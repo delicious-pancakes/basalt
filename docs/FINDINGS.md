@@ -41,7 +41,35 @@ cycles will report correct programs as broken.
 python -m basalt.cli verify path/to/O0.cubin --latencies data/latency/rtx-5070-ti.json
 ```
 
-## 2. Understalling corrupts silently, and basalt predicts exactly when
+## 2. The checker agrees with the vendor compiler across the whole corpus
+
+Every kernel `ptxas` builds from the generated corpus is compiled and verified.
+Its scheduling is the reference, so an error on any of them is basalt's fault.
+
+| | |
+| :--- | ---: |
+| Kernels compiled | 317 |
+| Dependencies checked | 5,423 |
+| Errors | **0** |
+| Kernels with warnings | 5 |
+
+The five warnings are opcodes whose latency is still assumed rather than
+measured, plus one late-read case, and they are reported as warnings for exactly
+that reason.
+
+This is not a formality. Every modelling error basalt has made was found here or
+by the smaller version of it, never by reasoning about the architecture:
+scoreboards treated as flags rather than counters, a wait required from every
+consumer rather than from any instruction, a guard predicate read as an opcode,
+a scoreboard ignored because the producer was fixed-latency, `VOTEU` classified
+as completing out of order, and a stall requirement treated as a property of the
+producer when it belongs to the pair.
+
+```bash
+pytest -m slow      # runs the control; it also runs in CI on every push
+```
+
+## 3. Understalling corrupts silently, and basalt predicts exactly when
 
 The premise of the project, checked directly rather than argued. For each encodable stall on
 a dependent producer, basalt's static verdict is compared against what the silicon computes:
@@ -63,7 +91,7 @@ deterministic rather than a race: every repeat produces the same incorrect value
 This is held as a test (`tests/test_gpu.py::TestVerdictsMatchHardware`), so a change that
 breaks the agreement fails the suite.
 
-## 3. Required stall, by three independent methods
+## 4. Required stall, by three independent methods
 
 Three ways of asking the question, which do not always agree because they are not quite the
 same question.
@@ -106,7 +134,7 @@ things. `MUFU` produces a perfectly linear 44 cycles under timing, but `ptxas` s
 scoreboard on it and the dependent instruction waits on that scoreboard, so the stall does
 not have to carry the dependency. basalt keeps it classified as variable for that reason.
 
-## 4. Tensor cores: throughput and requirement are far apart
+## 5. Tensor cores: throughput and requirement are far apart
 
 Timed with a dependent chain that accumulates through the D operand, so each
 `mma.sync` cannot issue until the previous one has written the accumulator back.
@@ -140,7 +168,7 @@ distinction matters: a checker that treated 34 as the required stall would
 reject correct code. It is recorded here as throughput, and the number is not
 written into the latency model.
 
-## 5. The stall field cannot express a long latency
+## 6. The stall field cannot express a long latency
 
 Four bits, so 15 is the largest gap a single instruction can request. Any requirement above
 that must be covered by accumulating stalls across several instructions, or by a scoreboard.
@@ -157,7 +185,7 @@ DFMA R4, R6, R4, R4     stall=15  wait=0x02
 
 Four NOPs whose only purpose is to spend cycles.
 
-## 6. What is deliberately not claimed
+## 7. What is deliberately not claimed
 
 Stated so the boundary of the evidence is visible.
 
@@ -184,7 +212,7 @@ Stated so the boundary of the evidence is visible.
   first conversion. An earlier run reported `I2FP` as requiring 4 cycles; the control
   retracted it, and it is listed as not established rather than quietly kept.
 
-## 7. Corrections made along the way
+## 8. Corrections made along the way
 
 Kept because a method is only as trustworthy as its error log.
 

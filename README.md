@@ -157,6 +157,8 @@ Three of those contradict the assumed model basalt shipped with: `DADD` was assu
 | 3 | 5.88 | wrong |
 | 4 | 6.88 | correct |
 
+**It agrees with the vendor compiler on 317 kernels.** Every kernel `ptxas` builds from the corpus is verified against its own scheduling: 5,423 dependencies, zero errors. That sweep runs in CI on every push, and every modelling error this project has made was caught by it rather than by reasoning.
+
 **The verdicts match the silicon.** For every encodable stall on a dependent producer, basalt's static answer and what the hardware actually computes agree, including the zero case. That is held as a test, not asserted here. Full evidence, including three independent methods for the required stall and the corrections made along the way, is in [findings](docs/FINDINGS.md).
 
 > [!NOTE]
