@@ -174,4 +174,34 @@ evidence that neither is confused.
 
 **Agreement between models.** The measured latency model verifies real compiler output
 clean. An independently measured number and the vendor's scheduling decisions agreeing is
-the strongest evidence available that both are right.
+good evidence that both are right, and it is not proof: they can also agree because the
+same wrong assumption is in both.
+
+**The hardware round trip.** Which is why this exists, and why it is the control the others
+answer to. Every kernel the corpus generates is compiled, stripped of every control bit,
+rescheduled from scratch, and run on the GPU beside the vendor's version of itself. The
+output bytes have to match.
+
+Nothing else here is independent of basalt's own latency model. The checker and the
+scheduler both read it, so a wrong entry satisfies both at once and they agree while both
+being wrong; only the silicon has no stake in the argument. Running the scheduler over
+seven hand-written kernels passed seven of seven for a long time, and running it over three
+hundred found forty-one that were wrong.
+
+**Four inputs, not one.** A stale read only changes the answer when the stale value and the
+fresh one differ, so a single pattern of bytes is a single chance to notice. Every kernel in
+the round trip runs against four patterns chosen to disagree with each other everywhere.
+Adding the second, third and fourth immediately exposed a carry-out predicate the operand
+model had been reading as a source since the beginning, which had survived every control
+above it including the round trip.
+
+**Assembling back to the vendor's bytes.** Every instruction `ptxas` emits is disassembled
+to text and assembled back, and the result has to be the same 128 bits. Coverage is allowed
+to be partial and is reported; the count of instructions that assemble to *different* bytes
+is pinned at zero, because a word that disassembles to the right text and encodes something
+else is the same failure this project exists to catch.
+
+**Costing the result.** A scheduler that reports only whether it was right is hiding the
+trade it made, so the issue cycles of both schedules are compared and the ratio is pinned
+from both sides. Getting slower is a regression; getting much faster without the round trip
+also moving is a reason to distrust the costing rather than to celebrate it.

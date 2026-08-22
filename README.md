@@ -51,7 +51,7 @@ So basalt is three tools, each held to the same standard, and the standard is th
 | :--- | :--- | :--- | ---: |
 | **Assembler** | SASS text to the 128-bit word | Reassemble every instruction `ptxas` emitted and compare bytes | 8,351 of 8,560 exact, **0 wrong** |
 | **Checker** | Reads a schedule, reports hazards | The vendor's own output must verify clean, and a deliberately shortened stall must be caught | 329 kernels clean, faults caught |
-| **Scheduler** | Assigns the control bits from scratch | Discard every control bit, compute new ones, run both on the GPU, compare output bytes | **314 of 314** byte-identical |
+| **Scheduler** | Assigns the control bits from scratch | Discard every control bit, compute new ones, run both on the GPU against four inputs, compare output bytes | **314 of 314** byte-identical |
 
 And the part a scheduler is usually quiet about: what the correctness costs. basalt's
 schedules spend **0.93x** the vendor's issue cycles, slower on 15 of the 329 kernels and
@@ -70,6 +70,12 @@ silicon has no stake in the argument. Running the scheduler over seven hand-writ
 passed seven of seven for a long time. Running it over three hundred found forty-one wrong
 ones, and every correction in [findings](docs/FINDINGS.md) came out of watching that number
 move.
+
+The same applies to the inputs. A stale read only changes the answer when the stale value
+and the fresh one differ, so one pattern of bytes is one chance to notice, and running
+every kernel against a second, third and fourth pattern immediately found a carry-out
+predicate the operand model had been reading as a source since the beginning. It had
+survived every control up to that point, including the round trip itself.
 
 The same discipline decides what the assembler is allowed to do. It reached 98% of the
 corpus only after six separate rounds of being confidently incorrect:
