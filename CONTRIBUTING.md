@@ -38,8 +38,24 @@ python -m basalt.cli doctor
 ```bash
 pytest                      # everything that runs anywhere
 pytest -m "not toolchain"   # pure unit tests, no NVIDIA binaries needed
+pytest -m slow              # the corpus controls, a couple of minutes, no GPU
 ruff check . && ruff format --check .
 ```
+
+If you have a 50 series card, the control that matters is the round trip. It reschedules
+every corpus kernel from scratch and runs both versions on the GPU, and it is the only
+check here that does not share a latency model with the thing it is checking:
+
+```bash
+python scripts/roundtrip_corpus.py --opt 3
+python scripts/roundtrip_corpus.py --opt 1   # and 2
+```
+
+**Run all three optimisation levels before believing a scheduler change.** They are not
+interchangeable: `-O3` unrolls a loop into ordinary registers where `-O1` keeps its counter
+in uniform ones, and two real bugs lived in the uniform datapath for as long as only `-O3`
+was run. Any change to the scheduler, the latency model, or `operands.py` should be
+followed by all three.
 
 ## Reporting an ISA gap
 

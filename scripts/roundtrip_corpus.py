@@ -19,6 +19,12 @@ and every model correction since came out of it.
     python scripts/roundtrip_corpus.py --report out.json
     python scripts/roundtrip_corpus.py --only k_sqrt_approx_f32 k_brev_b32
 
+**Run every optimisation level before believing a scheduler change**, not just the
+default. They are not interchangeable: `-O3` unrolls a loop into ordinary
+registers where `-O1` keeps its counter in uniform ones, so the uniform datapath
+had no coverage at all until `-O1` was run, and it immediately found two kernels
+basalt scheduled wrong. Both had passed everything else.
+
 Needs an sm_120 card and a toolchain; see the README for both.
 
 Three things this has to get right to mean anything:
