@@ -250,22 +250,29 @@ class Assembler:
                     # text that disagrees is refused rather than mis-encoded
                     continue
                 token, holds = classified
-                # a field that cannot reproduce its own reference value was only
-                # partly attributed, so writing through it leaves the rest behind
+                parts = dict(operand.subfields)
+                # A field that cannot reproduce its own reference value was only
+                # partly attributed, so writing through it leaves the rest
+                # behind. Checked against the bits that would actually carry the
+                # value, which is the sub-field where a modifier was split out:
+                # `PLOP3.LUT`'s predicate slot is a uniform-register flag, a
+                # number and a negate sharing five bits, and taking four of them
+                # for the number turns `P1` into `UP0`.
                 if holds == "value" and token < len(tokens):
-                    expected = _token_value(tokens[token])
-                    if (
-                        expected is None
-                        or _read(reference, tuple(sorted(operand.bits))) != expected
-                    ):
+                    value_bits = tuple(sorted(parts.get(SubRole.VALUE, operand.bits)))
+                    expected = _token_value(_strip_modifiers(tokens[token])[1])
+                    if expected is None or _read(reference, value_bits) != expected:
                         holds = "partial"
+                        parts = {
+                            role: bits for role, bits in parts.items() if role in _COMPOSITE_ROLES
+                        }
                 slots.append(
                     Slot(
                         index=operand.slot,
                         bits=tuple(sorted(operand.bits)),
                         token=token,
                         holds=holds,
-                        parts=dict(operand.subfields),
+                        parts=parts,
                     )
                 )
             self._forms.setdefault(mnemonic, []).append(
@@ -395,8 +402,10 @@ class Assembler:
 
             # When the prober separated a modifier out, the rest of the field is
             # the value and is named; otherwise the whole field is the value.
+            # Either way what the field holds still decides: splitting a negate
+            # bit off a float immediate does not turn the rest into an integer.
             value_bits = slot.parts.get(SubRole.VALUE) or slot.bits
-            if slot.holds != "value" and SubRole.VALUE not in slot.parts:
+            if slot.holds != "value":
                 raise AssemblyError(
                     f"{mnemonic} operand {slot.index} sits in a field the prober found to hold "
                     f"a {slot.holds} rather than a plain value, so writing {token!r} into it "

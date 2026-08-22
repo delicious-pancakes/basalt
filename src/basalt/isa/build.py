@@ -96,6 +96,21 @@ def operand_shape(operands: str) -> tuple[str, ...]:
     return tuple(kinds)
 
 
+_FLOAT_TEXT = re.compile(r"^[+-]?(?:\d+\.\d|\d+(?:\.\d+)?e[+-]?\d+|INF|QNAN|NAN)", re.IGNORECASE)
+
+
+def _reveals_float(observation) -> bool:
+    """Did this bit show the operand printing as a float rather than a number?"""
+    index = observation.changed_operand_index
+    if index is None:
+        return False
+    for text in (observation.before, observation.after):
+        parts = [p.strip() for p in text.split(",")]
+        if index < len(parts) and _FLOAT_TEXT.match(parts[index]):
+            return True
+    return False
+
+
 def collect_representatives(
     result: HarvestResult,
 ) -> dict[tuple[str, tuple[str, ...]], Observation]:
@@ -160,7 +175,12 @@ def build_database(
         operands = []
         for slot, bits in fmap.operand_fields().items():
             mine = [o for o in fmap.observations if o.bit in bits and o.role is BitRole.OPERAND]
-            sample = mine[0] if mine else None
+            # the sample decides what an assembler thinks this field holds, so
+            # take one that shows a float where any bit reveals one: `FFMA`'s
+            # immediate prints as `1` and flipping a high bit keeps it looking
+            # like an integer, which is how a float field is mistaken for a
+            # plain value and given an integer to encode
+            sample = next((o for o in mine if _reveals_float(o)), mine[0] if mine else None)
             operands.append(
                 OperandField(
                     slot=slot,

@@ -524,7 +524,7 @@ label under this rule and none decodes wrongly.
 The rule is a measurement, and a measurement written down as a constant is exactly what goes
 quietly wrong when a compiler version changes, so it is re-derived from the corpus by a test
 rather than trusted. With it, assembling every corpus kernel as a whole program reproduces
-8,514 of 8,584 instructions bit-identically, and none to anything else.
+8,518 of 8,584 instructions bit-identically, and none to anything else.
 
 ## 12. What the correctness costs
 
@@ -808,7 +808,52 @@ verdicts out of over-strict and into agreed broken, which is 22 cases where basa
 and a single pattern had not been enough to show it. The remaining 64 are unproven either
 way, and they are counted separately and named rather than folded into an accuracy figure.
 
-## 17. What is deliberately not claimed
+## 17. Going looking for a wrong word, rather than waiting for one
+
+"Nothing assembles to the wrong bytes" was measured against instructions `ptxas` chose to
+emit. That is the right control and it is a narrow one: the failure this repository exists
+to catch does not need the vendor's cooperation, and a corpus can only ever ask about text
+the compiler happened to produce.
+
+`scripts/fuzz_assembler.py` goes looking instead. It mutates the operand text of every form
+in the database, assembles the result, and hands it straight back to the decoder, holding
+one property:
+
+> assemble(text) must disassemble to text
+
+The interesting part is telling a real defect from a difference in spelling, because most
+mismatches are the second. `P7` and `PT` are one register. `URZ` prints as `UR63`. A
+negative immediate prints as its two's complement. A discarded result is not printed at all,
+so `VOTE.ANY RZ, PT, P0` reads back as `VOTE.ANY PT, P0`. And a suffix can follow an operand's
+value, which is finding 15 again. None of those are wrong words, and the test that separates
+them from one is whether what came back assembles to the *same* word.
+
+**It found four defects in the first thirty seconds**, none of which the corpus had ever
+reached:
+
+| What broke | Why |
+| :--- | :--- |
+| `PLOP3.LUT`'s predicate slot turned `P1` into `UP0` | five bits holding a uniform-register flag, a number and a negate; splitting the negate off left four bits that are not a number |
+| `IADD R4, R0, -0x1` refused | a minus on a *number* is part of the number, not a bit elsewhere in the word |
+| an immediate too wide for its field was trimmed | the value was masked at the call site before anything could refuse it |
+| `DFMA`/`FSEL` took an integer for a float field | splitting a modifier out of the field bypassed the check on what the field holds |
+
+The first is the one that matters: it wrote a word naming a different register, which is
+exactly the failure mode being hunted. It survived the corpus because the corpus only ever
+puts `PT` in that slot.
+
+After the fixes, at 120 mutations per form across five seeds:
+
+| | |
+| :--- | ---: |
+| Mutations | 193,800 |
+| Assembled and round-tripped | all of them |
+| Same word, printed differently | counted separately |
+| **Wrong** | **0** |
+
+The seed is fixed so a failure reproduces exactly, and three seeds run in CI on every push.
+
+## 18. What is deliberately not claimed
 
 Stated so the boundary of the evidence is visible.
 
@@ -846,7 +891,7 @@ Stated so the boundary of the evidence is visible.
   first conversion. An earlier run reported `I2FP` as requiring 4 cycles; the control
   retracted it, and it is listed as not established rather than quietly kept.
 
-## 18. Corrections made along the way
+## 19. Corrections made along the way
 
 Kept because a method is only as trustworthy as its error log.
 

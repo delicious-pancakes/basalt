@@ -93,6 +93,14 @@ jobs:
         # gates every push rather than running on a schedule.
         run: pytest -m slow
 
+      - name: Try to make the assembler emit something else
+        # the coverage run only asks about text ptxas chose to emit. this goes
+        # looking, and it found four real defects the corpus never reached
+        run: |
+          for seed in 1 2 3; do
+            python scripts/fuzz_assembler.py --cases 60 --seed "$seed"
+          done
+
       - name: Reproduce the assembler number the README quotes
         # the suite already pins "nothing assembles to the wrong bytes"; this
         # prints the figure itself, so a drop in coverage is visible in the log
