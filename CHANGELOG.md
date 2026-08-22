@@ -13,7 +13,7 @@ any release. The clean-room position in [`NOTICE`](NOTICE) will not.
 - Assembler: SASS text to the 128-bit instruction word, whole cubins as well as
   single instructions, and a `basalt assemble` command that can read its own
   output back through `nvdisasm` to prove it. Assembling every corpus kernel as
-  a program with its labels resolved reproduces 8,428 of 8,584 instructions
+  a program with its labels resolved reproduces 8,479 of 8,584 instructions
   bit-identically and none to anything else; the second count is a test pinned
   at zero.
 - `scripts/assembler_coverage.py`: the command that produces the number above.

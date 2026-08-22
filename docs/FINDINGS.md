@@ -523,7 +523,7 @@ label under this rule and none decodes wrongly.
 The rule is a measurement, and a measurement written down as a constant is exactly what goes
 quietly wrong when a compiler version changes, so it is re-derived from the corpus by a test
 rather than trusted. With it, assembling every corpus kernel as a whole program reproduces
-8,428 of 8,584 instructions bit-identically, and none to anything else.
+8,479 of 8,584 instructions bit-identically, and none to anything else.
 
 ## 12. What the correctness costs
 
@@ -682,7 +682,52 @@ and 54 fewer refusals:
 | Before | 8,374 | 210 | 0 |
 | After | **8,428** | 156 | **0** |
 
-## 15. What is deliberately not claimed
+## 15. A mnemonic that depends on its operand's value hides the operand
+
+Differential probing rests on one assumption: change a bit, and whatever moves in the
+printed text is what that bit controls. `IMAD.SHL.U32` breaks it.
+
+That mnemonic is not a separate instruction. It is what the disassembler calls `IMAD` when
+the multiplier is a power of two, because then the multiply is a shift. Writing values
+straight into the immediate field of one shows it plainly:
+
+| Immediate written | Decoded as |
+| :--- | :--- |
+| `0x10` | `IMAD.SHL.U32 R22, R2, 0x10, RZ` |
+| `0x20` | `IMAD.SHL.U32 R22, R2, 0x20, RZ` |
+| `0x10000000` | `IMAD.SHL.U32 R22, R2, 0x10000000, RZ` |
+| `0x30` | **`IMAD.U32`** `R22, R2, 0x30, RZ` |
+| `0x5` | **`IMAD.U32`** `R22, R2, 0x5, RZ` |
+
+Same bits, same field, different name, and the name depends on the value. So every single
+flip of that immediate changes the suffix, the probe records all thirty-two bits as suffix
+bits rather than operand bits, and the operand ends up with no field at all:
+
+| Form | Bits attributed to the immediate |
+| :--- | ---: |
+| `IMAD R8, R2, 0x5, RZ` | 30 |
+| `IMAD.U32 R12, R11, 0x10000, RZ` | 31 |
+| `IMAD.SHL.U32 R22, R2, 0x10, RZ` | **0** |
+
+The assembler then refused every `IMAD.SHL.U32` in the corpus, correctly, for want of
+anywhere to put its operand. It was the largest single group of refusals there was.
+
+**Recovering it without assuming it.** The tempting fix is to copy the field from a sibling
+form, and that is exactly the kind of reasoning this repository refuses. What is done
+instead: a bit that changed a suffix *and* moved exactly one operand is a candidate, and a
+candidate is only accepted if writing several distinct values through the candidate bits
+reproduces those values exactly and leaves every other operand untouched. A bit that really
+does control a modifier fails that check and stays where it was. Only immediates are
+recovered this way, because a register that moves a suffix is a genuinely different encoding
+rather than a rendering of the same one.
+
+| | Exact | Refused | Wrong |
+| :--- | ---: | ---: | ---: |
+| Before finding 14 | 8,374 | 210 | 0 |
+| After finding 14 | 8,428 | 156 | 0 |
+| After this | **8,479** | 105 | **0** |
+
+## 16. What is deliberately not claimed
 
 Stated so the boundary of the evidence is visible.
 
@@ -720,7 +765,7 @@ Stated so the boundary of the evidence is visible.
   first conversion. An earlier run reported `I2FP` as requiring 4 cycles; the control
   retracted it, and it is listed as not established rather than quietly kept.
 
-## 16. Corrections made along the way
+## 17. Corrections made along the way
 
 Kept because a method is only as trustworthy as its error log.
 
