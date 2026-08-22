@@ -174,7 +174,10 @@ class TestMeasurement:
             body="    mad.lo.s32 {d}, {d}, %ra, %rb;",
             seed="    ld.global.u32 %r1, [%in];",
         )
-        result = measure_latency(toolchain, device, spec, lengths=(64, 128, 256))
+        # the production sweep, not a truncated one: a three-point fit over a
+        # narrow range is noisy enough to trip the R-squared gate, and the gate
+        # is not going to be relaxed to accommodate a shortcut in a test
+        result = measure_latency(toolchain, device, spec)
         assert result.ok, result.rejected
         assert result.r_squared > 0.999
         assert result.integral_error < 0.2
@@ -235,7 +238,7 @@ def _measured_model(toolchain, device) -> LatencyModel:
         body="    mad.lo.s32 {d}, {d}, %ra, %rb;",
         seed="    ld.global.u32 %r1, [%in];",
     )
-    measured = measure_latency(toolchain, device, spec, lengths=(64, 128, 256))
+    measured = measure_latency(toolchain, device, spec)
     if not measured.ok:
         pytest.skip(f"could not measure IMAD: {measured.rejected}")
 
