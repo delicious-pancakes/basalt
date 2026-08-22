@@ -161,6 +161,7 @@ WIDTH_SUFFIXES: dict[str, int] = {
 }
 
 _REG_TOKEN = re.compile(r"\b(UR|R|UP|P|B)(\d+|Z|T)\b")
+_PREDICATE_ONLY = re.compile(r"^!?~?U?P(\d+|T)$")
 _GUARD = re.compile(r"^@(!)?(U?P)(\d+|T)\s+")
 # a register written as R4.64 or R4.reuse; the dotted tail after a register
 _REG_WITH_TAIL = re.compile(r"\b(UR|R)(\d+|Z)((?:\.[A-Za-z0-9_]+)*)")
@@ -306,6 +307,20 @@ def operand_access(mnemonic: str, operands: str) -> Access:
 
     def_slots = max(1, leading_preds)
     if leading_preds == 1 and len(parts) > 1 and _REG_WITH_TAIL.match(parts[1].strip()):
+        def_slots = 2
+    elif leading_preds == 0 and len(parts) > 1 and _PREDICATE_ONLY.match(parts[1].strip()):
+        # A predicate straight after the register destination is written, not
+        # read: it is the carry out of `IADD RZ, P0, R9, R10`, or the vote result
+        # of `VOTEU.ANY UR6, UPT, PT`. Every opcode in the corpus that puts a
+        # predicate there uses it that way, `IADD`, `IADD3`, `IMAD`, `UIADD3`,
+        # `VOTE` and `VOTEU`, and a predicate that is genuinely a source appears
+        # last instead, as in `SEL R11, R11, R8, P1`.
+        #
+        # Reading it as a source is wrong twice over: the definition disappears,
+        # so an `.X` instruction consuming the carry depends on nothing, and a
+        # false read of whatever defined that predicate earlier is invented. It
+        # was found by running the corpus against four input patterns instead of
+        # one, which is the only reason the wrong answer ever differed.
         def_slots = 2
     elif (
         leading_preds >= 2

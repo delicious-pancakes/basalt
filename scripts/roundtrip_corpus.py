@@ -28,6 +28,12 @@ Shared and local memory kernels need launch configuration this runner does not
 provide. The vendor side runs first and a failure there is reported against the
 harness, not the schedule.
 
+*One input is one chance to notice.* A stale read only changes the answer when
+the stale value and the fresh one differ, so a schedule can be wrong and a single
+pattern of bytes can fail to show it. Every kernel runs against four patterns
+chosen to disagree with each other everywhere, and their outputs are compared as
+one result.
+
 *A kernel whose output is not stable cannot be compared.* Several have 32 threads
 storing to one address, so the winner is arbitrary. Others read shared or local
 memory this runner never initialises, so they are stable until something else has
@@ -60,9 +66,18 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 
 ARCH = "sm_120a"
-# Fixed, arbitrary, and the same for both sides. The value does not matter; that
-# both schedules see the same one does.
-PATTERN = bytes((i * 37 + 11) & 0xFF for i in range(256))
+# Several inputs rather than one, and the same ones for both schedules.
+#
+# A stale read only changes the answer when the stale value and the fresh one
+# differ, so a single pattern of bytes is a single chance to notice. These four
+# are chosen to disagree with each other everywhere: an odd stride, a different
+# odd stride, a run of alternating extremes, and a quadratic.
+PATTERNS: tuple[bytes, ...] = (
+    bytes((i * 37 + 11) & 0xFF for i in range(256)),
+    bytes((i * 211 + 173) & 0xFF for i in range(256)),
+    bytes(0xFF if i % 3 else 0x00 for i in range(256)),
+    bytes((i * i + 7) & 0xFF for i in range(256)),
+)
 BUFFER = 256
 REPEATS = 5
 THREADS = 32
@@ -167,20 +182,25 @@ def worker(work: Path, start: int) -> None:
     with Device(0) as device:
         source = device.alloc(BUFFER)
         destination = device.alloc(BUFFER)
-        device.upload(source, PATTERN)
 
         def run(path, entry):
             module = device.load_cubin(Path(path).read_bytes())
             function = module.function(entry)
             seen = []
             for _ in range(REPEATS):
-                device.upload(destination, b"\0" * BUFFER)
-                device.launch(
-                    function,
-                    [ctypes.c_size_t(source), ctypes.c_size_t(destination)],
-                    block=(THREADS, 1, 1),
-                )
-                seen.append(device.download(destination, BUFFER))
+                # every pattern joined into one result, so a disagreement on any
+                # of them is a disagreement
+                outputs = []
+                for pattern in PATTERNS:
+                    device.upload(source, pattern)
+                    device.upload(destination, b"\0" * BUFFER)
+                    device.launch(
+                        function,
+                        [ctypes.c_size_t(source), ctypes.c_size_t(destination)],
+                        block=(THREADS, 1, 1),
+                    )
+                    outputs.append(device.download(destination, BUFFER))
+                seen.append(b"".join(outputs))
             module.unload()
             return seen
 

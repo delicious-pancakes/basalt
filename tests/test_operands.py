@@ -205,3 +205,43 @@ class TestMinMaxWritesARegister:
     def test_the_ordinary_three_operand_form_is_unchanged(self):
         access = operand_access("IMNMX", "R2, R3, R4, !PT")
         assert access.real_defs == {RegRef(RegKind.GENERAL, 2)}
+
+
+class TestCarryOutPredicates:
+    """A predicate straight after the register destination is written, not read.
+
+    `IADD RZ, P0, R9, R10` produces a carry into P0, and `IMAD.WIDE.U32 R10, P0,
+    R4, R7, R8` does the same alongside its wide product. `VOTEU.ANY UR6, UPT,
+    PT` puts its vote result there. A predicate that is genuinely a source
+    appears last instead, as in `SEL R11, R11, R8, P1`.
+
+    Reading it as a source is wrong twice over: the definition disappears, so the
+    `.X` instruction that consumes the carry depends on nothing and gets no gap,
+    and a read of whatever defined that predicate earlier is invented.
+
+    It survived every control until the corpus was run against four input
+    patterns rather than one. A stale carry only changes the answer when the
+    stale value and the fresh one differ, and with one pattern they did not.
+    """
+
+    def test_the_carry_out_of_an_add_is_written(self):
+        access = operand_access("IADD", "RZ, P0, R9, R10")
+        assert RegRef(RegKind.PREDICATE, 0) in access.real_defs
+        assert RegRef(RegKind.PREDICATE, 0) not in access.real_uses
+
+    def test_a_wide_multiply_writes_both_its_product_and_its_carry(self):
+        access = operand_access("IMAD.WIDE.U32", "R10, P0, R4, R7, R8")
+        assert RegRef(RegKind.PREDICATE, 0) in access.real_defs
+        assert RegRef(RegKind.GENERAL, 10) in access.real_defs
+        assert RegRef(RegKind.GENERAL, 11) in access.real_defs
+
+    def test_the_extended_form_reads_the_carry(self):
+        """`.X` takes it as a source, and it is last rather than second."""
+        access = operand_access("IADD.X", "R13, ~R5, R9, P0")
+        assert RegRef(RegKind.PREDICATE, 0) in access.real_uses
+        assert RegRef(RegKind.PREDICATE, 0) not in access.real_defs
+
+    def test_a_trailing_predicate_is_still_a_source(self):
+        access = operand_access("SEL", "R11, R11, R8, P1")
+        assert RegRef(RegKind.PREDICATE, 1) in access.real_uses
+        assert access.real_defs == {RegRef(RegKind.GENERAL, 11)}
