@@ -2772,7 +2772,6 @@
       "operands": [
         {
           "bits": [
-            12,
             13,
             14,
             15,
@@ -2859,7 +2858,7 @@
             126,
             127
           ],
-          "example_after": "@P1 0x30",
+          "example_after": "@P2 0x40",
           "example_before": "@P0 0x30",
           "slot": 0,
           "subfields": {}
@@ -3035,7 +3034,7 @@
         4,
         8
       ],
-      "operand_text": "`($__internal_0_$__cuda_sm_9x_mma_sub_byte_internal_m16n8k64_s4_s4)",
+      "operand_text": "`($__internal_0_$__cuda_sm_9x_mma_sub_byte_internal_m16n8k32_s4_s4)",
       "operands": [
         {
           "bits": [
@@ -3134,7 +3133,7 @@
       ],
       "payload": "0000000003c000000000000000207944",
       "source_family": "mma.dense",
-      "source_label": "mma.sync.m16n8k64....s4.s4.s32"
+      "source_label": "mma.sync.m16n8k32....s4.s4.s32"
     },
     "CCTL.IVALL": {
       "encoding": "000fc0000200000000000000ff00798f",
@@ -7512,7 +7511,7 @@
       ],
       "payload": "0000000003800000000000000000791b",
       "source_family": "special",
-      "source_label": "match.sync.b32"
+      "source_label": "shfl.sync.b32"
     },
     "ERRBAR": {
       "encoding": "000fc0000000000000000000000079ab",
@@ -11545,10 +11544,6 @@
       "operands": [
         {
           "bits": [
-            12,
-            13,
-            14,
-            15,
             16,
             17,
             18,
@@ -11558,7 +11553,7 @@
             22,
             23
           ],
-          "example_after": "@!P1 R0, R0, 0.5",
+          "example_after": "@!P0 R1, R0, 0.5",
           "example_before": "@!P0 R0, R0, 0.5",
           "slot": 0,
           "subfields": {}
@@ -12084,7 +12079,7 @@
       ],
       "payload": "000000000040c0003e22f98302007820",
       "source_family": "unary",
-      "source_label": "cos.approx.f32"
+      "source_label": "sin.approx.f32"
     },
     "FMUL.SAT": {
       "encoding": "000fc000004020000000000206027220",
@@ -41462,7 +41457,7 @@
       ],
       "payload": "000000000400000000000001ff007807",
       "source_family": "compare",
-      "source_label": "setp.ne.s32"
+      "source_label": "setp.eq.s32"
     },
     "SGXT.U32": {
       "encoding": "000fc00000000000000000200000781a",
@@ -46774,7 +46769,7 @@
       ],
       "payload": "000000000800000000000006000772bf",
       "source_family": "atomic",
-      "source_label": "atom.add.global.u32"
+      "source_label": "atom.add.global.s32"
     },
     "VIADD.S32.ISAT": {
       "encoding": "000fc000000104000000000206027236",
@@ -47932,7 +47927,7 @@
       ],
       "payload": "00000000038e01000000000000067886",
       "source_family": "atomic",
-      "source_label": "atom.add.global.u32"
+      "source_label": "atom.add.global.s32"
     },
     "WARPSYNC.ALL": {
       "encoding": "000fc000038000000000000000007948",
@@ -48186,10 +48181,10 @@
       ],
       "payload": "0000000003c000000000000000087348",
       "source_family": "special",
-      "source_label": "match.sync.b32"
+      "source_label": "shfl.sync.b32"
     }
   },
-  "generated_utc": "2026-08-22T22:43:54+00:00",
+  "generated_utc": "2026-08-22T22:52:11+00:00",
   "schema_version": 2,
   "variants": {
     "DADD": [
@@ -50283,7 +50278,7 @@
         ],
         "payload": "00000000080e00000000000600007d00",
         "source_family": "atomic",
-        "source_label": "atom.add.global.u32"
+        "source_label": "atom.add.global.s32"
       }
     ],
     "FMNMX": [
@@ -52868,7 +52863,7 @@
         ],
         "payload": "00000000078e0200000000ff02047235",
         "source_family": "mma.dense",
-        "source_label": "mma.sync.m16n8k8....f16.f16.f32"
+        "source_label": "mma.sync.m16n8k16....f16.f16.f32"
       }
     ],
     "IADD.X": [
@@ -53806,7 +53801,7 @@
         ],
         "payload": "000000000f8e02ff0000000702077c24",
         "source_family": "atomic",
-        "source_label": "atom.add.global.u32"
+        "source_label": "atom.add.global.s32"
       }
     ],
     "IMAD.U32": [
@@ -56882,7 +56877,7 @@
         ],
         "payload": "00000000000000000000000000057919",
         "source_family": "atomic",
-        "source_label": "atom.add.global.u32"
+        "source_label": "atom.add.global.s32"
       },
       {
         "encoding": "000e2400000039000000000000007919",
@@ -57474,7 +57469,7 @@
         ],
         "payload": "000000000000000000000001ff077807",
         "source_family": "compare",
-        "source_label": "setp.eq.s32"
+        "source_label": "setp.le.s32"
       },
       {
         "encoding": "000fc000000000000000000005047207",
@@ -58525,9 +58520,6 @@
         "operands": [
           {
             "bits": [
-              12,
-              13,
-              14,
               16,
               17,
               18,
@@ -58537,7 +58529,7 @@
               22,
               23
             ],
-            "example_after": "@!UP6 URZ, UPT, UPT, URZ, URZ, URZ",
+            "example_after": "@!UPT UR254, UPT, UPT, URZ, URZ, URZ",
             "example_before": "@!UPT URZ, UPT, UPT, URZ, URZ, URZ",
             "slot": 0,
             "subfields": {}

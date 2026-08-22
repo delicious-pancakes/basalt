@@ -206,7 +206,45 @@ def _kind(token: str) -> str:
     return "other"
 
 
-def _float_bits(text: str, width: int) -> int | None:
+# How a float field of a given width might be laid out. A 32-bit field is not
+# always a float32: `DMUL R6, R6, 2.2250738585072013831e-308` keeps the *top
+# half* of a double there and lets the low half be zero, so packing a float32
+# into it sets the wrong exponent bit and assembles a different number.
+_FLOAT_LAYOUTS: dict[int, tuple[tuple[str, int], ...]] = {
+    16: (("<e", 0),),
+    32: (("<f", 0), ("<d", 32)),
+    64: (("<d", 0),),
+}
+
+
+def _float_value(raw: int, layout: str, shift: int) -> float | None:
+    """What a field's raw bits mean under one layout."""
+    size = {"<e": 2, "<f": 4, "<d": 8}[layout]
+    try:
+        return struct.unpack(layout, (raw << shift).to_bytes(size, "little"))[0]
+    except (OverflowError, struct.error):
+        return None
+
+
+def _float_layout(reference_word: int, bits: tuple[int, ...], text: str) -> tuple[str, int] | None:
+    """Which layout this field uses, decided by reproducing its own value.
+
+    The reference text says what the reference bits mean, so the layout is the
+    one that turns the second into the first. Nothing is inferred from the
+    mnemonic, which would be a guess dressed as a rule.
+    """
+    try:
+        want = float(text.strip())
+    except ValueError:
+        return None
+    raw = _read(reference_word, bits)
+    for layout, shift in _FLOAT_LAYOUTS.get(len(bits), ()):
+        if _float_value(raw, layout, shift) == want:
+            return layout, shift
+    return None
+
+
+def _float_bits(text: str, layout: str, shift: int) -> int | None:
     """A float literal as the bits its field holds, or None if that is a guess.
 
     `FADD R7, R7, -24` and `FMUL R0, R0, 16777216` look like integers and are
@@ -218,9 +256,6 @@ def _float_bits(text: str, width: int) -> int | None:
     is no way to reproduce the vendor's payload from the word `QNAN` alone, and
     guessing one would put a wrong word in a file that looks right.
     """
-    layout = {16: "<e", 32: "<f", 64: "<d"}.get(width)
-    if layout is None:
-        return None
     try:
         value = float(text.strip())
     except ValueError:
@@ -228,9 +263,13 @@ def _float_bits(text: str, width: int) -> int | None:
     if value != value:
         return None
     try:
-        return int.from_bytes(struct.pack(layout, value), "little")
+        packed = int.from_bytes(struct.pack(layout, value), "little")
     except (OverflowError, struct.error):
         return None
+    # a field holding the top half of a double must not lose the bottom half
+    if shift and packed & ((1 << shift) - 1):
+        return None
+    return packed >> shift
 
 
 def _token_value(token: str) -> int | None:
@@ -448,13 +487,16 @@ class Assembler:
             # bit off a float immediate does not turn the rest into an integer.
             value_bits = slot.parts.get(SubRole.VALUE) or slot.bits
             if slot.holds == "float":
-                bits = _float_bits(token, len(value_bits))
+                # the whole field, not the split: a float's sign bit is part of
+                # its encoding rather than a modifier parked beside it
+                chosen = _float_layout(form.reference, slot.bits, reference_token)
+                bits = None if chosen is None else _float_bits(token, *chosen)
                 if bits is None:
                     raise AssemblyError(
-                        f"{mnemonic} operand {slot.index} is {token!r} in a {len(value_bits)}-bit "
+                        f"{mnemonic} operand {slot.index} is {token!r} in a {len(slot.bits)}-bit "
                         f"float field, and that is not a value this can encode exactly"
                     )
-                word = _write(word, tuple(value_bits), bits)
+                word = _write(word, tuple(slot.bits), bits)
                 continue
             if slot.holds != "value":
                 raise AssemblyError(

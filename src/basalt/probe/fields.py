@@ -36,6 +36,8 @@ _CONTROL_BITS = {b for f in CONTROL_FIELDS for b in range(f.lo, f.lo + f.width)}
 # operand tokens we care about telling apart
 _REG = re.compile(r"\b(?:UR|R|P|UP|SR_|SB)\w*", re.IGNORECASE)
 _IMM = re.compile(r"\b0x[0-9a-fA-F]+\b")
+# a guard is printed ahead of the first operand rather than beside it
+_GUARD_PREFIX = re.compile(r"^@!?U?P(?:\d+|T)\s+")
 
 
 class BitRole(StrEnum):
@@ -61,9 +63,15 @@ class BitObservation:
 
     @property
     def changed_operand_index(self) -> int | None:
-        """Which comma-separated operand slot moved, if exactly one did."""
-        a = [t.strip() for t in self.before.split(",")]
-        b = [t.strip() for t in self.after.split(",")]
+        """Which comma-separated operand slot moved, if exactly one did.
+
+        The guard is stripped first because it rides on the first operand rather
+        than being its own comma-separated part. Leaving it there puts `@!P0 R0`
+        in one field, so a guarded form's destination bits are recorded as the
+        guard's and there is nothing left to write a different destination with.
+        """
+        a = [t.strip() for t in _GUARD_PREFIX.sub("", self.before, count=1).split(",")]
+        b = [t.strip() for t in _GUARD_PREFIX.sub("", self.after, count=1).split(",")]
         if len(a) != len(b):
             return None
         moved = [i for i, (x, y) in enumerate(zip(a, b, strict=True)) if x != y]
