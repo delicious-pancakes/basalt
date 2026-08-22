@@ -26,7 +26,9 @@ from tempfile import TemporaryDirectory
 import pytest
 
 from basalt.disasm import disassemble_program
+from basalt.encoding import NO_BARRIER
 from basalt.harvest.corpus import generate
+from basalt.harvest.corpus_shapes import generate_shapes
 from basalt.harvest.corpus_tensor import generate_tensor
 from basalt.verify.hazards import Severity, verify_program
 from basalt.verify.latency import DEFAULT_MODEL, LatencyModel
@@ -210,6 +212,94 @@ class TestSchedulerOverTheWholeCorpus:
         if scheduled:
             lines = "\n".join(f"  {name}: {why} ({detail})" for name, why, detail in scheduled)
             pytest.fail(f"{len(scheduled)} kernels basalt could not schedule cleanly:\n{lines}")
+
+
+class TestReadBarrierWindowsAreNotTightened:
+    """A read barrier covers more reads than its own instruction's.
+
+    `ptxas` puts one on the last of a run of loads and lets in-order issue plus
+    the gaps it chose carry the earlier ones: by the time the last has read its
+    address register, the earlier ones have too. Compress those gaps and the
+    guarantee goes with them, which is `k_mma_m16n8k32_s4_s4_s32` at `-O1`,
+    where `R4` was overwritten under four loads that had not finished reading it.
+
+    The window here is found by scanning back from the barrier to the previous
+    barrier, control transfer or branch target, deliberately without asking the
+    scheduler where it thinks the window is. Otherwise this would agree with the
+    implementation by construction and catch nothing.
+
+    It stops at a branch target because the vendor's spacing cannot mean
+    anything across one: control can arrive there from somewhere else, so
+    whatever gap the fall-through path happened to have is not a guarantee the
+    vendor is relying on either. `s_loop_double` at `-O1` is the case that
+    settles it, where the barrier is on a `DFMA` in a loop body and guards
+    against the next iteration overwriting the operands of this one, not against
+    anything in the preamble above the label.
+    """
+
+    TRANSFERS = frozenset({"BRA", "BRX", "CALL", "RET", "EXIT", "JMP", "JMX", "BSSY", "BSYNC"})
+
+    @staticmethod
+    @pytest.fixture(scope="class")
+    def tightened(toolchain, model, observed):
+        from basalt.sched.scheduler import schedule_program
+
+        def one(task):
+            snippet, opt = task
+            with TemporaryDirectory(prefix="basalt-rb-") as tmp:
+                src, cubin_path = Path(tmp) / "k.ptx", Path(tmp) / "k.cubin"
+                src.write_text(snippet.ptx)
+                built = toolchain.run(
+                    [
+                        str(toolchain.ptxas),
+                        f"-arch={ARCH}",
+                        f"-O{opt}",
+                        "-o",
+                        str(cubin_path),
+                        str(src),
+                    ],
+                    check=False,
+                    timeout=60.0,
+                )
+                if built.returncode != 0:
+                    return []
+                program = disassemble_program(toolchain, cubin_path)
+                result = schedule_program(program, model, observed=observed)
+                transfers = TestReadBarrierWindowsAreNotTightened.TRANSFERS
+                targets = set(getattr(program, "labels", {}).values())
+
+                found = []
+                previous = -1
+                for index, instruction in enumerate(program.instructions):
+                    if instruction.word is None:
+                        continue
+                    if instruction.word.field("read_barrier") == NO_BARRIER:
+                        continue
+                    start = index
+                    while start > previous + 1 and start not in targets:
+                        earlier = program.instructions[start - 1]
+                        if earlier.word is None or earlier.opcode in transfers:
+                            break
+                        start -= 1
+                    window = range(start, index + 1)
+                    vendor = sum(program.instructions[i].word.field("stall") for i in window)
+                    ours = sum(result.words[i].field("stall") for i in window)
+                    if ours < vendor:
+                        found.append(
+                            f"{snippet.name} -O{opt} slot {index}: {ours} < {vendor} cycles"
+                        )
+                    previous = index
+                return found
+
+        snippets = generate() + generate_tensor() + generate_shapes()
+        tasks = [(s, opt) for s in snippets for opt in (1, 2, 3)]
+        with ThreadPoolExecutor(max_workers=os.cpu_count() or 4) as pool:
+            return [line for lines in pool.map(one, tasks) for line in lines]
+
+    def test_no_read_barrier_window_is_shorter_than_the_vendors(self, tightened):
+        if tightened:
+            shown = "\n".join(f"  {line}" for line in tightened[:10])
+            pytest.fail(f"{len(tightened)} read-barrier windows tightened:\n{shown}")
 
 
 class TestAssemblerAgainstTheVendorsBytes:
