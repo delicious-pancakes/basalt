@@ -39,6 +39,17 @@ ASSETS = ROOT / "docs" / "assets"
 SCALE = 2
 CAP_BYTES = 1_000_000
 
+# Aim well under the cap rather than at it. A 942 KB file is legal and leaves no
+# room for the artwork to gain a single element later, and an upload that fails
+# on a byte count is a bad afternoon.
+TARGET_BYTES = 600_000
+
+# How far a quantised pixel may drift from the lossless one, averaged over the
+# image, before the trade is refused. The artwork is flat panels and text over a
+# slow gradient, which quantises to 256 colours with no visible banding; this is
+# what stops that from being an assumption that survives an artwork change.
+MAX_MEAN_DRIFT = 1.5
+
 # (source svg, output png, css width, css height)
 TARGETS: tuple[tuple[str, Path, int, int], ...] = (
     ("social-preview.svg", ROOT / ".github" / "social-preview.png", 1280, 640),
@@ -151,7 +162,7 @@ def optimise(path: Path) -> tuple[str, str]:
     never happen without saying so.
     """
     try:
-        from PIL import Image
+        from PIL import Image, ImageChops, ImageStat
     except ImportError:
         return "unscaled", "no Pillow, left as rendered"
 
@@ -160,17 +171,35 @@ def optimise(path: Path) -> tuple[str, str]:
         px = f"{im.width}x{im.height}"
 
         im.save(path, "PNG", optimize=True, compress_level=9)
-        if path.stat().st_size <= CAP_BYTES:
+        lossless = path.stat().st_size
+        if lossless <= TARGET_BYTES:
             return px, "lossless"
 
-        for colors in (256, 192, 128, 96, 64):
-            im.quantize(colors=colors, dither=Image.Dither.FLOYDSTEINBERG).save(
-                path, "PNG", optimize=True, compress_level=9
-            )
-            if path.stat().st_size <= CAP_BYTES:
-                return px, f"quantised to {colors} colours to fit the 1 MB cap"
+        # Try progressively smaller palettes, keeping the first that fits and
+        # still matches the original. Fidelity is measured rather than assumed:
+        # the mean per-channel drift has to stay under MAX_MEAN_DRIFT, so a
+        # future artwork with a steep gradient refuses the trade instead of
+        # shipping banded.
+        for colors in (256, 192, 128):
+            candidate = im.quantize(colors=colors, dither=Image.Dither.FLOYDSTEINBERG)
+            drift = ImageStat.Stat(ImageChops.difference(im, candidate.convert("RGB"))).mean
+            worst = max(drift)
+            if worst > MAX_MEAN_DRIFT:
+                continue
+            candidate.save(path, "PNG", optimize=True, compress_level=9)
+            if path.stat().st_size <= TARGET_BYTES:
+                return px, (
+                    f"{colors} colours, {path.stat().st_size / lossless:.0%} of lossless, "
+                    f"mean drift {worst:.2f}/255"
+                )
 
-    return px, "still over the cap; reduce SCALE or simplify the artwork"
+        # nothing faithful was small enough, so keep the lossless file if it is
+        # at least legal and say why it is bigger than intended
+        im.save(path, "PNG", optimize=True, compress_level=9)
+        if path.stat().st_size <= CAP_BYTES:
+            return px, "lossless, over the comfort target but under GitHub's cap"
+
+    return px, "over GitHub's 1 MB cap; reduce SCALE or simplify the artwork"
 
 
 if __name__ == "__main__":

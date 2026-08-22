@@ -179,12 +179,15 @@
     <text x="1003.5" y="84" class="mono micro" text-anchor="middle" fill="#5e8f13">NEVER VALIDATED BY HARDWARE</text>
   </g>
 
-  <!-- the hazard, stated in the artwork -->
+  <!-- The hazard, with the numbers this repository actually measured: IMAD
+       times at 4.001 cycles on an RTX 5070 Ti (R2 0.99998), and a dependent
+       chain scheduled at a stall of 1, 2 or 3 returns the wrong answer while a
+       stall of 4 returns the right one. See docs/FINDINGS.md. -->
   <g transform="translate(84 566)">
-    <text x="0" y="0" class="mono hz" fill="#d29922">stall=2</text>
+    <text x="0" y="0" class="mono hz" fill="#d29922">stall=3</text>
     <text x="86" y="0" class="mono" font-size="18" fill="#6e7781">&#60;</text>
-    <text x="110" y="0" class="mono hz" fill="#f85149">latency=6</text>
-    <text x="228" y="0" class="mono" font-size="18" fill="#8b949e">&#8594;  stale read, no fault, full speed</text>
+    <text x="110" y="0" class="mono hz" fill="#f85149">IMAD latency=4</text>
+    <text x="290" y="0" class="mono" font-size="18" fill="#8b949e">&#8594;  stale read, no fault, full speed</text>
   </g>
 
   <text x="84" y="606" class="mono tag">CLEAN-ROOM  ·  APACHE-2.0  ·  GITHUB.COM/SUNNYPATELL/BASALT</text>
