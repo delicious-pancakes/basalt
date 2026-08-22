@@ -163,6 +163,54 @@ def _scoreboarded_requirement(
     return evidence.minimum if evidence is not None else 0
 
 
+def _live_out(cfg, program) -> list[set[RegRef]]:
+    """Registers each block defines that something after it may read.
+
+    The ordinary backwards liveness fixed point, restricted to what this needs:
+    a block's live-out set is the union of its successors' live-in sets, and a
+    live-in is anything read before being written. A definition in the set is
+    one whose consumer is in another block, which is exactly the case the
+    per-block stall analysis cannot see.
+    """
+    used: list[set[RegRef]] = []
+    written: list[set[RegRef]] = []
+    for block in cfg.blocks:
+        reads: set[RegRef] = set()
+        writes: set[RegRef] = set()
+        for index in range(block.start, block.end):
+            instruction = program.instructions[index]
+            if instruction.word is None:
+                continue
+            access = operand_access(instruction.mnemonic, instruction.operands)
+            reads |= access.real_uses - writes
+            writes |= access.real_defs
+        used.append(reads)
+        written.append(writes)
+
+    live_in: list[set[RegRef]] = [set() for _ in cfg.blocks]
+    live_out: list[set[RegRef]] = [set() for _ in cfg.blocks]
+    for _ in range(len(cfg.blocks) + 1):
+        changed = False
+        for block in reversed(cfg.blocks):
+            outgoing: set[RegRef] = set()
+            for successor in block.successors:
+                outgoing |= live_in[successor]
+            incoming = used[block.index] | (outgoing - written[block.index])
+            if outgoing != live_out[block.index] or incoming != live_in[block.index]:
+                live_out[block.index] = outgoing
+                live_in[block.index] = incoming
+                changed = True
+        if not changed:
+            break
+
+    # a block with unknown successors could reach anything, so nothing about it
+    # can be assumed to be dead
+    for block in cfg.blocks:
+        if getattr(block, "successors_unknown", False):
+            live_out[block.index] = live_out[block.index] | written[block.index]
+    return live_out
+
+
 def _place_stall(
     stalls: list[int],
     pinned: set[int],
@@ -472,23 +520,36 @@ def schedule_program(
                 break
 
     # ---- anything crossing a block boundary
-    # The analysis above is per block, so a value defined in one block and
-    # consumed in another gets no coverage from it. Rather than guess which
-    # values are live out, the last instruction of every block is given the safe
-    # stall encoding, which covers any dependency that leaves the block. That is
-    # blunt and it is correct, and correctness is the one thing this cannot
-    # trade away.
+    # The stall analysis above is per block, so a value defined in one block and
+    # consumed in another gets no coverage from it. The safe stall encoding on
+    # the block's last instruction covers anything that leaves, because it waits
+    # for outstanding results as well as elapsed cycles.
+    #
+    # It is only placed where something actually leaves. Doing it at every
+    # boundary regardless is unconditionally correct and costs about 37 cycles
+    # each time, which was most of the difference between basalt's schedules and
+    # the vendor's. A block whose definitions are all consumed before its end
+    # needs nothing, and that is the common case for straight-line code.
+    #
+    # Live-out is computed properly rather than guessed: a definition is live out
+    # if any block reachable from here reads it before redefining it, which is
+    # the ordinary backwards fixed point. Guessing would trade a known cost for
+    # an unknown correctness risk, which is the wrong way round.
+    live_out = _live_out(cfg, program)
     for block in cfg.blocks:
         last = block.end - 1
-        if 0 <= last < count and last not in pinned:
-            instr = program.instructions[last]
-            floor = _NEVER_ZERO_STALL.get(instr.opcode if instr.word is not None else "")
-            if floor is not None:
-                stalls[last] = max(stalls[last], floor)
-                continue
-            stalls[last] = STALL_YIELD
-            pinned.add(last)
-            result.yielded.append(last)
+        if not (0 <= last < count) or last in pinned:
+            continue
+        if not live_out[block.index]:
+            continue
+        instr = program.instructions[last]
+        floor = _NEVER_ZERO_STALL.get(instr.opcode if instr.word is not None else "")
+        if floor is not None:
+            stalls[last] = max(stalls[last], floor)
+            continue
+        stalls[last] = STALL_YIELD
+        pinned.add(last)
+        result.yielded.append(last)
 
     # ---- emit
     for index, instr in enumerate(program.instructions):

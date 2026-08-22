@@ -506,17 +506,22 @@ vendor's:
 | | Issue cycles |
 | :--- | ---: |
 | `ptxas -O3` | 13,537 |
-| basalt | 18,778 |
-| | **1.39x** |
+| basalt | 17,462 |
+| | **1.29x** |
 
-Slower on 302 of the 329 kernels, and the worst cases are around 2.7x. Two decisions
-account for most of it, and both were taken deliberately.
+Slower on 216 of the 329 kernels. Two decisions account for most of what remains, and both
+were taken deliberately.
 
-**The safe stall encoding at every block boundary.** A value defined in one block and
-consumed in another is covered by putting a zero stall on the block's last instruction,
-which waits for outstanding results as well as elapsed cycles and costs about 37 cycles.
-That is blunt and unconditionally correct, and it is reached for once per block whether or
-not anything actually crosses the edge.
+**The safe stall encoding where a value leaves a block.** A definition consumed in another
+block is covered by putting a zero stall on the block's last instruction, which waits for
+outstanding results as well as elapsed cycles and costs about 37 cycles.
+
+It used to be placed at every boundary regardless, which was unconditionally correct and
+most of the gap: 732 of them across the corpus, against 74 now. Restricting it to blocks
+that actually have something live out took the ratio from 1.39x to 1.29x with the hardware
+round trip unchanged at every comparable kernel. Live-out is computed as the ordinary
+backwards fixed point rather than guessed, because trading a known cost for an unknown
+correctness risk is the wrong way round.
 
 **Not leaning on a wait a predicated instruction carries.** `ptxas` does lean on them and
 its output runs; basalt emits its own wait instead, because relying on one was measurably

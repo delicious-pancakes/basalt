@@ -428,8 +428,9 @@ class TestWhatTheCorrectnessCosts:
         vendor, basalt = cycles
         assert vendor > 5000, "the corpus did not build"
         ratio = basalt / vendor
-        # 1.39x when this was written
-        assert ratio < 1.6, f"basalt's schedules cost {ratio:.2f}x the vendor's, up from 1.39x"
+        # 1.29x when this was written, down from 1.39x when the block-boundary
+        # safe stall was placed everywhere instead of only where needed
+        assert ratio < 1.45, f"basalt's schedules cost {ratio:.2f}x the vendor's, up from 1.29x"
         assert ratio > 1.0, (
             f"basalt's schedules cost {ratio:.2f}x, which is cheaper than the vendor's. that is "
             f"not implausible but it is surprising, and it is the shape a costing bug takes: "
