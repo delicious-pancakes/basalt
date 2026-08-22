@@ -411,6 +411,21 @@ than `ptxas` does, 37 cycles against 8. Nor is it the scoreboard index, since gi
 shuffle a different one to signal changes nothing. Whatever the rule is, it is about where
 a wait sits relative to a warp-convergent read, and basalt does not yet have it.
 
+The signed divide has its own unexplained instruction. `ptxas` puts a wait on
+`HFMA2 R4, -RZ, RZ, 0, 0`, which reads nothing and writes a constant, so there is no
+dependency in the operand list to justify it. The obvious reading is write-after-read: the
+`HFMA2` overwrites R4 while an outstanding conversion is still reading it, and the wait is
+what makes that safe.
+
+**That reading was tried and is wrong, or at least incomplete.** Teaching the scheduler to
+wait before overwriting any register an outstanding variable-latency instruction reads took
+the corpus from 301 matching to 293, and made eight kernels that had been correct
+non-deterministic. The rule is recorded here as rejected rather than left for someone to
+rediscover: SASS carries a separate read-barrier field for instructions that collect their
+sources late, and `ptxas` uses that mechanism rather than write scoreboards, so treating
+every scoreboarded instruction as a late reader adds waits that are not merely useless.
+Whatever `HFMA2` is doing there, it is not the general case.
+
 A further 12 kernels the harness itself cannot launch, 2 whose vendor output is not
 deterministic under 32 threads storing to one address, and any whose result is not
 reproducible once something else has used the card. That last group is why the vendor is
