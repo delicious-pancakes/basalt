@@ -114,13 +114,17 @@ def tensor_kernel(
 
 
 def _spec(entry: tuple[str, str, str, str, str, str, int, int, int]) -> ChainSpec:
-    label, shape, atype, btype, ctype, kind, na, nb, nc = entry
-    opcode = label.split(".")[0]
+    """Describe one form for reporting; the kernel itself comes from `tensor_kernel`.
+
+    Only the label and accumulator type are needed here. The rest of the entry
+    describes fragment shape and widths, which the scalar `ChainSpec` template
+    has no way to express, so the tensor path builds its whole kernel instead of
+    filling in a body.
+    """
+    label, ctype = entry[0], entry[4]
     return ChainSpec(
-        opcode=opcode,
+        opcode=label.split(".")[0],
         ptx_type=ctype,
-        # the body is unused for tensor chains; tensor_kernel builds the whole
-        # kernel, because the fragment operands do not fit the scalar template
         body="",
         seed="",
         note=f"{label}, accumulating through the D operand",

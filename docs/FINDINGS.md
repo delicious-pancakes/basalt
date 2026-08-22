@@ -164,8 +164,8 @@ Stated so the boundary of the evidence is visible.
 - **`I2FP` and `F2I` cannot be separated by timing.** A conversion cannot feed the next link
   of a dependent chain without converting back, so the chain always contains one of each. The
   24-cycle figure is the pair, and it is recorded in a separate `composite` section rather
-  than halved and presented as a per-instruction latency. Fault injection does give `I2FP`
-  alone, at 4.
+  than halved and presented as a per-instruction latency. Fault injection cannot separate them
+  either, because the round trip is idempotent and the chain reaches a fixed point.
 - **Only one SKU has been measured.** Everything here is an RTX 5070 Ti. Whether these figures
   hold across sm_120 parts with different SM counts is exactly the sort of thing that should
   not be assumed, and basalt records the part alongside every measurement so a second card can
