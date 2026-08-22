@@ -950,15 +950,93 @@
     }
   },
   "by_scoreboarded": {
-    "ATOMG": {
+    "ATOMG.E.ADD.64.STRONG.GPU": {
       "min_stall": 1,
-      "observations": 11,
+      "observations": 1,
       "samples": [
-        "ATOMG.E.ADD.STRONG.GPU @P0 PT, R7, desc[UR4][R4.64], R7",
-        "ATOMG.E.ADD.S32.STRONG.GPU @P0 PT, R7, desc[UR4][R4.64], R7",
         "ATOMG.E.ADD.64.STRONG.GPU @P0 PT, R6, desc[UR4][R4.64], R6"
       ],
-      "trusted": true
+      "trusted": false
+    },
+    "ATOMG.E.ADD.F32.FTZ.RN.STRONG.GPU": {
+      "min_stall": 4,
+      "observations": 1,
+      "samples": [
+        "ATOMG.E.ADD.F32.FTZ.RN.STRONG.GPU PT, R7, desc[UR4][R4.64], R3"
+      ],
+      "trusted": false
+    },
+    "ATOMG.E.ADD.F64.RN.STRONG.GPU": {
+      "min_stall": 4,
+      "observations": 1,
+      "samples": [
+        "ATOMG.E.ADD.F64.RN.STRONG.GPU PT, R6, desc[UR4][R4.64], R2"
+      ],
+      "trusted": false
+    },
+    "ATOMG.E.ADD.S32.STRONG.GPU": {
+      "min_stall": 1,
+      "observations": 1,
+      "samples": [
+        "ATOMG.E.ADD.S32.STRONG.GPU @P0 PT, R7, desc[UR4][R4.64], R7"
+      ],
+      "trusted": false
+    },
+    "ATOMG.E.ADD.STRONG.GPU": {
+      "min_stall": 1,
+      "observations": 1,
+      "samples": [
+        "ATOMG.E.ADD.STRONG.GPU @P0 PT, R7, desc[UR4][R4.64], R7"
+      ],
+      "trusted": false
+    },
+    "ATOMG.E.MAX.64.STRONG.GPU": {
+      "min_stall": 4,
+      "observations": 1,
+      "samples": [
+        "ATOMG.E.MAX.64.STRONG.GPU PT, R6, desc[UR4][R4.64], R2"
+      ],
+      "trusted": false
+    },
+    "ATOMG.E.MAX.S32.STRONG.GPU": {
+      "min_stall": 4,
+      "observations": 1,
+      "samples": [
+        "ATOMG.E.MAX.S32.STRONG.GPU PT, R7, desc[UR4][R4.64], R3"
+      ],
+      "trusted": false
+    },
+    "ATOMG.E.MAX.STRONG.GPU": {
+      "min_stall": 4,
+      "observations": 1,
+      "samples": [
+        "ATOMG.E.MAX.STRONG.GPU PT, R7, desc[UR4][R4.64], R3"
+      ],
+      "trusted": false
+    },
+    "ATOMG.E.MIN.64.STRONG.GPU": {
+      "min_stall": 4,
+      "observations": 1,
+      "samples": [
+        "ATOMG.E.MIN.64.STRONG.GPU PT, R6, desc[UR4][R4.64], R2"
+      ],
+      "trusted": false
+    },
+    "ATOMG.E.MIN.S32.STRONG.GPU": {
+      "min_stall": 4,
+      "observations": 1,
+      "samples": [
+        "ATOMG.E.MIN.S32.STRONG.GPU PT, R7, desc[UR4][R4.64], R3"
+      ],
+      "trusted": false
+    },
+    "ATOMG.E.MIN.STRONG.GPU": {
+      "min_stall": 4,
+      "observations": 1,
+      "samples": [
+        "ATOMG.E.MIN.STRONG.GPU PT, R7, desc[UR4][R4.64], R3"
+      ],
+      "trusted": false
     },
     "BREV": {
       "min_stall": 2,
@@ -997,17 +1075,84 @@
       ],
       "trusted": true
     },
-    "DSETP": {
+    "DSETP.GE.AND": {
       "min_stall": 2,
-      "observations": 14,
+      "observations": 2,
       "samples": [
-        "DSETP.MIN.AND P0, P1, R4, R6, PT",
-        "DSETP.MAX.AND P0, P1, R4, R6, PT",
-        "DSETP.GTU.AND P0, PT, |R2|, +INF , PT"
+        "DSETP.GE.AND P0, PT, R4, R6, PT",
+        "DSETP.GE.AND P0, PT, R4, R6, PT"
       ],
-      "trusted": true
+      "trusted": false
     },
-    "F2F": {
+    "DSETP.GEU.AND": {
+      "min_stall": 2,
+      "observations": 1,
+      "samples": [
+        "DSETP.GEU.AND P0, PT, R4, R6, PT"
+      ],
+      "trusted": false
+    },
+    "DSETP.GT.AND": {
+      "min_stall": 2,
+      "observations": 1,
+      "samples": [
+        "DSETP.GT.AND P0, PT, R4, R6, PT"
+      ],
+      "trusted": false
+    },
+    "DSETP.GTU.AND": {
+      "min_stall": 2,
+      "observations": 2,
+      "samples": [
+        "DSETP.GTU.AND P0, PT, |R2|, +INF , PT",
+        "DSETP.GTU.AND P0, PT, R4, R6, PT"
+      ],
+      "trusted": false
+    },
+    "DSETP.MAX.AND": {
+      "min_stall": 2,
+      "observations": 1,
+      "samples": [
+        "DSETP.MAX.AND P0, P1, R4, R6, PT"
+      ],
+      "trusted": false
+    },
+    "DSETP.MIN.AND": {
+      "min_stall": 2,
+      "observations": 1,
+      "samples": [
+        "DSETP.MIN.AND P0, P1, R4, R6, PT"
+      ],
+      "trusted": false
+    },
+    "DSETP.NAN.AND": {
+      "min_stall": 2,
+      "observations": 2,
+      "samples": [
+        "DSETP.NAN.AND P0, PT, R4, R6, PT",
+        "DSETP.NAN.AND P0, PT, R4, R6, PT"
+      ],
+      "trusted": false
+    },
+    "DSETP.NE.AND": {
+      "min_stall": 2,
+      "observations": 2,
+      "samples": [
+        "DSETP.NE.AND P0, PT, R4, R6, PT",
+        "DSETP.NE.AND P0, PT, R4, R6, PT"
+      ],
+      "trusted": false
+    },
+    "DSETP.NEU.AND": {
+      "min_stall": 2,
+      "observations": 2,
+      "samples": [
+        "DSETP.NEU.AND P0, PT, R4, R6, PT",
+        "DSETP.NEU.AND P0, PT, R4, R6, PT"
+      ],
+      "trusted": false
+    },
+    "F2F.F32.F64": {
       "min_stall": 2,
       "observations": 1,
       "samples": [
@@ -1015,9 +1160,17 @@
       ],
       "trusted": false
     },
-    "F2I": {
+    "F2I.F64": {
       "min_stall": 2,
-      "observations": 16,
+      "observations": 1,
+      "samples": [
+        "F2I.F64 R7, R2"
+      ],
+      "trusted": false
+    },
+    "F2I.FTZ.U32.TRUNC.NTZ": {
+      "min_stall": 2,
+      "observations": 4,
       "samples": [
         "F2I.FTZ.U32.TRUNC.NTZ R5, R4",
         "F2I.FTZ.U32.TRUNC.NTZ R5, R4",
@@ -1025,7 +1178,95 @@
       ],
       "trusted": true
     },
-    "FLO": {
+    "F2I.NTZ": {
+      "min_stall": 2,
+      "observations": 1,
+      "samples": [
+        "F2I.NTZ R7, R2"
+      ],
+      "trusted": false
+    },
+    "F2I.S16.F64": {
+      "min_stall": 2,
+      "observations": 1,
+      "samples": [
+        "F2I.S16.F64 R7, R2"
+      ],
+      "trusted": false
+    },
+    "F2I.S16.NTZ": {
+      "min_stall": 2,
+      "observations": 1,
+      "samples": [
+        "F2I.S16.NTZ R7, R2"
+      ],
+      "trusted": false
+    },
+    "F2I.S64": {
+      "min_stall": 2,
+      "observations": 1,
+      "samples": [
+        "F2I.S64 R4, R2"
+      ],
+      "trusted": false
+    },
+    "F2I.S64.F64": {
+      "min_stall": 2,
+      "observations": 1,
+      "samples": [
+        "F2I.S64.F64 R4, R2"
+      ],
+      "trusted": false
+    },
+    "F2I.U16.F64": {
+      "min_stall": 2,
+      "observations": 1,
+      "samples": [
+        "F2I.U16.F64 R7, R2"
+      ],
+      "trusted": false
+    },
+    "F2I.U16.NTZ": {
+      "min_stall": 2,
+      "observations": 1,
+      "samples": [
+        "F2I.U16.NTZ R7, R2"
+      ],
+      "trusted": false
+    },
+    "F2I.U32.F64": {
+      "min_stall": 2,
+      "observations": 1,
+      "samples": [
+        "F2I.U32.F64 R7, R2"
+      ],
+      "trusted": false
+    },
+    "F2I.U32.NTZ": {
+      "min_stall": 2,
+      "observations": 1,
+      "samples": [
+        "F2I.U32.NTZ R7, R2"
+      ],
+      "trusted": false
+    },
+    "F2I.U64": {
+      "min_stall": 2,
+      "observations": 1,
+      "samples": [
+        "F2I.U64 R4, R2"
+      ],
+      "trusted": false
+    },
+    "F2I.U64.F64": {
+      "min_stall": 2,
+      "observations": 1,
+      "samples": [
+        "F2I.U64.F64 R4, R2"
+      ],
+      "trusted": false
+    },
+    "FLO.U32": {
       "min_stall": 1,
       "observations": 4,
       "samples": [
@@ -1035,19 +1276,109 @@
       ],
       "trusted": true
     },
-    "I2F": {
+    "I2F.F64": {
+      "min_stall": 2,
+      "observations": 1,
+      "samples": [
+        "I2F.F64 R4, R2"
+      ],
+      "trusted": false
+    },
+    "I2F.F64.S16": {
+      "min_stall": 2,
+      "observations": 1,
+      "samples": [
+        "I2F.F64.S16 R4, R2"
+      ],
+      "trusted": false
+    },
+    "I2F.F64.S64": {
+      "min_stall": 2,
+      "observations": 1,
+      "samples": [
+        "I2F.F64.S64 R4, R2"
+      ],
+      "trusted": false
+    },
+    "I2F.F64.U16": {
+      "min_stall": 2,
+      "observations": 1,
+      "samples": [
+        "I2F.F64.U16 R4, R2"
+      ],
+      "trusted": false
+    },
+    "I2F.F64.U32": {
+      "min_stall": 2,
+      "observations": 1,
+      "samples": [
+        "I2F.F64.U32 R4, R2"
+      ],
+      "trusted": false
+    },
+    "I2F.F64.U64": {
+      "min_stall": 2,
+      "observations": 1,
+      "samples": [
+        "I2F.F64.U64 R4, R2"
+      ],
+      "trusted": false
+    },
+    "I2F.RP": {
       "min_stall": 1,
-      "observations": 13,
+      "observations": 2,
       "samples": [
         "I2F.RP R6, R9",
-        "I2F.RP R6, R8",
+        "I2F.RP R6, R8"
+      ],
+      "trusted": false
+    },
+    "I2F.S16": {
+      "min_stall": 2,
+      "observations": 1,
+      "samples": [
+        "I2F.S16 R7, R2"
+      ],
+      "trusted": false
+    },
+    "I2F.S64": {
+      "min_stall": 2,
+      "observations": 1,
+      "samples": [
+        "I2F.S64 R7, R2"
+      ],
+      "trusted": false
+    },
+    "I2F.U32.RP": {
+      "min_stall": 1,
+      "observations": 2,
+      "samples": [
+        "I2F.U32.RP R6, R7",
         "I2F.U32.RP R6, R7"
       ],
-      "trusted": true
+      "trusted": false
+    },
+    "I2F.U64": {
+      "min_stall": 2,
+      "observations": 1,
+      "samples": [
+        "I2F.U64 R7, R2"
+      ],
+      "trusted": false
     },
     "LDC": {
       "min_stall": 1,
-      "observations": 613,
+      "observations": 4,
+      "samples": [
+        "LDC R5, c[0x0][0x380]",
+        "LDC R2, c[0x0][0x380]",
+        "LDC R5, c[0x0][0x380]"
+      ],
+      "trusted": true
+    },
+    "LDC.64": {
+      "min_stall": 1,
+      "observations": 608,
       "samples": [
         "LDC.64 R4, c[0x0][0x388]",
         "LDC.64 R4, c[0x0][0x388]",
@@ -1055,55 +1386,223 @@
       ],
       "trusted": true
     },
+    "LDC.U16": {
+      "min_stall": 2,
+      "observations": 1,
+      "samples": [
+        "LDC.U16 R5, c[0x3][R5]"
+      ],
+      "trusted": false
+    },
     "LDCU": {
+      "min_stall": 2,
+      "observations": 12,
+      "samples": [
+        "LDCU UR4, c[0x0][0x380]",
+        "LDCU UR4, c[0x0][0x380]",
+        "LDCU UR4, c[0x0][0x380]"
+      ],
+      "trusted": true
+    },
+    "LDCU.64": {
       "min_stall": 1,
-      "observations": 329,
+      "observations": 317,
       "samples": [
         "LDCU.64 UR4, c[0x0][0x358]"
       ],
       "trusted": true
     },
-    "LDG": {
+    "LDG.E": {
       "min_stall": 1,
-      "observations": 849,
+      "observations": 680,
       "samples": [
-        "LDG.E.S16 R0, desc[UR4][R2.64]",
+        "LDG.E R6, desc[UR4][R2.64+0x8]",
+        "LDG.E R0, desc[UR4][R2.64+0x4]",
+        "LDG.E R0, desc[UR4][R2.64]"
+      ],
+      "trusted": true
+    },
+    "LDG.E.64": {
+      "min_stall": 1,
+      "observations": 105,
+      "samples": [
+        "LDG.E.64 R6, desc[UR4][R2.64+0x8]",
+        "LDG.E.64 R6, desc[UR4][R2.64+0x8]",
+        "LDG.E.64 R8, desc[UR4][R2.64+0x10]"
+      ],
+      "trusted": true
+    },
+    "LDG.E.64.CONSTANT": {
+      "min_stall": 6,
+      "observations": 1,
+      "samples": [
+        "LDG.E.64.CONSTANT R2, desc[UR4][R2.64]"
+      ],
+      "trusted": false
+    },
+    "LDG.E.CONSTANT": {
+      "min_stall": 6,
+      "observations": 1,
+      "samples": [
+        "LDG.E.CONSTANT R3, desc[UR4][R2.64]"
+      ],
+      "trusted": false
+    },
+    "LDG.E.EF": {
+      "min_stall": 6,
+      "observations": 1,
+      "samples": [
+        "LDG.E.EF R3, desc[UR4][R2.64]"
+      ],
+      "trusted": false
+    },
+    "LDG.E.LU": {
+      "min_stall": 6,
+      "observations": 1,
+      "samples": [
+        "LDG.E.LU R3, desc[UR4][R2.64]"
+      ],
+      "trusted": false
+    },
+    "LDG.E.S16": {
+      "min_stall": 1,
+      "observations": 21,
+      "samples": [
+        "LDG.E.S16 R0, desc[UR4][R2.64]"
+      ],
+      "trusted": true
+    },
+    "LDG.E.STRONG.GPU": {
+      "min_stall": 6,
+      "observations": 1,
+      "samples": [
+        "LDG.E.STRONG.GPU R3, desc[UR4][R2.64]"
+      ],
+      "trusted": false
+    },
+    "LDG.E.STRONG.SM": {
+      "min_stall": 6,
+      "observations": 1,
+      "samples": [
+        "LDG.E.STRONG.SM R3, desc[UR4][R2.64]"
+      ],
+      "trusted": false
+    },
+    "LDG.E.STRONG.SYS": {
+      "min_stall": 6,
+      "observations": 1,
+      "samples": [
+        "LDG.E.STRONG.SYS R3, desc[UR4][R2.64]"
+      ],
+      "trusted": false
+    },
+    "LDG.E.U16": {
+      "min_stall": 1,
+      "observations": 36,
+      "samples": [
         "LDG.E.U16 R0, desc[UR4][R2.64]",
-        "LDG.E R6, desc[UR4][R2.64+0x8]"
+        "LDG.E.U16 R2, desc[UR4][R2.64]",
+        "LDG.E.U16 R2, desc[UR4][R2.64]"
       ],
       "trusted": true
     },
     "LDL": {
       "min_stall": 1,
-      "observations": 3,
+      "observations": 1,
       "samples": [
-        "LDL R5, [UR4]",
-        "LDL.64 R2, [UR4]",
+        "LDL R5, [UR4]"
+      ],
+      "trusted": false
+    },
+    "LDL.64": {
+      "min_stall": 1,
+      "observations": 1,
+      "samples": [
+        "LDL.64 R2, [UR4]"
+      ],
+      "trusted": false
+    },
+    "LDL.U16": {
+      "min_stall": 1,
+      "observations": 1,
+      "samples": [
         "LDL.U16 R5, [UR4]"
       ],
-      "trusted": true
+      "trusted": false
     },
     "LDS": {
       "min_stall": 1,
-      "observations": 3,
+      "observations": 1,
       "samples": [
-        "LDS R5, [UR4]",
-        "LDS.64 R2, [UR4]",
+        "LDS R5, [UR4]"
+      ],
+      "trusted": false
+    },
+    "LDS.64": {
+      "min_stall": 1,
+      "observations": 1,
+      "samples": [
+        "LDS.64 R2, [UR4]"
+      ],
+      "trusted": false
+    },
+    "LDS.U16": {
+      "min_stall": 1,
+      "observations": 1,
+      "samples": [
         "LDS.U16 R5, [UR4]"
       ],
-      "trusted": true
+      "trusted": false
     },
-    "LDSM": {
+    "LDSM.16.M88": {
       "min_stall": 2,
-      "observations": 6,
+      "observations": 1,
       "samples": [
-        "LDSM.16.M88 R5, [UR4]",
-        "LDSM.16.MT88 R5, [UR4]",
+        "LDSM.16.M88 R5, [UR4]"
+      ],
+      "trusted": false
+    },
+    "LDSM.16.M88.2": {
+      "min_stall": 2,
+      "observations": 1,
+      "samples": [
         "LDSM.16.M88.2 R4, [UR4]"
       ],
-      "trusted": true
+      "trusted": false
     },
-    "MATCH": {
+    "LDSM.16.M88.4": {
+      "min_stall": 2,
+      "observations": 1,
+      "samples": [
+        "LDSM.16.M88.4 R4, [UR4]"
+      ],
+      "trusted": false
+    },
+    "LDSM.16.MT88": {
+      "min_stall": 2,
+      "observations": 1,
+      "samples": [
+        "LDSM.16.MT88 R5, [UR4]"
+      ],
+      "trusted": false
+    },
+    "LDSM.16.MT88.2": {
+      "min_stall": 2,
+      "observations": 1,
+      "samples": [
+        "LDSM.16.MT88.2 R4, [UR4]"
+      ],
+      "trusted": false
+    },
+    "LDSM.16.MT88.4": {
+      "min_stall": 2,
+      "observations": 1,
+      "samples": [
+        "LDSM.16.MT88.4 R4, [UR4]"
+      ],
+      "trusted": false
+    },
+    "MATCH.ANY": {
       "min_stall": 2,
       "observations": 1,
       "samples": [
@@ -1111,7 +1610,7 @@
       ],
       "trusted": false
     },
-    "MOVM": {
+    "MOVM.16.MT88": {
       "min_stall": 4,
       "observations": 1,
       "samples": [
@@ -1119,13 +1618,72 @@
       ],
       "trusted": false
     },
-    "MUFU": {
+    "MUFU.COS": {
+      "min_stall": 2,
+      "observations": 1,
+      "samples": [
+        "MUFU.COS R7, R7"
+      ],
+      "trusted": false
+    },
+    "MUFU.EX2": {
+      "min_stall": 2,
+      "observations": 1,
+      "samples": [
+        "MUFU.EX2 R7, R0"
+      ],
+      "trusted": false
+    },
+    "MUFU.LG2": {
+      "min_stall": 2,
+      "observations": 1,
+      "samples": [
+        "MUFU.LG2 R7, R0"
+      ],
+      "trusted": false
+    },
+    "MUFU.RCP": {
+      "min_stall": 2,
+      "observations": 5,
+      "samples": [
+        "MUFU.RCP R6, R6",
+        "MUFU.RCP R6, R6",
+        "MUFU.RCP R6, R6"
+      ],
+      "trusted": true
+    },
+    "MUFU.RCP64H": {
       "min_stall": 1,
-      "observations": 16,
+      "observations": 3,
       "samples": [
         "MUFU.RCP64H R5, R3"
       ],
       "trusted": true
+    },
+    "MUFU.RSQ": {
+      "min_stall": 2,
+      "observations": 3,
+      "samples": [
+        "MUFU.RSQ R7, R0",
+        "MUFU.RSQ R3, R0"
+      ],
+      "trusted": true
+    },
+    "MUFU.SIN": {
+      "min_stall": 2,
+      "observations": 1,
+      "samples": [
+        "MUFU.SIN R7, R7"
+      ],
+      "trusted": false
+    },
+    "MUFU.SQRT": {
+      "min_stall": 2,
+      "observations": 1,
+      "samples": [
+        "MUFU.SQRT R7, R0"
+      ],
+      "trusted": false
     },
     "POPC": {
       "min_stall": 1,
@@ -1157,7 +1715,7 @@
       ],
       "trusted": true
     },
-    "SHFL": {
+    "SHFL.IDX": {
       "min_stall": 1,
       "observations": 7,
       "samples": [

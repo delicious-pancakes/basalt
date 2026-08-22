@@ -421,7 +421,7 @@ def _check_scoreboarded_minimum(
     raw = producer.word.field("stall")
     if raw == STALL_YIELD:
         return
-    evidence = observed.scoreboarded_minimum(producer.opcode)
+    evidence = observed.scoreboarded_minimum(producer.mnemonic)
     if evidence is None or raw >= evidence.minimum:
         return
     _add(
@@ -439,10 +439,10 @@ def _check_scoreboarded_minimum(
             required=evidence.minimum,
             actual=raw,
             detail=(
-                f"{producer.opcode} signals a scoreboard and is waited on, but a "
+                f"{producer.mnemonic} signals a scoreboard and is waited on, but a "
                 f"scoreboard does not cover the whole result: across "
                 f"{evidence.observations} observations the compiler never scheduled "
-                f"{producer.opcode} with less than {evidence.minimum} cycles of its own"
+                f"{evidence.producer} with less than {evidence.minimum} cycles of its own"
             ),
         ),
     )

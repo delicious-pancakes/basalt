@@ -59,6 +59,10 @@ class ScheduleResult:
     passes: int = 0
     stalls_added: int = 0
     scoreboards_used: int = 0
+    # Producers that had to share an already-busy scoreboard because all six
+    # were guarding something. Correct but slightly over-synchronised, so it is
+    # counted rather than hidden.
+    scoreboards_shared: int = 0
     unplaceable: list[str] = field(default_factory=list)
     out_of_scoreboards: list[str] = field(default_factory=list)
     # Instructions given the safe stall encoding because their dependency could
@@ -74,7 +78,7 @@ class ScheduleResult:
         return (
             f"{len(self.words)} instructions, {self.passes} passes, "
             f"{self.stalls_added} stall cycles, {self.scoreboards_used} scoreboards, "
-            f"{len(self.yielded)} safe stalls: {verdict}"
+            f"{self.scoreboards_shared} shared, {len(self.yielded)} safe stalls: {verdict}"
         )
 
 
@@ -207,13 +211,30 @@ def schedule_program(
             record = model.lookup(instr.opcode)
             if record.kind is LatencyClass.VARIABLE and access.real_defs:
                 free = next((sb for sb in range(SCOREBOARDS) if sb not in protects), None)
-                if free is None:
-                    result.out_of_scoreboards.append(f"#{index} {instr.text}")
-                    continue
-                protects[free] = set(access.real_defs)
+                if free is not None:
+                    protects[free] = set(access.real_defs)
+                    result.scoreboards_used += 1
+                else:
+                    # Every scoreboard is already guarding something, so share
+                    # one. A scoreboard is a counter rather than a flag: several
+                    # producers can signal the same index, and a wait on it
+                    # blocks until all of them have reported. Sharing therefore
+                    # makes the wait cover more than it strictly needs to, which
+                    # costs a little parallelism and cannot be unsafe.
+                    #
+                    # Not an edge case. Six loads in flight is ordinary in a
+                    # tensor kernel, and refusing to schedule the seventh
+                    # rejected 45 of the 317 corpus kernels outright. The vendor
+                    # compiler shares for the same reason.
+                    #
+                    # The one holding the fewest registers is chosen, so the
+                    # extra waiting lands where the fewest consumers will feel
+                    # it.
+                    free = min(protects, key=lambda sb: (len(protects[sb]), sb))
+                    protects[free] |= set(access.real_defs)
+                    result.scoreboards_shared += 1
                 barrier_of[index] = free
                 write_barriers[index] = free
-                result.scoreboards_used += 1
 
     # register -> barriers that may still be outstanding for it on entry
     entry_state: list[dict[RegRef, frozenset[int]]] = [{} for _ in cfg.blocks]
@@ -354,7 +375,7 @@ def schedule_program(
             if index in pinned:
                 # already the safe encoding, which is worth more than any minimum
                 continue
-            evidence = observed.scoreboarded_minimum(instr.opcode)
+            evidence = observed.scoreboarded_minimum(instr.mnemonic)
             if evidence is not None and stalls[index] < evidence.minimum:
                 result.stalls_added += evidence.minimum - stalls[index]
                 stalls[index] = evidence.minimum

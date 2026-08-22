@@ -87,6 +87,13 @@ class ObservedStalls:
     # scoreboard. Not redundant with the above: a scoreboard does not make the
     # producer's own stall irrelevant. `DADD` is scoreboarded and still never
     # given less than 2, and shortening it to 1 changes the answer on hardware.
+    #
+    # Keyed on the full mnemonic rather than the bare opcode, because the
+    # modifier decides the number and collapsing them takes the minimum across
+    # variants. `I2F` reads as 1 only because of `I2F.RP`, while every other
+    # `I2F` needs 2. `MUFU` reads as 1 only because of `MUFU.RCP64H`. `ATOMG`
+    # reads as 1 while its float and min/max forms need 4. Every one of those
+    # collapses is wrong in the direction that silently corrupts.
     by_scoreboarded: dict[str, StallEvidence] = field(default_factory=dict)
     kernels: int = 0
 
@@ -110,8 +117,11 @@ class ObservedStalls:
             self.by_producer[collapsed] = StallEvidence(producer, "*", minimum=stall)
         self.by_producer[collapsed].observe(stall, sample)
 
-    def observe_scoreboarded(self, producer: str, stall: int, sample: str) -> None:
+    def observe_scoreboarded(self, mnemonic: str, stall: int, sample: str) -> None:
         """Record the stall on a producer that also signals a scoreboard.
+
+        Takes the full mnemonic, modifiers and all, because the modifier is what
+        decides the number.
 
         A stall of zero is skipped rather than recorded as a minimum of zero: it
         is the safe long-wait encoding, so it is evidence of caution rather than
@@ -119,14 +129,31 @@ class ObservedStalls:
         """
         if stall == 0:
             return
-        if producer not in self.by_scoreboarded:
-            self.by_scoreboarded[producer] = StallEvidence(producer, "!scoreboarded", minimum=stall)
-        self.by_scoreboarded[producer].observe(stall, sample)
+        if mnemonic not in self.by_scoreboarded:
+            self.by_scoreboarded[mnemonic] = StallEvidence(mnemonic, "!scoreboarded", minimum=stall)
+        self.by_scoreboarded[mnemonic].observe(stall, sample)
 
-    def scoreboarded_minimum(self, producer: str) -> StallEvidence | None:
-        """The stall a scoreboarded producer still needs, if enough was seen."""
-        evidence = self.by_scoreboarded.get(producer)
-        return evidence if evidence and evidence.trusted else None
+    def scoreboarded_minimum(self, mnemonic: str) -> StallEvidence | None:
+        """The stall a scoreboarded producer still owes, for this exact form.
+
+        An exact match wins. Failing that the answer is the **largest** minimum
+        any form of the same opcode was seen to need, not the smallest. That
+        asymmetry is deliberate and is the whole point of the entry: an unseen
+        form is more likely to resemble the expensive variants than the one
+        cheap outlier, and the two errors are not symmetric. Requiring too much
+        costs a cycle. Requiring too little produces a kernel that runs, returns
+        a plausible number, and is wrong.
+
+        No `trusted` gate here for the same reason. A single observation is thin
+        evidence for a lower bound, but acting on it can only over-synchronise,
+        and declining to act on it is what left `I2F.F64` a cycle short.
+        """
+        exact = self.by_scoreboarded.get(mnemonic)
+        if exact is not None:
+            return exact
+        bare = mnemonic.split(".")[0]
+        family = [e for name, e in self.by_scoreboarded.items() if name.split(".")[0] == bare]
+        return max(family, key=lambda e: e.minimum) if family else None
 
     @staticmethod
     def _collapse_key(producer: str, consumer: str) -> str:
@@ -249,7 +276,7 @@ def mine_program(program: Program, into: ObservedStalls) -> None:
 
             if instr.word.field("write_barrier") != 7:
                 into.observe_scoreboarded(
-                    instr.opcode, instr.word.field("stall"), f"{instr.mnemonic} {instr.operands}"
+                    instr.mnemonic, instr.word.field("stall"), f"{instr.mnemonic} {instr.operands}"
                 )
 
             for reg in access.real_uses:

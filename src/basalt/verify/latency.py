@@ -107,8 +107,10 @@ _ASSUMED: dict[str, tuple[int, LatencyClass, str]] = {
     # timed at 18 cycles; ptxas also scoreboards it, but fp64 showed that a
     # scoreboard alongside a long stall does not mean the stall is redundant,
     # so this stays fixed and the cycles are respected
-    "POPC": (18, LatencyClass.FIXED, "population count, measured"),
-    "FLO": (4, LatencyClass.FIXED, "find leading one"),
+    # Scoreboarded in every instance the corpus contains where the result is
+    # consumed, so they complete out of order however long the pipe is.
+    "POPC": (18, LatencyClass.VARIABLE, "population count, measured, scoreboard signalled"),
+    "FLO": (4, LatencyClass.VARIABLE, "find leading one, scoreboard signalled"),
     "BREV": (4, LatencyClass.FIXED, ""),
     "MOV": (4, LatencyClass.FIXED, ""),
     "FADD": (4, LatencyClass.FIXED, ""),
@@ -127,10 +129,25 @@ _ASSUMED: dict[str, tuple[int, LatencyClass, str]] = {
     "VABSDIFF": (4, LatencyClass.FIXED, ""),
     "IDP": (4, LatencyClass.FIXED, "dot-product accumulate"),
     # conversions run a longer fixed pipeline
-    "I2F": (6, LatencyClass.FIXED, "conversion pipeline"),
-    "F2I": (6, LatencyClass.FIXED, "conversion pipeline"),
-    "F2F": (6, LatencyClass.FIXED, "conversion pipeline"),
-    "I2I": (6, LatencyClass.FIXED, "conversion pipeline"),
+    # The conversion pipe signals a scoreboard. `I2F` and `F2I` are seen doing so
+    # in every dependent instance in the corpus; `F2F` and `I2I` share the unit
+    # and are classed with them. Treating the pipe as fixed latency is what made
+    # basalt's own schedule for the conversion kernels non-deterministic on
+    # hardware, which no amount of static checking would have shown, because the
+    # checker was reading the same wrong class.
+    "I2F": (6, LatencyClass.VARIABLE, "conversion pipeline, scoreboard signalled"),
+    "F2I": (6, LatencyClass.VARIABLE, "conversion pipeline, scoreboard signalled"),
+    "F2F": (6, LatencyClass.VARIABLE, "conversion pipeline, scoreboard signalled"),
+    # `I2FP` is not `I2F` with a suffix, it is a different instruction, and the
+    # longest-prefix lookup would otherwise hand it the conversion pipe's entry.
+    # ptxas emits it with no scoreboard in every instance, so it is fixed, and
+    # saying so explicitly is what stops the prefix rule from guessing. Caught by
+    # the positive control the moment the pipe was reclassified.
+    "I2FP": (6, LatencyClass.FIXED, "packed integer to float, never scoreboarded"),
+    # `I2I` does not appear anywhere in the corpus, so there is no evidence for
+    # its class either way and it keeps the conservative default rather than
+    # being classed with the rest of the pipe on the strength of its name.
+    "I2I": (6, LatencyClass.FIXED, "conversion pipeline, class unobserved"),
     "FRND": (6, LatencyClass.FIXED, ""),
     # Double precision completes out of order and must be scoreboarded. `ptxas`
     # puts a write scoreboard on all 41 fp64 instructions in the corpus and none
