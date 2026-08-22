@@ -259,3 +259,120 @@ class TestAssemblerAgainstTheVendorsBytes:
         # it catches a regression without failing on a database that legitimately
         # learned to refuse something it had been guessing at.
         assert exact / total >= 0.85, f"only {exact}/{total} ({exact / total:.1%}) reproduced"
+
+
+class TestWholeProgramAssembly:
+    """Assemble each kernel as a program, with its labels resolved.
+
+    A branch cannot be assembled alone: the field holds the distance to the
+    destination, so the same text encodes differently in every kernel it appears
+    in. Given the whole program that distance is known, and the standard is
+    unchanged: reproduce the vendor's bytes or refuse.
+    """
+
+    @staticmethod
+    @pytest.fixture(scope="class")
+    def assembled(toolchain):
+        from basalt.asm.assemble import assemble_program
+        from basalt.harvest.corpus_shapes import generate_shapes
+        from basalt.isa.database import IsaDatabase
+
+        database = ROOT / "data" / "isa" / "sm_120a.json"
+        if not database.is_file():
+            pytest.skip("no ISA database; run `basalt build-isa`")
+        db = IsaDatabase.read(database)
+
+        def one(snippet):
+            with TemporaryDirectory(prefix="basalt-prog-") as tmp:
+                src = Path(tmp) / "k.ptx"
+                cubin = Path(tmp) / "k.cubin"
+                src.write_text(snippet.ptx)
+                built = toolchain.run(
+                    [str(toolchain.ptxas), f"-arch={ARCH}", "-O3", "-o", str(cubin), str(src)],
+                    check=False,
+                    timeout=60.0,
+                )
+                if built.returncode != 0:
+                    return (0, 0, 0)
+                program = disassemble_program(toolchain, cubin)
+                result = assemble_program(program, db)
+                exact = wrong = 0
+                for instruction, got in zip(program.instructions, result.words, strict=True):
+                    if instruction.word is None or got is None:
+                        continue
+                    if got.value == instruction.word.value:
+                        exact += 1
+                    else:
+                        wrong += 1
+                return (exact, wrong, len(result.refused))
+
+        snippets = generate() + generate_tensor() + generate_shapes()
+        with ThreadPoolExecutor(max_workers=os.cpu_count() or 4) as pool:
+            rows = list(pool.map(one, snippets))
+        return tuple(sum(column) for column in zip(*rows, strict=True))
+
+    def test_nothing_assembles_to_the_wrong_bytes(self, assembled):
+        _, wrong, _ = assembled
+        assert wrong == 0, f"{wrong} instructions assembled to bytes the vendor did not emit"
+
+    def test_resolving_labels_covers_the_branches(self, assembled):
+        exact, wrong, refused = assembled
+        total = exact + wrong + refused
+        assert total > 5000, "the corpus did not build"
+        # 97.0% when this was written; the floor catches a regression without
+        # failing on a database that legitimately learned to refuse something
+        assert exact / total >= 0.94, f"only {exact}/{total} ({exact / total:.1%}) reproduced"
+
+
+class TestTheBranchFieldIsStillWhereItWasFound:
+    """Re-derive the branch encoding rather than trusting the constant.
+
+    `BRANCH_TARGET_BITS` was solved from real kernels: the label table gives the
+    destination, the instruction gives its address, the word gives the bits. It
+    is a measurement, and a measurement written down as a constant is exactly
+    the kind of thing that goes quietly wrong when a compiler version changes.
+    """
+
+    def test_every_branch_in_the_corpus_decodes_to_its_label(self, toolchain):
+        import re
+
+        from basalt.asm.assemble import branch_target
+        from basalt.harvest.corpus_shapes import generate_shapes
+
+        label = re.compile(r"`\(([^)]+)\)")
+
+        def one(snippet):
+            with TemporaryDirectory(prefix="basalt-branch-") as tmp:
+                src = Path(tmp) / "k.ptx"
+                cubin = Path(tmp) / "k.cubin"
+                src.write_text(snippet.ptx)
+                built = toolchain.run(
+                    [str(toolchain.ptxas), f"-arch={ARCH}", "-O3", "-o", str(cubin), str(src)],
+                    check=False,
+                    timeout=60.0,
+                )
+                if built.returncode != 0:
+                    return (0, 0)
+                program = disassemble_program(toolchain, cubin)
+                ok = bad = 0
+                for instruction in program.instructions:
+                    if instruction.word is None:
+                        continue
+                    match = label.search(instruction.operands)
+                    if match is None:
+                        continue
+                    destination = program.labels.get(match.group(1))
+                    if destination is None:
+                        continue
+                    if branch_target(instruction.word, instruction.offset) == destination * 16:
+                        ok += 1
+                    else:
+                        bad += 1
+                return (ok, bad)
+
+        with ThreadPoolExecutor(max_workers=os.cpu_count() or 4) as pool:
+            rows = list(pool.map(one, generate() + generate_shapes()))
+        ok = sum(row[0] for row in rows)
+        bad = sum(row[1] for row in rows)
+        assert ok > 100, f"only {ok} branches found; the corpus did not build"
+        assert bad == 0, f"{bad} branches did not decode to their label"

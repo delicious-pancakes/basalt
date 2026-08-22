@@ -281,6 +281,9 @@ def _assemble(args: argparse.Namespace) -> int:
         print(f"error: {database} not found; run `basalt build-isa`", file=_sys.stderr)
         return 1
 
+    if args.cubin:
+        return _assemble_cubin(args, database)
+
     text = args.text if args.text else _sys.stdin.read()
     lines = [line.strip() for line in text.splitlines() if line.strip()]
     if not lines:
@@ -319,6 +322,59 @@ def _assemble(args: argparse.Namespace) -> int:
                 failures += 1
 
     return 1 if failures else 0
+
+
+def _assemble_cubin(args: argparse.Namespace, database) -> int:
+    """Assemble a whole cubin and say how much of it came back identical.
+
+    This is the assembler's own control. Every instruction goes out as text and
+    comes back as bits, and the bits have to be the ones the vendor compiler
+    emitted. Anything that cannot be encoded is listed with its reason rather
+    than approximated, so the number reported is coverage and not a score.
+    """
+    import sys as _sys
+    from pathlib import Path
+
+    from .asm.assemble import assemble_program
+    from .disasm import disassemble_program
+    from .isa.database import IsaDatabase
+    from .toolchain import ToolchainError, find_toolchain
+
+    try:
+        tc = find_toolchain(args.cuda_bin)
+    except ToolchainError as exc:
+        print(f"error: {exc}", file=_sys.stderr)
+        return 1
+
+    target = Path(args.cubin)
+    if not target.is_file():
+        print(f"error: {target} not found", file=_sys.stderr)
+        return 1
+
+    program = disassemble_program(tc, target)
+    if not program.instructions:
+        print(f"error: nothing disassembled from {target}", file=_sys.stderr)
+        return 1
+
+    result = assemble_program(program, IsaDatabase.read(database))
+    exact = wrong = 0
+    for instruction, got in zip(program.instructions, result.words, strict=True):
+        if instruction.word is None or got is None:
+            continue
+        if got.value == instruction.word.value:
+            exact += 1
+        else:
+            wrong += 1
+
+    total = exact + wrong + len(result.refused)
+    print(f"{target}")
+    print(f"  {exact}/{total} instructions reassembled bit-identically")
+    if wrong:
+        print(f"  {wrong} assembled to different bytes, which is a defect")
+    for index, text, reason in result.refused[: args.limit if hasattr(args, "limit") else 10]:
+        print(f"  refused #{index}: {text}")
+        print(f"           {reason}")
+    return 1 if wrong else 0
 
 
 def _schedule(args: argparse.Namespace) -> int:
@@ -631,6 +687,12 @@ def main(argv: list[str] | None = None) -> int:
         help='one instruction, e.g. "IMAD R7, R2, R6, RZ". omit to read stdin',
     )
     a.add_argument("--isa", default=DEFAULT_ISA, help="instruction database to encode against")
+    a.add_argument(
+        "--cubin",
+        default=None,
+        help="assemble a whole cubin instead: disassemble it, encode every instruction with "
+        "its labels resolved, and report how much came back bit-identical",
+    )
     a.add_argument(
         "--verify",
         action="store_true",

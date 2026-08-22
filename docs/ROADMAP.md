@@ -46,11 +46,19 @@ against: it was 246 when the control was first run, and every model correction s
 out of watching it move.
 
 The assembler encodes SASS text back into the instruction word, and its standard is the
-vendor's own bytes: 7,597 of the 8,560 instructions in the corpus reassemble bit-identically
-and none reassembles to anything else. That second number is a test pinned at zero. What it
-declines is branch targets, which need the address they are relative to, and mnemonics whose
-several operand shapes the harvest has only sampled once; both are coverage rather than
-correctness, and both show up as a refusal with a reason rather than as a wrong word.
+vendor's own bytes: assembling every corpus kernel as a whole program, with its labels
+resolved, reproduces 8,351 of 8,560 instructions bit-identically and none to anything else.
+That second number is a test pinned at zero.
+
+Whole programs rather than lone instructions because a branch cannot be assembled alone.
+Its field holds the distance to the destination, so the same text encodes differently in
+every kernel it appears in. That field was solved from real kernels, the label table giving
+the destination and the word giving the bits, and it is split across bits 16..23 and 34..81
+with the value scaled by four, which is why searching contiguous runs finds nothing.
+
+What it still declines is a handful of fields the prober could only partly attribute, and a
+few operand shapes the harvest has not sampled. Both are coverage rather than correctness,
+and both surface as a refusal with a reason rather than a wrong word.
 
 Stages 1 to 6 need no GPU and run in CI. Stage 7 needs an sm_120 card, and only the
 measurement step does; the numbers it produces are a checked-in file everyone else reads.

@@ -10,12 +10,18 @@ any release. The clean-room position in [`NOTICE`](NOTICE) will not.
 ## [Unreleased]
 
 ### Added
-- Assembler: SASS text to the 128-bit instruction word, and a `basalt assemble`
-  command that can read its own output back through `nvdisasm` to prove it.
-  7,597 of the 8,560 corpus instructions reassemble bit-identically to what
-  `ptxas` emitted, and none assembles to anything else; the second count is a
-  test pinned at zero. Branch targets and unsampled operand shapes are refused
-  with a reason rather than approximated.
+- Assembler: SASS text to the 128-bit instruction word, whole cubins as well as
+  single instructions, and a `basalt assemble` command that can read its own
+  output back through `nvdisasm` to prove it. Assembling every corpus kernel as
+  a program with its labels resolved reproduces 8,351 of 8,560 instructions
+  bit-identically and none to anything else; the second count is a test pinned
+  at zero.
+- The branch target encoding, solved from real kernels rather than probed: a
+  field split across bits 16..23 and 34..81, holding the distance to the
+  destination from the following instruction, scaled by four. All 354 branches
+  in the corpus decode to their label and none decodes wrongly, and a test
+  re-derives it from the corpus so it cannot rot when a compiler version
+  changes.
 - Composite operands are taken apart into their sub-fields. A constant-bank
   reference is one field holding a bank, a base register and an offset, and the
   prober had already recorded what each bit did to the text, so decomposing it

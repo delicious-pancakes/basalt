@@ -36,12 +36,42 @@ from dataclasses import dataclass, field
 from ..encoding import CONTROL_FIELDS, Word
 from ..isa.database import IsaDatabase
 
-__all__ = ["Assembler", "AssemblyError", "assemble_instruction"]
+__all__ = [
+    "BRANCH_SCALE",
+    "BRANCH_TARGET_BITS",
+    "Assembler",
+    "AssemblyError",
+    "assemble_instruction",
+    "assemble_program",
+    "branch_target",
+]
 
-# `R7`, `UR4`, `P0`, `UP1`, and the sinks that read as constants
-_REGISTER = re.compile(r"^(UR|R|UP|P)(\d+|Z|T)$")
+# Where a branch keeps its destination, and what the number means.
+#
+# Solved from real kernels rather than probed: the label table gives the
+# destination, the instruction gives its own address, and the word gives the
+# bits, so a field and a convention agreeing on every sample is the encoding.
+# All 354 branches in the corpus decode correctly and none decodes wrongly.
+#
+# The field is split, which is why searching contiguous runs finds nothing: the
+# low eight bits sit at 16..23 and the rest at 34..81, low part first. The value
+# is the distance from the *following* instruction, in units of four bytes,
+# signed. `tests/test_assemble.py` re-derives this from the corpus so it cannot
+# quietly rot when a compiler version changes.
+BRANCH_TARGET_BITS: tuple[int, ...] = (*range(16, 24), *range(34, 82))
+BRANCH_SCALE = 4
+
+# `R7`, `UR4`, `P0`, `UP1`, and the sinks that read as constants.
+#
+# `.reuse` is allowed on the end and ignored. It is not part of the operand: it
+# is a hint in the control word saying the operand collector may serve this
+# source from the reuse cache, and the control word is copied wholesale rather
+# than assembled. Treating `R6.reuse` as an unencodable token refuses perfectly
+# ordinary instructions, and treating it as a distinct register would be worse.
+_REGISTER = re.compile(r"^(UR|R|UP|P)(\d+|Z|T)(?:\.reuse)?$")
 _IMMEDIATE = re.compile(r"^-?0[xX][0-9a-fA-F]+$|^-?\d+$")
 _GUARD = re.compile(r"^@(!)?(U?P)(\d+|T)\s+")
+_LABEL = re.compile(r"`\(([^)]+)\)")
 
 
 class AssemblyError(Exception):
@@ -126,6 +156,16 @@ def _token_value(token: str) -> int | None:
     if _IMMEDIATE.match(token):
         return int(token, 0)
     return None
+
+
+def _signed(value: int, width: int) -> int:
+    return value - (1 << width) if value & (1 << (width - 1)) else value
+
+
+def branch_target(word: Word, address: int) -> int:
+    """The byte address a branch at `address` jumps to."""
+    raw = _signed(_read(word.value, BRANCH_TARGET_BITS), len(BRANCH_TARGET_BITS))
+    return address + 16 + raw * BRANCH_SCALE
 
 
 def _register_number(token: str) -> int | None:
@@ -507,3 +547,93 @@ def _apply_guard(word: int, register: str, negated: bool) -> int:
 def assemble_instruction(text: str, database: IsaDatabase, *, control: Word | None = None) -> Word:
     """Convenience wrapper for a single instruction."""
     return Assembler(database).assemble(text, control=control)
+
+
+@dataclass
+class ProgramAssembly:
+    """The result of assembling a whole program, and what it could not do."""
+
+    words: list[Word | None]
+    exact: int = 0
+    refused: list[tuple[int, str, str]] = field(default_factory=list)
+
+    @property
+    def total(self) -> int:
+        return sum(1 for w in self.words if w is not None)
+
+    def summary(self) -> str:
+        refused = len(self.refused)
+        return (
+            f"{self.total} instructions assembled, {refused} refused"
+            if refused
+            else f"{self.total} instructions assembled"
+        )
+
+
+def assemble_program(
+    program, database: IsaDatabase, *, keep_control: bool = True
+) -> ProgramAssembly:
+    """Assemble a whole disassembled program, resolving its labels.
+
+    A branch cannot be assembled on its own: its field holds the distance to the
+    destination, so the same text encodes differently in every kernel it appears
+    in. Given the whole program the distance is known, which is the only reason
+    this exists separately from `Assembler.assemble`.
+
+    Instructions that cannot be encoded are recorded with their reason and left
+    as `None` rather than approximated, so a caller can see exactly what was not
+    reproduced instead of receiving a program that is quietly part guesswork.
+    """
+    assembler = Assembler(database)
+    result = ProgramAssembly(words=[])
+
+    # labels are recorded as instruction indices; a branch field is in bytes
+    addresses = {name: index * 16 for name, index in getattr(program, "labels", {}).items()}
+
+    for index, instruction in enumerate(program.instructions):
+        if instruction.word is None:
+            result.words.append(None)
+            continue
+        text = f"{instruction.mnemonic} {instruction.operands}".strip()
+        control = instruction.word if keep_control else None
+
+        label = _LABEL.search(instruction.operands)
+        if label is not None:
+            destination = addresses.get(label.group(1))
+            if destination is None:
+                result.words.append(None)
+                result.refused.append((index, text, f"no address for label {label.group(1)}"))
+                continue
+            # assemble the instruction with the label removed, then place the
+            # distance in the field the corpus says holds it
+            stripped = instruction.operands.replace(label.group(0), "").strip().rstrip(",")
+            try:
+                word = assembler.assemble(
+                    f"{instruction.mnemonic} {stripped}".strip(), control=control
+                )
+            except AssemblyError as exc:
+                result.words.append(None)
+                result.refused.append((index, text, str(exc)))
+                continue
+            relative = (destination - (instruction.offset + 16)) // BRANCH_SCALE
+            word = Word(
+                _write(
+                    word.value,
+                    BRANCH_TARGET_BITS,
+                    relative & ((1 << len(BRANCH_TARGET_BITS)) - 1),
+                )
+            )
+            result.words.append(word)
+            result.exact += int(word.value == instruction.word.value)
+            continue
+
+        try:
+            word = assembler.assemble(text, control=control)
+        except AssemblyError as exc:
+            result.words.append(None)
+            result.refused.append((index, text, str(exc)))
+            continue
+        result.words.append(word)
+        result.exact += int(word.value == instruction.word.value)
+
+    return result

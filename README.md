@@ -49,7 +49,7 @@ So basalt is three tools, each held to the same standard, and the standard is th
 
 | | What it does | How it is checked | Result |
 | :--- | :--- | :--- | ---: |
-| **Assembler** | SASS text to the 128-bit word | Reassemble every instruction `ptxas` emitted and compare bytes | 7,953 of 8,560 exact, **0 wrong** |
+| **Assembler** | SASS text to the 128-bit word | Reassemble every instruction `ptxas` emitted and compare bytes | 8,351 of 8,560 exact, **0 wrong** |
 | **Checker** | Reads a schedule, reports hazards | The vendor's own output must verify clean, and a deliberately shortened stall must be caught | 329 kernels clean, faults caught |
 | **Scheduler** | Assigns the control bits from scratch | Discard every control bit, compute new ones, run both on the GPU, compare output bytes | **314 of 314** byte-identical |
 
@@ -60,7 +60,7 @@ passed seven of seven for a long time. Running it over three hundred found forty
 ones, and every correction in [findings](docs/FINDINGS.md) came out of watching that number
 move.
 
-The same discipline decides what the assembler is allowed to do. It reached 93% of the
+The same discipline decides what the assembler is allowed to do. It reached 98% of the
 corpus only after six separate rounds of being confidently incorrect:
 
 - writing a register number into the encoding of an immediate form,
@@ -215,7 +215,7 @@ Everything else, in one place:
 | `mine-stalls` | Learn per-pair requirements from what the compiler schedules | no |
 | `verify` | Check a cubin's control bits for data hazards | no |
 | `schedule` | Assign a cubin's control bits from scratch and check the result | no |
-| `assemble` | Encode SASS text, and read it back to prove it | no |
+| `assemble` | Encode SASS text, or a whole cubin, and read it back to prove it | no |
 | `measure` | Time instruction latency on real silicon | **yes** |
 | `probe-stalls` | Find the required stall by breaking programs on purpose | **yes** |
 
