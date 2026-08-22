@@ -87,7 +87,10 @@ _ASSUMED: dict[str, tuple[int, LatencyClass, str]] = {
     "PRMT": (4, LatencyClass.FIXED, "byte permute"),
     "SEL": (4, LatencyClass.FIXED, ""),
     "PLOP3": (4, LatencyClass.FIXED, "predicate lookup"),
-    "POPC": (4, LatencyClass.FIXED, ""),
+    # timed at 18 cycles; ptxas also scoreboards it, but fp64 showed that a
+    # scoreboard alongside a long stall does not mean the stall is redundant,
+    # so this stays fixed and the cycles are respected
+    "POPC": (18, LatencyClass.FIXED, "population count, measured"),
     "FLO": (4, LatencyClass.FIXED, "find leading one"),
     "BREV": (4, LatencyClass.FIXED, ""),
     "MOV": (4, LatencyClass.FIXED, ""),
@@ -112,15 +115,16 @@ _ASSUMED: dict[str, tuple[int, LatencyClass, str]] = {
     "F2F": (6, LatencyClass.FIXED, "conversion pipeline"),
     "I2I": (6, LatencyClass.FIXED, "conversion pipeline"),
     "FRND": (6, LatencyClass.FIXED, ""),
-    # double precision is a separate, much narrower pipe on consumer parts
-    "DADD": (
-        48,
-        LatencyClass.FIXED,
-        "fp64 is heavily rate-limited on consumer parts, so this is a placeholder until measured",
-    ),
-    "DMUL": (48, LatencyClass.FIXED, "see DADD"),
-    "DFMA": (48, LatencyClass.FIXED, "see DADD"),
-    "DSETP": (48, LatencyClass.FIXED, "see DADD"),
+    # Double precision is fixed latency at 64 cycles, and ptxas additionally
+    # signals a scoreboard on it. The scoreboard is not what carries the
+    # dependency: keeping every scoreboard and wait in place while reducing the
+    # stalls to 1 computes the wrong answer, so the cycles are load-bearing and
+    # the scoreboard is belt and braces. Measured 64 by timing, and corroborated
+    # by ptxas padding the gap with maximum-stall NOPs to exactly 64.
+    "DADD": (64, LatencyClass.FIXED, "fp64 add, measured"),
+    "DMUL": (64, LatencyClass.FIXED, "fp64 multiply, assumed equal to DADD"),
+    "DFMA": (64, LatencyClass.FIXED, "fp64 fused multiply-add, measured"),
+    "DSETP": (64, LatencyClass.FIXED, "fp64 compare, assumed equal to DADD"),
     # the special-function unit signals completion rather than running to a
     # fixed schedule
     "MUFU": (0, LatencyClass.VARIABLE, "special function unit, scoreboard signalled"),

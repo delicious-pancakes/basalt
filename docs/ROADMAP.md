@@ -35,7 +35,15 @@ vendor compiler's own output, which is what makes it useful rather than self-ref
 | 9 | Field validation | Prove the measured fields can be written through | **done** |
 | 9b | Cross-check | basalt's ISA model against independently derived tables | planned |
 | 10 | Audit | Every public sm_120 SASS kernel, ptxas as the control | planned |
-| 11 | Assembler | SASS text to cubin, so basalt can emit its own test cases | planned |
+| 11 | Scheduler | Assign the control bits, not only check them | **experimental** |
+| 12 | Assembler | SASS text to cubin, so basalt can emit its own test cases | planned |
+
+The scheduler discards every control bit `ptxas` produced and computes its own, then hands the
+result back to the verifier and then to the GPU. Five of seven test kernels come out computing
+exactly what the vendor schedule computes. The two that do not are recorded as strict expected
+failures with their reasons, not removed: an fp64 case where the verifier and the scheduler
+share a blind spot because they share a latency model, and a loop-carried dependence the
+scheduler does not yet follow around a cycle in the graph.
 
 Stages 1 to 6 need no GPU and run in CI. Stage 7 needs an sm_120 card, and only the
 measurement step does; the numbers it produces are a checked-in file everyone else reads.

@@ -135,14 +135,14 @@ _SPECS: tuple[ChainSpec, ...] = (
         ptx_type="f64",
         body="    add.f64 {d}, {d}, %ga;",
         seed="    ld.global.f64 %g1, [%in];",
-        note="double precision add, expected to be heavily rate limited",
+        note="fp64 add; ptxas also scoreboards it, but the stalls are what carry it",
     ),
     ChainSpec(
         opcode="DFMA",
         ptx_type="f64",
         body="    fma.rn.f64 {d}, {d}, %ga, %gb;",
         seed="    ld.global.f64 %g1, [%in];",
-        note="double precision fused multiply-add",
+        note="fp64 fused multiply-add",
     ),
     ChainSpec(
         opcode="LOP3",

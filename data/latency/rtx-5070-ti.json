@@ -4,7 +4,7 @@
   "composite": {
     "I2FP+F2I": {
       "cycles": 24,
-      "measured_cycles": 24.01,
+      "measured_cycles": 23.961,
       "note": "round trip through float. a conversion cannot feed the next link without converting back, so this slope covers the pair and is deliberately not split between them",
       "r_squared": 0.999999
     }
@@ -14,79 +14,79 @@
     "DADD": {
       "cycles": 64,
       "kind": "fixed",
-      "measured_cycles": 64.008,
-      "note": "double precision add, expected to be heavily rate limited",
-      "r_squared": 1.0
+      "measured_cycles": 63.999,
+      "note": "fp64 add; ptxas also scoreboards it, but the stalls are what carry it",
+      "r_squared": 0.999999
     },
     "DFMA": {
       "cycles": 64,
       "kind": "fixed",
-      "measured_cycles": 63.997,
-      "note": "double precision fused multiply-add",
-      "r_squared": 1.0
+      "measured_cycles": 63.992,
+      "note": "fp64 fused multiply-add",
+      "r_squared": 0.999999
     },
     "FADD": {
       "cycles": 4,
       "kind": "fixed",
-      "measured_cycles": 3.986,
+      "measured_cycles": 3.984,
       "note": "single precision add",
-      "r_squared": 0.999909
+      "r_squared": 0.999993
     },
     "FFMA": {
       "cycles": 4,
       "kind": "fixed",
-      "measured_cycles": 3.986,
+      "measured_cycles": 3.983,
       "note": "single precision fused multiply-add",
-      "r_squared": 0.999986
+      "r_squared": 0.999888
     },
     "FMUL": {
       "cycles": 4,
       "kind": "fixed",
-      "measured_cycles": 4.0,
+      "measured_cycles": 4.005,
       "note": "single precision multiply",
-      "r_squared": 0.99988
+      "r_squared": 0.999972
     },
     "IADD3": {
       "cycles": 4,
       "kind": "fixed",
-      "measured_cycles": 4.0,
+      "measured_cycles": 3.998,
       "note": "integer add",
-      "r_squared": 0.99997
+      "r_squared": 0.999885
     },
     "IMAD": {
       "cycles": 4,
       "kind": "fixed",
-      "measured_cycles": 3.99,
+      "measured_cycles": 4.001,
       "note": "integer multiply-add, the workhorse of the integer pipe",
-      "r_squared": 0.999911
+      "r_squared": 0.999982
     },
     "LOP3": {
       "cycles": 4,
       "kind": "fixed",
-      "measured_cycles": 3.972,
+      "measured_cycles": 4.002,
       "note": "three-input bitwise lookup",
-      "r_squared": 0.999939
+      "r_squared": 0.999972
     },
     "MUFU": {
       "cycles": 44,
       "kind": "variable",
-      "measured_cycles": 44.0,
+      "measured_cycles": 44.004,
       "note": "special function unit",
-      "r_squared": 0.999999
+      "r_squared": 1.0
     },
     "POPC": {
       "cycles": 18,
       "kind": "fixed",
-      "measured_cycles": 17.975,
+      "measured_cycles": 18.038,
       "note": "population count",
-      "r_squared": 1.0
+      "r_squared": 0.999999
     },
     "SHF": {
       "cycles": 4,
       "kind": "fixed",
-      "measured_cycles": 3.983,
+      "measured_cycles": 4.013,
       "note": "funnel shift",
-      "r_squared": 0.999845
+      "r_squared": 0.999989
     }
   },
   "multiprocessors": 70,
@@ -95,14 +95,43 @@
       "covers": [
         "IMAD"
       ],
-      "cycles": 3.990217391304348,
+      "cycles": 4.0012228260869565,
       "kind": "fixed",
       "note": "integer multiply-add, the workhorse of the integer pipe",
       "opcode": "IMAD",
       "points": [
         [
           64,
-          594
+          619
+        ],
+        [
+          128,
+          872
+        ],
+        [
+          256,
+          1392
+        ],
+        [
+          512,
+          2410
+        ]
+      ],
+      "r_squared": 0.9999816617749263,
+      "rejected": ""
+    },
+    {
+      "covers": [
+        "IADD3"
+      ],
+      "cycles": 3.9976902173913045,
+      "kind": "fixed",
+      "note": "integer add",
+      "opcode": "IADD3",
+      "points": [
+        [
+          64,
+          589
         ],
         [
           128,
@@ -117,17 +146,75 @@
           2381
         ]
       ],
-      "r_squared": 0.9999110828869894,
+      "r_squared": 0.9998851760423906,
       "rejected": ""
     },
     {
       "covers": [
-        "IADD3"
+        "FFMA"
       ],
-      "cycles": 4.0,
+      "cycles": 3.9831521739130435,
       "kind": "fixed",
-      "note": "integer add",
-      "opcode": "IADD3",
+      "note": "single precision fused multiply-add",
+      "opcode": "FFMA",
+      "points": [
+        [
+          64,
+          607
+        ],
+        [
+          128,
+          844
+        ],
+        [
+          256,
+          1356
+        ],
+        [
+          512,
+          2385
+        ]
+      ],
+      "r_squared": 0.9998883754004252,
+      "rejected": ""
+    },
+    {
+      "covers": [
+        "FADD"
+      ],
+      "cycles": 3.9842391304347826,
+      "kind": "fixed",
+      "note": "single precision add",
+      "opcode": "FADD",
+      "points": [
+        [
+          64,
+          626
+        ],
+        [
+          128,
+          876
+        ],
+        [
+          256,
+          1389
+        ],
+        [
+          512,
+          2409
+        ]
+      ],
+      "r_squared": 0.999993180624918,
+      "rejected": ""
+    },
+    {
+      "covers": [
+        "FMUL"
+      ],
+      "cycles": 4.005298913043478,
+      "kind": "fixed",
+      "note": "single precision multiply",
+      "opcode": "FMUL",
       "points": [
         [
           64,
@@ -135,36 +222,123 @@
         ],
         [
           128,
-          871
+          883
         ],
         [
           256,
-          1393
+          1397
         ],
         [
           512,
-          2409
+          2416
         ]
       ],
-      "r_squared": 0.9999702794159481,
+      "r_squared": 0.99997171118424,
       "rejected": ""
     },
     {
       "covers": [
-        "FFMA"
+        "DADD"
       ],
-      "cycles": 3.986141304347826,
+      "cycles": 63.999184782608694,
       "kind": "fixed",
-      "note": "single precision fused multiply-add",
-      "opcode": "FFMA",
+      "note": "fp64 add; ptxas also scoreboards it, but the stalls are what carry it",
+      "opcode": "DADD",
       "points": [
         [
           64,
-          625
+          4389
         ],
         [
           128,
-          873
+          8466
+        ],
+        [
+          256,
+          16657
+        ],
+        [
+          512,
+          33054
+        ]
+      ],
+      "r_squared": 0.9999994175771376,
+      "rejected": ""
+    },
+    {
+      "covers": [
+        "DFMA"
+      ],
+      "cycles": 63.99171195652174,
+      "kind": "fixed",
+      "note": "fp64 fused multiply-add",
+      "opcode": "DFMA",
+      "points": [
+        [
+          64,
+          4384
+        ],
+        [
+          128,
+          8494
+        ],
+        [
+          256,
+          16692
+        ],
+        [
+          512,
+          33057
+        ]
+      ],
+      "r_squared": 0.9999994138345976,
+      "rejected": ""
+    },
+    {
+      "covers": [
+        "LOP3"
+      ],
+      "cycles": 4.001630434782609,
+      "kind": "fixed",
+      "note": "three-input bitwise lookup",
+      "opcode": "LOP3",
+      "points": [
+        [
+          64,
+          626
+        ],
+        [
+          128,
+          879
+        ],
+        [
+          256,
+          1385
+        ],
+        [
+          512,
+          2418
+        ]
+      ],
+      "r_squared": 0.9999715301834698,
+      "rejected": ""
+    },
+    {
+      "covers": [
+        "SHF"
+      ],
+      "cycles": 4.01304347826087,
+      "kind": "fixed",
+      "note": "funnel shift",
+      "opcode": "SHF",
+      "points": [
+        [
+          64,
+          618
+        ],
+        [
+          128,
+          880
         ],
         [
           256,
@@ -172,213 +346,39 @@
         ],
         [
           512,
-          2408
+          2418
         ]
       ],
-      "r_squared": 0.9999859003466335,
-      "rejected": ""
-    },
-    {
-      "covers": [
-        "FADD"
-      ],
-      "cycles": 3.9862771739130434,
-      "kind": "fixed",
-      "note": "single precision add",
-      "opcode": "FADD",
-      "points": [
-        [
-          64,
-          609
-        ],
-        [
-          128,
-          846
-        ],
-        [
-          256,
-          1364
-        ],
-        [
-          512,
-          2388
-        ]
-      ],
-      "r_squared": 0.9999088534481317,
-      "rejected": ""
-    },
-    {
-      "covers": [
-        "FMUL"
-      ],
-      "cycles": 4.000407608695652,
-      "kind": "fixed",
-      "note": "single precision multiply",
-      "opcode": "FMUL",
-      "points": [
-        [
-          64,
-          604
-        ],
-        [
-          128,
-          839
-        ],
-        [
-          256,
-          1364
-        ],
-        [
-          512,
-          2388
-        ]
-      ],
-      "r_squared": 0.9998797039720706,
-      "rejected": ""
-    },
-    {
-      "covers": [
-        "DADD"
-      ],
-      "cycles": 64.00842391304347,
-      "kind": "fixed",
-      "note": "double precision add, expected to be heavily rate limited",
-      "opcode": "DADD",
-      "points": [
-        [
-          64,
-          4406
-        ],
-        [
-          128,
-          8509
-        ],
-        [
-          256,
-          16703
-        ],
-        [
-          512,
-          33084
-        ]
-      ],
-      "r_squared": 0.9999999240505569,
-      "rejected": ""
-    },
-    {
-      "covers": [
-        "DFMA"
-      ],
-      "cycles": 63.996875,
-      "kind": "fixed",
-      "note": "double precision fused multiply-add",
-      "opcode": "DFMA",
-      "points": [
-        [
-          64,
-          4430
-        ],
-        [
-          128,
-          8523
-        ],
-        [
-          256,
-          16708
-        ],
-        [
-          512,
-          33100
-        ]
-      ],
-      "r_squared": 0.9999998847185556,
-      "rejected": ""
-    },
-    {
-      "covers": [
-        "LOP3"
-      ],
-      "cycles": 3.971875,
-      "kind": "fixed",
-      "note": "three-input bitwise lookup",
-      "opcode": "LOP3",
-      "points": [
-        [
-          64,
-          595
-        ],
-        [
-          128,
-          850
-        ],
-        [
-          256,
-          1370
-        ],
-        [
-          512,
-          2374
-        ]
-      ],
-      "r_squared": 0.9999388547346472,
-      "rejected": ""
-    },
-    {
-      "covers": [
-        "SHF"
-      ],
-      "cycles": 3.983288043478261,
-      "kind": "fixed",
-      "note": "funnel shift",
-      "opcode": "SHF",
-      "points": [
-        [
-          64,
-          613
-        ],
-        [
-          128,
-          847
-        ],
-        [
-          256,
-          1359
-        ],
-        [
-          512,
-          2390
-        ]
-      ],
-      "r_squared": 0.9998448895708053,
+      "r_squared": 0.9999894725316526,
       "rejected": ""
     },
     {
       "covers": [
         "POPC"
       ],
-      "cycles": 17.97459239130435,
+      "cycles": 18.03845108695652,
       "kind": "fixed",
       "note": "population count",
       "opcode": "POPC",
       "points": [
         [
           64,
-          1510
+          1478
         ],
         [
           128,
-          2656
+          2625
         ],
         [
           256,
-          4958
+          4944
         ],
         [
           512,
-          9561
+          9556
         ]
       ],
-      "r_squared": 0.9999997179661094,
+      "r_squared": 0.9999985217326371,
       "rejected": ""
     },
     {
@@ -386,58 +386,58 @@
         "I2FP",
         "F2I"
       ],
-      "cycles": 24.01032608695652,
+      "cycles": 23.961141304347827,
       "kind": "fixed",
       "note": "round trip through float. a conversion cannot feed the next link without converting back, so this slope covers the pair and is deliberately not split between them",
       "opcode": "I2FP",
       "points": [
         [
           64,
-          1884
+          1870
         ],
         [
           128,
-          3415
+          3409
         ],
         [
           256,
-          6499
+          6468
         ],
         [
           512,
-          12638
+          12607
         ]
       ],
-      "r_squared": 0.9999990949314247,
+      "r_squared": 0.9999994796266888,
       "rejected": ""
     },
     {
       "covers": [
         "MUFU"
       ],
-      "cycles": 43.99959239130435,
+      "cycles": 44.0039402173913,
       "kind": "variable",
       "note": "special function unit",
       "opcode": "MUFU",
       "points": [
         [
           64,
-          3152
+          3183
         ],
         [
           128,
-          5974
+          6004
         ],
         [
           256,
-          11622
+          11627
         ],
         [
           512,
-          22865
+          22899
         ]
       ],
-      "r_squared": 0.9999986370243493,
+      "r_squared": 0.999999785453781,
       "rejected": ""
     }
   ],

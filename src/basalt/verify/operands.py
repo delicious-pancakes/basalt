@@ -174,18 +174,33 @@ def _mk(kind_text: str, num_text: str) -> RegRef | None:
 
 
 def _expand(base: RegRef, count: int) -> set[RegRef]:
-    """A 64- or 128-bit access covers consecutive registers from the base."""
+    """A 64- or 128-bit access covers consecutive registers from the base.
+
+    Only general and uniform registers are widened. A predicate is one bit
+    whatever the instruction's data width, so widening `P0` on a 64-bit compare
+    would invent a dependency on `P1` that does not exist.
+    """
     if base.is_sink or count <= 1:
         return {base}
+    if base.kind not in (RegKind.GENERAL, RegKind.UNIFORM):
+        return {base}
     return {RegRef(base.kind, base.number + i) for i in range(count)}
+
+
+# Opcodes whose register operands are 64-bit and therefore occupy a pair, with
+# no suffix anywhere to say so. `DFMA R4, R4, R6, R4` writes R4 and R5 and reads
+# R6 and R7; reading it as single registers loses half of every dependency it
+# has, which is silent in both the checker and the scheduler and produced a
+# wrong fp64 kernel from basalt's own scheduler before it was found.
+_PAIRED_OPCODES = frozenset({"DADD", "DMUL", "DFMA", "DSETP", "DMMA", "DMNMX"})
 
 
 def _width_from(mnemonic: str, tail: str) -> int:
     """How many registers a reference covers.
 
-    The width can be attached to the register (`R2.64`) or carried by the
-    mnemonic (`LDG.E.64`). Both spellings appear, so both are checked, and the
-    per-register spelling wins because it is the more specific statement.
+    The width can be attached to the register (`R2.64`), carried by the mnemonic
+    (`LDG.E.64`), or implied by the opcode operating on 64-bit values at all.
+    The per-register spelling wins because it is the most specific statement.
     """
     for part in tail.split("."):
         if part in WIDTH_SUFFIXES:
@@ -193,6 +208,8 @@ def _width_from(mnemonic: str, tail: str) -> int:
     for part in mnemonic.split(".")[1:]:
         if part in WIDTH_SUFFIXES:
             return WIDTH_SUFFIXES[part]
+    if mnemonic.split(".")[0].upper() in _PAIRED_OPCODES:
+        return 2
     return 1
 
 

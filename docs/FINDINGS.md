@@ -198,7 +198,31 @@ listed rather than rounded away.
 python -m basalt.cli validate-isa --show
 ```
 
-## 7. The stall field cannot express a long latency
+## 7. fp64 needs the stalls, and gets a scoreboard as well
+
+`ptxas` covers a dependent `DFMA` pair with both mechanisms at once: 64 cycles of
+stall, padded out with maximum-stall NOPs, and a scoreboard signalled on the
+producer that the consumer waits on. Which one is actually carrying it can be
+settled directly.
+
+| What was changed | Result |
+| :--- | :--- |
+| Nothing | correct |
+| Scoreboards and waits kept, stalls reduced to 1 | **wrong** |
+| Stalls kept, every scoreboard and wait removed | faulted before completing |
+
+So the cycles are load-bearing and the scoreboard is belt and braces. That is the
+opposite of what fault injection alone suggests, which reports the pair as
+scoreboarded and declines to return a stall requirement, and it is why that
+command reports rather than concludes.
+
+**A related bug this uncovered.** `DFMA R4, R4, R6, R4` carries no width suffix
+anywhere, but fp64 operands occupy register pairs: it writes R4 and R5 and reads
+R6 and R7. basalt's operand model widened only on an explicit `.64`, so it saw
+half of every fp64 dependency. Silent in the checker, silent in the scheduler,
+and found only by running a rescheduled kernel and getting the wrong number.
+
+## 8. The stall field cannot express a long latency
 
 Four bits, so 15 is the largest gap a single instruction can request. Any requirement above
 that must be covered by accumulating stalls across several instructions, or by a scoreboard.
@@ -215,7 +239,7 @@ DFMA R4, R6, R4, R4     stall=15  wait=0x02
 
 Four NOPs whose only purpose is to spend cycles.
 
-## 8. What is deliberately not claimed
+## 9. What is deliberately not claimed
 
 Stated so the boundary of the evidence is visible.
 
@@ -242,7 +266,7 @@ Stated so the boundary of the evidence is visible.
   first conversion. An earlier run reported `I2FP` as requiring 4 cycles; the control
   retracted it, and it is listed as not established rather than quietly kept.
 
-## 9. Corrections made along the way
+## 10. Corrections made along the way
 
 Kept because a method is only as trustworthy as its error log.
 
@@ -255,6 +279,12 @@ Kept because a method is only as trustworthy as its error log.
   silently misparses every predicated instruction.
 - A scoreboard covers a dependency whatever the producer's latency class. Checking stalls
   only for fixed-latency producers missed that `ptxas` scoreboards fp64.
+- `VOTEU` was classified as completing out of order. `ptxas` emits it with no scoreboard and
+  reads the result on the next instruction, which settles it.
+- The required stall belongs to the producer/consumer pair, not to the producer. `IMAD` into
+  `IMAD` is scheduled at four cycles and `IMAD` into `IADD` at three.
+- fp64 operands are register pairs with nothing in the mnemonic to say so, so half of every
+  fp64 dependency was invisible.
 
 Each of these was caught by the positive control: the vendor compiler's own output must
 verify clean, and every one of them made it fail.
