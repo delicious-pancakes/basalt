@@ -88,13 +88,15 @@ class ObservedStalls:
     # producer's own stall irrelevant. `DADD` is scoreboarded and still never
     # given less than 2, and shortening it to 1 changes the answer on hardware.
     #
-    # Keyed on the full mnemonic rather than the bare opcode, because the
-    # modifier decides the number and collapsing them takes the minimum across
-    # variants. `I2F` reads as 1 only because of `I2F.RP`, while every other
-    # `I2F` needs 2. `MUFU` reads as 1 only because of `MUFU.RCP64H`. `ATOMG`
-    # reads as 1 while its float and min/max forms need 4. Every one of those
-    # collapses is wrong in the direction that silently corrupts.
-    by_scoreboarded: dict[str, StallEvidence] = field(default_factory=dict)
+    # Keyed on the producer's full mnemonic and its consumer, because both
+    # decide the number. Collapsing forms takes the minimum across variants:
+    # `I2F` reads as 1 only because of `I2F.RP`, `MUFU` as 1 only because of
+    # `MUFU.RCP64H`, `ATOMG` as 1 while its float and min/max forms need 4. And
+    # collapsing consumers is just as wrong: `FLO.U32` is scheduled 1 cycle from
+    # a consumer three instructions later and 2 from the one straight after it.
+    # Every one of those collapses errs in the direction that silently
+    # corrupts.
+    by_scoreboarded: dict[tuple[str, str], StallEvidence] = field(default_factory=dict)
     kernels: int = 0
 
     def observe(self, producer: str, consumer: str, stall: int, sample: str) -> None:
@@ -117,43 +119,55 @@ class ObservedStalls:
             self.by_producer[collapsed] = StallEvidence(producer, "*", minimum=stall)
         self.by_producer[collapsed].observe(stall, sample)
 
-    def observe_scoreboarded(self, mnemonic: str, stall: int, sample: str) -> None:
-        """Record the stall on a producer that also signals a scoreboard.
+    def observe_scoreboarded(self, mnemonic: str, consumer: str, cycles: int, sample: str) -> None:
+        """Record the gap between a waited-on scoreboarded producer and its use.
 
-        Takes the full mnemonic, modifiers and all, because the modifier is what
-        decides the number.
-
-        A stall of zero is skipped rather than recorded as a minimum of zero: it
-        is the safe long-wait encoding, so it is evidence of caution rather than
-        of a small requirement.
+        Takes the producer's full mnemonic, modifiers and all, because the
+        modifier is what decides the number: `I2F.RP` needs one cycle and every
+        other `I2F` needs two.
         """
-        if stall == 0:
-            return
-        if mnemonic not in self.by_scoreboarded:
-            self.by_scoreboarded[mnemonic] = StallEvidence(mnemonic, "!scoreboarded", minimum=stall)
-        self.by_scoreboarded[mnemonic].observe(stall, sample)
+        key = (mnemonic, consumer)
+        if key not in self.by_scoreboarded:
+            self.by_scoreboarded[key] = StallEvidence(mnemonic, consumer, minimum=cycles)
+        self.by_scoreboarded[key].observe(cycles, sample)
 
-    def scoreboarded_minimum(self, mnemonic: str) -> StallEvidence | None:
-        """The stall a scoreboarded producer still owes, for this exact form.
+    def scoreboarded_minimum(
+        self, mnemonic: str, consumer: str | None = None
+    ) -> StallEvidence | None:
+        """Cycles a waited-on scoreboarded producer still needs before its use.
 
-        An exact match wins. Failing that the answer is the **largest** minimum
-        any form of the same opcode was seen to need, not the smallest. That
-        asymmetry is deliberate and is the whole point of the entry: an unseen
-        form is more likely to resemble the expensive variants than the one
-        cheap outlier, and the two errors are not symmetric. Requiring too much
-        costs a cycle. Requiring too little produces a kernel that runs, returns
-        a plausible number, and is wrong.
+        A wait covers the long, variable part of a result. It does not cover the
+        whole of it, and how much is left over depends on the exact form and on
+        what reads it.
 
-        No `trusted` gate here for the same reason. A single observation is thin
-        evidence for a lower bound, but acting on it can only over-synchronise,
-        and declining to act on it is what left `I2F.F64` a cycle short.
+        Keyed on both ends, because both decide the number.
+
+        The producer's exact form matters: `I2F.RP` needs 1 where every other
+        `I2F` needs 2, `MUFU.RCP64H` needs 1 where the rest of `MUFU` needs 2,
+        and `ATOMG`'s float and min/max forms need 4 where the plain one needs
+        1. So does the consumer: `MUFU.SQRT` into an `FMUL` is not the same
+        question as `FLO.U32` into a `SHFL` twenty-eight cycles later.
+
+        Failing an exact pairing, the answer is the smallest gap anything in the
+        same family was ever given, first across this form's other consumers and
+        then across the whole opcode. The tightest gap the compiler ever leaves
+        is the closest thing to a statement of a requirement; a wide one usually
+        means it had other work to fit in, and reading a requirement off it
+        produces confident nonsense.
+
+        No `trusted` gate. A single observation is thin evidence for a lower
+        bound in general, but for an exact pairing it is the only evidence there
+        is, and declining to use it left `I2F.F64` and `FLO.U32` a cycle short of
+        what the hardware needs.
         """
-        exact = self.by_scoreboarded.get(mnemonic)
-        if exact is not None:
+        if consumer is not None and (exact := self.by_scoreboarded.get((mnemonic, consumer))):
             return exact
+        same_form = [e for (m, _), e in self.by_scoreboarded.items() if m == mnemonic]
+        if same_form:
+            return min(same_form, key=lambda e: e.minimum)
         bare = mnemonic.split(".")[0]
-        family = [e for name, e in self.by_scoreboarded.items() if name.split(".")[0] == bare]
-        return max(family, key=lambda e: e.minimum) if family else None
+        family = [e for (m, _), e in self.by_scoreboarded.items() if m.split(".")[0] == bare]
+        return min(family, key=lambda e: e.minimum) if family else None
 
     @staticmethod
     def _collapse_key(producer: str, consumer: str) -> str:
@@ -215,13 +229,13 @@ class ObservedStalls:
                         for (p, c), e in sorted(self.by_pair.items())
                     },
                     "by_scoreboarded": {
-                        name: {
+                        f"{m}=>{c}": {
                             "min_stall": e.minimum,
                             "observations": e.observations,
                             "trusted": e.trusted,
                             "samples": e.samples,
                         }
-                        for name, e in sorted(self.by_scoreboarded.items())
+                        for (m, c), e in sorted(self.by_scoreboarded.items())
                     },
                 },
                 indent=2,
@@ -244,11 +258,12 @@ class ObservedStalls:
             ev = StallEvidence(producer, consumer, minimum=entry["min_stall"])
             ev.observations = entry["observations"]
             out.by_pair[(producer, consumer)] = ev
-        for name, entry in raw.get("by_scoreboarded", {}).items():
-            ev = StallEvidence(name, "!scoreboarded", minimum=entry["min_stall"])
+        for key, entry in raw.get("by_scoreboarded", {}).items():
+            mnemonic, _, consumer = key.partition("=>")
+            ev = StallEvidence(mnemonic, consumer, minimum=entry["min_stall"])
             ev.observations = entry["observations"]
             ev.samples = entry.get("samples", [])
-            out.by_scoreboarded[name] = ev
+            out.by_scoreboarded[(mnemonic, consumer)] = ev
         return out
 
 
@@ -265,8 +280,17 @@ def mine_program(program: Program, into: ObservedStalls) -> None:
     cfg = build_cfg(program)
     for block in cfg.blocks:
         # last writer of each register, and the stall accumulated since
-        last_def: dict[object, tuple[int, str]] = {}
+        last_def: dict[object, tuple[int, str, str]] = {}
         elapsed: dict[object, int] = {}
+        # scoreboard each live definition signalled, and whether that signal has
+        # been waited on yet. Kept per definition rather than per scoreboard: a
+        # scoreboard is a counter, so a later producer signalling the same index
+        # does not undo an earlier wait, and `FLO.U32` at #5 stays satisfied by
+        # the wait at #8 even though `LDC.64` signals the same index at #9.
+        # Tracking it per scoreboard makes the miner blind to that pairing, and
+        # then the pairing gets judged against a floor mined from looser company.
+        signalled: dict[int, int] = {}
+        satisfied: set[int] = set()
 
         for index in range(block.start, block.end):
             instr = program.instructions[index]
@@ -274,10 +298,9 @@ def mine_program(program: Program, into: ObservedStalls) -> None:
                 continue
             access = operand_access(instr.mnemonic, instr.operands)
 
-            if instr.word.field("write_barrier") != 7:
-                into.observe_scoreboarded(
-                    instr.mnemonic, instr.word.field("stall"), f"{instr.mnemonic} {instr.operands}"
-                )
+            # a wait takes effect before this instruction reads its operands
+            wait_mask = instr.word.field("wait_mask")
+            satisfied |= {producer for producer, sb in signalled.items() if (wait_mask >> sb) & 1}
 
             for reg in access.real_uses:
                 if (previous := last_def.get(reg)) is None:
@@ -286,27 +309,49 @@ def mine_program(program: Program, into: ObservedStalls) -> None:
                 # it needs a different amount of lead and is mined separately.
                 # `@IMAD` and `IMAD` are two requirements, not one.
                 consumer_key = ("@" if reg == access.guard else "") + instr.opcode
-                producer_index, producer_opcode = previous
+                producer_index, producer_opcode, producer_mnemonic = previous
                 word = program.instructions[producer_index].word
                 if word is None:
                     continue
-                # a scoreboarded producer is covered by the wait, not the stall,
-                # so its gap carries no information about a latency requirement
-                if word.field("write_barrier") != 7:
+                sample = f"{program.instructions[producer_index].text} -> {instr.text}"
+                barrier = word.field("write_barrier")
+                if barrier != 7:
+                    # A scoreboarded producer. The wait carries most of the
+                    # dependency but not the whole of it, so the gap still says
+                    # something, and it is recorded in its own keyspace.
+                    #
+                    # Only where the barrier has actually been waited on by the
+                    # time the consumer runs. Otherwise the gap is covering the
+                    # full latency the ordinary way and the evidence belongs
+                    # with the unscoreboarded pairs.
+                    #
+                    # Any instruction's wait counts, not just this consumer's,
+                    # which is the same rule the checker applies. Requiring the
+                    # consumer to carry the wait itself makes the miner blind to
+                    # exactly the tightest cases, because those are the ones
+                    # where something earlier already waited. That mined 28
+                    # cycles for `LDCU.64` into `ATOMG` from a kernel where the
+                    # compiler had other work to fit in, and then flagged the
+                    # kernel that really does it in 17. The same applies to a
+                    # scoreboard reused by a later producer, which is why
+                    # satisfaction is tracked per definition above.
+                    if producer_index in satisfied:
+                        into.observe_scoreboarded(
+                            producer_mnemonic, consumer_key, elapsed.get(reg, 0), sample
+                        )
                     continue
-                into.observe(
-                    producer_opcode,
-                    consumer_key,
-                    elapsed.get(reg, 0),
-                    f"{program.instructions[producer_index].text} -> {instr.text}",
-                )
+                into.observe(producer_opcode, consumer_key, elapsed.get(reg, 0), sample)
 
             stall = effective_stall(instr.word.field("stall"))
             for key in list(elapsed):
                 elapsed[key] += stall
 
+            if (mine := instr.word.field("write_barrier")) != 7:
+                signalled[index] = mine
+                satisfied.discard(index)
+
             for reg in access.real_defs:
-                last_def[reg] = (index, instr.opcode)
+                last_def[reg] = (index, instr.opcode, instr.mnemonic)
                 elapsed[reg] = stall
 
 

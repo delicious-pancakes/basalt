@@ -20,7 +20,7 @@ a clean result mean something.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 from .cfg import ReachingDef
 from .operands import RegRef
@@ -48,6 +48,21 @@ class FlowState:
     def copy(self) -> FlowState:
         return FlowState(
             defs={reg: dict(by_index) for reg, by_index in self.defs.items()},
+            reads={sb: dict(by_index) for sb, by_index in self.reads.items()},
+        )
+
+    def crossing(self) -> FlowState:
+        """This state as seen by a successor block.
+
+        Every definition is marked as having crossed an edge. Past that point
+        the distance to a consumer is a minimum over paths rather than a
+        measurable gap, and a rule that needs a real distance has to know.
+        """
+        return FlowState(
+            defs={
+                reg: {i: replace(rd, crossed=True) for i, rd in by_index.items()}
+                for reg, by_index in self.defs.items()
+            },
             reads={sb: dict(by_index) for sb, by_index in self.reads.items()},
         )
 

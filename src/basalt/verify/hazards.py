@@ -193,7 +193,7 @@ def _check_instruction(
                 # below for that opcode. `DADD` is a real case: always
                 # scoreboarded, never given less than 2, and wrong at 1.
                 _check_scoreboarded_minimum(
-                    report, seen, program, model, observed, rd, index, instr, recording
+                    report, seen, program, observed, rd, reg, access.guard, index, instr, recording
                 )
                 continue
 
@@ -370,8 +370,11 @@ def verify_program(
         iterations += 1
         current = worklist.pop()
         exit_state = _run_block(cfg, current, entries[current], model, None, None, observed)
+        # anything leaving a block is marked as having crossed one, which is what
+        # lets a rule that only holds for a measurable distance say so
+        outgoing = exit_state.crossing()
         for succ in cfg.blocks[current].successors:
-            if entries[succ].merge(exit_state) and succ not in worklist:
+            if entries[succ].merge(outgoing) and succ not in worklist:
                 worklist.append(succ)
 
     # ---- report ---------------------------------------------------------
@@ -394,35 +397,42 @@ def _check_scoreboarded_minimum(
     report,
     seen,
     program,
-    model,
     observed,
     rd,
+    reg,
+    guard,
     index: int,
     instr,
     recording: bool,
 ) -> None:
-    """A producer that signalled a scoreboard still owes its own minimum stall.
+    """A waited-on scoreboard still leaves a gap the producer has to cover.
 
-    The wait covers the long, variable part of the result. It does not cover
-    everything: `ptxas` scoreboards every `DADD` in the corpus and still never
-    schedules one with less than 2 cycles of stall, and shortening it to 1 while
-    leaving the wait in place changes what the GPU computes. Treating a wait as
-    a complete answer is what let basalt emit an fp64 kernel that its own
-    checker accepted and the hardware disagreed with.
+    The wait covers the long, variable part of the result and not the whole of
+    it. `ptxas` scoreboards every `DADD` in the corpus and still never puts one
+    less than 2 cycles from its consumer, and closing that to 1 while leaving
+    the wait in place changes what the GPU computes. Treating a wait as a
+    complete answer is what let basalt emit an fp64 kernel its own checker
+    accepted and the hardware disagreed with.
 
-    Only reported where the compiler was seen often enough to be believed, and
-    never for the safe stall encoding, which is worth more than any minimum.
+    The quantity is the gap between producer and consumer, not the producer's
+    own stall, because they are not the same: `FLO.U32` is scheduled 1 cycle
+    from a consumer three instructions later and 2 from the one straight after
+    it. Never reported against the safe stall encoding, which covers anything.
     """
     if observed is None or report is None or not recording:
         return
+    if rd.crossed:
+        # The gap is a minimum over paths rather than a distance, and the
+        # evidence this is checked against is mined one block at a time, so
+        # there is nothing here to compare fairly. Recorded as a limit in
+        # docs/FINDINGS.md rather than guessed at.
+        return
     producer = program.instructions[rd.index]
-    if producer.word is None:
+    if producer.word is None or producer.word.field("stall") == STALL_YIELD:
         return
-    raw = producer.word.field("stall")
-    if raw == STALL_YIELD:
-        return
-    evidence = observed.scoreboarded_minimum(producer.mnemonic)
-    if evidence is None or raw >= evidence.minimum:
+    consumer_key = ("@" if reg == guard else "") + instr.opcode
+    evidence = observed.scoreboarded_minimum(producer.mnemonic, consumer_key)
+    if evidence is None or rd.elapsed >= evidence.minimum:
         return
     _add(
         report,
@@ -437,12 +447,13 @@ def _check_scoreboarded_minimum(
             def_text=f"{producer.mnemonic} {producer.operands}".strip(),
             use_text=f"{instr.mnemonic} {instr.operands}".strip(),
             required=evidence.minimum,
-            actual=raw,
+            actual=rd.elapsed,
             detail=(
                 f"{producer.mnemonic} signals a scoreboard and is waited on, but a "
                 f"scoreboard does not cover the whole result: across "
                 f"{evidence.observations} observations the compiler never scheduled "
-                f"{evidence.producer} with less than {evidence.minimum} cycles of its own"
+                f"{evidence.producer} closer than {evidence.minimum} cycles to "
+                f"{evidence.consumer}"
             ),
         ),
     )

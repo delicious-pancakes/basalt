@@ -59,6 +59,10 @@ class ReachingDef:
     # as elapsed cycles. Kept as a fact rather than folded into `elapsed`, since
     # a saturating counter cannot distinguish "waited" from "waited a long time".
     yielded: bool = False
+    # True once this definition has been carried into another block. The gap to
+    # a consumer then depends on which path was taken, so it is a minimum over
+    # paths rather than a distance anything can be measured against.
+    crossed: bool = False
 
     def merged_with(self, other: ReachingDef) -> ReachingDef:
         """Worst case of two paths reaching the same point."""
@@ -68,6 +72,7 @@ class ReachingDef:
             satisfied=self.satisfied and other.satisfied,
             barrier=self.barrier,
             yielded=self.yielded and other.yielded,
+            crossed=self.crossed or other.crossed,
         )
 
     def advanced(self, stall: int, *, yielded: bool = False) -> ReachingDef:

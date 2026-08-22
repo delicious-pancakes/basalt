@@ -394,12 +394,13 @@ class TestScoreboardIsNotTheWholeAnswer:
 
         obs = ObservedStalls(cuda_version="test", arch="sm_120a")
         for _ in range(MIN_OBSERVATIONS + 1):
-            obs.observe_scoreboarded("DADD", minimum, "DADD R6, R4, R6")
+            obs.observe_scoreboarded("DADD", "STG", minimum, "DADD R6, R4, R6 -> STG")
         return obs
 
-    def _program(self, producer_stall: int):
+    def _program(self, gap: int):
+        """A DADD its store waits on, `gap` cycles in front of that store."""
         return [
-            instr("DADD R6, R4, R2", stall=producer_stall, write_barrier=0, index=0),
+            instr("DADD R6, R4, R2", stall=gap, write_barrier=0, index=0),
             instr("STG.E.64 desc[UR4][R8.64], R6", stall=1, wait=0b1, index=1),
             instr("EXIT", index=2),
         ]

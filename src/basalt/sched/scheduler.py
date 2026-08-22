@@ -86,6 +86,7 @@ class ScheduleResult:
 class _Producer:
     index: int
     opcode: str
+    mnemonic: str
     kind: LatencyClass
     barrier: int = NO_BARRIER
 
@@ -111,6 +112,24 @@ def _requirement(
         if evidence is not None:
             return evidence.minimum
     return GUARD_CYCLES if guard else cycles
+
+
+def _scoreboarded_requirement(
+    producer_mnemonic: str,
+    consumer: str,
+    observed: ObservedStalls | None,
+    *,
+    guard: bool = False,
+) -> int:
+    """Cycles a waited-on scoreboarded producer still needs before its consumer.
+
+    Zero when nothing was observed, because there is no basis for inventing one
+    and the wait already covers the bulk of it.
+    """
+    if observed is None:
+        return 0
+    evidence = observed.scoreboarded_minimum(producer_mnemonic, ("@" if guard else "") + consumer)
+    return evidence.minimum if evidence is not None else 0
 
 
 def _place_stall(
@@ -305,16 +324,30 @@ def schedule_program(
 
                 for reg in sorted(access.real_uses, key=str):
                     producer = last_def.get(reg)
-                    if producer is None or producer.kind is not LatencyClass.FIXED:
+                    if producer is None:
                         continue
                     record = model.lookup(producer.opcode)
-                    needed = _requirement(
-                        producer.opcode,
-                        instr.opcode,
-                        record.cycles,
-                        observed,
-                        guard=reg == access.guard,
-                    )
+                    if producer.kind is LatencyClass.FIXED:
+                        needed = _requirement(
+                            producer.opcode,
+                            instr.opcode,
+                            record.cycles,
+                            observed,
+                            guard=reg == access.guard,
+                        )
+                    else:
+                        # A variable-latency producer is covered by the wait for
+                        # the long part of its result, and by a small gap for
+                        # the rest. Only the second part is scheduled here; the
+                        # wait itself was assigned above.
+                        needed = _scoreboarded_requirement(
+                            producer.mnemonic,
+                            instr.opcode,
+                            observed,
+                            guard=reg == access.guard,
+                        )
+                        if not needed:
+                            continue
                     have = elapsed.get(producer.index, 0)
                     if have >= needed:
                         continue
@@ -351,7 +384,11 @@ def schedule_program(
                     elapsed[key] = min(SATURATION, elapsed[key] + charge)
 
                 produced = _Producer(
-                    index, instr.opcode, model.lookup(instr.opcode).kind, write_barriers[index]
+                    index,
+                    instr.opcode,
+                    instr.mnemonic,
+                    model.lookup(instr.opcode).kind,
+                    write_barriers[index],
                 )
                 for reg in access.real_defs:
                     last_def[reg] = produced
@@ -359,26 +396,6 @@ def schedule_program(
 
             if not short:
                 break
-
-    # ---- a scoreboard does not excuse the producer's own stall
-    # Waiting on a scoreboard covers the bulk of a variable-latency result but
-    # not all of it. `DADD` is always scoreboarded and `ptxas` never leaves it
-    # less than 2 cycles; dropping it to 1 while keeping the wait changes the
-    # answer on hardware. So the minimum is mined alongside everything else and
-    # applied here, after the pair-wise fixed point, because raising a stall can
-    # only widen a gap and never reopen one.
-    if observed is not None:
-        for index in range(count):
-            instr = program.instructions[index]
-            if instr.word is None or write_barriers[index] == NO_BARRIER:
-                continue
-            if index in pinned:
-                # already the safe encoding, which is worth more than any minimum
-                continue
-            evidence = observed.scoreboarded_minimum(instr.mnemonic)
-            if evidence is not None and stalls[index] < evidence.minimum:
-                result.stalls_added += evidence.minimum - stalls[index]
-                stalls[index] = evidence.minimum
 
     # ---- anything crossing a block boundary
     # The analysis above is per block, so a value defined in one block and
