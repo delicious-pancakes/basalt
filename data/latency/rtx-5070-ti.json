@@ -1,0 +1,446 @@
+{
+  "arch": "sm_120",
+  "clock_khz": 2542000,
+  "composite": {
+    "I2FP+F2I": {
+      "cycles": 24,
+      "measured_cycles": 24.01,
+      "note": "round trip through float. a conversion cannot feed the next link without converting back, so this slope covers the pair and is deliberately not split between them",
+      "r_squared": 0.999999
+    }
+  },
+  "cuda_version": "V13.3.73",
+  "latencies": {
+    "DADD": {
+      "cycles": 64,
+      "kind": "fixed",
+      "measured_cycles": 64.008,
+      "note": "double precision add, expected to be heavily rate limited",
+      "r_squared": 1.0
+    },
+    "DFMA": {
+      "cycles": 64,
+      "kind": "fixed",
+      "measured_cycles": 63.997,
+      "note": "double precision fused multiply-add",
+      "r_squared": 1.0
+    },
+    "FADD": {
+      "cycles": 4,
+      "kind": "fixed",
+      "measured_cycles": 3.986,
+      "note": "single precision add",
+      "r_squared": 0.999909
+    },
+    "FFMA": {
+      "cycles": 4,
+      "kind": "fixed",
+      "measured_cycles": 3.986,
+      "note": "single precision fused multiply-add",
+      "r_squared": 0.999986
+    },
+    "FMUL": {
+      "cycles": 4,
+      "kind": "fixed",
+      "measured_cycles": 4.0,
+      "note": "single precision multiply",
+      "r_squared": 0.99988
+    },
+    "IADD3": {
+      "cycles": 4,
+      "kind": "fixed",
+      "measured_cycles": 4.0,
+      "note": "integer add",
+      "r_squared": 0.99997
+    },
+    "IMAD": {
+      "cycles": 4,
+      "kind": "fixed",
+      "measured_cycles": 3.99,
+      "note": "integer multiply-add, the workhorse of the integer pipe",
+      "r_squared": 0.999911
+    },
+    "LOP3": {
+      "cycles": 4,
+      "kind": "fixed",
+      "measured_cycles": 3.972,
+      "note": "three-input bitwise lookup",
+      "r_squared": 0.999939
+    },
+    "MUFU": {
+      "cycles": 44,
+      "kind": "variable",
+      "measured_cycles": 44.0,
+      "note": "special function unit",
+      "r_squared": 0.999999
+    },
+    "POPC": {
+      "cycles": 18,
+      "kind": "fixed",
+      "measured_cycles": 17.975,
+      "note": "population count",
+      "r_squared": 1.0
+    },
+    "SHF": {
+      "cycles": 4,
+      "kind": "fixed",
+      "measured_cycles": 3.983,
+      "note": "funnel shift",
+      "r_squared": 0.999845
+    }
+  },
+  "multiprocessors": 70,
+  "raw": [
+    {
+      "covers": [
+        "IMAD"
+      ],
+      "cycles": 3.990217391304348,
+      "kind": "fixed",
+      "note": "integer multiply-add, the workhorse of the integer pipe",
+      "opcode": "IMAD",
+      "points": [
+        [
+          64,
+          594
+        ],
+        [
+          128,
+          850
+        ],
+        [
+          256,
+          1375
+        ],
+        [
+          512,
+          2381
+        ]
+      ],
+      "r_squared": 0.9999110828869894,
+      "rejected": ""
+    },
+    {
+      "covers": [
+        "IADD3"
+      ],
+      "cycles": 4.0,
+      "kind": "fixed",
+      "note": "integer add",
+      "opcode": "IADD3",
+      "points": [
+        [
+          64,
+          619
+        ],
+        [
+          128,
+          871
+        ],
+        [
+          256,
+          1393
+        ],
+        [
+          512,
+          2409
+        ]
+      ],
+      "r_squared": 0.9999702794159481,
+      "rejected": ""
+    },
+    {
+      "covers": [
+        "FFMA"
+      ],
+      "cycles": 3.986141304347826,
+      "kind": "fixed",
+      "note": "single precision fused multiply-add",
+      "opcode": "FFMA",
+      "points": [
+        [
+          64,
+          625
+        ],
+        [
+          128,
+          873
+        ],
+        [
+          256,
+          1388
+        ],
+        [
+          512,
+          2408
+        ]
+      ],
+      "r_squared": 0.9999859003466335,
+      "rejected": ""
+    },
+    {
+      "covers": [
+        "FADD"
+      ],
+      "cycles": 3.9862771739130434,
+      "kind": "fixed",
+      "note": "single precision add",
+      "opcode": "FADD",
+      "points": [
+        [
+          64,
+          609
+        ],
+        [
+          128,
+          846
+        ],
+        [
+          256,
+          1364
+        ],
+        [
+          512,
+          2388
+        ]
+      ],
+      "r_squared": 0.9999088534481317,
+      "rejected": ""
+    },
+    {
+      "covers": [
+        "FMUL"
+      ],
+      "cycles": 4.000407608695652,
+      "kind": "fixed",
+      "note": "single precision multiply",
+      "opcode": "FMUL",
+      "points": [
+        [
+          64,
+          604
+        ],
+        [
+          128,
+          839
+        ],
+        [
+          256,
+          1364
+        ],
+        [
+          512,
+          2388
+        ]
+      ],
+      "r_squared": 0.9998797039720706,
+      "rejected": ""
+    },
+    {
+      "covers": [
+        "DADD"
+      ],
+      "cycles": 64.00842391304347,
+      "kind": "fixed",
+      "note": "double precision add, expected to be heavily rate limited",
+      "opcode": "DADD",
+      "points": [
+        [
+          64,
+          4406
+        ],
+        [
+          128,
+          8509
+        ],
+        [
+          256,
+          16703
+        ],
+        [
+          512,
+          33084
+        ]
+      ],
+      "r_squared": 0.9999999240505569,
+      "rejected": ""
+    },
+    {
+      "covers": [
+        "DFMA"
+      ],
+      "cycles": 63.996875,
+      "kind": "fixed",
+      "note": "double precision fused multiply-add",
+      "opcode": "DFMA",
+      "points": [
+        [
+          64,
+          4430
+        ],
+        [
+          128,
+          8523
+        ],
+        [
+          256,
+          16708
+        ],
+        [
+          512,
+          33100
+        ]
+      ],
+      "r_squared": 0.9999998847185556,
+      "rejected": ""
+    },
+    {
+      "covers": [
+        "LOP3"
+      ],
+      "cycles": 3.971875,
+      "kind": "fixed",
+      "note": "three-input bitwise lookup",
+      "opcode": "LOP3",
+      "points": [
+        [
+          64,
+          595
+        ],
+        [
+          128,
+          850
+        ],
+        [
+          256,
+          1370
+        ],
+        [
+          512,
+          2374
+        ]
+      ],
+      "r_squared": 0.9999388547346472,
+      "rejected": ""
+    },
+    {
+      "covers": [
+        "SHF"
+      ],
+      "cycles": 3.983288043478261,
+      "kind": "fixed",
+      "note": "funnel shift",
+      "opcode": "SHF",
+      "points": [
+        [
+          64,
+          613
+        ],
+        [
+          128,
+          847
+        ],
+        [
+          256,
+          1359
+        ],
+        [
+          512,
+          2390
+        ]
+      ],
+      "r_squared": 0.9998448895708053,
+      "rejected": ""
+    },
+    {
+      "covers": [
+        "POPC"
+      ],
+      "cycles": 17.97459239130435,
+      "kind": "fixed",
+      "note": "population count",
+      "opcode": "POPC",
+      "points": [
+        [
+          64,
+          1510
+        ],
+        [
+          128,
+          2656
+        ],
+        [
+          256,
+          4958
+        ],
+        [
+          512,
+          9561
+        ]
+      ],
+      "r_squared": 0.9999997179661094,
+      "rejected": ""
+    },
+    {
+      "covers": [
+        "I2FP",
+        "F2I"
+      ],
+      "cycles": 24.01032608695652,
+      "kind": "fixed",
+      "note": "round trip through float. a conversion cannot feed the next link without converting back, so this slope covers the pair and is deliberately not split between them",
+      "opcode": "I2FP",
+      "points": [
+        [
+          64,
+          1884
+        ],
+        [
+          128,
+          3415
+        ],
+        [
+          256,
+          6499
+        ],
+        [
+          512,
+          12638
+        ]
+      ],
+      "r_squared": 0.9999990949314247,
+      "rejected": ""
+    },
+    {
+      "covers": [
+        "MUFU"
+      ],
+      "cycles": 43.99959239130435,
+      "kind": "variable",
+      "note": "special function unit",
+      "opcode": "MUFU",
+      "points": [
+        [
+          64,
+          3152
+        ],
+        [
+          128,
+          5974
+        ],
+        [
+          256,
+          11622
+        ],
+        [
+          512,
+          22865
+        ]
+      ],
+      "r_squared": 0.9999986370243493,
+      "rejected": ""
+    }
+  ],
+  "rejected": {},
+  "sku": "NVIDIA GeForce RTX 5070 Ti"
+}

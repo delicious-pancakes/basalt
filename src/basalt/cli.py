@@ -224,6 +224,49 @@ def _verify(args: argparse.Namespace) -> int:
     return 0 if report.ok or not args.strict else 2
 
 
+def _measure(args: argparse.Namespace) -> int:
+    """Measure instruction latency on a real device."""
+    from pathlib import Path
+
+    from .gpu.driver import cuda_available
+    from .gpu.latency import measure_all
+    from .toolchain import ToolchainError, find_toolchain
+
+    try:
+        tc = find_toolchain(args.cuda_bin)
+    except ToolchainError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+
+    if not cuda_available():
+        print(
+            "error: no CUDA device. this is the one basalt command that needs real\n"
+            "       silicon; everything else runs without a GPU.",
+            file=sys.stderr,
+        )
+        return 1
+
+    run = measure_all(
+        tc,
+        arch=args.arch,
+        ordinal=args.device,
+        lengths=tuple(args.lengths),
+        repeats=args.repeats,
+    )
+
+    out = Path(args.out) if args.out else Path("data/latency") / _slug(run.sku)
+    run.write(out)
+    usable = sum(1 for m in run.measurements if m.ok)
+    print(f"\n{usable}/{len(run.measurements)} measured, wrote {out}")
+    print(f"use it with: basalt verify <cubin> --latencies {out}")
+    return 0
+
+
+def _slug(name: str) -> str:
+    keep = [c.lower() if c.isalnum() else "-" for c in name]
+    return "".join(keep).strip("-").replace("--", "-") + ".json"
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="basalt", description="a SASS assembler for sm_120")
     ap.add_argument("--version", action="version", version=f"basalt {__version__}")
@@ -244,6 +287,18 @@ def main(argv: list[str] | None = None) -> int:
     q.add_argument("--opcode", help="list every form of one opcode")
     q.add_argument("--stats", action="store_true", help="print coverage")
 
+    m = sub.add_parser("measure", help="measure instruction latency on a real device")
+    m.add_argument("-o", "--out", default=None, help="output path (default names the SKU)")
+    m.add_argument("--device", type=int, default=0, help="CUDA device ordinal")
+    m.add_argument(
+        "--lengths",
+        type=int,
+        nargs="+",
+        default=[64, 128, 256, 512],
+        help="chain lengths to fit the slope across",
+    )
+    m.add_argument("--repeats", type=int, default=7, help="launches per length; the minimum wins")
+
     v = sub.add_parser("verify", help="check a cubin's control bits for data hazards")
     v.add_argument("cubin", help="path to a cubin, whatever produced it")
     v.add_argument("--latencies", default=None, help="measured latency JSON to overlay")
@@ -256,6 +311,7 @@ def main(argv: list[str] | None = None) -> int:
         "doctor": _doctor,
         "build-isa": _build_isa,
         "isa": _isa,
+        "measure": _measure,
         "verify": _verify,
     }[args.command](args)
 
