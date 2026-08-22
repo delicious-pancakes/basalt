@@ -195,6 +195,34 @@ def _probe_stalls(args: argparse.Namespace) -> int:
     return 0
 
 
+def _mine_stalls(args: argparse.Namespace) -> int:
+    """Mine the compiler's own scheduling for per-pair stall requirements."""
+    from pathlib import Path
+
+    from .toolchain import ToolchainError, find_toolchain
+    from .verify.observed import mine_corpus
+
+    try:
+        tc = find_toolchain(args.cuda_bin)
+    except ToolchainError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+
+    observed = mine_corpus(tc, arch=args.arch)
+    out = Path(args.out)
+    observed.write(out)
+    print()
+    print(observed.summary())
+    print(f"wrote {out}")
+
+    if args.show:
+        print()
+        for name, ev in sorted(observed.by_producer.items()):
+            if ev.trusted:
+                print(f"  {name:<10} min {ev.minimum:2d}   from {ev.observations} observations")
+    return 0
+
+
 def _verify(args: argparse.Namespace) -> int:
     """Check a cubin's control bits against the latency model."""
     from pathlib import Path
@@ -236,7 +264,11 @@ def _verify(args: argparse.Namespace) -> int:
     print(f"{target}")
     print(f"  {report.summary()}")
     if observed is not None:
-        print(f"  pair data: {len(observed.by_pair)} pairs mined from {observed.kernels} kernels")
+        trusted = sum(1 for e in observed.by_producer.values() if e.trusted)
+        print(
+            f"  pair data: {len(observed.by_pair)} pairings from {observed.kernels} kernels, "
+            f"{trusted} producers with enough observations to use"
+        )
     if model.sku:
         print(f"  latency model: measured on {model.sku}")
     else:
@@ -353,6 +385,13 @@ def main(argv: list[str] | None = None) -> int:
     ps.add_argument("--links", type=int, default=8, help="chain length to build")
     ps.add_argument("--repeats", type=int, default=12, help="launches per candidate stall")
 
+    ms = sub.add_parser(
+        "mine-stalls",
+        help="learn per-pair stall requirements from what the compiler schedules",
+    )
+    ms.add_argument("-o", "--out", default=DEFAULT_OBSERVED)
+    ms.add_argument("--show", action="store_true", help="print the per-producer minimums")
+
     v = sub.add_parser("verify", help="check a cubin's control bits for data hazards")
     v.add_argument("cubin", help="path to a cubin, whatever produced it")
     v.add_argument("--latencies", default=None, help="measured latency JSON to overlay")
@@ -371,6 +410,7 @@ def main(argv: list[str] | None = None) -> int:
         "build-isa": _build_isa,
         "isa": _isa,
         "measure": _measure,
+        "mine-stalls": _mine_stalls,
         "probe-stalls": _probe_stalls,
         "verify": _verify,
     }[args.command](args)
