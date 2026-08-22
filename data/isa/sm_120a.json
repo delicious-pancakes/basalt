@@ -39,1262 +39,14 @@
     }
   ],
   "coverage": {
-    "forms": 281,
-    "forms_with_operand_map": 276,
-    "opcodes": 84,
+    "forms": 274,
+    "forms_with_operand_map": 269,
+    "opcodes": 77,
     "tensor_forms": 43,
-    "uniform_forms": 3
+    "uniform_forms": 4
   },
   "cuda_version": "V13.3.73",
   "forms": {
-    "@!P0": {
-      "encoding": "000fe20000000f000000000000028202",
-      "inert_bits": [
-        24,
-        25,
-        26,
-        27,
-        28,
-        29,
-        30,
-        31,
-        40,
-        41,
-        42,
-        43,
-        44,
-        45,
-        46,
-        47,
-        48,
-        49,
-        50,
-        51,
-        52,
-        53,
-        54,
-        55,
-        56,
-        57,
-        58,
-        59,
-        60,
-        61,
-        62,
-        63,
-        64,
-        65,
-        66,
-        67,
-        68,
-        69,
-        70,
-        71,
-        76,
-        77,
-        78,
-        79,
-        81,
-        82,
-        83,
-        84,
-        85,
-        86,
-        87,
-        88,
-        89,
-        90,
-        92,
-        93,
-        94,
-        95,
-        96,
-        97,
-        98,
-        99,
-        100,
-        101,
-        102,
-        103,
-        104,
-        126,
-        127
-      ],
-      "invalid_bits": [
-        1,
-        2,
-        5,
-        6,
-        7,
-        9,
-        10,
-        11,
-        91
-      ],
-      "mnemonic": "@!P0",
-      "modifier_bits": [],
-      "modifiers": [],
-      "opcode": "@!P0",
-      "opcode_bits": [
-        12,
-        13,
-        14,
-        15
-      ],
-      "operand_text": "MOV R2, R0",
-      "operands": [
-        {
-          "bits": [
-            16,
-            17,
-            18,
-            19,
-            20,
-            21,
-            22,
-            23,
-            80
-          ],
-          "example_after": "MOV R3, R0",
-          "example_before": "MOV R2, R0",
-          "slot": 0
-        },
-        {
-          "bits": [
-            32,
-            33,
-            34,
-            35,
-            36,
-            37,
-            38,
-            39
-          ],
-          "example_after": "MOV R2, R1",
-          "example_before": "MOV R2, R0",
-          "slot": 1
-        }
-      ],
-      "payload": "0000000000000f000000000000028202",
-      "source_family": "unary",
-      "source_label": "sqrt.rn.f32"
-    },
-    "@!P1": {
-      "encoding": "000fca00078e33ff00000007ff009212",
-      "inert_bits": [
-        40,
-        41,
-        42,
-        43,
-        44,
-        45,
-        46,
-        47,
-        48,
-        49,
-        50,
-        51,
-        52,
-        53,
-        54,
-        55,
-        56,
-        57,
-        58,
-        59,
-        60,
-        61,
-        62,
-        63,
-        84,
-        85,
-        86,
-        92,
-        93,
-        94,
-        95,
-        96,
-        97,
-        98,
-        99,
-        100,
-        101,
-        102,
-        103,
-        104,
-        126,
-        127
-      ],
-      "invalid_bits": [
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        91
-      ],
-      "mnemonic": "@!P1",
-      "modifier_bits": [],
-      "modifiers": [],
-      "opcode": "@!P1",
-      "opcode_bits": [
-        12,
-        13,
-        14,
-        15
-      ],
-      "operand_text": "LOP3.LUT R0, RZ, R7, RZ, 0x33, !PT",
-      "operands": [
-        {
-          "bits": [
-            16,
-            17,
-            18,
-            19,
-            20,
-            21,
-            22,
-            23,
-            80
-          ],
-          "example_after": "LOP3.LUT R1, RZ, R7, RZ, 0x33, !PT",
-          "example_before": "LOP3.LUT R0, RZ, R7, RZ, 0x33, !PT",
-          "slot": 0
-        },
-        {
-          "bits": [
-            24,
-            25,
-            26,
-            27,
-            28,
-            29,
-            30,
-            31
-          ],
-          "example_after": "LOP3.LUT R0, R254, R7, RZ, 0x33, !PT",
-          "example_before": "LOP3.LUT R0, RZ, R7, RZ, 0x33, !PT",
-          "slot": 1
-        },
-        {
-          "bits": [
-            32,
-            33,
-            34,
-            35,
-            36,
-            37,
-            38,
-            39
-          ],
-          "example_after": "LOP3.LUT R0, RZ, R6, RZ, 0x33, !PT",
-          "example_before": "LOP3.LUT R0, RZ, R7, RZ, 0x33, !PT",
-          "slot": 2
-        },
-        {
-          "bits": [
-            64,
-            65,
-            66,
-            67,
-            68,
-            69,
-            70,
-            71
-          ],
-          "example_after": "LOP3.LUT R0, RZ, R7, R254, 0x33, !PT",
-          "example_before": "LOP3.LUT R0, RZ, R7, RZ, 0x33, !PT",
-          "slot": 3
-        },
-        {
-          "bits": [
-            72,
-            73,
-            74,
-            75,
-            76,
-            77,
-            78,
-            79
-          ],
-          "example_after": "LOP3.LUT R0, RZ, R7, RZ, 0x32, !PT",
-          "example_before": "LOP3.LUT R0, RZ, R7, RZ, 0x33, !PT",
-          "slot": 4
-        },
-        {
-          "bits": [
-            87,
-            88,
-            89,
-            90
-          ],
-          "example_after": "LOP3.LUT R0, RZ, R7, RZ, 0x33, !P6",
-          "example_before": "LOP3.LUT R0, RZ, R7, RZ, 0x33, !PT",
-          "slot": 5
-        }
-      ],
-      "payload": "00000000078e33ff00000007ff009212",
-      "source_family": "binary",
-      "source_label": "rem.u32"
-    },
-    "@!P2": {
-      "encoding": "000fca00078e33ff00000007ff05a212",
-      "inert_bits": [
-        40,
-        41,
-        42,
-        43,
-        44,
-        45,
-        46,
-        47,
-        48,
-        49,
-        50,
-        51,
-        52,
-        53,
-        54,
-        55,
-        56,
-        57,
-        58,
-        59,
-        60,
-        61,
-        62,
-        63,
-        84,
-        85,
-        86,
-        92,
-        93,
-        94,
-        95,
-        96,
-        97,
-        98,
-        99,
-        100,
-        101,
-        102,
-        103,
-        104,
-        126,
-        127
-      ],
-      "invalid_bits": [
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        91
-      ],
-      "mnemonic": "@!P2",
-      "modifier_bits": [],
-      "modifiers": [],
-      "opcode": "@!P2",
-      "opcode_bits": [
-        12,
-        13,
-        14,
-        15
-      ],
-      "operand_text": "LOP3.LUT R5, RZ, R7, RZ, 0x33, !PT",
-      "operands": [
-        {
-          "bits": [
-            16,
-            17,
-            18,
-            19,
-            20,
-            21,
-            22,
-            23,
-            80
-          ],
-          "example_after": "LOP3.LUT R4, RZ, R7, RZ, 0x33, !PT",
-          "example_before": "LOP3.LUT R5, RZ, R7, RZ, 0x33, !PT",
-          "slot": 0
-        },
-        {
-          "bits": [
-            24,
-            25,
-            26,
-            27,
-            28,
-            29,
-            30,
-            31
-          ],
-          "example_after": "LOP3.LUT R5, R254, R7, RZ, 0x33, !PT",
-          "example_before": "LOP3.LUT R5, RZ, R7, RZ, 0x33, !PT",
-          "slot": 1
-        },
-        {
-          "bits": [
-            32,
-            33,
-            34,
-            35,
-            36,
-            37,
-            38,
-            39
-          ],
-          "example_after": "LOP3.LUT R5, RZ, R6, RZ, 0x33, !PT",
-          "example_before": "LOP3.LUT R5, RZ, R7, RZ, 0x33, !PT",
-          "slot": 2
-        },
-        {
-          "bits": [
-            64,
-            65,
-            66,
-            67,
-            68,
-            69,
-            70,
-            71
-          ],
-          "example_after": "LOP3.LUT R5, RZ, R7, R254, 0x33, !PT",
-          "example_before": "LOP3.LUT R5, RZ, R7, RZ, 0x33, !PT",
-          "slot": 3
-        },
-        {
-          "bits": [
-            72,
-            73,
-            74,
-            75,
-            76,
-            77,
-            78,
-            79
-          ],
-          "example_after": "LOP3.LUT R5, RZ, R7, RZ, 0x32, !PT",
-          "example_before": "LOP3.LUT R5, RZ, R7, RZ, 0x33, !PT",
-          "slot": 4
-        },
-        {
-          "bits": [
-            87,
-            88,
-            89,
-            90
-          ],
-          "example_after": "LOP3.LUT R5, RZ, R7, RZ, 0x33, !P6",
-          "example_before": "LOP3.LUT R5, RZ, R7, RZ, 0x33, !PT",
-          "slot": 5
-        }
-      ],
-      "payload": "00000000078e33ff00000007ff05a212",
-      "source_family": "binary",
-      "source_label": "div.u32"
-    },
-    "@!UPT": {
-      "encoding": "000fe6000fffe0ff000000fffffff290",
-      "inert_bits": [
-        40,
-        41,
-        42,
-        43,
-        44,
-        45,
-        46,
-        47,
-        48,
-        49,
-        50,
-        51,
-        52,
-        53,
-        54,
-        55,
-        56,
-        57,
-        58,
-        59,
-        60,
-        61,
-        62,
-        73,
-        76,
-        77,
-        78,
-        79,
-        80,
-        87,
-        88,
-        89,
-        90,
-        92,
-        93,
-        94,
-        95,
-        96,
-        97,
-        98,
-        99,
-        100,
-        101,
-        102,
-        103,
-        104,
-        126,
-        127
-      ],
-      "invalid_bits": [
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        91
-      ],
-      "mnemonic": "@!UPT",
-      "modifier_bits": [],
-      "modifiers": [],
-      "opcode": "@!UPT",
-      "opcode_bits": [
-        12,
-        13,
-        14,
-        15
-      ],
-      "operand_text": "UIADD3 URZ, UPT, UPT, URZ, URZ, URZ",
-      "operands": [
-        {
-          "bits": [
-            16,
-            17,
-            18,
-            19,
-            20,
-            21,
-            22,
-            23
-          ],
-          "example_after": "UIADD3 UR254, UPT, UPT, URZ, URZ, URZ",
-          "example_before": "UIADD3 URZ, UPT, UPT, URZ, URZ, URZ",
-          "slot": 0
-        },
-        {
-          "bits": [
-            81,
-            82,
-            83
-          ],
-          "example_after": "UIADD3 URZ, UP6, UPT, URZ, URZ, URZ",
-          "example_before": "UIADD3 URZ, UPT, UPT, URZ, URZ, URZ",
-          "slot": 1
-        },
-        {
-          "bits": [
-            84,
-            85,
-            86
-          ],
-          "example_after": "UIADD3 URZ, UPT, UP6, URZ, URZ, URZ",
-          "example_before": "UIADD3 URZ, UPT, UPT, URZ, URZ, URZ",
-          "slot": 2
-        },
-        {
-          "bits": [
-            24,
-            25,
-            26,
-            27,
-            28,
-            29,
-            30,
-            31,
-            72
-          ],
-          "example_after": "UIADD3 URZ, UPT, UPT, UR254, URZ, URZ",
-          "example_before": "UIADD3 URZ, UPT, UPT, URZ, URZ, URZ",
-          "slot": 3
-        },
-        {
-          "bits": [
-            32,
-            33,
-            34,
-            35,
-            36,
-            37,
-            38,
-            39,
-            63
-          ],
-          "example_after": "UIADD3 URZ, UPT, UPT, URZ, UR254, URZ",
-          "example_before": "UIADD3 URZ, UPT, UPT, URZ, URZ, URZ",
-          "slot": 4
-        },
-        {
-          "bits": [
-            64,
-            65,
-            66,
-            67,
-            68,
-            69,
-            70,
-            71,
-            75
-          ],
-          "example_after": "UIADD3 URZ, UPT, UPT, URZ, URZ, UR254",
-          "example_before": "UIADD3 URZ, UPT, UPT, URZ, URZ, URZ",
-          "slot": 5
-        }
-      ],
-      "payload": "000000000fffe0ff000000fffffff290",
-      "source_family": "mma.dense",
-      "source_label": "mma.sync.m16n8k32....s8.s8.s32"
-    },
-    "@P0": {
-      "encoding": "000fe200078e3cff7ff0000003050812",
-      "inert_bits": [
-        84,
-        85,
-        86,
-        92,
-        93,
-        94,
-        95,
-        96,
-        97,
-        98,
-        99,
-        100,
-        101,
-        102,
-        103,
-        104,
-        126,
-        127
-      ],
-      "invalid_bits": [
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        91
-      ],
-      "mnemonic": "@P0",
-      "modifier_bits": [],
-      "modifiers": [],
-      "opcode": "@P0",
-      "opcode_bits": [
-        12,
-        13,
-        14,
-        15
-      ],
-      "operand_text": "LOP3.LUT R5, R3, 0x7ff00000, RZ, 0x3c, !PT",
-      "operands": [
-        {
-          "bits": [
-            16,
-            17,
-            18,
-            19,
-            20,
-            21,
-            22,
-            23,
-            80
-          ],
-          "example_after": "LOP3.LUT R4, R3, 0x7ff00000, RZ, 0x3c, !PT",
-          "example_before": "LOP3.LUT R5, R3, 0x7ff00000, RZ, 0x3c, !PT",
-          "slot": 0
-        },
-        {
-          "bits": [
-            24,
-            25,
-            26,
-            27,
-            28,
-            29,
-            30,
-            31
-          ],
-          "example_after": "LOP3.LUT R5, R2, 0x7ff00000, RZ, 0x3c, !PT",
-          "example_before": "LOP3.LUT R5, R3, 0x7ff00000, RZ, 0x3c, !PT",
-          "slot": 1
-        },
-        {
-          "bits": [
-            32,
-            33,
-            34,
-            35,
-            36,
-            37,
-            38,
-            39,
-            40,
-            41,
-            42,
-            43,
-            44,
-            45,
-            46,
-            47,
-            48,
-            49,
-            50,
-            51,
-            52,
-            53,
-            54,
-            55,
-            56,
-            57,
-            58,
-            59,
-            60,
-            61,
-            62,
-            63
-          ],
-          "example_after": "LOP3.LUT R5, R3, 0x7ff00001, RZ, 0x3c, !PT",
-          "example_before": "LOP3.LUT R5, R3, 0x7ff00000, RZ, 0x3c, !PT",
-          "slot": 2
-        },
-        {
-          "bits": [
-            64,
-            65,
-            66,
-            67,
-            68,
-            69,
-            70,
-            71
-          ],
-          "example_after": "LOP3.LUT R5, R3, 0x7ff00000, R254, 0x3c, !PT",
-          "example_before": "LOP3.LUT R5, R3, 0x7ff00000, RZ, 0x3c, !PT",
-          "slot": 3
-        },
-        {
-          "bits": [
-            72,
-            73,
-            74,
-            75,
-            76,
-            77,
-            78,
-            79
-          ],
-          "example_after": "LOP3.LUT R5, R3, 0x7ff00000, RZ, 0x3d, !PT",
-          "example_before": "LOP3.LUT R5, R3, 0x7ff00000, RZ, 0x3c, !PT",
-          "slot": 4
-        },
-        {
-          "bits": [
-            87,
-            88,
-            89,
-            90
-          ],
-          "example_after": "LOP3.LUT R5, R3, 0x7ff00000, RZ, 0x3c, !P6",
-          "example_before": "LOP3.LUT R5, R3, 0x7ff00000, RZ, 0x3c, !PT",
-          "slot": 5
-        }
-      ],
-      "payload": "00000000078e3cff7ff0000003050812",
-      "source_family": "unary",
-      "source_label": "rcp.rn.f64"
-    },
-    "@P1": {
-      "encoding": "000fc80003f0e170000000000080181c",
-      "inert_bits": [
-        24,
-        25,
-        26,
-        27,
-        28,
-        29,
-        30,
-        31,
-        32,
-        33,
-        34,
-        35,
-        36,
-        37,
-        38,
-        39,
-        40,
-        41,
-        42,
-        43,
-        44,
-        45,
-        46,
-        47,
-        48,
-        49,
-        50,
-        51,
-        52,
-        53,
-        54,
-        55,
-        56,
-        57,
-        58,
-        59,
-        60,
-        61,
-        62,
-        63,
-        92,
-        93,
-        94,
-        95,
-        96,
-        97,
-        98,
-        99,
-        100,
-        101,
-        102,
-        103,
-        104,
-        126,
-        127
-      ],
-      "invalid_bits": [
-        0,
-        1,
-        2,
-        3,
-        5,
-        6,
-        8,
-        9,
-        10,
-        11,
-        91
-      ],
-      "mnemonic": "@P1",
-      "modifier_bits": [],
-      "modifiers": [],
-      "opcode": "@P1",
-      "opcode_bits": [
-        7,
-        12,
-        13,
-        14,
-        15
-      ],
-      "operand_text": "PLOP3.LUT P0, PT, PT, PT, PT, 0x8, 0x80",
-      "operands": [
-        {
-          "bits": [
-            81,
-            82,
-            83
-          ],
-          "example_after": "PLOP3.LUT P1, PT, PT, PT, PT, 0x8, 0x80",
-          "example_before": "PLOP3.LUT P0, PT, PT, PT, PT, 0x8, 0x80",
-          "slot": 0
-        },
-        {
-          "bits": [
-            84,
-            85,
-            86
-          ],
-          "example_after": "PLOP3.LUT P0, P6, PT, PT, PT, 0x8, 0x80",
-          "example_before": "PLOP3.LUT P0, PT, PT, PT, PT, 0x8, 0x80",
-          "slot": 1
-        },
-        {
-          "bits": [
-            87,
-            88,
-            89,
-            90
-          ],
-          "example_after": "PLOP3.LUT P0, PT, P6, PT, PT, 0x8, 0x80",
-          "example_before": "PLOP3.LUT P0, PT, PT, PT, PT, 0x8, 0x80",
-          "slot": 2
-        },
-        {
-          "bits": [
-            77,
-            78,
-            79,
-            80
-          ],
-          "example_after": "PLOP3.LUT P0, PT, PT, P6, PT, 0x8, 0x80",
-          "example_before": "PLOP3.LUT P0, PT, PT, PT, PT, 0x8, 0x80",
-          "slot": 3
-        },
-        {
-          "bits": [
-            67,
-            68,
-            69,
-            70,
-            71
-          ],
-          "example_after": "PLOP3.LUT P0, PT, PT, PT, UPT, 0x8, 0x80",
-          "example_before": "PLOP3.LUT P0, PT, PT, PT, PT, 0x8, 0x80",
-          "slot": 4
-        },
-        {
-          "bits": [
-            64,
-            65,
-            66,
-            72,
-            73,
-            74,
-            75,
-            76
-          ],
-          "example_after": "PLOP3.LUT P0, PT, PT, PT, PT, 0x9, 0x80",
-          "example_before": "PLOP3.LUT P0, PT, PT, PT, PT, 0x8, 0x80",
-          "slot": 5
-        },
-        {
-          "bits": [
-            16,
-            17,
-            18,
-            19,
-            20,
-            21,
-            22,
-            23
-          ],
-          "example_after": "PLOP3.LUT P0, PT, PT, PT, PT, 0x8, 0x81",
-          "example_before": "PLOP3.LUT P0, PT, PT, PT, PT, 0x8, 0x80",
-          "slot": 6
-        }
-      ],
-      "payload": "0000000003f0e170000000000080181c",
-      "source_family": "special",
-      "source_label": "bra.loop.b32"
-    },
-    "@P2": {
-      "encoding": "000fc800000000ff000023100c0c2816",
-      "inert_bits": [
-        75,
-        76,
-        77,
-        78,
-        79,
-        80,
-        81,
-        82,
-        83,
-        84,
-        85,
-        86,
-        87,
-        88,
-        89,
-        90,
-        92,
-        93,
-        94,
-        95,
-        96,
-        97,
-        98,
-        99,
-        100,
-        101,
-        102,
-        103,
-        104,
-        126,
-        127
-      ],
-      "invalid_bits": [
-        1,
-        3,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        91
-      ],
-      "mnemonic": "@P2",
-      "modifier_bits": [],
-      "modifiers": [],
-      "opcode": "@P2",
-      "opcode_bits": [
-        12,
-        13,
-        14,
-        15
-      ],
-      "operand_text": "PRMT R12, R12, 0x2310, RZ",
-      "operands": [
-        {
-          "bits": [
-            16,
-            17,
-            18,
-            19,
-            20,
-            21,
-            22,
-            23,
-            72,
-            73,
-            74
-          ],
-          "example_after": "PRMT R13, R12, 0x2310, RZ",
-          "example_before": "PRMT R12, R12, 0x2310, RZ",
-          "slot": 0
-        },
-        {
-          "bits": [
-            24,
-            25,
-            26,
-            27,
-            28,
-            29,
-            30,
-            31
-          ],
-          "example_after": "PRMT R12, R13, 0x2310, RZ",
-          "example_before": "PRMT R12, R12, 0x2310, RZ",
-          "slot": 1
-        },
-        {
-          "bits": [
-            32,
-            33,
-            34,
-            35,
-            36,
-            37,
-            38,
-            39,
-            40,
-            41,
-            42,
-            43,
-            44,
-            45,
-            46,
-            47,
-            48,
-            49,
-            50,
-            51,
-            52,
-            53,
-            54,
-            55,
-            56,
-            57,
-            58,
-            59,
-            60,
-            61,
-            62,
-            63
-          ],
-          "example_after": "PRMT R12, R12, 0x2311, RZ",
-          "example_before": "PRMT R12, R12, 0x2310, RZ",
-          "slot": 2
-        },
-        {
-          "bits": [
-            64,
-            65,
-            66,
-            67,
-            68,
-            69,
-            70,
-            71
-          ],
-          "example_after": "PRMT R12, R12, 0x2310, R254",
-          "example_before": "PRMT R12, R12, 0x2310, RZ",
-          "slot": 3
-        }
-      ],
-      "payload": "00000000000000ff000023100c0c2816",
-      "source_family": "mma.sparse",
-      "source_label": "mma.sp.sync.m16n8k64.s8"
-    },
-    "@P6": {
-      "encoding": "000fe200000000ff000023100f0f6816",
-      "inert_bits": [
-        75,
-        76,
-        77,
-        78,
-        79,
-        80,
-        81,
-        82,
-        83,
-        84,
-        85,
-        86,
-        87,
-        88,
-        89,
-        90,
-        92,
-        93,
-        94,
-        95,
-        96,
-        97,
-        98,
-        99,
-        100,
-        101,
-        102,
-        103,
-        104,
-        126,
-        127
-      ],
-      "invalid_bits": [
-        1,
-        3,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        91
-      ],
-      "mnemonic": "@P6",
-      "modifier_bits": [],
-      "modifiers": [],
-      "opcode": "@P6",
-      "opcode_bits": [
-        12,
-        13,
-        14,
-        15
-      ],
-      "operand_text": "PRMT R15, R15, 0x2310, RZ",
-      "operands": [
-        {
-          "bits": [
-            16,
-            17,
-            18,
-            19,
-            20,
-            21,
-            22,
-            23,
-            72,
-            73,
-            74
-          ],
-          "example_after": "PRMT R14, R15, 0x2310, RZ",
-          "example_before": "PRMT R15, R15, 0x2310, RZ",
-          "slot": 0
-        },
-        {
-          "bits": [
-            24,
-            25,
-            26,
-            27,
-            28,
-            29,
-            30,
-            31
-          ],
-          "example_after": "PRMT R15, R14, 0x2310, RZ",
-          "example_before": "PRMT R15, R15, 0x2310, RZ",
-          "slot": 1
-        },
-        {
-          "bits": [
-            32,
-            33,
-            34,
-            35,
-            36,
-            37,
-            38,
-            39,
-            40,
-            41,
-            42,
-            43,
-            44,
-            45,
-            46,
-            47,
-            48,
-            49,
-            50,
-            51,
-            52,
-            53,
-            54,
-            55,
-            56,
-            57,
-            58,
-            59,
-            60,
-            61,
-            62,
-            63
-          ],
-          "example_after": "PRMT R15, R15, 0x2311, RZ",
-          "example_before": "PRMT R15, R15, 0x2310, RZ",
-          "slot": 2
-        },
-        {
-          "bits": [
-            64,
-            65,
-            66,
-            67,
-            68,
-            69,
-            70,
-            71
-          ],
-          "example_after": "PRMT R15, R15, 0x2310, R254",
-          "example_before": "PRMT R15, R15, 0x2310, RZ",
-          "slot": 3
-        }
-      ],
-      "payload": "00000000000000ff000023100f0f6816",
-      "source_family": "mma.sparse",
-      "source_label": "mma.sp.sync.m16n8k64.s8"
-    },
     "ATOMG.E.ADD.64.STRONG.GPU": {
       "encoding": "000fc000081ef50480000002040279a8",
       "inert_bits": [
@@ -1356,11 +108,7 @@
       "opcode_bits": [
         1,
         2,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "PT, R2, desc[UR4][R4.64], R2",
       "operands": [
@@ -1519,11 +267,7 @@
       "opcode_bits": [
         0,
         2,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "PT, R7, desc[UR4][R4.64], R3",
       "operands": [
@@ -1681,11 +425,7 @@
       "opcode_bits": [
         0,
         2,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "PT, R6, desc[UR4][R4.64], R2",
       "operands": [
@@ -1842,11 +582,7 @@
       "opcode_bits": [
         1,
         2,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "PT, R0, desc[UR4][R2.64], R0",
       "operands": [
@@ -2002,11 +738,7 @@
       "opcode_bits": [
         1,
         2,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "PT, R0, desc[UR4][R2.64], R0",
       "operands": [
@@ -2163,11 +895,7 @@
       "opcode": "ATOMG",
       "opcode_bits": [
         1,
-        2,
-        12,
-        13,
-        14,
-        15
+        2
       ],
       "operand_text": "PT, R6, desc[UR4][R4.64], R2",
       "operands": [
@@ -2324,11 +1052,7 @@
       "opcode": "ATOMG",
       "opcode_bits": [
         1,
-        2,
-        12,
-        13,
-        14,
-        15
+        2
       ],
       "operand_text": "PT, R7, desc[UR4][R4.64], R3",
       "operands": [
@@ -2484,11 +1208,7 @@
       "opcode": "ATOMG",
       "opcode_bits": [
         1,
-        2,
-        12,
-        13,
-        14,
-        15
+        2
       ],
       "operand_text": "PT, R7, desc[UR4][R4.64], R3",
       "operands": [
@@ -2645,11 +1365,7 @@
       "opcode": "ATOMG",
       "opcode_bits": [
         1,
-        2,
-        12,
-        13,
-        14,
-        15
+        2
       ],
       "operand_text": "PT, R6, desc[UR4][R4.64], R2",
       "operands": [
@@ -2806,11 +1522,7 @@
       "opcode": "ATOMG",
       "opcode_bits": [
         1,
-        2,
-        12,
-        13,
-        14,
-        15
+        2
       ],
       "operand_text": "PT, R7, desc[UR4][R4.64], R3",
       "operands": [
@@ -2966,11 +1678,7 @@
       "opcode": "ATOMG",
       "opcode_bits": [
         1,
-        2,
-        12,
-        13,
-        14,
-        15
+        2
       ],
       "operand_text": "PT, R7, desc[UR4][R4.64], R3",
       "operands": [
@@ -3165,12 +1873,7 @@
         "DEFER_BLOCKING"
       ],
       "opcode": "BAR",
-      "opcode_bits": [
-        12,
-        13,
-        14,
-        15
-      ],
+      "opcode_bits": [],
       "operand_text": "0x0",
       "operands": [
         {
@@ -3279,11 +1982,7 @@
         1,
         2,
         3,
-        4,
-        12,
-        13,
-        14,
-        15
+        4
       ],
       "operand_text": "R3, R8, R3",
       "operands": [
@@ -3338,7 +2037,7 @@
       "source_label": "bfi.b32"
     },
     "BRA": {
-      "encoding": "000fc000038000000000000000107947",
+      "encoding": "000fc000038000000000000000080947",
       "inert_bits": [],
       "invalid_bits": [
         3,
@@ -3364,16 +2063,16 @@
         0,
         1,
         2,
-        4,
-        12,
-        13,
-        14,
-        15
+        4
       ],
-      "operand_text": "`(.L_x_3)",
+      "operand_text": "@P0 `(.L_x_0)",
       "operands": [
         {
           "bits": [
+            12,
+            13,
+            14,
+            15,
             16,
             17,
             18,
@@ -3457,14 +2156,14 @@
             126,
             127
           ],
-          "example_after": "0x94",
-          "example_before": "0x50",
+          "example_after": "@P1 0x30",
+          "example_before": "@P0 0x30",
           "slot": 0
         }
       ],
-      "payload": "00000000038000000000000000107947",
-      "source_family": "unary",
-      "source_label": "rcp.rn.f64"
+      "payload": "00000000038000000000000000080947",
+      "source_family": "special",
+      "source_label": "bra.b32"
     },
     "BREV": {
       "encoding": "000e2400000000000000000300047301",
@@ -3563,11 +2262,7 @@
       "opcode_bits": [
         0,
         3,
-        7,
-        12,
-        13,
-        14,
-        15
+        7
       ],
       "operand_text": "R4, R3",
       "operands": [
@@ -3632,13 +2327,9 @@
         1,
         3,
         4,
-        8,
-        12,
-        13,
-        14,
-        15
+        8
       ],
-      "operand_text": "`($__internal_0_$__cuda_sm_9x_mma_sub_byte_internal_m16n8k64_s4_s4)",
+      "operand_text": "`($__internal_0_$__cuda_sm_9x_mma_sub_byte_internal_m16n8k32_s4_s4)",
       "operands": [
         {
           "bits": [
@@ -3736,7 +2427,7 @@
       ],
       "payload": "0000000003c000000000000000207944",
       "source_family": "mma.dense",
-      "source_label": "mma.sync.m16n8k64....s4.s4.s32"
+      "source_label": "mma.sync.m16n8k32....s4.s4.s32"
     },
     "CCTL.IVALL": {
       "encoding": "000fc0000200000000000000ff00798f",
@@ -3854,11 +2545,7 @@
       "opcode": "CCTL",
       "opcode_bits": [
         0,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "",
       "operands": [],
@@ -3979,12 +2666,7 @@
       "modifier_bits": [],
       "modifiers": [],
       "opcode": "CGAERRBAR",
-      "opcode_bits": [
-        12,
-        13,
-        14,
-        15
-      ],
+      "opcode_bits": [],
       "operand_text": "",
       "operands": [],
       "payload": "000000000000000000000000000075ab",
@@ -4089,11 +2771,7 @@
         1,
         2,
         3,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "R10, SRZ",
       "operands": [
@@ -4232,11 +2910,7 @@
         1,
         2,
         3,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "R0, SR_CLOCKLO",
       "operands": [
@@ -4361,11 +3035,7 @@
         1,
         3,
         4,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "R6, -RZ, |R4|",
       "operands": [
@@ -4499,11 +3169,7 @@
         0,
         1,
         3,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "R14, R8, R6, R12",
       "operands": [
@@ -4642,11 +3308,7 @@
       "opcode_bits": [
         3,
         4,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "R2, R2, 8.11296384146066816958e+31",
       "operands": [
@@ -4813,11 +3475,7 @@
       "opcode_bits": [
         0,
         1,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "P0, PT, R6, R2, PT",
       "operands": [
@@ -4978,11 +3636,7 @@
       "opcode_bits": [
         0,
         1,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "P0, PT, R6, R2, PT",
       "operands": [
@@ -5143,11 +3797,7 @@
       "opcode_bits": [
         0,
         1,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "P0, PT, R6, R2, PT",
       "operands": [
@@ -5308,11 +3958,7 @@
       "opcode_bits": [
         0,
         1,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "P0, PT, R4, R6, PT",
       "operands": [
@@ -5473,11 +4119,7 @@
         0,
         1,
         4,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "P0, PT, R6, R2, PT",
       "operands": [
@@ -5616,11 +4258,7 @@
       ],
       "opcode": "DSETP",
       "opcode_bits": [
-        0,
-        12,
-        13,
-        14,
-        15
+        0
       ],
       "operand_text": "P0, PT, |R2|, +INF , PT",
       "operands": [
@@ -5803,11 +4441,7 @@
         0,
         1,
         4,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "P0, PT, R6, R2, PT",
       "operands": [
@@ -5968,11 +4602,7 @@
       "opcode_bits": [
         0,
         1,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "P0, PT, R6, R2, PT",
       "operands": [
@@ -6133,11 +4763,7 @@
       "opcode_bits": [
         0,
         1,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "P0, PT, R6, R2, PT",
       "operands": [
@@ -6298,11 +4924,7 @@
         0,
         1,
         4,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "P0, P1, R4, R6, PT",
       "operands": [
@@ -6463,11 +5085,7 @@
         0,
         1,
         4,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "P0, P1, R4, R6, PT",
       "operands": [
@@ -6628,11 +5246,7 @@
         0,
         1,
         4,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "P0, PT, R6, R2, PT",
       "operands": [
@@ -6793,11 +5407,7 @@
       "opcode_bits": [
         0,
         1,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "P0, PT, R6, R2, PT",
       "operands": [
@@ -6958,11 +5568,7 @@
       "opcode_bits": [
         0,
         1,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "P0, PT, R6, R2, PT",
       "operands": [
@@ -7123,11 +5729,7 @@
         0,
         1,
         4,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "P0, PT, R6, R2, PT",
       "operands": [
@@ -7310,11 +5912,7 @@
         1,
         3,
         6,
-        8,
-        12,
-        13,
-        14,
-        15
+        8
       ],
       "operand_text": "",
       "operands": [
@@ -7332,7 +5930,7 @@
       ],
       "payload": "0000000003800000000000000000791b",
       "source_family": "special",
-      "source_label": "shfl.sync.b32"
+      "source_label": "vote.sync.b32"
     },
     "ERRBAR": {
       "encoding": "000fc0000000000000000000000079ab",
@@ -7447,11 +6045,7 @@
       "modifiers": [],
       "opcode": "ERRBAR",
       "opcode_bits": [
-        2,
-        12,
-        13,
-        14,
-        15
+        2
       ],
       "operand_text": "",
       "operands": [],
@@ -7569,11 +6163,7 @@
         0,
         2,
         3,
-        4,
-        12,
-        13,
-        14,
-        15
+        4
       ],
       "operand_text": "",
       "operands": [
@@ -7591,7 +6181,7 @@
       ],
       "payload": "0000000003800000000000000000794d",
       "source_family": "binary",
-      "source_label": "mul.lo.u16"
+      "source_label": "add.s16"
     },
     "F2F.F32.F64": {
       "encoding": "004e2400003010000000000200077310",
@@ -7692,11 +6282,7 @@
         0,
         1,
         4,
-        8,
-        12,
-        13,
-        14,
-        15
+        8
       ],
       "operand_text": "R7, R2",
       "operands": [
@@ -7835,11 +6421,7 @@
         0,
         1,
         4,
-        8,
-        12,
-        13,
-        14,
-        15
+        8
       ],
       "operand_text": "R7, R2",
       "operands": [
@@ -7981,11 +6563,7 @@
       ],
       "opcode": "F2I",
       "opcode_bits": [
-        2,
-        12,
-        13,
-        14,
-        15
+        2
       ],
       "operand_text": "R5, R4",
       "operands": [
@@ -8024,7 +6602,7 @@
       ],
       "payload": "000000000021f0000000000400057305",
       "source_family": "binary",
-      "source_label": "rem.s32"
+      "source_label": "div.s32"
     },
     "F2I.NTZ": {
       "encoding": "004e2400002031000000000200077305",
@@ -8124,11 +6702,7 @@
       ],
       "opcode": "F2I",
       "opcode_bits": [
-        2,
-        12,
-        13,
-        14,
-        15
+        2
       ],
       "operand_text": "R7, R2",
       "operands": [
@@ -8268,11 +6842,7 @@
         0,
         1,
         4,
-        8,
-        12,
-        13,
-        14,
-        15
+        8
       ],
       "operand_text": "R7, R2",
       "operands": [
@@ -8412,11 +6982,7 @@
       ],
       "opcode": "F2I",
       "opcode_bits": [
-        2,
-        12,
-        13,
-        14,
-        15
+        2
       ],
       "operand_text": "R7, R2",
       "operands": [
@@ -8555,11 +7121,7 @@
         0,
         1,
         4,
-        8,
-        12,
-        13,
-        14,
-        15
+        8
       ],
       "operand_text": "R4, R2",
       "operands": [
@@ -8699,11 +7261,7 @@
       "opcode_bits": [
         1,
         4,
-        8,
-        12,
-        13,
-        14,
-        15
+        8
       ],
       "operand_text": "R4, R2",
       "operands": [
@@ -8843,11 +7401,7 @@
         0,
         1,
         4,
-        8,
-        12,
-        13,
-        14,
-        15
+        8
       ],
       "operand_text": "R7, R2",
       "operands": [
@@ -8987,11 +7541,7 @@
       ],
       "opcode": "F2I",
       "opcode_bits": [
-        2,
-        12,
-        13,
-        14,
-        15
+        2
       ],
       "operand_text": "R7, R2",
       "operands": [
@@ -9131,11 +7681,7 @@
         0,
         1,
         4,
-        8,
-        12,
-        13,
-        14,
-        15
+        8
       ],
       "operand_text": "R7, R2",
       "operands": [
@@ -9275,11 +7821,7 @@
       ],
       "opcode": "F2I",
       "opcode_bits": [
-        2,
-        12,
-        13,
-        14,
-        15
+        2
       ],
       "operand_text": "R7, R2",
       "operands": [
@@ -9418,11 +7960,7 @@
         0,
         1,
         4,
-        8,
-        12,
-        13,
-        14,
-        15
+        8
       ],
       "operand_text": "R4, R2",
       "operands": [
@@ -9562,11 +8100,7 @@
       "opcode_bits": [
         1,
         4,
-        8,
-        12,
-        13,
-        14,
-        15
+        8
       ],
       "operand_text": "R4, R2",
       "operands": [
@@ -9693,10 +8227,6 @@
         3,
         4,
         8,
-        12,
-        13,
-        14,
-        15,
         81
       ],
       "operand_text": "R4, -RZ, |R0|",
@@ -9843,10 +8373,6 @@
         3,
         4,
         8,
-        12,
-        13,
-        14,
-        15,
         81
       ],
       "operand_text": "R5, -RZ, |R4|",
@@ -9993,10 +8519,6 @@
         2,
         3,
         4,
-        12,
-        13,
-        14,
-        15,
         81
       ],
       "operand_text": "R2, R6, R2",
@@ -10143,10 +8665,6 @@
         2,
         3,
         4,
-        12,
-        13,
-        14,
-        15,
         81
       ],
       "operand_text": "R2, R6, R2",
@@ -10293,10 +8811,6 @@
         2,
         3,
         4,
-        12,
-        13,
-        14,
-        15,
         81
       ],
       "operand_text": "R2, R6, R2",
@@ -10431,10 +8945,6 @@
         3,
         4,
         5,
-        12,
-        13,
-        14,
-        15,
         81
       ],
       "operand_text": "R8, R8, R5, R0",
@@ -10606,11 +9116,7 @@
       "opcode_bits": [
         0,
         1,
-        3,
-        12,
-        13,
-        14,
-        15
+        3
       ],
       "operand_text": "R0, UR6",
       "operands": [
@@ -10648,7 +9154,7 @@
       ],
       "payload": "00000000080e00000000000600007d00",
       "source_family": "atomic",
-      "source_label": "atom.add.global.s32"
+      "source_label": "atom.add.global.u32"
     },
     "FMNMX": {
       "encoding": "000fc000038000000000000206027209",
@@ -10732,11 +9238,7 @@
         1,
         4,
         5,
-        8,
-        12,
-        13,
-        14,
-        15
+        8
       ],
       "operand_text": "R2, R6, R2, PT",
       "operands": [
@@ -10891,11 +9393,7 @@
         0,
         2,
         3,
-        4,
-        12,
-        13,
-        14,
-        15
+        4
       ],
       "operand_text": "R0, R2, R7",
       "operands": [
@@ -11041,11 +9539,7 @@
         0,
         2,
         3,
-        4,
-        12,
-        13,
-        14,
-        15
+        4
       ],
       "operand_text": "R5, R4, R0",
       "operands": [
@@ -11169,11 +9663,7 @@
         1,
         2,
         3,
-        8,
-        12,
-        13,
-        14,
-        15
+        8
       ],
       "operand_text": "R0, R2, 0.15915493667125701904",
       "operands": [
@@ -11251,7 +9741,7 @@
       ],
       "payload": "000000000040c0003e22f98302007820",
       "source_family": "unary",
-      "source_label": "sin.approx.f32"
+      "source_label": "cos.approx.f32"
     },
     "FMUL.SAT": {
       "encoding": "000fc000004020000000000206027220",
@@ -11341,11 +9831,7 @@
         0,
         2,
         3,
-        4,
-        12,
-        13,
-        14,
-        15
+        4
       ],
       "operand_text": "R2, R6, R2",
       "operands": [
@@ -11485,11 +9971,7 @@
         2,
         5,
         6,
-        8,
-        12,
-        13,
-        14,
-        15
+        8
       ],
       "operand_text": "R3, R6, R2, P0",
       "operands": [
@@ -11645,11 +10127,7 @@
         1,
         3,
         4,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "P0, PT, R6, R2, PT",
       "operands": [
@@ -11811,11 +10289,7 @@
         1,
         3,
         4,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "P0, PT, R5, R8, PT",
       "operands": [
@@ -11976,11 +10450,7 @@
         1,
         3,
         4,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "P0, PT, R6, R2, PT",
       "operands": [
@@ -12141,11 +10611,7 @@
         1,
         3,
         4,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "P0, PT, R6, R2, PT",
       "operands": [
@@ -12284,11 +10750,7 @@
         1,
         3,
         4,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "P0, PT, R6, 5.8789094863358348022e-39, PT",
       "operands": [
@@ -12472,11 +10934,7 @@
         1,
         3,
         4,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "P0, PT, R0, RZ, PT",
       "operands": [
@@ -12637,11 +11095,7 @@
         1,
         3,
         4,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "P0, PT, R6, R2, PT",
       "operands": [
@@ -12802,11 +11256,7 @@
         1,
         3,
         4,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "P0, PT, R0, R5, PT",
       "operands": [
@@ -12946,11 +11396,7 @@
         1,
         3,
         4,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "P0, PT, |R0|, +INF , PT",
       "operands": [
@@ -13133,11 +11579,7 @@
         1,
         3,
         4,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "P0, PT, R6, R2, PT",
       "operands": [
@@ -13299,11 +11741,7 @@
         1,
         3,
         4,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "P0, PT, R5, R8, PT",
       "operands": [
@@ -13464,11 +11902,7 @@
         1,
         3,
         4,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "P0, PT, R2, R0, PT",
       "operands": [
@@ -13630,11 +12064,7 @@
         1,
         3,
         4,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "P0, PT, R4, R5, PT",
       "operands": [
@@ -13795,11 +12225,7 @@
         1,
         3,
         4,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "P0, PT, R6, R2, PT",
       "operands": [
@@ -13960,11 +12386,7 @@
         1,
         3,
         4,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "P0, PT, R6, R2, PT",
       "operands": [
@@ -14125,11 +12547,7 @@
         1,
         3,
         4,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "P0, PT, R6, R2, PT",
       "operands": [
@@ -14290,11 +12708,7 @@
         1,
         3,
         4,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "P0, PT, R6, R2, PT",
       "operands": [
@@ -14434,11 +12848,7 @@
         1,
         3,
         4,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "P0, PT, |R0|, +INF , PT",
       "operands": [
@@ -14621,11 +13031,7 @@
         1,
         3,
         4,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "P0, PT, R6, R2, PT",
       "operands": [
@@ -14748,11 +13154,7 @@
         0,
         1,
         4,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "R3, -RZ, RZ, 0, 0",
       "operands": [
@@ -14940,11 +13342,7 @@
         1,
         2,
         3,
-        4,
-        12,
-        13,
-        14,
-        15
+        4
       ],
       "operand_text": "R4, R4, R18, R12",
       "operands": [
@@ -15095,11 +13493,7 @@
       "opcode_bits": [
         2,
         3,
-        4,
-        12,
-        13,
-        14,
-        15
+        4
       ],
       "operand_text": "R4, R4, R18, R12",
       "operands": [
@@ -15250,11 +13644,7 @@
       "opcode_bits": [
         2,
         3,
-        4,
-        12,
-        13,
-        14,
-        15
+        4
       ],
       "operand_text": "R4, R10, R0, R4",
       "operands": [
@@ -15404,11 +13794,7 @@
         1,
         2,
         3,
-        4,
-        12,
-        13,
-        14,
-        15
+        4
       ],
       "operand_text": "R4, R10, R0, R4",
       "operands": [
@@ -15559,11 +13945,7 @@
       "opcode_bits": [
         2,
         3,
-        4,
-        12,
-        13,
-        14,
-        15
+        4
       ],
       "operand_text": "R4, R10, R0, R4",
       "operands": [
@@ -15714,11 +14096,7 @@
       "opcode_bits": [
         2,
         3,
-        4,
-        12,
-        13,
-        14,
-        15
+        4
       ],
       "operand_text": "R4, R4, R18, R12",
       "operands": [
@@ -15889,11 +14267,7 @@
         1,
         4,
         6,
-        8,
-        12,
-        13,
-        14,
-        15
+        8
       ],
       "operand_text": "R4, R2",
       "operands": [
@@ -16031,11 +14405,7 @@
         1,
         4,
         6,
-        8,
-        12,
-        13,
-        14,
-        15
+        8
       ],
       "operand_text": "R4, R2",
       "operands": [
@@ -16177,11 +14547,7 @@
         0,
         4,
         6,
-        8,
-        12,
-        13,
-        14,
-        15
+        8
       ],
       "operand_text": "R4, R2",
       "operands": [
@@ -16319,11 +14685,7 @@
         1,
         4,
         6,
-        8,
-        12,
-        13,
-        14,
-        15
+        8
       ],
       "operand_text": "R4, R2",
       "operands": [
@@ -16465,11 +14827,7 @@
         1,
         4,
         6,
-        8,
-        12,
-        13,
-        14,
-        15
+        8
       ],
       "operand_text": "R4, R2",
       "operands": [
@@ -16609,11 +14967,7 @@
         0,
         4,
         6,
-        8,
-        12,
-        13,
-        14,
-        15
+        8
       ],
       "operand_text": "R4, R2",
       "operands": [
@@ -16752,11 +15106,7 @@
       "opcode_bits": [
         0,
         2,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "R6, R8",
       "operands": [
@@ -16893,11 +15243,7 @@
       "opcode_bits": [
         1,
         2,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "R7, R2",
       "operands": [
@@ -17038,11 +15384,7 @@
         1,
         4,
         6,
-        8,
-        12,
-        13,
-        14,
-        15
+        8
       ],
       "operand_text": "R7, R2",
       "operands": [
@@ -17179,11 +15521,7 @@
         1,
         2,
         5,
-        7,
-        12,
-        13,
-        14,
-        15
+        7
       ],
       "operand_text": "R2, R2",
       "operands": [
@@ -17325,11 +15663,7 @@
         0,
         2,
         5,
-        7,
-        12,
-        13,
-        14,
-        15
+        7
       ],
       "operand_text": "R4, R0",
       "operands": [
@@ -17366,7 +15700,7 @@
       ],
       "payload": "00000000002090000000000000047306",
       "source_family": "binary",
-      "source_label": "div.u32"
+      "source_label": "rem.u32"
     },
     "I2F.U64": {
       "encoding": "004e2400003010000000000200077312",
@@ -17468,11 +15802,7 @@
         1,
         4,
         6,
-        8,
-        12,
-        13,
-        14,
-        15
+        8
       ],
       "operand_text": "R7, R2",
       "operands": [
@@ -17612,12 +15942,7 @@
         "S32"
       ],
       "opcode": "I2FP",
-      "opcode_bits": [
-        12,
-        13,
-        14,
-        15
-      ],
+      "opcode_bits": [],
       "operand_text": "R7, R2",
       "operands": [
         {
@@ -17756,12 +16081,7 @@
         "U32"
       ],
       "opcode": "I2FP",
-      "opcode_bits": [
-        12,
-        13,
-        14,
-        15
-      ],
+      "opcode_bits": [],
       "operand_text": "R7, R2",
       "operands": [
         {
@@ -17797,7 +16117,7 @@
       ],
       "payload": "00000000002010000000000200077245",
       "source_family": "convert",
-      "source_label": "cvt.rn.f32.u16"
+      "source_label": "cvt.rn.f32.u32"
     },
     "IABS": {
       "encoding": "000fc000000000000000000000047213",
@@ -17896,11 +16216,7 @@
         3,
         4,
         5,
-        8,
-        12,
-        13,
-        14,
-        15
+        8
       ],
       "operand_text": "R4, R0",
       "operands": [
@@ -18024,11 +16340,7 @@
         0,
         1,
         2,
-        4,
-        12,
-        13,
-        14,
-        15
+        4
       ],
       "operand_text": "R4, P1, R6, R12",
       "operands": [
@@ -18158,11 +16470,7 @@
       "opcode": "IADD",
       "opcode_bits": [
         2,
-        4,
-        12,
-        13,
-        14,
-        15
+        4
       ],
       "operand_text": "R4, R2, 0x4",
       "operands": [
@@ -18324,11 +16632,7 @@
         0,
         1,
         2,
-        4,
-        12,
-        13,
-        14,
-        15
+        4
       ],
       "operand_text": "R4, RZ, RZ, P0",
       "operands": [
@@ -18468,11 +16772,7 @@
       "opcode": "IADD3",
       "opcode_bits": [
         0,
-        1,
-        12,
-        13,
-        14,
-        15
+        1
       ],
       "operand_text": "R7, PT, PT, R5, R8, R12",
       "operands": [
@@ -18649,11 +16949,7 @@
         0,
         1,
         4,
-        8,
-        12,
-        13,
-        14,
-        15
+        8
       ],
       "operand_text": "R0, R0, R6, R2",
       "operands": [
@@ -18804,11 +17100,7 @@
         3,
         4,
         5,
-        8,
-        12,
-        13,
-        14,
-        15
+        8
       ],
       "operand_text": "R3, R7, R8, RZ",
       "operands": [
@@ -18958,11 +17250,7 @@
         0,
         2,
         4,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "R0, R0, R6, R2",
       "operands": [
@@ -19113,11 +17401,7 @@
         0,
         2,
         4,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "R0, R0, R6, R2",
       "operands": [
@@ -19287,11 +17571,7 @@
       "opcode_bits": [
         2,
         5,
-        8,
-        12,
-        13,
-        14,
-        15
+        8
       ],
       "operand_text": "R22, R2, 0x10, RZ",
       "operands": [
@@ -19421,11 +17701,7 @@
         3,
         4,
         5,
-        8,
-        12,
-        13,
-        14,
-        15
+        8
       ],
       "operand_text": "R5, R4, R0, RZ",
       "operands": [
@@ -19493,7 +17769,7 @@
       ],
       "payload": "00000000078e00ff0000000004057224",
       "source_family": "binary",
-      "source_label": "div.u32"
+      "source_label": "rem.u32"
     },
     "IMAD.WIDE": {
       "encoding": "000fc000078e02ff0000000206027225",
@@ -19575,11 +17851,7 @@
       "opcode": "IMAD",
       "opcode_bits": [
         2,
-        4,
-        12,
-        13,
-        14,
-        15
+        4
       ],
       "operand_text": "R2, R6, R2, RZ",
       "operands": [
@@ -19730,11 +18002,7 @@
       "opcode": "IMAD",
       "opcode_bits": [
         2,
-        4,
-        12,
-        13,
-        14,
-        15
+        4
       ],
       "operand_text": "R10, P0, R4, R7, R8",
       "operands": [
@@ -19892,11 +18160,7 @@
       "opcode": "IMAD",
       "opcode_bits": [
         2,
-        4,
-        12,
-        13,
-        14,
-        15
+        4
       ],
       "operand_text": "R8, R5, R7, R12, P0",
       "operands": [
@@ -20057,11 +18321,7 @@
         2,
         3,
         4,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "R4, R12.ROW, R5.COL, RZ",
       "operands": [
@@ -20212,11 +18472,7 @@
         2,
         3,
         4,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "R4, R4.ROW, R18.COL, R12",
       "operands": [
@@ -20367,11 +18623,7 @@
         2,
         3,
         4,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "R4, R4.ROW, R18.COL, R12",
       "operands": [
@@ -20522,11 +18774,7 @@
         2,
         3,
         4,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "R4, R4.ROW, R18.COL, R12",
       "operands": [
@@ -20668,11 +18916,7 @@
         2,
         3,
         4,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "R4, R16.ROW, R4.COL, R8, R0, 0x0",
       "operands": [
@@ -20845,11 +19089,7 @@
         2,
         3,
         4,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "PT, PT, R2, R6, R2, PT, !PT",
       "operands": [
@@ -21023,11 +19263,7 @@
         2,
         3,
         4,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "PT, PT, R2, R6, R2, PT, !PT",
       "operands": [
@@ -21214,11 +19450,7 @@
       "opcode_bits": [
         2,
         3,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "P0, PT, R6, R2, PT",
       "operands": [
@@ -21380,11 +19612,7 @@
       "opcode_bits": [
         2,
         3,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "P0, PT, R6, R2, PT",
       "operands": [
@@ -21546,11 +19774,7 @@
       "opcode_bits": [
         2,
         3,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "P0, PT, R6, R2, PT",
       "operands": [
@@ -21711,11 +19935,7 @@
       "opcode_bits": [
         2,
         3,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "P0, PT, R6, R2, PT",
       "operands": [
@@ -21877,11 +20097,7 @@
       "opcode_bits": [
         2,
         3,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "P0, PT, R6, R2, PT",
       "operands": [
@@ -22043,11 +20259,7 @@
       "opcode_bits": [
         2,
         3,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "P0, PT, R4, R0, PT",
       "operands": [
@@ -22115,7 +20327,7 @@
       ],
       "payload": "0000000003f06070000000000400720c",
       "source_family": "binary",
-      "source_label": "div.u32"
+      "source_label": "rem.u32"
     },
     "ISETP.GT.AND": {
       "encoding": "000fc00003f04270000000020600720c",
@@ -22208,11 +20420,7 @@
       "opcode_bits": [
         2,
         3,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "P0, PT, R6, R2, PT",
       "operands": [
@@ -22373,11 +20581,7 @@
       "opcode_bits": [
         2,
         3,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "P0, PT, R0, RZ, P0",
       "operands": [
@@ -22539,11 +20743,7 @@
       "opcode_bits": [
         2,
         3,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "P0, PT, R6, R2, PT",
       "operands": [
@@ -22705,11 +20905,7 @@
       "opcode_bits": [
         2,
         3,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "P0, PT, R6, R2, PT",
       "operands": [
@@ -22870,11 +21066,7 @@
       "opcode_bits": [
         2,
         3,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "P0, PT, R6, R2, PT",
       "operands": [
@@ -23036,11 +21228,7 @@
       "opcode_bits": [
         2,
         3,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "P0, PT, R6, R2, PT",
       "operands": [
@@ -23202,11 +21390,7 @@
       "opcode_bits": [
         2,
         3,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "P0, PT, R6, R2, PT",
       "operands": [
@@ -23367,11 +21551,7 @@
       "opcode_bits": [
         2,
         3,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "P0, PT, R6, R2, PT",
       "operands": [
@@ -23533,11 +21713,7 @@
       "opcode_bits": [
         2,
         3,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "P0, PT, R6, R2, PT",
       "operands": [
@@ -23699,11 +21875,7 @@
       "opcode_bits": [
         2,
         3,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "P0, PT, R6, R2, PT",
       "operands": [
@@ -23864,11 +22036,7 @@
       "opcode_bits": [
         2,
         3,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "P0, PT, R6, R2, PT",
       "operands": [
@@ -24030,11 +22198,7 @@
       "opcode_bits": [
         2,
         3,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "P0, PT, R6, R2, PT",
       "operands": [
@@ -24196,11 +22360,7 @@
       "opcode_bits": [
         2,
         3,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "P0, PT, R6, R2, PT",
       "operands": [
@@ -24347,12 +22507,7 @@
       ],
       "modifiers": [],
       "opcode": "LDC",
-      "opcode_bits": [
-        12,
-        13,
-        14,
-        15
-      ],
+      "opcode_bits": [],
       "operand_text": "R2, c[0x0][0x380]",
       "operands": [
         {
@@ -24490,12 +22645,7 @@
         "64"
       ],
       "opcode": "LDC",
-      "opcode_bits": [
-        12,
-        13,
-        14,
-        15
-      ],
+      "opcode_bits": [],
       "operand_text": "R4, c[0x0][0x140]",
       "operands": [
         {
@@ -24633,12 +22783,7 @@
         "U16"
       ],
       "opcode": "LDC",
-      "opcode_bits": [
-        12,
-        13,
-        14,
-        15
-      ],
+      "opcode_bits": [],
       "operand_text": "R0, c[0x3][R0]",
       "operands": [
         {
@@ -24773,12 +22918,7 @@
       ],
       "modifiers": [],
       "opcode": "LDCU",
-      "opcode_bits": [
-        12,
-        13,
-        14,
-        15
-      ],
+      "opcode_bits": [],
       "operand_text": "UR4, c[0x0][0x380]",
       "operands": [
         {
@@ -24916,12 +23056,7 @@
         "64"
       ],
       "opcode": "LDCU",
-      "opcode_bits": [
-        12,
-        13,
-        14,
-        15
-      ],
+      "opcode_bits": [],
       "operand_text": "UR4, c[0x0][0x358]",
       "operands": [
         {
@@ -25041,11 +23176,7 @@
       "opcode": "LDG",
       "opcode_bits": [
         0,
-        1,
-        12,
-        13,
-        14,
-        15
+        1
       ],
       "operand_text": "R0, desc[UR4][R2.64]",
       "operands": [
@@ -25178,11 +23309,7 @@
       "opcode": "LDG",
       "opcode_bits": [
         0,
-        1,
-        12,
-        13,
-        14,
-        15
+        1
       ],
       "operand_text": "R6, desc[UR4][R2.64+0x8]",
       "operands": [
@@ -25316,11 +23443,7 @@
       "opcode_bits": [
         0,
         1,
-        2,
-        12,
-        13,
-        14,
-        15
+        2
       ],
       "operand_text": "R2, desc[UR4][R2.64]",
       "operands": [
@@ -25453,11 +23576,7 @@
       "opcode": "LDG",
       "opcode_bits": [
         0,
-        1,
-        12,
-        13,
-        14,
-        15
+        1
       ],
       "operand_text": "R3, desc[UR4][R2.64]",
       "operands": [
@@ -25590,11 +23709,7 @@
       "opcode": "LDG",
       "opcode_bits": [
         0,
-        1,
-        12,
-        13,
-        14,
-        15
+        1
       ],
       "operand_text": "R3, desc[UR4][R2.64]",
       "operands": [
@@ -25727,11 +23842,7 @@
       "opcode": "LDG",
       "opcode_bits": [
         0,
-        1,
-        12,
-        13,
-        14,
-        15
+        1
       ],
       "operand_text": "R3, desc[UR4][R2.64]",
       "operands": [
@@ -25864,11 +23975,7 @@
       "opcode": "LDG",
       "opcode_bits": [
         0,
-        1,
-        12,
-        13,
-        14,
-        15
+        1
       ],
       "operand_text": "R4, desc[UR4][R2.64+0x2]",
       "operands": [
@@ -25938,7 +24045,7 @@
       ],
       "payload": "000000000c1e17000000020402047981",
       "source_family": "binary",
-      "source_label": "max.s16"
+      "source_label": "min.s16"
     },
     "LDG.E.STRONG.GPU": {
       "encoding": "001eac000c1ef9000000000402037981",
@@ -26002,11 +24109,7 @@
       "opcode": "LDG",
       "opcode_bits": [
         0,
-        1,
-        12,
-        13,
-        14,
-        15
+        1
       ],
       "operand_text": "R3, desc[UR4][R2.64]",
       "operands": [
@@ -26140,11 +24243,7 @@
       "opcode": "LDG",
       "opcode_bits": [
         0,
-        1,
-        12,
-        13,
-        14,
-        15
+        1
       ],
       "operand_text": "R3, desc[UR4][R2.64]",
       "operands": [
@@ -26278,11 +24377,7 @@
       "opcode": "LDG",
       "opcode_bits": [
         0,
-        1,
-        12,
-        13,
-        14,
-        15
+        1
       ],
       "operand_text": "R3, desc[UR4][R2.64]",
       "operands": [
@@ -26415,11 +24510,7 @@
       "opcode": "LDG",
       "opcode_bits": [
         0,
-        1,
-        12,
-        13,
-        14,
-        15
+        1
       ],
       "operand_text": "R4, desc[UR4][R2.64+0x2]",
       "operands": [
@@ -26489,7 +24580,7 @@
       ],
       "payload": "000000000c1e15000000020402047981",
       "source_family": "binary",
-      "source_label": "min.u16"
+      "source_label": "max.u16"
     },
     "LDL": {
       "encoding": "001ea2000810080000000004ff057983",
@@ -26555,11 +24646,7 @@
       "opcode_bits": [
         1,
         5,
-        8,
-        12,
-        13,
-        14,
-        15
+        8
       ],
       "operand_text": "R5, [UR4]",
       "operands": [
@@ -26707,11 +24794,7 @@
       ],
       "opcode": "LDL",
       "opcode_bits": [
-        6,
-        12,
-        13,
-        14,
-        15
+        6
       ],
       "operand_text": "R2, [R0]",
       "operands": [
@@ -26841,11 +24924,7 @@
       "opcode_bits": [
         1,
         5,
-        8,
-        12,
-        13,
-        14,
-        15
+        8
       ],
       "operand_text": "R5, [UR4]",
       "operands": [
@@ -26981,11 +25060,7 @@
       "opcode_bits": [
         2,
         3,
-        8,
-        12,
-        13,
-        14,
-        15
+        8
       ],
       "operand_text": "R5, [UR4]",
       "operands": [
@@ -27132,11 +25207,7 @@
       ],
       "opcode": "LDS",
       "opcode_bits": [
-        2,
-        12,
-        13,
-        14,
-        15
+        2
       ],
       "operand_text": "R2, [R0]",
       "operands": [
@@ -27267,11 +25338,7 @@
       "opcode_bits": [
         2,
         3,
-        8,
-        12,
-        13,
-        14,
-        15
+        8
       ],
       "operand_text": "R5, [UR4]",
       "operands": [
@@ -27413,12 +25480,7 @@
         "M88"
       ],
       "opcode": "LDSM",
-      "opcode_bits": [
-        12,
-        13,
-        14,
-        15
-      ],
+      "opcode_bits": [],
       "operand_text": "R5, [UR4]",
       "operands": [
         {
@@ -27558,12 +25620,7 @@
         "2"
       ],
       "opcode": "LDSM",
-      "opcode_bits": [
-        12,
-        13,
-        14,
-        15
-      ],
+      "opcode_bits": [],
       "operand_text": "R4, [UR4]",
       "operands": [
         {
@@ -27703,12 +25760,7 @@
         "4"
       ],
       "opcode": "LDSM",
-      "opcode_bits": [
-        12,
-        13,
-        14,
-        15
-      ],
+      "opcode_bits": [],
       "operand_text": "R4, [UR4]",
       "operands": [
         {
@@ -27847,12 +25899,7 @@
         "MT88"
       ],
       "opcode": "LDSM",
-      "opcode_bits": [
-        12,
-        13,
-        14,
-        15
-      ],
+      "opcode_bits": [],
       "operand_text": "R5, [UR4]",
       "operands": [
         {
@@ -27992,12 +26039,7 @@
         "2"
       ],
       "opcode": "LDSM",
-      "opcode_bits": [
-        12,
-        13,
-        14,
-        15
-      ],
+      "opcode_bits": [],
       "operand_text": "R4, [UR4]",
       "operands": [
         {
@@ -28137,12 +26179,7 @@
         "4"
       ],
       "opcode": "LDSM",
-      "opcode_bits": [
-        12,
-        13,
-        14,
-        15
-      ],
+      "opcode_bits": [],
       "operand_text": "R4, [UR4]",
       "operands": [
         {
@@ -28293,11 +26330,7 @@
         0,
         1,
         3,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "R0, R2, R0, 0x18",
       "operands": [
@@ -28410,11 +26443,7 @@
         2,
         3,
         4,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "P0, RZ, R12, 0x1, RZ, 0xc0, !PT",
       "operands": [
@@ -28643,11 +26672,7 @@
         0,
         1,
         3,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "R0, R2",
       "operands": [
@@ -28803,11 +26828,7 @@
       "opcode": "MEMBAR",
       "opcode_bits": [
         1,
-        3,
-        12,
-        13,
-        14,
-        15
+        3
       ],
       "operand_text": "",
       "operands": [],
@@ -28909,11 +26930,7 @@
         0,
         3,
         4,
-        8,
-        12,
-        13,
-        14,
-        15
+        8
       ],
       "operand_text": "R2, R0",
       "operands": [
@@ -29052,11 +27069,7 @@
         0,
         3,
         4,
-        8,
-        12,
-        13,
-        14,
-        15
+        8
       ],
       "operand_text": "R4, R2",
       "operands": [
@@ -29196,11 +27209,7 @@
         3,
         4,
         5,
-        6,
-        12,
-        13,
-        14,
-        15
+        6
       ],
       "operand_text": "R7, R2",
       "operands": [
@@ -29337,11 +27346,7 @@
       "opcode_bits": [
         0,
         3,
-        8,
-        12,
-        13,
-        14,
-        15
+        8
       ],
       "operand_text": "R7, R7",
       "operands": [
@@ -29480,11 +27485,7 @@
       "opcode_bits": [
         0,
         3,
-        8,
-        12,
-        13,
-        14,
-        15
+        8
       ],
       "operand_text": "R7, R0",
       "operands": [
@@ -29623,11 +27624,7 @@
       "opcode_bits": [
         0,
         3,
-        8,
-        12,
-        13,
-        14,
-        15
+        8
       ],
       "operand_text": "R7, R0",
       "operands": [
@@ -29766,11 +27763,7 @@
       "opcode_bits": [
         0,
         3,
-        8,
-        12,
-        13,
-        14,
-        15
+        8
       ],
       "operand_text": "R0, R0",
       "operands": [
@@ -29909,11 +27902,7 @@
       "opcode_bits": [
         0,
         3,
-        8,
-        12,
-        13,
-        14,
-        15
+        8
       ],
       "operand_text": "R7, R5",
       "operands": [
@@ -30052,11 +28041,7 @@
       "opcode_bits": [
         0,
         3,
-        8,
-        12,
-        13,
-        14,
-        15
+        8
       ],
       "operand_text": "R5, R0",
       "operands": [
@@ -30195,11 +28180,7 @@
       "opcode_bits": [
         0,
         3,
-        8,
-        12,
-        13,
-        14,
-        15
+        8
       ],
       "operand_text": "R7, R7",
       "operands": [
@@ -30338,11 +28319,7 @@
       "opcode_bits": [
         0,
         3,
-        8,
-        12,
-        13,
-        14,
-        15
+        8
       ],
       "operand_text": "R7, R0",
       "operands": [
@@ -30496,17 +28473,13 @@
         0,
         1,
         4,
-        7,
-        12,
-        13,
-        14,
-        15
+        7
       ],
       "operand_text": "",
       "operands": [],
       "payload": "00000000000000000000000000007918",
       "source_family": "binary",
-      "source_label": "mul.lo.u16"
+      "source_label": "add.s16"
     },
     "OMMA.SF.16864.F32.E2M1.E2M1.E8": {
       "encoding": "000fc00000083e0c7020120a0404747f",
@@ -30566,12 +28539,7 @@
         "E8"
       ],
       "opcode": "OMMA",
-      "opcode_bits": [
-        12,
-        13,
-        14,
-        15
-      ],
+      "opcode_bits": [],
       "operand_text": "R4, R4, R10, R12, R18, R2, URZ",
       "operands": [
         {
@@ -30746,12 +28714,7 @@
         "4X"
       ],
       "opcode": "OMMA",
-      "opcode_bits": [
-        12,
-        13,
-        14,
-        15
-      ],
+      "opcode_bits": [],
       "operand_text": "R4, R4, R10, R12, R18, R2, URZ",
       "operands": [
         {
@@ -30947,11 +28910,7 @@
       "opcode": "PLOP3",
       "opcode_bits": [
         4,
-        7,
-        12,
-        13,
-        14,
-        15
+        7
       ],
       "operand_text": "P0, PT, P0, PT, PT, 0x8, 0x80",
       "operands": [
@@ -31140,11 +29099,7 @@
         0,
         3,
         7,
-        8,
-        12,
-        13,
-        14,
-        15
+        8
       ],
       "operand_text": "R13, R0",
       "operands": [
@@ -31242,11 +29197,7 @@
         0,
         2,
         4,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "R3, RZ, 0x4, R0",
       "operands": [
@@ -31420,11 +29371,7 @@
       ],
       "opcode": "QMMA",
       "opcode_bits": [
-        6,
-        12,
-        13,
-        14,
-        15
+        6
       ],
       "operand_text": "R4, R4, R18, R12",
       "operands": [
@@ -31576,11 +29523,7 @@
       ],
       "opcode": "QMMA",
       "opcode_bits": [
-        6,
-        12,
-        13,
-        14,
-        15
+        6
       ],
       "operand_text": "R4, R4, R18, R12",
       "operands": [
@@ -31732,11 +29675,7 @@
       ],
       "opcode": "QMMA",
       "opcode_bits": [
-        6,
-        12,
-        13,
-        14,
-        15
+        6
       ],
       "operand_text": "R4, R4, R18, R12",
       "operands": [
@@ -31888,11 +29827,7 @@
       ],
       "opcode": "QMMA",
       "opcode_bits": [
-        6,
-        12,
-        13,
-        14,
-        15
+        6
       ],
       "operand_text": "R4, R4, R18, R12",
       "operands": [
@@ -32044,11 +29979,7 @@
       ],
       "opcode": "QMMA",
       "opcode_bits": [
-        6,
-        12,
-        13,
-        14,
-        15
+        6
       ],
       "operand_text": "R4, R4, R18, R12",
       "operands": [
@@ -32200,11 +30131,7 @@
       ],
       "opcode": "QMMA",
       "opcode_bits": [
-        6,
-        12,
-        13,
-        14,
-        15
+        6
       ],
       "operand_text": "R4, R4, R18, R12",
       "operands": [
@@ -32356,11 +30283,7 @@
       ],
       "opcode": "QMMA",
       "opcode_bits": [
-        6,
-        12,
-        13,
-        14,
-        15
+        6
       ],
       "operand_text": "R4, R4, R18, R12",
       "operands": [
@@ -32512,11 +30435,7 @@
       ],
       "opcode": "QMMA",
       "opcode_bits": [
-        6,
-        12,
-        13,
-        14,
-        15
+        6
       ],
       "operand_text": "R4, R4, R18, R12",
       "operands": [
@@ -32668,11 +30587,7 @@
       ],
       "opcode": "QMMA",
       "opcode_bits": [
-        6,
-        12,
-        13,
-        14,
-        15
+        6
       ],
       "operand_text": "R4, R4, R18, R12",
       "operands": [
@@ -32824,11 +30739,7 @@
       ],
       "opcode": "QMMA",
       "opcode_bits": [
-        6,
-        12,
-        13,
-        14,
-        15
+        6
       ],
       "operand_text": "R4, R4, R18, R12",
       "operands": [
@@ -32980,11 +30891,7 @@
       ],
       "opcode": "QMMA",
       "opcode_bits": [
-        6,
-        12,
-        13,
-        14,
-        15
+        6
       ],
       "operand_text": "R4, R4, R18, R12",
       "operands": [
@@ -33136,11 +31043,7 @@
       ],
       "opcode": "QMMA",
       "opcode_bits": [
-        6,
-        12,
-        13,
-        14,
-        15
+        6
       ],
       "operand_text": "R4, R4, R18, R12",
       "operands": [
@@ -33292,11 +31195,7 @@
       ],
       "opcode": "QMMA",
       "opcode_bits": [
-        6,
-        12,
-        13,
-        14,
-        15
+        6
       ],
       "operand_text": "R4, R4, R18, R12",
       "operands": [
@@ -33448,11 +31347,7 @@
       ],
       "opcode": "QMMA",
       "opcode_bits": [
-        6,
-        12,
-        13,
-        14,
-        15
+        6
       ],
       "operand_text": "R4, R4, R18, R12",
       "operands": [
@@ -33604,11 +31499,7 @@
       ],
       "opcode": "QMMA",
       "opcode_bits": [
-        6,
-        12,
-        13,
-        14,
-        15
+        6
       ],
       "operand_text": "R4, R4, R18, R12",
       "operands": [
@@ -33760,11 +31651,7 @@
       ],
       "opcode": "QMMA",
       "opcode_bits": [
-        6,
-        12,
-        13,
-        14,
-        15
+        6
       ],
       "operand_text": "R4, R4, R18, R12",
       "operands": [
@@ -33916,11 +31803,7 @@
       ],
       "opcode": "QMMA",
       "opcode_bits": [
-        6,
-        12,
-        13,
-        14,
-        15
+        6
       ],
       "operand_text": "R4, R4, R18, R12",
       "operands": [
@@ -34072,11 +31955,7 @@
       ],
       "opcode": "QMMA",
       "opcode_bits": [
-        6,
-        12,
-        13,
-        14,
-        15
+        6
       ],
       "operand_text": "R4, R4, R18, R12",
       "operands": [
@@ -34228,11 +32107,7 @@
       ],
       "opcode": "QMMA",
       "opcode_bits": [
-        6,
-        12,
-        13,
-        14,
-        15
+        6
       ],
       "operand_text": "R4, R4, R18, R12",
       "operands": [
@@ -34384,11 +32259,7 @@
       ],
       "opcode": "QMMA",
       "opcode_bits": [
-        6,
-        12,
-        13,
-        14,
-        15
+        6
       ],
       "operand_text": "R4, R4, R18, R12",
       "operands": [
@@ -34540,11 +32411,7 @@
       ],
       "opcode": "QMMA",
       "opcode_bits": [
-        6,
-        12,
-        13,
-        14,
-        15
+        6
       ],
       "operand_text": "R4, R4, R18, R12",
       "operands": [
@@ -34696,11 +32563,7 @@
       ],
       "opcode": "QMMA",
       "opcode_bits": [
-        6,
-        12,
-        13,
-        14,
-        15
+        6
       ],
       "operand_text": "R4, R4, R18, R12",
       "operands": [
@@ -34852,11 +32715,7 @@
       ],
       "opcode": "QMMA",
       "opcode_bits": [
-        6,
-        12,
-        13,
-        14,
-        15
+        6
       ],
       "operand_text": "R4, R4, R18, R12",
       "operands": [
@@ -35008,11 +32867,7 @@
       ],
       "opcode": "QMMA",
       "opcode_bits": [
-        6,
-        12,
-        13,
-        14,
-        15
+        6
       ],
       "operand_text": "R4, R4, R18, R12",
       "operands": [
@@ -35164,11 +33019,7 @@
       ],
       "opcode": "QMMA",
       "opcode_bits": [
-        6,
-        12,
-        13,
-        14,
-        15
+        6
       ],
       "operand_text": "R4, R4, R18, R12",
       "operands": [
@@ -35297,12 +33148,7 @@
         "E8"
       ],
       "opcode": "QMMA",
-      "opcode_bits": [
-        12,
-        13,
-        14,
-        15
-      ],
+      "opcode_bits": [],
       "operand_text": "R4, R4, R10, R12, R18, R2, URZ",
       "operands": [
         {
@@ -35476,12 +33322,7 @@
         "E8"
       ],
       "opcode": "QMMA",
-      "opcode_bits": [
-        12,
-        13,
-        14,
-        15
-      ],
+      "opcode_bits": [],
       "operand_text": "R4, R4, R10, R12, R18, R2, URZ",
       "operands": [
         {
@@ -35655,12 +33496,7 @@
         "E8"
       ],
       "opcode": "QMMA",
-      "opcode_bits": [
-        12,
-        13,
-        14,
-        15
-      ],
+      "opcode_bits": [],
       "operand_text": "R4, R4, R10, R12, R18, R2, URZ",
       "operands": [
         {
@@ -35834,12 +33670,7 @@
         "E8"
       ],
       "opcode": "QMMA",
-      "opcode_bits": [
-        12,
-        13,
-        14,
-        15
-      ],
+      "opcode_bits": [],
       "operand_text": "R4, R4, R10, R12, R18, R2, URZ",
       "operands": [
         {
@@ -36013,12 +33844,7 @@
         "E8"
       ],
       "opcode": "QMMA",
-      "opcode_bits": [
-        12,
-        13,
-        14,
-        15
-      ],
+      "opcode_bits": [],
       "operand_text": "R4, R4, R10, R12, R18, R2, URZ",
       "operands": [
         {
@@ -36229,12 +34055,7 @@
       ],
       "modifiers": [],
       "opcode": "R2UR",
-      "opcode_bits": [
-        12,
-        13,
-        14,
-        15
-      ],
+      "opcode_bits": [],
       "operand_text": "UR4, R4",
       "operands": [
         {
@@ -36299,11 +34120,7 @@
       "opcode": "RET",
       "opcode_bits": [
         1,
-        2,
-        12,
-        13,
-        14,
-        15
+        2
       ],
       "operand_text": "R12 `(k_mma_m16n8k64_s4_s4_s32)",
       "operands": [
@@ -36501,11 +34318,7 @@
         0,
         1,
         4,
-        8,
-        12,
-        13,
-        14,
-        15
+        8
       ],
       "operand_text": "R5, SR_LANEID",
       "operands": [
@@ -36542,7 +34355,7 @@
       ],
       "payload": "00000000000000000000000000057919",
       "source_family": "atomic",
-      "source_label": "atom.add.global.s32"
+      "source_label": "atom.add.global.u32"
     },
     "S2UR": {
       "encoding": "000e22000000880000000000000579c3",
@@ -36641,11 +34454,7 @@
       "modifiers": [],
       "opcode": "S2UR",
       "opcode_bits": [
-        6,
-        12,
-        13,
-        14,
-        15
+        6
       ],
       "operand_text": "UR5, SR_CgaCtaId",
       "operands": [
@@ -36682,7 +34491,7 @@
       ],
       "payload": "000000000000880000000000000579c3",
       "source_family": "matrix",
-      "source_label": "ldmatrix.x1..b16"
+      "source_label": "ldmatrix.x1.trans.b16"
     },
     "SEL": {
       "encoding": "000fc000000000000000000005047207",
@@ -36770,11 +34579,7 @@
       "opcode_bits": [
         2,
         4,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "R4, R5, R0, P0",
       "operands": [
@@ -36931,11 +34736,7 @@
         2,
         3,
         4,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "R0, R2, R0",
       "operands": [
@@ -37050,11 +34851,7 @@
         1,
         4,
         5,
-        8,
-        12,
-        13,
-        14,
-        15
+        8
       ],
       "operand_text": "R17, R16, 0x2, RZ",
       "operands": [
@@ -37233,11 +35030,7 @@
         2,
         3,
         4,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "R3, R0, R2, R6",
       "operands": [
@@ -37369,11 +35162,7 @@
         3,
         4,
         5,
-        8,
-        12,
-        13,
-        14,
-        15
+        8
       ],
       "operand_text": "R0, R0, 0x5, R2",
       "operands": [
@@ -37528,11 +35317,7 @@
         3,
         4,
         5,
-        8,
-        12,
-        13,
-        14,
-        15
+        8
       ],
       "operand_text": "R3, RZ, 0x1f, R2",
       "operands": [
@@ -37711,11 +35496,7 @@
         2,
         3,
         4,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "R0, RZ, RZ, R2",
       "operands": [
@@ -37869,11 +35650,7 @@
         1,
         2,
         4,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "R2, R0, R3, R6",
       "operands": [
@@ -38023,11 +35800,7 @@
         2,
         3,
         5,
-        7,
-        12,
-        13,
-        14,
-        15
+        7
       ],
       "operand_text": "P0, R0, R2, R3, R8",
       "operands": [
@@ -38182,11 +35955,7 @@
       ],
       "opcode": "SHFL",
       "opcode_bits": [
-        2,
-        12,
-        13,
-        14,
-        15
+        2
       ],
       "operand_text": "PT, R9, R7, R11, 0x1f",
       "operands": [
@@ -38337,11 +36106,7 @@
         0,
         1,
         3,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "desc[UR4][R2.64], R0",
       "operands": [
@@ -38411,7 +36176,7 @@
       ],
       "payload": "000000000c1019040000000002007986",
       "source_family": "binary",
-      "source_label": "div.u32"
+      "source_label": "rem.u32"
     },
     "STG.E.64": {
       "encoding": "000fc0000c101b040000000204007986",
@@ -38481,11 +36246,7 @@
         0,
         1,
         3,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "desc[UR4][R4.64], R2",
       "operands": [
@@ -38554,8 +36315,8 @@
         }
       ],
       "payload": "000000000c101b040000000204007986",
-      "source_family": "widening",
-      "source_label": "mul.wide.s32"
+      "source_family": "binary",
+      "source_label": "add.s64"
     },
     "STG.E.EF": {
       "encoding": "000fc0000c0019040000000204007986",
@@ -38625,11 +36386,7 @@
         0,
         1,
         3,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "desc[UR4][R4.64], R2",
       "operands": [
@@ -38769,11 +36526,7 @@
         0,
         1,
         3,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "desc[UR4][R4.64], R0",
       "operands": [
@@ -38843,7 +36596,7 @@
       ],
       "payload": "000000000c1017040000000004007986",
       "source_family": "binary",
-      "source_label": "mul.hi.s16"
+      "source_label": "mul.lo.s16"
     },
     "STG.E.STRONG.GPU": {
       "encoding": "000fc0000c10f9040000000204007986",
@@ -38914,11 +36667,7 @@
         0,
         1,
         3,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "desc[UR4][R4.64], R2",
       "operands": [
@@ -39059,11 +36808,7 @@
         0,
         1,
         3,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "desc[UR4][R4.64], R2",
       "operands": [
@@ -39204,11 +36949,7 @@
         0,
         1,
         3,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "desc[UR4][R4.64], R2",
       "operands": [
@@ -39348,11 +37089,7 @@
         0,
         1,
         3,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "desc[UR4][R4.64], R0",
       "operands": [
@@ -39498,11 +37235,7 @@
         0,
         1,
         5,
-        7,
-        12,
-        13,
-        14,
-        15
+        7
       ],
       "operand_text": "[R0], R2",
       "operands": [
@@ -39641,11 +37374,7 @@
         0,
         1,
         5,
-        7,
-        12,
-        13,
-        14,
-        15
+        7
       ],
       "operand_text": "[R0], R2",
       "operands": [
@@ -39784,11 +37513,7 @@
       "opcode_bits": [
         0,
         1,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "[R0], R2",
       "operands": [
@@ -39923,11 +37648,7 @@
         1,
         2,
         5,
-        7,
-        12,
-        13,
-        14,
-        15
+        7
       ],
       "operand_text": "[R0], R2",
       "operands": [
@@ -40066,11 +37787,7 @@
         1,
         2,
         5,
-        7,
-        12,
-        13,
-        14,
-        15
+        7
       ],
       "operand_text": "[R0], R2",
       "operands": [
@@ -40209,11 +37926,7 @@
         1,
         2,
         5,
-        7,
-        12,
-        13,
-        14,
-        15
+        7
       ],
       "operand_text": "[R0], R2",
       "operands": [
@@ -40354,11 +38067,7 @@
         2,
         3,
         6,
-        8,
-        12,
-        13,
-        14,
-        15
+        8
       ],
       "operand_text": "[R0], R2",
       "operands": [
@@ -40499,11 +38208,7 @@
         2,
         3,
         6,
-        8,
-        12,
-        13,
-        14,
-        15
+        8
       ],
       "operand_text": "[R0], R6",
       "operands": [
@@ -40644,11 +38349,7 @@
         2,
         3,
         6,
-        8,
-        12,
-        13,
-        14,
-        15
+        8
       ],
       "operand_text": "[R0], R4",
       "operands": [
@@ -40788,11 +38489,7 @@
         2,
         3,
         6,
-        8,
-        12,
-        13,
-        14,
-        15
+        8
       ],
       "operand_text": "[R0], R2",
       "operands": [
@@ -40933,11 +38630,7 @@
         2,
         3,
         6,
-        8,
-        12,
-        13,
-        14,
-        15
+        8
       ],
       "operand_text": "[R0], R6",
       "operands": [
@@ -41078,11 +38771,7 @@
         2,
         3,
         6,
-        8,
-        12,
-        13,
-        14,
-        15
+        8
       ],
       "operand_text": "[R0], R4",
       "operands": [
@@ -41145,6 +38834,174 @@
       "payload": "00000000000042000000000400007844",
       "source_family": "matrix",
       "source_label": "stmatrix.x4.trans.b16"
+    },
+    "UIADD3": {
+      "encoding": "000fe6000fffe0ff000000fffffff290",
+      "inert_bits": [
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        73,
+        76,
+        77,
+        78,
+        79,
+        80,
+        87,
+        88,
+        89,
+        90,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97,
+        98,
+        99,
+        100,
+        101,
+        102,
+        103,
+        104,
+        126,
+        127
+      ],
+      "invalid_bits": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        91
+      ],
+      "mnemonic": "UIADD3",
+      "modifier_bits": [
+        74
+      ],
+      "modifiers": [],
+      "opcode": "UIADD3",
+      "opcode_bits": [
+        0,
+        1
+      ],
+      "operand_text": "@!UPT URZ, UPT, UPT, URZ, URZ, URZ",
+      "operands": [
+        {
+          "bits": [
+            12,
+            13,
+            14,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23
+          ],
+          "example_after": "@!UP6 URZ, UPT, UPT, URZ, URZ, URZ",
+          "example_before": "@!UPT URZ, UPT, UPT, URZ, URZ, URZ",
+          "slot": 0
+        },
+        {
+          "bits": [
+            81,
+            82,
+            83
+          ],
+          "example_after": "@!UPT URZ, UP6, UPT, URZ, URZ, URZ",
+          "example_before": "@!UPT URZ, UPT, UPT, URZ, URZ, URZ",
+          "slot": 1
+        },
+        {
+          "bits": [
+            84,
+            85,
+            86
+          ],
+          "example_after": "@!UPT URZ, UPT, UP6, URZ, URZ, URZ",
+          "example_before": "@!UPT URZ, UPT, UPT, URZ, URZ, URZ",
+          "slot": 2
+        },
+        {
+          "bits": [
+            24,
+            25,
+            26,
+            27,
+            28,
+            29,
+            30,
+            31,
+            72
+          ],
+          "example_after": "@!UPT URZ, UPT, UPT, UR254, URZ, URZ",
+          "example_before": "@!UPT URZ, UPT, UPT, URZ, URZ, URZ",
+          "slot": 3
+        },
+        {
+          "bits": [
+            32,
+            33,
+            34,
+            35,
+            36,
+            37,
+            38,
+            39,
+            63
+          ],
+          "example_after": "@!UPT URZ, UPT, UPT, URZ, UR254, URZ",
+          "example_before": "@!UPT URZ, UPT, UPT, URZ, URZ, URZ",
+          "slot": 4
+        },
+        {
+          "bits": [
+            64,
+            65,
+            66,
+            67,
+            68,
+            69,
+            70,
+            71,
+            75
+          ],
+          "example_after": "@!UPT URZ, UPT, UPT, URZ, URZ, UR254",
+          "example_before": "@!UPT URZ, UPT, UPT, URZ, URZ, URZ",
+          "slot": 5
+        }
+      ],
+      "payload": "000000000fffe0ff000000fffffff290",
+      "source_family": "mma.dense",
+      "source_label": "mma.sync.m16n8k32....s8.s8.s32"
     },
     "ULEA": {
       "encoding": "001fd2000f8ec0ff0000000405047291",
@@ -41226,11 +39083,7 @@
       "opcode": "ULEA",
       "opcode_bits": [
         0,
-        3,
-        12,
-        13,
-        14,
-        15
+        3
       ],
       "operand_text": "UR4, UR5, UR4, 0x18",
       "operands": [
@@ -41296,7 +39149,7 @@
       ],
       "payload": "000000000f8ec0ff0000000405047291",
       "source_family": "matrix",
-      "source_label": "ldmatrix.x1..b16"
+      "source_label": "ldmatrix.x1.trans.b16"
     },
     "UMOV": {
       "encoding": "000fce00000000000000040000047882",
@@ -41371,11 +39224,7 @@
       "opcode": "UMOV",
       "opcode_bits": [
         2,
-        7,
-        12,
-        13,
-        14,
-        15
+        7
       ],
       "operand_text": "UR4, 0x400",
       "operands": [
@@ -41436,7 +39285,7 @@
       ],
       "payload": "00000000000000000000040000047882",
       "source_family": "matrix",
-      "source_label": "ldmatrix.x1..b16"
+      "source_label": "ldmatrix.x1.trans.b16"
     },
     "UPOPC": {
       "encoding": "000fe2000800000000000006000772bf",
@@ -41534,11 +39383,7 @@
       "opcode_bits": [
         0,
         1,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "UR7, UR6",
       "operands": [
@@ -41576,7 +39421,7 @@
       ],
       "payload": "000000000800000000000006000772bf",
       "source_family": "atomic",
-      "source_label": "atom.add.global.s32"
+      "source_label": "atom.add.global.u32"
     },
     "VIADD.S32.ISAT": {
       "encoding": "000fc000000104000000000206027236",
@@ -41669,11 +39514,7 @@
         1,
         2,
         4,
-        5,
-        12,
-        13,
-        14,
-        15
+        5
       ],
       "operand_text": "R2, R6, R2",
       "operands": [
@@ -41817,11 +39658,7 @@
       "opcode": "VIMNMX",
       "opcode_bits": [
         3,
-        6,
-        12,
-        13,
-        14,
-        15
+        6
       ],
       "operand_text": "R2, R6, R2, PT",
       "operands": [
@@ -41974,11 +39811,7 @@
       "opcode": "VIMNMX",
       "opcode_bits": [
         3,
-        6,
-        12,
-        13,
-        14,
-        15
+        6
       ],
       "operand_text": "R2, R6, R2, PT",
       "operands": [
@@ -42131,11 +39964,7 @@
       "opcode": "VIMNMX",
       "opcode_bits": [
         3,
-        6,
-        12,
-        13,
-        14,
-        15
+        6
       ],
       "operand_text": "R2, R6, R2, PT",
       "operands": [
@@ -42288,11 +40117,7 @@
       "opcode": "VIMNMX",
       "opcode_bits": [
         3,
-        6,
-        12,
-        13,
-        14,
-        15
+        6
       ],
       "operand_text": "R2, R6, R2, PT",
       "operands": [
@@ -42458,11 +40283,7 @@
         1,
         2,
         4,
-        7,
-        12,
-        13,
-        14,
-        15
+        7
       ],
       "operand_text": "R0, PT, P0",
       "operands": [
@@ -42608,11 +40429,7 @@
       "opcode": "VOTEU",
       "opcode_bits": [
         2,
-        7,
-        12,
-        13,
-        14,
-        15
+        7
       ],
       "operand_text": "UR6, UPT, PT",
       "operands": [
@@ -42655,7 +40472,7 @@
       ],
       "payload": "00000000038e01000000000000067886",
       "source_family": "atomic",
-      "source_label": "atom.add.global.s32"
+      "source_label": "atom.add.global.u32"
     },
     "WARPSYNC.ALL": {
       "encoding": "000fc000038000000000000000007948",
@@ -42769,11 +40586,7 @@
         1,
         2,
         6,
-        8,
-        12,
-        13,
-        14,
-        15
+        8
       ],
       "operand_text": "",
       "operands": [
@@ -42822,11 +40635,7 @@
       "opcode_bits": [
         3,
         6,
-        8,
-        12,
-        13,
-        14,
-        15
+        8
       ],
       "operand_text": "R0, `(.L_x_0)",
       "operands": [
@@ -42915,9 +40724,9 @@
       ],
       "payload": "0000000003c000000000000000087348",
       "source_family": "special",
-      "source_label": "shfl.sync.b32"
+      "source_label": "vote.sync.b32"
     }
   },
-  "generated_utc": "2026-08-22T05:14:54+00:00",
+  "generated_utc": "2026-08-22T06:35:59+00:00",
   "schema_version": 1
 }

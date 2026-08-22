@@ -17,11 +17,12 @@ keywords = [
   "cuda", "sass", "assembler", "blackwell", "sm120", "gpu",
   "reverse-engineering", "ptx", "nvidia", "disassembler", "isa",
 ]
+# no license classifier here: PEP 639 supersedes them with the `license`
+# expression above, and setuptools rejects a project that carries both
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Environment :: GPU :: NVIDIA CUDA",
   "Intended Audience :: Developers",
-  "License :: OSI Approved :: Apache Software License",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",

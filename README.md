@@ -127,9 +127,9 @@ Numbers here are printed by the tooling and regenerate from a clean checkout. Th
 
 | | |
 | :--- | ---: |
-| Instruction forms | 281 |
-| Distinct opcodes | 84 |
-| Forms with a full operand map | 276 |
+| Instruction forms | 274 |
+| Distinct opcodes | 77 |
+| Forms with a full operand map | 269 |
 | Tensor-core forms | 43 |
 | Built with | `ptxas` V13.3.73 |
 
