@@ -361,6 +361,10 @@ class Assembler:
 
         for slot in form.slots:
             if slot.token >= len(tokens):
+                reference_token = form.tokens[slot.token] if slot.token < len(form.tokens) else ""
+                if reference_token.startswith("`"):
+                    # the caller stripped a label and writes its bits itself
+                    continue
                 raise AssemblyError(
                     f"{mnemonic} wants an operand in position {slot.token} and the text has "
                     f"{len(tokens)}"
