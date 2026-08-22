@@ -13,9 +13,21 @@ any release. The clean-room position in [`NOTICE`](NOTICE) will not.
 - Assembler: SASS text to the 128-bit instruction word, whole cubins as well as
   single instructions, and a `basalt assemble` command that can read its own
   output back through `nvdisasm` to prove it. Assembling every corpus kernel as
-  a program with its labels resolved reproduces 8,351 of 8,560 instructions
+  a program with its labels resolved reproduces 8,428 of 8,584 instructions
   bit-identically and none to anything else; the second count is a test pinned
   at zero.
+- `scripts/assembler_coverage.py`: the command that produces the number above.
+  Compiles every corpus kernel, hands the disassembly back to the assembler and
+  compares the bytes, needing no GPU. It runs in CI so the published figure is
+  regenerated on every push rather than asserted.
+- Operand modifiers are separated from the values beside them. `-R0` is a
+  register number and a negate bit that sits nowhere near it, bit 72 for `IADD`
+  source 1 against bits 24:31 for the number, and the prober had already
+  recorded which was which. 276 negate, 135 absolute, 104 invert and 11
+  bitwise-not fields, worth 54 more instructions assembled exactly.
+- A CycloneDX bill of materials is built and attested with every release, from a
+  throwaway environment holding only the wheel, so it lists exactly one
+  component. That is the machine-readable form of "no runtime dependencies".
 - The branch target encoding, solved from real kernels rather than probed: a
   field split across bits 16..23 and 34..81, holding the distance to the
   destination from the following instruction, scaled by four. All 354 branches
@@ -88,6 +100,19 @@ any release. The clean-room position in [`NOTICE`](NOTICE) will not.
   a different question from what correctness requires.
 
 ### Fixed
+- The scheduler no longer tightens the gaps a read barrier depends on. `ptxas`
+  puts one barrier on the last of a run of loads and lets in-order issue carry
+  the earlier ones, so compressing the run makes it fire while they are still
+  reading. `k_mma_m16n8k32_s4_s4_s32` at `-O1` overwrote `R4` under four loads
+  that had not finished reading it: no fault, wrong answer, found by the round
+  trip and now held by a test that fails when the rule is narrowed.
+- A wait that services a read barrier is kept on the instruction that does the
+  waiting rather than the one that sets the barrier, which is where it was being
+  folded in and where it protects nothing.
+- Every sweep prints the source tree and commit it imported. An editable install
+  pointing at a stale clone shadowed the working tree for fifty-four commits and
+  the test suite ran against the old source without anything saying so; `src` is
+  now pinned on the pytest path as well.
 - The yield bit is written from the stall rather than inherited. The two are not
   independent: across the corpus `ptxas` emits a zero stall with the bit clear
   4205 times and set never, and a stall of one with it set 1123 times and clear
@@ -148,6 +173,14 @@ any release. The clean-room position in [`NOTICE`](NOTICE) will not.
   The entry now records both the correction and why it went unnoticed.
 
 ### Found
+- A read barrier covers more reads than its own instruction's. `ptxas` puts one
+  on the last of a run of loads and relies on the gaps it chose to carry the
+  rest, which nothing in the encoding records. Recorded as finding 13, along
+  with the bisection that separates "this is a stall" from "this is a barrier"
+  in a single run.
+- A modifier is one character of text and one bit of encoding, and the bit is
+  nowhere near the operand it belongs to: negating `IADD` source 1 is bit 72
+  while its register number is bits 24:31. Finding 14.
 - A stall count of 0 is a safe long-wait encoding rather than zero cycles, which
   is why `ptxas -O0` emits a zeroed control word and still computes correctly.
 - Understalling corrupts silently and deterministically; basalt's static verdict
