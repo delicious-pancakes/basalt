@@ -389,6 +389,27 @@ does not:
 | Signed integer divide | `div_s32` |
 | 64-bit atomic add | `atom_global_add_u64` |
 
+The last of those is worth writing down, because the evidence contradicts the obvious
+explanation and the next person to look should not have to rediscover that.
+
+`ptxas` emits a warp-aggregated atomic: one lane, chosen by `@P0`, performs the
+`ATOMG.E.ADD.64`, and the others collect its result through two `SHFL.IDX`. basalt waits on
+the atomic's scoreboard at the shuffle that reads it, which is exactly where `ptxas` waits.
+That is not enough. Adding a second wait on the same scoreboard one or two instructions
+*earlier* makes it correct every time:
+
+| Where the extra wait on the atomic's scoreboard goes | Result |
+| :--- | :--- |
+| Nowhere (the wait at the shuffle only, which is what `ptxas` does) | **wrong** |
+| On the `S2R` two before the shuffle | wrong |
+| On the `LOP3` before the shuffle | correct |
+| On the `POPC` immediately before the shuffle | correct |
+
+Timing is not the explanation: basalt already leaves far more stall across that stretch
+than `ptxas` does, 37 cycles against 8. Nor is it the scoreboard index, since giving the
+shuffle a different one to signal changes nothing. Whatever the rule is, it is about where
+a wait sits relative to a warp-convergent read, and basalt does not yet have it.
+
 A further 12 kernels the harness itself cannot launch, 2 whose vendor output is not
 deterministic under 32 threads storing to one address, and any whose result is not
 reproducible once something else has used the card. That last group is why the vendor is
