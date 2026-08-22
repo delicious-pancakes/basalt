@@ -199,7 +199,7 @@ def _check_instruction(
 
             if producer_record.kind is LatencyClass.FIXED:
                 required, source = _requirement(
-                    producer.opcode,
+                    producer.mnemonic,
                     instr.opcode,
                     producer_record,
                     observed,
@@ -494,7 +494,7 @@ def _requirement(
         if evidence is not None:
             return (
                 evidence.minimum,
-                f"{producer} -> {evidence.consumer} is scheduled no tighter than "
+                f"{evidence.producer} -> {evidence.consumer} is scheduled no tighter than "
                 f"{evidence.minimum} cycles across {evidence.observations} observations",
             )
     if guard:

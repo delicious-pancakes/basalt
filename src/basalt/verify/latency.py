@@ -111,7 +111,11 @@ _ASSUMED: dict[str, tuple[int, LatencyClass, str]] = {
     # consumed, so they complete out of order however long the pipe is.
     "POPC": (18, LatencyClass.VARIABLE, "population count, measured, scoreboard signalled"),
     "FLO": (4, LatencyClass.VARIABLE, "find leading one, scoreboard signalled"),
-    "BREV": (4, LatencyClass.FIXED, ""),
+    # Scoreboarded in two of the three dependent instances in the corpus, and the
+    # third is covered by a wait on a later instruction from the same unit rather
+    # than by elapsed cycles. Left as fixed latency it produced a non-
+    # deterministic `brev` on hardware from basalt's own schedule.
+    "BREV": (4, LatencyClass.VARIABLE, "bit reverse, scoreboard signalled"),
     "MOV": (4, LatencyClass.FIXED, ""),
     "FADD": (4, LatencyClass.FIXED, ""),
     "FMUL": (4, LatencyClass.FIXED, ""),

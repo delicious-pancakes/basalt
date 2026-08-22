@@ -180,15 +180,42 @@ class ObservedStalls:
     def requirement(self, producer: str, consumer: str | None = None) -> StallEvidence | None:
         """The tightest trusted gap seen for a pairing, or for the producer alone.
 
+        `producer` is a full mnemonic. The modifier decides the number here just
+        as it does for a scoreboarded producer: `IMAD.HI.U32` is a wide multiply
+        and is never scheduled closer than 5 cycles to its consumer, while plain
+        `IMAD` is scheduled at 3. Collapsing them onto `IMAD` takes the smaller,
+        which is how basalt emitted an integer divide that computed 10 where the
+        vendor computed 8.
+
+        Four places are tried, most specific first: this exact form and consumer,
+        this form against any consumer, the bare opcode and this consumer, the
+        bare opcode against any consumer. The bare-opcode steps are what keep a
+        form the compiler never emitted checkable at all.
+
         A guard consumer is spelled `@OPCODE` and only ever matches guard
-        evidence, both for the exact pairing and for the fallback.
+        evidence, at every step.
         """
-        pair = self.by_pair.get((producer, consumer)) if consumer is not None else None
-        if pair is not None and pair.trusted:
-            return pair
-        key = self._collapse_key(producer, consumer) if consumer is not None else producer
-        evidence = self.by_producer.get(key)
-        return evidence if evidence and evidence.trusted else None
+        bare = producer.split(".")[0]
+        if consumer is not None:
+            # This exact form against this exact consumer, however few times it
+            # was seen. The `trusted` gate belongs on the collapsed evidence,
+            # where a thin sample really is a guess; on an exact pairing it is
+            # the only evidence there is, and skipping it falls through to the
+            # bare opcode's number, which is a different instruction's
+            # requirement wearing this one's name. `IMAD.WIDE.U32.X` into
+            # `IADD` is scheduled at 3 and plain `IMAD` into `IADD` at 5, and
+            # taking the second for the first reports a hazard in the vendor's
+            # own output.
+            if (pair := self.by_pair.get((producer, consumer))) is not None:
+                return pair
+            if (pair := self.by_pair.get((bare, consumer))) is not None and pair.trusted:
+                return pair
+        for name in (producer, bare):
+            key = self._collapse_key(name, consumer) if consumer is not None else name
+            evidence = self.by_producer.get(key)
+            if evidence is not None and evidence.trusted:
+                return evidence
+        return None
 
     def summary(self) -> str:
         trusted = sum(1 for e in self.by_producer.values() if e.trusted)
@@ -340,7 +367,7 @@ def mine_program(program: Program, into: ObservedStalls) -> None:
                             producer_mnemonic, consumer_key, elapsed.get(reg, 0), sample
                         )
                     continue
-                into.observe(producer_opcode, consumer_key, elapsed.get(reg, 0), sample)
+                into.observe(producer_mnemonic, consumer_key, elapsed.get(reg, 0), sample)
 
             stall = effective_stall(instr.word.field("stall"))
             for key in list(elapsed):

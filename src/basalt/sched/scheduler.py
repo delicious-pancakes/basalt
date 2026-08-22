@@ -332,7 +332,7 @@ def schedule_program(
                         record = model.lookup(producer.opcode)
                         if producer.kind is LatencyClass.FIXED:
                             needed = _requirement(
-                                producer.opcode,
+                                producer.mnemonic,
                                 instr.opcode,
                                 record.cycles,
                                 observed,

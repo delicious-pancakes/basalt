@@ -12,7 +12,7 @@ any release. The clean-room position in [`NOTICE`](NOTICE) will not.
 ### Added
 - `scripts/roundtrip_corpus.py`: reschedules every kernel the corpus generates
   from scratch and runs both versions on the GPU with identical input, comparing
-  output bytes. 287 of the 303 comparable kernels come out byte-identical to the
+  output bytes. 295 of the 303 comparable kernels come out byte-identical to the
   vendor schedule, from 246 when the control was first run. Every model
   correction in this release came out of it. Recorded as finding 10 in
   [`docs/FINDINGS.md`](docs/FINDINGS.md), with the failures named.
@@ -72,6 +72,14 @@ any release. The clean-room position in [`NOTICE`](NOTICE) will not.
   a different question from what correctness requires.
 
 ### Fixed
+- Fixed-latency pair requirements are keyed on the producer's full mnemonic, not
+  its bare opcode. `IMAD.WIDE.U32.X` into `IADD` is scheduled at 3 cycles and
+  plain `IMAD` into `IADD` at 5; collapsing them applied one instruction's
+  requirement to another. An exact pairing now wins however few times it was
+  seen, since on an exact pairing a thin sample is the only evidence there is.
+- `BREV` is modelled as completing out of order. It carries a scoreboard in two
+  of the three dependent instances in the corpus and the third is covered by a
+  wait on a later instruction from the same unit.
 - An instruction that writes a predicate and a register is read as writing both.
   `SHFL.IDX PT, R9, ...` and `ATOMG ... PT, R7, ...` return a value as well as a
   predicate, and reading only the predicate meant nothing scoreboarded that value

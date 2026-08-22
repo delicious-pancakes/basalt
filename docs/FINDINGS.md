@@ -343,9 +343,9 @@ rescheduled kernel has to produce the same bytes.
 | :--- | ---: |
 | Kernels rescheduled and run | 317 |
 | Comparable (vendor runs here, and deterministically) | 303 |
-| **Byte-identical to the vendor schedule** | **287** |
-| Wrong, deterministically | 6 |
-| Non-deterministic, so a dependency is uncovered | 10 |
+| **Byte-identical to the vendor schedule** | **295** |
+| Wrong, deterministically | 2 |
+| Non-deterministic, so a dependency is uncovered | 6 |
 
 The first run of this scored 246. Everything between then and now was found by it:
 
@@ -355,8 +355,10 @@ The first run of this scored 246. Everything between then and now was found by i
   gap being a distance to the consumer rather than the producer's own stall (finding 7),
 - the conversion pipe, `POPC` and `FLO` completing out of order rather than on a fixed
   schedule, like fp64 before them,
-- requirements having to be keyed on the full mnemonic, since `I2F.RP` needs 1 cycle and
-  every other `I2F` needs 2, and collapsing them takes the minimum,
+- requirements having to be keyed on the full mnemonic on both paths, since `I2F.RP` needs
+  1 cycle where every other `I2F` needs 2, and `IMAD.WIDE.U32.X` into `IADD` is scheduled at
+  3 where plain `IMAD` into `IADD` is scheduled at 5; collapsing either takes a different
+  instruction's requirement and wears this one's name,
 - a predicated write not killing the previous definition, because `@!P0 FMUL R7, R7, c`
   leaves R7 holding whatever produced it whenever the guard is false,
 - an instruction that writes a predicate and a register reading as though it wrote only the
@@ -379,13 +381,10 @@ does not:
 
 | Family | Kernels |
 | :--- | :--- |
-| Transcendental approximations | `sqrt`, `rsqrt`, `lg2`, `ex2` on f32 |
-| Integer divide and remainder | `div_s32`, `div_u32`, `rem_u32` |
-| Bit reversal | `brev_b32`, `brev_b64` |
-| 16-bit subtract | `sub_s16`, `sub_u16` |
-| 64-bit atomic add | `atom_global_add_u64` |
+| Transcendental approximations | `sqrt`, `rsqrt`, `ex2` on f32 |
 | Tensor and matrix movement | two `s4` MMA shapes, `movmatrix` |
-| Loops | `special_loop` |
+| Signed integer divide | `div_s32` |
+| 64-bit atomic add | `atom_global_add_u64` |
 
 A further 12 kernels the harness itself cannot launch, shared and local memory forms that
 need launch configuration it does not provide, and 2 whose vendor output is not
