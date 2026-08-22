@@ -578,6 +578,7 @@ def _measure(args: argparse.Namespace) -> int:
         ordinal=args.device,
         lengths=tuple(args.lengths),
         repeats=args.repeats,
+        board=args.board,
     )
 
     out = Path(args.out) if args.out else Path("data/latency") / _slug(run.sku)
@@ -627,6 +628,13 @@ def main(argv: list[str] | None = None) -> int:
         help="chain lengths to fit the slope across",
     )
     m.add_argument("--repeats", type=int, default=7, help="launches per length; the minimum wins")
+    m.add_argument(
+        "--board",
+        default="",
+        help='board model, e.g. "Gigabyte RTX 5070 Ti EAGLE OC". the driver reports the GPU '
+        "and not the partner board, and a run is easier to reproduce when the card is named "
+        "exactly. it does not change the numbers: latencies are in cycles",
+    )
 
     ps = sub.add_parser(
         "probe-stalls",

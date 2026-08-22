@@ -569,7 +569,10 @@ Stated so the boundary of the evidence is visible.
   24-cycle figure is the pair, and it is recorded in a separate `composite` section rather
   than halved and presented as a per-instruction latency. Fault injection cannot separate them
   either, because the round trip is idempotent and the chain reaches a fixed point.
-- **Only one SKU has been measured.** Everything here is an RTX 5070 Ti. Whether these figures
+- **Only one card has been measured.** Everything here is a Gigabyte GeForce RTX 5070 Ti
+  EAGLE OC, 70 SMs, 2542 MHz boost, named exactly because "a 5070 Ti" is not enough to
+  reproduce a run. The factory overclock does not move the numbers, which are in cycles
+  rather than nanoseconds, but the SM count plausibly could. Whether these figures
   hold across sm_120 parts with different SM counts is exactly the sort of thing that should
   not be assumed, and basalt records the part alongside every measurement so a second card can
   be compared rather than merged.

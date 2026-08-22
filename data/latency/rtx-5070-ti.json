@@ -1,5 +1,7 @@
 {
   "arch": "sm_120",
+  "board": "Gigabyte GeForce RTX 5070 Ti EAGLE OC",
+  "board_note": "the driver reports the GPU, not the board partner, so this is recorded by hand. it matters for reproducing the run and not for the numbers: every latency here is in cycles, which a factory overclock does not change. the boost clock is kept alongside so a wall-clock comparison is still possible.",
   "clock_khz": 2542000,
   "composite": {
     "I2FP+F2I": {

@@ -312,12 +312,18 @@ class MeasurementRun:
     multiprocessors: int
     clock_khz: int
     cuda_version: str
+    # The driver reports the GPU, not the board partner, so this is passed in.
+    # It matters for reproducing a run and not for the numbers: every latency
+    # here is in cycles, which a factory overclock does not change. The boost
+    # clock is recorded alongside so a wall-clock comparison stays possible.
+    board: str = ""
     measurements: list[LatencyMeasurement] = field(default_factory=list)
 
     def write(self, path: Path) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
         payload = {
             "sku": self.sku,
+            "board": self.board,
             "arch": self.arch,
             "multiprocessors": self.multiprocessors,
             "clock_khz": self.clock_khz,
@@ -521,6 +527,7 @@ def measure_all(
     specs: tuple[ChainSpec, ...] = _SPECS,
     lengths: tuple[int, ...] = DEFAULT_LENGTHS,
     repeats: int = DEFAULT_REPEATS,
+    board: str = "",
     progress: bool = True,
 ) -> MeasurementRun:
     """Sweep every chain spec on the device and collect the results."""
@@ -528,6 +535,7 @@ def measure_all(
         info = dev.info
         run = MeasurementRun(
             sku=info.name,
+            board=board,
             arch=info.arch,
             multiprocessors=info.multiprocessors,
             clock_khz=info.clock_khz,

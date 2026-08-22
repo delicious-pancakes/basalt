@@ -133,18 +133,45 @@ The layout validates itself on contact. In a trivial kernel, `S2R` sets `write_b
 
 ## Which GPUs, and what needs one
 
+<div align="center">
+
+<img alt="NVIDIA Blackwell" src="https://img.shields.io/badge/NVIDIA-Blackwell-76B900?style=for-the-badge&logo=nvidia&logoColor=white&labelColor=0d1117">
+<img alt="GeForce RTX 50 series" src="https://img.shields.io/badge/GeForce-RTX%2050%20series-76B900?style=for-the-badge&logo=nvidia&logoColor=white&labelColor=0d1117">
+<img alt="Compute capability 12.0" src="https://img.shields.io/badge/compute%20capability-12.0%20%C2%B7%20sm__120-76B900?style=for-the-badge&logo=nvidia&logoColor=white&labelColor=0d1117">
+
+</div>
+
 `sm_120` is not a model number. It is the compute capability shared by the whole consumer
 Blackwell line, so the instruction encoding, the database, the assembler and the checker
 apply to every card in it:
 
-| Card | Compute capability |
-| :--- | :--- |
-| GeForce RTX 5090, 5090D, 5080, 5070 Ti, 5070, 5060 Ti, 5060, 5050 | 12.0 (`sm_120`) |
-| GeForce RTX 50 series laptop parts | 12.0 (`sm_120`) |
-| RTX PRO Blackwell workstation cards | 12.0 (`sm_120`) |
+| Card | Compute capability | Covered |
+| :--- | :--- | :---: |
+| GeForce RTX 5090, 5090D | 12.0 (`sm_120`) | yes |
+| GeForce RTX 5080, 5070 Ti, 5070 | 12.0 (`sm_120`) | yes |
+| GeForce RTX 5060 Ti, 5060, 5050 | 12.0 (`sm_120`) | yes |
+| GeForce RTX 50 series laptop parts | 12.0 (`sm_120`) | yes |
+| RTX PRO Blackwell workstation cards | 12.0 (`sm_120`) | yes |
+| Datacentre Blackwell (B100, B200, GB200) | 10.0 (`sm_100`) | no, different encoding |
 
-Datacentre Blackwell is a different target (`sm_100`) with its own encoding, and nothing
-here claims to cover it.
+### The card everything was measured on
+
+Every number in this repository comes from one physical card, and it is named exactly
+because "a 5070 Ti" is not enough to reproduce a run:
+
+| | |
+| :--- | :--- |
+| Board | Gigabyte GeForce RTX 5070 Ti **EAGLE OC** |
+| Reported by the driver | `NVIDIA GeForce RTX 5070 Ti` |
+| Compute capability | 12.0 |
+| Streaming multiprocessors | 70 |
+| Boost clock | 2542 MHz |
+| Toolchain | CUDA 13.3.1, `ptxas` V13.3.73 |
+
+The factory overclock does not move the measurements. Every latency here is in **cycles**,
+which is a property of the pipeline rather than of the clock, and the boost figure is
+recorded beside them only so a wall-clock comparison stays possible. What the board does
+affect is reproducibility, which is why `basalt measure --board` records it.
 
 **Most of basalt needs no GPU at all.** Both oracles, the instruction database, the
 assembler and the hazard checker run against `ptxas` and `nvdisasm` as ordinary
