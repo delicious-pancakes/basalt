@@ -362,6 +362,7 @@ def schedule_program(
 
             record = model.lookup(instr.opcode)
             if record.kind is LatencyClass.VARIABLE and access.real_defs:
+                # lowest free index, so a kernel's scoreboards read in issue order
                 free = next((sb for sb in range(SCOREBOARDS) if sb not in protects), None)
                 if free is not None:
                     protects[free] = set(access.real_defs)
@@ -451,6 +452,7 @@ def schedule_program(
         return live
 
     worklist = [0]
+    # the lattice is finite, so this bound is a bug detector rather than a cutoff
     guard = 0
     while worklist and guard < MAX_PASSES * max(1, len(cfg.blocks)):
         guard += 1
@@ -460,6 +462,7 @@ def schedule_program(
             merged = dict(entry_state[succ])
             changed = False
             for reg, barriers in out.items():
+                # union rather than intersect: a barrier outstanding on any path in
                 union = merged.get(reg, frozenset()) | barriers
                 if union != merged.get(reg):
                     merged[reg] = union

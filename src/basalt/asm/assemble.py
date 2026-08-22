@@ -110,6 +110,7 @@ def _tokenise(operands: str) -> list[str]:
 
 
 def _read(word: int, bits: tuple[int, ...]) -> int:
+    # bits are listed low end of the value first, so a split field reassembles
     value = 0
     for position, bit in enumerate(bits):
         value |= ((word >> bit) & 1) << position
@@ -117,6 +118,7 @@ def _read(word: int, bits: tuple[int, ...]) -> int:
 
 
 def _write(word: int, bits: tuple[int, ...], value: int) -> int:
+    # refuse rather than truncate: a silently narrowed value is a wrong operand
     if value < 0 or value >= (1 << len(bits)):
         raise AssemblyError(f"{value} does not fit in {len(bits)} bits")
     for position, bit in enumerate(bits):

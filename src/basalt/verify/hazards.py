@@ -176,6 +176,7 @@ def _check_instruction(
 
     # a wait takes effect before the instruction reads its operands
     state.satisfy(wait_mask)
+    # so everything below sees the state this instruction actually executes in
 
     for reg in sorted(access.real_uses, key=str):
         for rd in state.reaching(reg):

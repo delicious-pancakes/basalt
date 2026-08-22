@@ -126,6 +126,7 @@ class ObservedStalls:
         modifier is what decides the number: `I2F.RP` needs one cycle and every
         other `I2F` needs two.
         """
+        # keyed on the producer's full mnemonic: the modifier decides the number
         key = (mnemonic, consumer)
         if key not in self.by_scoreboarded:
             self.by_scoreboarded[key] = StallEvidence(mnemonic, consumer, minimum=cycles)

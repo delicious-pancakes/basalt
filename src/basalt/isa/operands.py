@@ -116,6 +116,7 @@ def subfields(observations) -> dict[str, tuple[int, ...]]:
     """
     grouped: dict[str, list[int]] = {}
     for observation in observations:
+        # a bit whose effect could not be read is left out, not guessed at
         role = classify_bit(observation.before, observation.after)
         if role in (SubRole.WHOLE, SubRole.UNKNOWN):
             continue
