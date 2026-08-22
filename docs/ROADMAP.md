@@ -47,7 +47,7 @@ out of watching it move.
 
 The assembler encodes SASS text back into the instruction word, and its standard is the
 vendor's own bytes: assembling every corpus kernel as a whole program, with its labels
-resolved, reproduces 8,351 of 8,560 instructions bit-identically and none to anything else.
+resolved, reproduces 8,428 of 8,584 instructions bit-identically and none to anything else.
 That second number is a test pinned at zero.
 
 Whole programs rather than lone instructions because a branch cannot be assembled alone.

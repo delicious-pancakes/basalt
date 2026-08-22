@@ -48,14 +48,14 @@ Its scheduling is the reference, so an error on any of them is basalt's fault.
 
 | | |
 | :--- | ---: |
-| Kernels compiled | 317 |
-| Dependencies checked | 5,423 |
+| Kernels compiled | 330 |
+| Dependencies checked | 6,165 |
 | Errors | **0** |
-| Kernels with warnings | 5 |
+| Kernels with warnings | 1 |
 
-The five warnings are opcodes whose latency is still assumed rather than
-measured, plus one late-read case, and they are reported as warnings for exactly
-that reason.
+The remaining warning is a late-read case, reported as a warning rather than an
+error because basalt has no measured model of how long an operand read takes.
+Finding 13 is what that gap costs and what basalt does about it.
 
 This is not a formality. Every modelling error basalt has made was found here or
 by the smaller version of it, never by reasoning about the architecture:
@@ -293,7 +293,7 @@ The staircase is the useful part. A single wrong answer could be anything; a val
 climbs monotonically toward the right one as the gap widens, and then stops changing, is a
 timing requirement being met.
 
-**Across the corpus.** Every dependent pair in the 317 kernel corpus, split by how the
+**Across the corpus.** Every dependent pair in the 330 kernel corpus, split by how the
 consumer reads the value, scoreboard-covered pairs excluded because there the stall says
 nothing:
 
@@ -334,13 +334,13 @@ said so.
 The scheduler was run over seven hand-written kernels for a long time and passed all
 seven. That is a smoke test wearing the clothes of a control.
 
-`scripts/roundtrip_corpus.py` runs it over everything the corpus generates, plus twelve
+`scripts/roundtrip_corpus.py` runs it over everything the corpus generates, plus thirteen
 hand-written kernels whose control flow is the point rather than their opcodes. For each of
-the 329: compile with `ptxas`, discard every control bit it produced, compute new ones,
+the 330: compile with `ptxas`, discard every control bit it produced, compute new ones,
 write them back, and run both versions on the card with identical input. The rescheduled
 kernel has to produce the same bytes.
 
-The twelve exist because the generated corpus is deliberately narrow. One or two
+The thirteen exist because the generated corpus is deliberately narrow. One or two
 instructions of body per kernel is right for attributing a bit to a form and wrong for
 exercising a scheduler: almost nothing in it has a loop, a barrier, a nested branch, or
 shared memory that is actually addressable. The hand-written ones have counted loops with
@@ -349,7 +349,7 @@ with traffic on both sides, predicated writes, and long unbranched dependent cha
 
 | | |
 | :--- | ---: |
-| Kernels rescheduled and run | 329 |
+| Kernels rescheduled and run | 330 |
 | Comparable (the vendor runs here, deterministically, and reproducibly) | 314 |
 | **Byte-identical to the vendor schedule** | **314** |
 | Wrong | 0 |
@@ -523,7 +523,7 @@ label under this rule and none decodes wrongly.
 The rule is a measurement, and a measurement written down as a constant is exactly what goes
 quietly wrong when a compiler version changes, so it is re-derived from the corpus by a test
 rather than trusted. With it, assembling every corpus kernel as a whole program reproduces
-8,351 of 8,560 instructions bit-identically, and none to anything else.
+8,428 of 8,584 instructions bit-identically, and none to anything else.
 
 ## 12. What the correctness costs
 
@@ -532,12 +532,12 @@ schedules are correct on every comparable corpus kernel, and here is what they c
 
 | | Issue cycles |
 | :--- | ---: |
-| `ptxas -O3` | 13,537 |
-| basalt | 12,645 |
-| | **0.93x** |
+| `ptxas -O3` | 13,571 |
+| basalt | 12,168 |
+| | **0.90x** |
 
-Slower on 15 of the 329 kernels and cheaper on the rest, with every comparable kernel still
-byte-identical on the GPU.
+Slower on 34 of the 330 kernels and cheaper on the rest, with every comparable kernel still
+byte-identical on the GPU at all three optimisation levels.
 
 Cheaper than the vendor is believable rather than suspicious, for a specific reason: basalt
 schedules every dependency at the tightest gap `ptxas` was ever observed to leave for that
@@ -565,7 +565,7 @@ a consumer that is short and spends cycles in the window before it, and a cycle 
 one pair also separates every other pair spanning that point. So a later pair can be
 satisfied by stall placed for an earlier one, leaving the earlier placement larger than
 anything requires. Walking that back, one cycle at a time, judged by the same requirement
-function that placed them, took 1.29x to 0.93x. `LDC` alone was half the excess before it,
+function that placed them, took 1.29x to 0.90x. `LDC` alone was half the excess before it,
 almost all overshoot rather than requirement.
 
 **Not leaning on a wait a predicated instruction carries.** `ptxas` does lean on them and
@@ -587,7 +587,102 @@ or occupancy. It is pinned in the test suite from both sides: getting slower is 
 regression, and getting much faster without the hardware round trip also moving is a
 reason to distrust the costing rather than to celebrate.
 
-## 13. What is deliberately not claimed
+## 13. A read barrier covers more reads than its own instruction's
+
+A read barrier means "signal once my operands have been read". What it protects is less
+obvious: `ptxas` puts one on the *last* of a run of loads and lets in-order issue plus the
+gaps it chose carry the rest. By the time the fourth load has read the address register, the
+first three have too, so one barrier covers four reads. Compress those gaps and the
+guarantee disappears with them, silently, because nothing in the encoding records that the
+barrier was ever standing in for its neighbours.
+
+`k_mma_m16n8k32_s4_s4_s32` at `-O1` is the case that exposed it:
+
+```
+      LDG.E R7, desc[UR4][R4.64]          stall 4
+      LDG.E R2, desc[UR4][R4.64+0x4]      stall 4
+      LDG.E R0, desc[UR4][R4.64+0x40]     stall 4
+      LDG.E R3, desc[UR4][R4.64+0x80]     stall 2   read_barrier 0
+      MOV   R4, 0x90                                wait 0x01
+```
+
+Four loads take their address from `R4`, and the `MOV` that overwrites `R4` waits for the
+barrier. basalt kept the barrier, kept the wait, and issued the loads one cycle apart
+instead of four. The barrier fired while the earlier loads were still reading, `R4` was
+overwritten under them, and they loaded from the wrong address. No fault, wrong answer,
+full speed. It is the exact failure this repository exists to catch, produced by basalt.
+
+**How the cause was isolated.** The first attempt was to start from the vendor's cubin and
+apply basalt's control words to a growing prefix, which pointed at the fourth load. That
+answer was wrong, and wrong in an instructive way: scoreboard numbers are global, so a cubin
+holding basalt's write barriers and the vendor's wait masks is broken by construction and
+the bisection was measuring its own hybrid. The experiment that works keeps basalt's
+schedule whole and changes only stalls, which is always safe:
+
+| Cubin | Matches the vendor |
+| :--- | :---: |
+| basalt's schedule | no |
+| basalt's schedule, every stall raised to the vendor's | **yes** |
+
+That separates the two hypotheses in one run. The bug is a stall, not a barrier, and a
+second bisection over which stalls have to be raised lands on the run of loads.
+
+**The rule basalt adopted.** It has no measured model of how long an operand read takes, so
+it cannot compute a safe gap here. What it can do is decline to make the window tighter than
+`ptxas` made it, and that is what it does: inside the window a read barrier covers, the
+vendor's stalls are a floor.
+
+The window is bounded by the previous read barrier and by the enclosing basic block, and
+the block bound is not a convenience. `s_loop_double` at `-O1` has a read barrier on a
+`DFMA` inside a loop body, where the thing it guards against is the *next iteration*
+overwriting the operands of this one. The instructions above the label are preamble that
+runs once, and pinning their stalls would cost cycles to protect nothing. More generally,
+control can arrive at a branch target from anywhere, so whatever gap the fall-through path
+happened to have is not a guarantee `ptxas` is relying on either.
+
+## 14. A modifier is one bit, and it is nowhere near its operand
+
+`IADD R5, R4, -R0` and `IADD R5, R4, R0` differ by one character of text and one bit of
+encoding, and that bit is not in the operand's field:
+
+| Operand | Register number | Negate |
+| :--- | :--- | :--- |
+| source 1 | bits 24:31 | **bit 72** |
+| source 2 | bits 32:39 | **bit 63** |
+
+The prober groups both into the same slot, because flipping either one changes that
+operand's text. That grouping is correct and too coarse to write through: an assembler
+handed `R5` against a form harvested as `-R0` sees a nine-bit field, no way to say which
+part is the sign, and refuses.
+
+Telling them apart costs nothing extra. The prober already records the operand text with
+each bit clear and set, so a bit whose flip adds or removes a leading `-` is the negate, and
+a bit whose flip changes `R4` to `R5` is the value. Across the database that separates 276
+negate fields, 135 absolute, 104 invert and 11 bitwise-not from the values beside them, none
+of them guessed.
+
+Two details matter more than they look.
+
+**The polarity is read off the form, not assumed.** Whether bit 72 set means negated is not
+something to take on faith from the order the prober happened to record a pair in. The
+reference text says whether its own encoding is negated, so the bit that has to change is
+simply the opposite of whatever the reference holds.
+
+**An unreadable bit cancels the split.** A bracket operand can lose a bit and lose only the
+part it belonged to; the offset stays writable when a bank bit is unattributed. A value
+cannot, because its bits are one number: writing a register number into the readable
+fraction of a field encodes a different register, in silence. So if any bit in a field could
+not be read, the field goes back to being whole and the assembler refuses it.
+
+The effect on the corpus, at `ptxas -O3`, is 54 more instructions assembled bit-identically
+and 54 fewer refusals:
+
+| | Exact | Refused | Wrong |
+| :--- | ---: | ---: | ---: |
+| Before | 8,374 | 210 | 0 |
+| After | **8,428** | 156 | **0** |
+
+## 15. What is deliberately not claimed
 
 Stated so the boundary of the evidence is visible.
 
@@ -625,7 +720,7 @@ Stated so the boundary of the evidence is visible.
   first conversion. An earlier run reported `I2FP` as requiring 4 cycles; the control
   retracted it, and it is listed as not established rather than quietly kept.
 
-## 14. Corrections made along the way
+## 16. Corrections made along the way
 
 Kept because a method is only as trustworthy as its error log.
 
