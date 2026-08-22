@@ -85,6 +85,13 @@ jobs:
         # gates every push rather than running on a schedule.
         run: pytest -m slow
 
+      - name: Reproduce the assembler number the README quotes
+        # the suite already pins "nothing assembles to the wrong bytes"; this
+        # prints the figure itself, so a drop in coverage is visible in the log
+        # rather than only when it crosses the floor, and the script that
+        # produces the published number cannot quietly stop working
+        run: python scripts/assembler_coverage.py
+
   isa-drift:
     # Rebuilding the database takes minutes and answers a different question:
     # has the compiler changed what it emits. That does not need to gate a push,

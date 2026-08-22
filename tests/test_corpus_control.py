@@ -433,9 +433,11 @@ class TestWholeProgramAssembly:
         exact, wrong, refused = assembled
         total = exact + wrong + refused
         assert total > 5000, "the corpus did not build"
-        # 97.0% when this was written; the floor catches a regression without
-        # failing on a database that legitimately learned to refuse something
-        assert exact / total >= 0.94, f"only {exact}/{total} ({exact / total:.1%}) reproduced"
+        # 98.2% when this was written, after the modifier bits were split out of
+        # the values beside them. The floor sits a point below rather than four,
+        # because a floor far under the real number lets coverage fall a long
+        # way without anything going red.
+        assert exact / total >= 0.97, f"only {exact}/{total} ({exact / total:.1%}) reproduced"
 
 
 class TestTheBranchFieldIsStillWhereItWasFound:
