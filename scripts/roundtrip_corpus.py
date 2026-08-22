@@ -90,7 +90,7 @@ ORDER = (
 # --------------------------------------------------------------------- build
 
 
-def build(work: Path, only: set[str] | None) -> list[dict]:
+def build(work: Path, only: set[str] | None, opt: int) -> list[dict]:
     """Compile every corpus kernel and reschedule it, writing both cubins."""
     from basalt.asm.cubin import Cubin
     from basalt.disasm import disassemble_program
@@ -118,7 +118,7 @@ def build(work: Path, only: set[str] | None) -> list[dict]:
         src.write_text(snippet.ptx)
         vendor = work / f"{index:04d}.v.cubin"
         built = tc.run(
-            [str(tc.ptxas), f"-arch={ARCH}", "-O3", "-o", str(vendor), str(src)],
+            [str(tc.ptxas), f"-arch={ARCH}", f"-O{opt}", "-o", str(vendor), str(src)],
             check=False,
             timeout=60.0,
         )
@@ -285,16 +285,24 @@ def main() -> int:
     parser.add_argument("--work", type=Path, default=None, help="scratch directory for cubins")
     parser.add_argument("--report", type=Path, default=None, help="write the verdicts as JSON")
     parser.add_argument("--only", nargs="*", default=None, help="restrict to these kernel names")
+    parser.add_argument(
+        "--opt",
+        type=int,
+        default=3,
+        choices=(1, 2, 3),
+        help="ptxas optimisation level to reschedule (default 3). -O0 is not offered: it "
+        "emits a zeroed control word, so there is no schedule to replace",
+    )
     parser.add_argument("--worker", type=int, default=None, help=argparse.SUPPRESS)
     args = parser.parse_args()
 
-    work = args.work or Path(os.environ.get("TMP", "/tmp")) / "basalt-roundtrip"
+    work = args.work or Path(os.environ.get("TMP", "/tmp")) / f"basalt-roundtrip-O{args.opt}"
 
     if args.worker is not None:
         worker(work, args.worker)
         return 0
 
-    manifest = build(work, set(args.only) if args.only else None)
+    manifest = build(work, set(args.only) if args.only else None, args.opt)
     if not manifest:
         raise SystemExit("nothing built; is the toolchain on PATH or BASALT_CUDA_BIN?")
     print(f"built {len(manifest)} vendor and rescheduled cubin pairs")

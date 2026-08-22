@@ -347,9 +347,21 @@ rescheduled kernel has to produce the same bytes.
 | Wrong | 0 |
 
 Every kernel basalt can be compared on now computes exactly what the vendor's schedule
-computes, from control bits it worked out itself. The comparable count moves between 302
-and 303 from run to run, because one shared-memory kernel's reproducibility depends on what
-last used the card; the match count moves with it.
+computes, from control bits it worked out itself. The comparable count moves by one or two
+from run to run, because a few kernels' reproducibility depends on what last used the card;
+the match count moves with it and the failure count stays at zero.
+
+It holds at three optimisation levels, which is three different vendor schedules to
+replace rather than one:
+
+| `ptxas` level | Comparable | Matching |
+| :--- | ---: | ---: |
+| `-O1` | 301 | 301 |
+| `-O2` | 300 | 300 |
+| `-O3` | 303 | 303 |
+
+`-O0` is not offered. It emits a zeroed control word, so there is no schedule there to
+replace and nothing the comparison would prove.
 
 The first run of this scored 246. Everything between then and now was found by it:
 
@@ -427,9 +439,14 @@ same afternoon on it.
 
 ### What is still excluded
 
-12 kernels the harness itself cannot launch, 2 whose vendor output is not
+12 kernels that are not runnable by construction, 2 whose vendor output is not
 deterministic under 32 threads storing to one address, and any whose result is not
-reproducible once something else has used the card. That last group is why the vendor is
+reproducible once something else has used the card.
+
+The first group is the shared and local memory forms. They read shared memory through an
+address that has been converted to the global space, which exists to make `ptxas` emit an
+`LDS` or an `LDL` and was never meant to execute. Excluding them is not a limitation of the
+runner. That last group is why the vendor is
 run a second time, after basalt has had the GPU: a kernel reading uninitialised shared
 memory is stable until it is not, and its first result is not ground truth. Every `LDSM`
 and `MOVMATRIX` kernel read as a basalt failure until that check existed. All three groups
