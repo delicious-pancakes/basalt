@@ -394,7 +394,7 @@ def _schedule(args: argparse.Namespace) -> int:
 
     from .asm.cubin import Cubin
     from .disasm import disassemble_program
-    from .sched.scheduler import schedule_program
+    from .sched.scheduler import issue_cycles, schedule_program
     from .toolchain import ToolchainError, find_toolchain
     from .verify.hazards import verify_program
     from .verify.latency import DEFAULT_MODEL, LatencyModel
@@ -431,6 +431,12 @@ def _schedule(args: argparse.Namespace) -> int:
     result = schedule_program(program, model, observed=observed)
     print(f"{target}")
     print(f"  {result.summary()}")
+
+    # what the correctness costs, stated rather than left for someone to find
+    before = issue_cycles([i.word for i in program.instructions], program.instructions)
+    after = issue_cycles(result.words, program.instructions)
+    if before:
+        print(f"  issue cycles: {before} as compiled, {after} as scheduled ({after / before:.2f}x)")
     for note in result.out_of_scoreboards:
         print(f"  unallocatable: {note}")
     for note in result.unplaceable[:5]:

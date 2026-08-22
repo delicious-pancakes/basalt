@@ -35,7 +35,20 @@ from ..verify.latency import GUARD_CYCLES, LatencyClass, LatencyModel
 from ..verify.observed import ObservedStalls
 from ..verify.operands import RegRef, operand_access
 
-__all__ = ["SCOREBOARDS", "STALL_MAX", "ScheduleResult", "schedule_program"]
+__all__ = [
+    "SCOREBOARDS",
+    "STALL_MAX",
+    "YIELD_COST",
+    "ScheduleResult",
+    "issue_cycles",
+    "schedule_program",
+]
+
+# What the safe stall encoding costs when counting issue cycles. A zero stall is
+# a long wait rather than no wait, measured at about 37 cycles per instruction
+# (see docs/FINDINGS.md), so costing it as zero would flatter a schedule that
+# leans on it, which is exactly the schedule basalt produces.
+YIELD_COST = 37
 
 # Four bits of stall, so 15 is the most a single instruction can request.
 STALL_MAX = 15
@@ -520,3 +533,34 @@ def schedule_program(
         result.words.append(word)
 
     return result
+
+
+def issue_cycles(words, instructions=None) -> int:
+    """Cycles a schedule spends issuing, counting only what runs.
+
+    Everything after the first `EXIT` is padding the assembler emits to fill a
+    cache line and never issues, so counting it makes a kernel with more padding
+    look more expensive. Ignoring that is how a first attempt at this measured
+    basalt as nearly four times *faster* than the vendor.
+
+    A cost model rather than a measurement: it counts what the control bits ask
+    the scheduler to wait, which is the thing basalt decides, and says nothing
+    about memory or occupancy.
+    """
+    reachable = len(words)
+    source = instructions if instructions is not None else []
+    for index, instruction in enumerate(source):
+        if instruction.word is not None and instruction.opcode == "EXIT":
+            reachable = index + 1
+            break
+
+    total = 0
+    for index in range(min(reachable, len(words))):
+        word = words[index]
+        if word is None:
+            continue
+        if instructions is not None and instructions[index].word is None:
+            continue
+        stall = word.field("stall")
+        total += YIELD_COST if stall == STALL_YIELD else stall
+    return total

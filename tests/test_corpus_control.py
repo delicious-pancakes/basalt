@@ -376,3 +376,62 @@ class TestTheBranchFieldIsStillWhereItWasFound:
         bad = sum(row[1] for row in rows)
         assert ok > 100, f"only {ok} branches found; the corpus did not build"
         assert bad == 0, f"{bad} branches did not decode to their label"
+
+
+class TestWhatTheCorrectnessCosts:
+    """basalt's schedules are correct and slower. Both halves are measured.
+
+    A scheduler that only reports whether it was right is hiding the trade it
+    made. basalt reaches for the safe stall encoding at every block boundary and
+    declines to lean on a wait a predicated instruction carries, and those are
+    not free: over the whole corpus its schedules spend about 40% more cycles
+    issuing than the vendor's.
+
+    Pinned so the number cannot drift in either direction unnoticed. Getting
+    slower is a regression. Getting much faster without the round trip also
+    moving is a reason to check the round trip rather than to celebrate.
+    """
+
+    @staticmethod
+    @pytest.fixture(scope="class")
+    def cycles(toolchain, model, observed):
+        from basalt.harvest.corpus_shapes import generate_shapes
+        from basalt.sched.scheduler import issue_cycles, schedule_program
+
+        def one(snippet):
+            with TemporaryDirectory(prefix="basalt-cost-") as tmp:
+                src = Path(tmp) / "k.ptx"
+                cubin = Path(tmp) / "k.cubin"
+                src.write_text(snippet.ptx)
+                built = toolchain.run(
+                    [str(toolchain.ptxas), f"-arch={ARCH}", "-O3", "-o", str(cubin), str(src)],
+                    check=False,
+                    timeout=60.0,
+                )
+                if built.returncode != 0:
+                    return (0, 0)
+                program = disassemble_program(toolchain, cubin)
+                result = schedule_program(program, model, observed=observed)
+                if result.out_of_scoreboards:
+                    return (0, 0)
+                return (
+                    issue_cycles([i.word for i in program.instructions], program.instructions),
+                    issue_cycles(result.words, program.instructions),
+                )
+
+        snippets = generate() + generate_tensor() + generate_shapes()
+        with ThreadPoolExecutor(max_workers=os.cpu_count() or 4) as pool:
+            rows = list(pool.map(one, snippets))
+        return sum(r[0] for r in rows), sum(r[1] for r in rows)
+
+    def test_the_cost_is_known_and_bounded(self, cycles):
+        vendor, basalt = cycles
+        assert vendor > 5000, "the corpus did not build"
+        ratio = basalt / vendor
+        # 1.39x when this was written
+        assert ratio < 1.6, f"basalt's schedules cost {ratio:.2f}x the vendor's, up from 1.39x"
+        assert ratio > 1.0, (
+            f"basalt's schedules cost {ratio:.2f}x, which is cheaper than the vendor's. that is "
+            f"not implausible but it is surprising, and it is the shape a costing bug takes: "
+            f"check the round trip still passes before believing it"
+        )

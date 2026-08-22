@@ -497,7 +497,47 @@ quietly wrong when a compiler version changes, so it is re-derived from the corp
 rather than trusted. With it, assembling every corpus kernel as a whole program reproduces
 8,351 of 8,560 instructions bit-identically, and none to anything else.
 
-## 12. What is deliberately not claimed
+## 12. What the correctness costs
+
+A scheduler that reports only whether it was right is hiding the trade it made. basalt's
+schedules are correct on every comparable corpus kernel and they are slower than the
+vendor's:
+
+| | Issue cycles |
+| :--- | ---: |
+| `ptxas -O3` | 13,537 |
+| basalt | 18,778 |
+| | **1.39x** |
+
+Slower on 302 of the 329 kernels, and the worst cases are around 2.7x. Two decisions
+account for most of it, and both were taken deliberately.
+
+**The safe stall encoding at every block boundary.** A value defined in one block and
+consumed in another is covered by putting a zero stall on the block's last instruction,
+which waits for outstanding results as well as elapsed cycles and costs about 37 cycles.
+That is blunt and unconditionally correct, and it is reached for once per block whether or
+not anything actually crosses the edge.
+
+**Not leaning on a wait a predicated instruction carries.** `ptxas` does lean on them and
+its output runs; basalt emits its own wait instead, because relying on one was measurably
+wrong for `MUFU` feeding a store through a predicated `FMUL` (finding 10). One extra wait
+per occurrence.
+
+### Costing this is easy to get wrong
+
+The first attempt at this measurement reported basalt as nearly four times **faster**,
+which would have been a lovely thing to write down and completely false. Everything after
+the first `EXIT` is padding the assembler emits to fill a cache line and never issues, and
+`ptxas` leaves it at a zero stall. Counting that padding at 37 cycles each charged the
+vendor several hundred phantom cycles per kernel.
+
+The number is a cost model, not a measurement. It counts what the control bits ask the
+scheduler to wait, which is the part basalt decides, and says nothing about memory latency
+or occupancy. It is pinned in the test suite from both sides: getting slower is a
+regression, and getting much faster without the hardware round trip also moving is a
+reason to distrust the costing rather than to celebrate.
+
+## 13. What is deliberately not claimed
 
 Stated so the boundary of the evidence is visible.
 
@@ -524,7 +564,7 @@ Stated so the boundary of the evidence is visible.
   first conversion. An earlier run reported `I2FP` as requiring 4 cycles; the control
   retracted it, and it is listed as not established rather than quietly kept.
 
-## 13. Corrections made along the way
+## 14. Corrections made along the way
 
 Kept because a method is only as trustworthy as its error log.
 
