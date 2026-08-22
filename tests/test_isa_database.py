@@ -118,6 +118,25 @@ class TestCoverage:
         """Uniform-register instructions are easy to miss entirely."""
         assert any(n.startswith("U") for n in db.forms)
 
+    def test_an_operand_the_mnemonic_depends_on_still_has_a_field(self, db):
+        """`IMAD.SHL.U32` is what `IMAD` is called when its multiplier is a shift.
+
+        Any flip of that immediate makes the value something other than a power
+        of two, which the disassembler prints as `IMAD.U32`, so a differential
+        probe reads all thirty-two bits as suffix bits and the operand ends up
+        with no field at all. Every one of them was refused by the assembler
+        until the probe learned to check whether writing values through those
+        bits reproduces them.
+        """
+        forms = [f for f in db.shapes("IMAD.SHL.U32") if f.operand_text]
+        assert forms, "IMAD.SHL.U32 is not in the database"
+        for form in forms:
+            immediate = [o for o in form.operands if len(o.bits) >= 16]
+            assert immediate, (
+                f"IMAD.SHL.U32 {form.operand_text} has no wide operand field; "
+                "the rendered-operand recovery is not running"
+            )
+
 
 class TestSerialisation:
     def test_reported_coverage_matches_the_contents(self, db):

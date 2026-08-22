@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import re
 from collections import defaultdict
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from enum import StrEnum
 
@@ -132,6 +133,111 @@ def _classify(base: Instruction, mutant: Instruction | None, bit: int) -> BitRol
     return BitRole.OPERAND
 
 
+def _operands_of(text: str) -> list[str]:
+    """The operand list of a decoded instruction, split on top-level commas."""
+    parts: list[str] = []
+    current = ""
+    depth = 0
+    for char in text:
+        if char in "[({":
+            depth += 1
+        elif char in "])}":
+            depth -= 1
+        if char == "," and depth == 0:
+            parts.append(current.strip())
+            current = ""
+        else:
+            current += char
+    if current.strip():
+        parts.append(current.strip())
+    return parts
+
+
+def _write_bits(word: int, bits: Sequence[int], value: int) -> int:
+    for position, bit in enumerate(bits):
+        word &= ~(1 << bit)
+        word |= ((value >> position) & 1) << bit
+    return word
+
+
+def _promote_rendered_operands(
+    tc: Toolchain, base: Word, origin, fmap: FieldMap, arch: str
+) -> None:
+    """Recover an operand field the disassembler hid behind a suffix.
+
+    `IMAD R22, R2, 0x10, RZ` prints as `IMAD.SHL.U32` because the multiplier is a
+    power of two, and as `IMAD.U32` the moment it is not. Every flip of an
+    immediate bit therefore changes the suffix, the probe records those bits as
+    modifier bits, and the immediate ends up with no field at all. The assembler
+    then refuses every `IMAD.SHL.U32` in the corpus for want of anywhere to put
+    its operand, which is the largest single group of refusals there was.
+
+    Nothing here is assumed. The candidates are modifier bits that also moved
+    exactly one operand, and they are kept only if writing values through them
+    reproduces those values exactly and leaves every other operand alone. A bit
+    that really does control a modifier fails that check and stays where it was.
+    """
+    candidates: dict[int, list[int]] = defaultdict(list)
+    for observation in fmap.observations:
+        if observation.role is not BitRole.MODIFIER:
+            continue
+        if (index := observation.changed_operand_index) is not None:
+            candidates[index].append(observation.bit)
+    if not candidates:
+        return
+
+    reference = _operands_of(origin.operands)
+    promoted: set[int] = set()
+
+    for slot, found in candidates.items():
+        bits = sorted(found)
+        if slot >= len(reference) or not _IMM.fullmatch(reference[slot]):
+            # only immediates are recovered this way; a register that moves a
+            # suffix is a genuinely different encoding rather than a rendering
+            continue
+        # values that fit, are distinct, and keep the top bit clear so nothing
+        # turns on how the decoder prints a negative
+        width = len(bits)
+        probes = [v for v in (0x1, 0x2, 0x15, 0x7F) if v < (1 << (width - 1))]
+        if len(probes) < 2:
+            continue
+
+        words = [Word(_write_bits(base.value, bits, v)) for v in probes]
+        decoded = decode_words(tc, words, arch=arch)
+        if len(decoded) != len(probes):
+            continue
+        pairs = zip(decoded, probes, strict=True)
+        if all(_reads_back(got, reference, slot, want) for got, want in pairs):
+            promoted.update(bits)
+
+    if not promoted:
+        return
+    for position, observation in enumerate(fmap.observations):
+        if observation.bit in promoted:
+            fmap.observations[position] = BitObservation(
+                observation.bit, BitRole.OPERAND, observation.before, observation.after
+            )
+
+
+def _reads_back(decoded, reference: list[str], slot: int, want: int) -> bool:
+    """Did writing `want` into the field produce exactly `want` and nothing else?"""
+    if decoded is None or not decoded.is_valid:
+        return False
+    got = _operands_of(decoded.operands)
+    if len(got) != len(reference):
+        return False
+    for index, (a, b) in enumerate(zip(reference, got, strict=True)):
+        if index == slot:
+            try:
+                if int(b, 0) != want:
+                    return False
+            except ValueError:
+                return False
+        elif a != b:
+            return False
+    return True
+
+
 def probe_word(
     tc: Toolchain,
     base: Word,
@@ -167,6 +273,7 @@ def probe_word(
             fmap.observations.append(BitObservation(bit, BitRole.CONTROL, "", ""))
 
     fmap.observations.sort(key=lambda o: o.bit)
+    _promote_rendered_operands(tc, base, origin, fmap, arch)
     return fmap
 
 
