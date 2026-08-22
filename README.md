@@ -49,7 +49,7 @@ So basalt is three tools, each held to the same standard, and the standard is th
 
 | | What it does | How it is checked | Result |
 | :--- | :--- | :--- | ---: |
-| **Assembler** | SASS text to the 128-bit word | Reassemble every instruction `ptxas` emitted and compare bytes | 7,597 of 8,560 exact, **0 wrong** |
+| **Assembler** | SASS text to the 128-bit word | Reassemble every instruction `ptxas` emitted and compare bytes | 7,953 of 8,560 exact, **0 wrong** |
 | **Checker** | Reads a schedule, reports hazards | The vendor's own output must verify clean, and a deliberately shortened stall must be caught | 329 kernels clean, faults caught |
 | **Scheduler** | Assigns the control bits from scratch | Discard every control bit, compute new ones, run both on the GPU, compare output bytes | **314 of 314** byte-identical |
 
@@ -60,13 +60,22 @@ passed seven of seven for a long time. Running it over three hundred found forty
 ones, and every correction in [findings](docs/FINDINGS.md) came out of watching that number
 move.
 
-The same discipline decides what the assembler is allowed to do. It reached 89% of the
-corpus only after four rounds of being confidently incorrect: writing a register number
-into an immediate form, keeping a harvested branch target, putting the integer 15 into a
-field that holds a half-precision float, and writing an operand into bits that turned out
-to be a reuse flag. Each of those produced a word that assembles, disassembles back to the
-right text, and computes something else. All four are now refused with a reason, and the
-count of instructions that assemble to the wrong bytes is a test pinned at zero.
+The same discipline decides what the assembler is allowed to do. It reached 93% of the
+corpus only after six separate rounds of being confidently incorrect:
+
+- writing a register number into the encoding of an immediate form,
+- treating a uniform register as interchangeable with a regular one,
+- keeping the branch target of whichever kernel the form was harvested from,
+- putting the integer 15 into a field that holds a half-precision float,
+- writing an operand into bits that turned out to be a reuse flag,
+- and writing into a field the prober had only partly attributed, leaving the rest still
+  encoding the old value.
+
+Every one of those produced a word that assembles, disassembles back to exactly the text
+it came from, and computes something else. That is the same failure the rest of this
+repository exists to catch, which is why all six are now refused with a reason naming what
+the field really holds, and why the count of instructions that assemble to the wrong bytes
+is a test pinned at zero rather than a number in a table.
 
 ## How it works
 
@@ -261,7 +270,7 @@ Three of those contradict the assumed model basalt shipped with: `DADD` was assu
 | 3 | 5.88 | wrong |
 | 4 | 6.88 | correct |
 
-**It agrees with the vendor compiler on 317 kernels.** Every kernel `ptxas` builds from the corpus is verified against its own scheduling: 5,423 dependencies, zero errors. That sweep runs in CI on every push, and every modelling error this project has made was caught by it rather than by reasoning.
+**It agrees with the vendor compiler on every kernel in the corpus.** Every kernel `ptxas` builds from the corpus is verified against its own scheduling: 5,423 dependencies, zero errors. That sweep runs in CI on every push, and every modelling error this project has made was caught by it rather than by reasoning.
 
 **The verdicts match the silicon.** For every encodable stall on a dependent producer, basalt's static answer and what the hardware actually computes agree, including the zero case. That is held as a test, not asserted here. Full evidence, including three independent methods for the required stall and the corrections made along the way, is in [findings](docs/FINDINGS.md).
 

@@ -180,9 +180,9 @@ rather than one, since a single value can agree by accident.
 
 | | |
 | :--- | ---: |
-| Forms checked | 269 |
-| Register-bearing operand slots | 726 |
-| Slots that behave as measured | **710 (97.8%)** |
+| Forms checked | 270 |
+| Register-bearing operand slots | 713 |
+| Slots that behave as measured | **695 (97.5%)** |
 | Forms with every register slot controllable | 246 |
 
 The 207 remaining slots hold something other than a register, a branch target,
