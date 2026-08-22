@@ -57,6 +57,21 @@ in uniform ones, and two real bugs lived in the uniform datapath for as long as 
 was run. Any change to the scheduler, the latency model, or `operands.py` should be
 followed by all three.
 
+The assembler has its own control, and it needs no GPU. It compiles every corpus kernel,
+hands the disassembly back to basalt, and compares the bytes against the vendor's:
+
+```bash
+python scripts/assembler_coverage.py                  # the README's assembler number
+python scripts/assembler_coverage.py --show-refusals  # and why the rest were declined
+```
+
+Refusing is a limit and the count is expected to move. **Being wrong is a bug**, and the
+script exits non-zero the moment that column leaves zero. Anything touching `assemble.py`,
+`isa/operands.py` or the ISA database should be followed by this.
+
+Both scripts print the source tree and commit they imported above their results. If that
+line does not name your checkout, an install elsewhere on the machine is what actually ran.
+
 ## Reporting an ISA gap
 
 Use the **ISA gap** issue template and include, at minimum:

@@ -656,6 +656,61 @@ def schedule_program(
         pinned.add(last)
         result.yielded.append(last)
 
+    # A read barrier says "signal once my operands have been read", and what it
+    # covers is not only its own read. `ptxas` puts one on the last of a run of
+    # loads and lets in-order issue plus the gaps it chose carry the rest: by
+    # the time the last one has read its address register, the earlier ones
+    # have too. Compress those gaps and the guarantee goes with them.
+    #
+    # That is the whole of `k_mma_m16n8k32_s4_s4_s32` at `-O1`. Four `LDG.E`
+    # take their address from `R4`, the vendor spaces them four cycles apart and
+    # puts a read barrier on the fourth, and the `MOV R4, 0x90` after them waits
+    # for it. basalt issued them one cycle apart, the barrier fired while the
+    # earlier loads were still reading, `R4` was overwritten under them and they
+    # loaded from the wrong address.
+    #
+    # basalt has no measured model of how long an operand read takes, so it
+    # cannot compute a safe gap here; FINDINGS records that as the one hazard
+    # class it reports rather than solves. What it can do is decline to make the
+    # window tighter than the vendor made it, which is what this does. The
+    # window is bounded by the previous read barrier and the enclosing block, so
+    # this pins a handful of instructions rather than a kernel.
+    block_of_index: dict[int, int] = {}
+    for block in cfg.blocks:
+        for index in range(block.start, block.end):
+            block_of_index[index] = block.start
+
+    previous_barrier = -1
+    for index, instr in enumerate(program.instructions):
+        if instr.word is None or instr.word.field("read_barrier") == NO_BARRIER:
+            continue
+        start = max(block_of_index.get(index, 0), previous_barrier + 1)
+        for covered in range(start, index + 1):
+            original = program.instructions[covered]
+            if original.word is not None:
+                stalls[covered] = max(stalls[covered], original.word.field("stall"))
+        previous_barrier = index
+
+    # Scoreboards the original schedule used as read barriers. basalt does not
+    # recompute those, so the waits that serviced them have to survive too, and
+    # they belong on the instruction that did the waiting rather than the one
+    # that set the barrier.
+    #
+    # Keeping them only where the barrier is set is what this used to do, and it
+    # leaves the overwrite unguarded. In `k_mma_m16n8k32_s4_s4_s32` at `-O1`,
+    # four loads take their address from `R4` and the last one signals a read
+    # barrier; the next instruction is `MOV R4, 0x90`. The vendor makes that MOV
+    # wait for the barrier. basalt kept the barrier, dropped the wait, and the
+    # loads read an address that had already been overwritten: a write after
+    # read, no fault, wrong answer.
+    read_barrier_mask = 0
+    for instr in program.instructions:
+        if instr.word is None:
+            continue
+        barrier = instr.word.field("read_barrier")
+        if barrier != NO_BARRIER:
+            read_barrier_mask |= 1 << barrier
+
     # ---- emit
     for index, instr in enumerate(program.instructions):
         if instr.word is None:
@@ -671,9 +726,8 @@ def schedule_program(
         # original barrier is kept and the waits that serviced it are folded into
         # the new wait mask. Everything else here is computed from scratch.
         inherited_read_barrier = word.field("read_barrier")
-        wait = waits[index]
-        if inherited_read_barrier != NO_BARRIER or word.field("read_barrier") != NO_BARRIER:
-            wait |= word.field("wait_mask")
+        # every original wait on a read barrier is kept; the rest are recomputed
+        wait = waits[index] | (word.field("wait_mask") & read_barrier_mask)
 
         word = word.with_field("stall", stalls[index])
         # The yield bit is not independent of the stall. Across the whole corpus
