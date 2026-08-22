@@ -7,9 +7,11 @@ stages land. Anything claimed here as done has a command that demonstrates it.
 
 basalt is a **checker**, not a code generator.
 
-Tools that emit sm_120 machine code *assign* the scheduling control word from a latency model.
-Nothing publicly available verifies the result afterwards, and the latency models in use were
-validated against a single GPU part.
+Tools that emit sm_120 machine code *assign* the scheduling control word from a latency model,
+and the ones that check themselves do it by running their own kernels and seeing that the
+answers come out right. Nothing publicly available reads machine code it did not produce and
+says whether that code's control bits are safe, which is the question anyone holding a cubin
+actually has.
 
 That matters because sm_120 has no hardware interlock on fixed-latency instructions. The
 hardware does not validate the scheduling control word; it trusts whatever produced it. A stall

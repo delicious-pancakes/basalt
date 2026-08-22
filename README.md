@@ -29,25 +29,29 @@ That is a strange kind of bug. It does not crash. It does not appear in a debugg
 
 Tools that generate machine code for this architecture *assign* those control bits from a latency model. basalt is the thing that checks the answer.
 
-## The first one that is actually checked
+## The first one that checks somebody else's work
 
 Machine-code assemblers for NVIDIA GPUs have existed for a decade, and there is prior work
-on Blackwell: the encoding has been reverse engineered before, and there are published
-cycle-level characterisations of `sm_120`. Being first to write one is not the claim here.
+on Blackwell specifically: the encoding has been reverse engineered before, there are
+published cycle-level characterisations of `sm_120`, and there are tools that generate its
+scheduling control bits and run their own kernels on a real card to see that the answers
+come out right. Being first to write one is not the claim here, and neither is being first
+to run one.
 
-Being first to **prove one correct** is.
+Being first to **check code you did not write** is.
 
-Every one of those tools assigns the scheduling control bits from a latency table written
-by hand, and then stops. The most widely used of them says so in its own documentation: it
-translates assembly to machine code *literally*, and guaranteeing that the result is
-semantically correct is left to the programmer. The published work in this area profiles
-instruction latency so that a human expert can place instructions better; none of it checks
-the placement afterwards.
+Generating a kernel and confirming it computes the right answer is a real control, and it
+is a different question. It says nothing about the cubin in front of you, because it did
+not produce that cubin. There is no tool that reads `sm_120` machine code, whatever emitted
+it, and tells you whether its control bits actually cover its data dependencies, which on
+an architecture with no hardware interlock is the difference between "it ran" and "it is
+correct": a wrong stall count produces a wrong number at full speed, with no fault and no
+warning.
 
-Nobody publishes evidence that their assignment is right, there is no tool that reads a
-cubin and tells you whether its control bits are safe, and on an architecture with no
-hardware interlock the difference between "it ran" and "it is correct" is invisible: a
-wrong stall count produces a wrong number at full speed, with no fault and no warning.
+basalt reads a cubin and answers that question. The reference it is held to is the vendor
+compiler's own output, so a disagreement is basalt's bug until proven otherwise, and the
+schedules it writes itself have to reproduce what the vendor's schedules compute, byte for
+byte, on the card.
 
 So basalt is three tools, each held to the same standard, and the standard is the point:
 **agree with the vendor exactly, or say why not.**
