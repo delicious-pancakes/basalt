@@ -10,7 +10,8 @@ abstract: >-
   vendor compiler's own bytes and against the silicon, by rescheduling every
   kernel in a generated corpus and comparing GPU output byte for byte.
 type: software
-version: 0.1.0
+# tracks the package version; there is no 0.1.0 to cite until one is tagged
+version: 0.1.0.dev0
 authors:
   - family-names: Patel
     given-names: Sunny
