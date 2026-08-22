@@ -53,12 +53,16 @@ So basalt is three tools, each held to the same standard, and the standard is th
 | **Checker** | Reads a schedule, reports hazards | The vendor's own output must verify clean, and a deliberately shortened stall must be caught | 329 kernels clean, faults caught |
 | **Scheduler** | Assigns the control bits from scratch | Discard every control bit, compute new ones, run both on the GPU, compare output bytes | **314 of 314** byte-identical |
 
-And the part a scheduler is usually quiet about: basalt's schedules cost **1.29x** the
-vendor's issue cycles, and it is slower on 216 of the 329 kernels. That is the price of
-reaching for the safe stall encoding at every block boundary and declining to lean on a
-wait a predicated instruction carries. Both decisions were taken deliberately, both are
-measured, and the ratio is pinned in the test suite so it cannot drift unnoticed in either
-direction.
+And the part a scheduler is usually quiet about: what the correctness costs. basalt's
+schedules spend **0.93x** the vendor's issue cycles, slower on 15 of the 329 kernels and
+cheaper on the rest, with every comparable kernel still byte-identical on the GPU.
+
+Cheaper than the vendor is not a claim to be smug about. basalt schedules every dependency
+at the tightest gap `ptxas` was ever seen to leave for that exact pairing, and `ptxas` is
+balancing register pressure and memory alongside issue latency while this optimises one
+number. It was also not believed on sight: the first time the ratio went under 1.0 the
+hardware round trip broke, and the number only stood once the bug it exposed was fixed. The
+ratio is pinned from both sides in the test suite for that reason.
 
 The middle column is the point. A checker and a scheduler that share a latency model agree
 with each other while both being wrong, so neither is evidence for the other; only the

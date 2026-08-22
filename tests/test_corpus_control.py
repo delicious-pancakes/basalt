@@ -428,11 +428,22 @@ class TestWhatTheCorrectnessCosts:
         vendor, basalt = cycles
         assert vendor > 5000, "the corpus did not build"
         ratio = basalt / vendor
-        # 1.29x when this was written, down from 1.39x when the block-boundary
-        # safe stall was placed everywhere instead of only where needed
-        assert ratio < 1.45, f"basalt's schedules cost {ratio:.2f}x the vendor's, up from 1.29x"
-        assert ratio > 1.0, (
-            f"basalt's schedules cost {ratio:.2f}x, which is cheaper than the vendor's. that is "
-            f"not implausible but it is surprising, and it is the shape a costing bug takes: "
-            f"check the round trip still passes before believing it"
+        # 0.93x when this was written: slightly cheaper than the vendor, and
+        # correct on every comparable kernel of the hardware round trip.
+        #
+        # Cheaper is believable rather than suspicious, for a specific reason.
+        # basalt schedules every dependency at the tightest gap `ptxas` was ever
+        # observed to leave for that exact pairing, and `ptxas` does not always
+        # schedule at its own minimum: it is balancing register pressure and
+        # memory alongside issue latency, and this is optimising one number.
+        #
+        # It was not believed on sight. When this first went under 1.0 the round
+        # trip was run before anything was written down, and the first time it
+        # was the round trip broke, on an `IMNMX` whose destination the operand
+        # model could not see. Both bounds stay because a ratio drifting either
+        # way is a reason to look.
+        assert ratio < 1.15, f"basalt's schedules cost {ratio:.2f}x the vendor's, up from 0.93x"
+        assert ratio > 0.75, (
+            f"basalt's schedules cost {ratio:.2f}x, which is far cheaper than the vendor's and "
+            f"is the shape a costing bug takes. check the hardware round trip before believing it"
         )

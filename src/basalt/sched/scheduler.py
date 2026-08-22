@@ -211,6 +211,60 @@ def _live_out(cfg, program) -> list[set[RegRef]]:
     return live_out
 
 
+def _short_pair(block, program, stalls, pinned, model, observed) -> bool:
+    """Is any dependency inside this block short of what it needs?
+
+    The same walk the assignment fixed point does, asking only whether anything
+    is short rather than fixing it. Sharing the requirement function is the
+    point: a shrink pass judged by a looser rule than the one that placed the
+    cycles would quietly undo the placement.
+    """
+    last_def: dict[RegRef, list[_Producer]] = {}
+    elapsed: dict[int, int] = {}
+
+    for index in range(block.start, block.end):
+        instr = program.instructions[index]
+        if instr.word is None:
+            continue
+        access = operand_access(instr.mnemonic, instr.operands)
+
+        for reg in access.real_uses:
+            for producer in last_def.get(reg, ()):
+                record = model.lookup(producer.opcode)
+                if producer.kind is LatencyClass.FIXED:
+                    needed = _requirement(
+                        producer.mnemonic,
+                        instr.opcode,
+                        record.cycles,
+                        observed,
+                        guard=reg == access.guard,
+                    )
+                else:
+                    needed = _scoreboarded_requirement(
+                        producer.mnemonic, instr.opcode, observed, guard=reg == access.guard
+                    )
+                if needed and elapsed.get(producer.index, 0) < needed:
+                    return True
+
+        charge = SATURATION if index in pinned else stalls[index]
+        for key in elapsed:
+            elapsed[key] = min(SATURATION, elapsed[key] + charge)
+
+        produced = _Producer(
+            index,
+            instr.opcode,
+            instr.mnemonic,
+            model.lookup(instr.opcode).kind,
+        )
+        for reg in access.real_defs:
+            if access.guard:
+                last_def.setdefault(reg, []).append(produced)
+            else:
+                last_def[reg] = [produced]
+            elapsed[index] = stalls[index]
+    return False
+
+
 def _place_stall(
     stalls: list[int],
     pinned: set[int],
@@ -518,6 +572,34 @@ def schedule_program(
 
             if not short:
                 break
+
+    # ---- take back what nothing needs
+    # The fixed point above only ever adds. It walks the block, finds a consumer
+    # that is short, and spends cycles in the window before it, and a cycle
+    # spent for one pair also separates every other pair spanning that point.
+    # So a later pair can be satisfied by stall that was placed for an earlier
+    # one, and the earlier placement is then larger than anything requires.
+    #
+    # This walks it back: lower a stall while every dependency in the block is
+    # still met, one cycle at a time, cheapest instruction first. Purely
+    # subtractive and checked against the same requirement function that put the
+    # cycles there, so it cannot introduce a shortfall the fixed point would
+    # have caught.
+    #
+    # Worth about a fifth of the gap against the vendor. `LDC` alone accounted
+    # for half the excess before this existed, almost all of it overshoot rather
+    # than a real requirement.
+    for block in cfg.blocks:
+        for index in range(block.end - 1, block.start - 1, -1):
+            if index in pinned or program.instructions[index].word is None:
+                continue
+            floor = _NEVER_ZERO_STALL.get(program.instructions[index].opcode, 1)
+            while stalls[index] > floor:
+                stalls[index] -= 1
+                if _short_pair(block, program, stalls, pinned, model, observed):
+                    stalls[index] += 1
+                    break
+                result.stalls_added -= 1
 
     # ---- anything crossing a block boundary
     # The stall analysis above is per block, so a value defined in one block and

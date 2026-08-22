@@ -506,11 +506,22 @@ vendor's:
 | | Issue cycles |
 | :--- | ---: |
 | `ptxas -O3` | 13,537 |
-| basalt | 17,462 |
-| | **1.29x** |
+| basalt | 12,645 |
+| | **0.93x** |
 
-Slower on 216 of the 329 kernels. Two decisions account for most of what remains, and both
-were taken deliberately.
+Slower on 15 of the 329 kernels and cheaper on the rest, with every comparable kernel still
+byte-identical on the GPU.
+
+Cheaper than the vendor is believable rather than suspicious, for a specific reason: basalt
+schedules every dependency at the tightest gap `ptxas` was ever observed to leave for that
+exact pairing, and `ptxas` does not always schedule at its own minimum. It is balancing
+register pressure and memory alongside issue latency; this is optimising one number.
+
+It was not believed on sight. The first time the ratio went under 1.0 the hardware round
+trip broke, on an `IMNMX` whose destination the operand model could not see, and the number
+only stood once that was fixed and every kernel round-tripped again.
+
+Two decisions still cost cycles, and both were taken deliberately.
 
 **The safe stall encoding where a value leaves a block.** A definition consumed in another
 block is covered by putting a zero stall on the block's last instruction, which waits for
@@ -518,10 +529,17 @@ outstanding results as well as elapsed cycles and costs about 37 cycles.
 
 It used to be placed at every boundary regardless, which was unconditionally correct and
 most of the gap: 732 of them across the corpus, against 74 now. Restricting it to blocks
-that actually have something live out took the ratio from 1.39x to 1.29x with the hardware
-round trip unchanged at every comparable kernel. Live-out is computed as the ordinary
-backwards fixed point rather than guessed, because trading a known cost for an unknown
-correctness risk is the wrong way round.
+that actually have something live out took the ratio from 1.39x to 1.29x. Live-out is
+computed as the ordinary backwards fixed point rather than guessed, because trading a known
+cost for an unknown correctness risk is the wrong way round.
+
+**Stall the assignment placed and nothing needs.** The fixed point only ever adds: it finds
+a consumer that is short and spends cycles in the window before it, and a cycle spent for
+one pair also separates every other pair spanning that point. So a later pair can be
+satisfied by stall placed for an earlier one, leaving the earlier placement larger than
+anything requires. Walking that back, one cycle at a time, judged by the same requirement
+function that placed them, took 1.29x to 0.93x. `LDC` alone was half the excess before it,
+almost all overshoot rather than requirement.
 
 **Not leaning on a wait a predicated instruction carries.** `ptxas` does lean on them and
 its output runs; basalt emits its own wait instead, because relying on one was measurably
