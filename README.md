@@ -38,11 +38,16 @@ cycle-level characterisations of `sm_120`. Being first to write one is not the c
 Being first to **prove one correct** is.
 
 Every one of those tools assigns the scheduling control bits from a latency table written
-by hand, and then stops. None of them checks the result. Nobody publishes evidence that
-their assignment is right, there is no tool that reads a cubin and tells you whether its
-control bits are safe, and on an architecture with no hardware interlock the difference
-between "it ran" and "it is correct" is invisible: a wrong stall count produces a wrong
-number at full speed, with no fault and no warning.
+by hand, and then stops. The most widely used of them says so in its own documentation: it
+translates assembly to machine code *literally*, and guaranteeing that the result is
+semantically correct is left to the programmer. The published work in this area profiles
+instruction latency so that a human expert can place instructions better; none of it checks
+the placement afterwards.
+
+Nobody publishes evidence that their assignment is right, there is no tool that reads a
+cubin and tells you whether its control bits are safe, and on an architecture with no
+hardware interlock the difference between "it ran" and "it is correct" is invisible: a
+wrong stall count produces a wrong number at full speed, with no fault and no warning.
 
 So basalt is three tools, each held to the same standard, and the standard is the point:
 **agree with the vendor exactly, or say why not.**
