@@ -118,6 +118,16 @@ def _kind(token: str) -> str:
     return "other"
 
 
+def _token_value(token: str) -> int | None:
+    """The number a token encodes, register or immediate, or None."""
+    number = _register_number(token)
+    if number is not None:
+        return number
+    if _IMMEDIATE.match(token):
+        return int(token, 0)
+    return None
+
+
 def _register_number(token: str) -> int | None:
     """The number a register token encodes, or None if it is not one."""
     match = _REGISTER.match(token)
@@ -135,8 +145,14 @@ class Assembler:
     """Builds instruction words from text, for the forms the database knows."""
 
     def __init__(self, database: IsaDatabase) -> None:
-        self._forms: dict[str, Form] = {}
-        for mnemonic, entry in database.forms.items():
+        # every recorded shape of a mnemonic, not just the canonical one. one
+        # mnemonic covers several encodings and the text decides which applies,
+        # so assembling tries each and keeps the one that fits.
+        self._forms: dict[str, list[Form]] = {}
+        entries = [
+            (mnemonic, form) for mnemonic in database.forms for form in database.shapes(mnemonic)
+        ]
+        for mnemonic, entry in entries:
             reference = entry.word.value
             reference_text = entry.operand_text
             if (recorded := _GUARD.match(reference_text + " ")) is not None:
@@ -151,6 +167,19 @@ class Assembler:
                     # text that disagrees is refused rather than mis-encoded
                     continue
                 token, holds = classified
+                # A field has to be able to reproduce the reference operand's
+                # own value. If reading it back does not give what the reference
+                # text says, the prober attributed only part of the field, and
+                # writing a different value leaves the rest encoding the old
+                # one. `IMAD R?, R?, 0x1, R?` with two of the immediate's bits
+                # unattributed assembles `0x3` into something that is neither.
+                if holds == "value" and token < len(tokens):
+                    expected = _token_value(tokens[token])
+                    if (
+                        expected is None
+                        or _read(reference, tuple(sorted(operand.bits))) != expected
+                    ):
+                        holds = "partial"
                 slots.append(
                     Slot(
                         index=operand.slot,
@@ -160,15 +189,21 @@ class Assembler:
                         parts=dict(operand.subfields),
                     )
                 )
-            self._forms[mnemonic] = Form(
-                mnemonic=mnemonic,
-                reference=reference,
-                tokens=tokens,
-                slots=tuple(slots),
+            self._forms.setdefault(mnemonic, []).append(
+                Form(
+                    mnemonic=mnemonic,
+                    reference=reference,
+                    tokens=tokens,
+                    slots=tuple(slots),
+                )
             )
 
     @property
     def forms(self) -> int:
+        return sum(len(shapes) for shapes in self._forms.values())
+
+    @property
+    def mnemonics(self) -> int:
         return len(self._forms)
 
     def knows(self, mnemonic: str) -> bool:
@@ -204,9 +239,34 @@ class Assembler:
             negated = bool(trailing.group(1))
             operands = operands[trailing.end() - 1 :].strip()
 
-        form = self._forms.get(mnemonic)
-        if form is None:
+        shapes = self._forms.get(mnemonic)
+        if not shapes:
             raise AssemblyError(f"{mnemonic} is not in the instruction database")
+
+        # Try every recorded shape and keep the first that fits. Order does not
+        # matter for correctness: a shape that does not match the text raises
+        # rather than encoding something else, which is what makes trying them
+        # in turn safe rather than a search for one that happens not to complain.
+        failures: list[str] = []
+        for form in shapes:
+            try:
+                return self._encode(form, mnemonic, operands, guard_register, negated, control)
+            except AssemblyError as exc:
+                failures.append(str(exc))
+        raise AssemblyError(
+            failures[0] if len(failures) == 1 else "; ".join(dict.fromkeys(failures))
+        )
+
+    def _encode(
+        self,
+        form: Form,
+        mnemonic: str,
+        operands: str,
+        guard_register: str | None,
+        negated: bool,
+        control: Word | None,
+    ) -> Word:
+        """Encode against one recorded shape, raising if the text does not fit."""
 
         word = form.reference
         tokens = _tokenise(operands)
@@ -283,8 +343,11 @@ class Assembler:
                 f"{form.tokens[position]!r}, and no field is known to encode it"
             )
 
-        if guard_register is not None:
-            word = _apply_guard(word, guard_register, negated)
+        # The guard is always written, even when the text has none. A recorded
+        # form can itself be a predicated instruction, and its reference
+        # encoding then carries that predicate; leaving the field alone would
+        # emit `@P0 MOV` for text that said `MOV`.
+        word = _apply_guard(word, guard_register or "PT", negated)
 
         result = Word(word)
         if control is not None:

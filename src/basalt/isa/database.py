@@ -107,6 +107,12 @@ class IsaDatabase:
     cuda_version: str
     generated_utc: str = ""
     forms: dict[str, InstructionForm] = field(default_factory=dict)
+    # Other operand shapes of a mnemonic already in `forms`. One mnemonic can
+    # cover several genuinely different encodings, `IADD R2, R3, 0x4` against
+    # `IADD R2, R3, R4`, and they differ in bits outside every operand field.
+    # Kept beside the canonical form rather than replacing it, so every existing
+    # lookup keeps working and an assembler can pick the shape it needs.
+    variants: dict[str, list[InstructionForm]] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         if not self.generated_utc:
@@ -134,7 +140,32 @@ class IsaDatabase:
         return sorted({f.opcode for f in self.forms.values()})
 
     def add(self, form: InstructionForm) -> None:
-        self.forms[form.mnemonic] = form
+        """Record a form, keeping the most informative one as canonical.
+
+        The canonical form is the one with the most attributed operand slots,
+        since that is the one worth showing when someone asks about a mnemonic.
+        The rest become variants, which is what makes assembling the other
+        shapes possible at all.
+        """
+        existing = self.forms.get(form.mnemonic)
+        if existing is None:
+            self.forms[form.mnemonic] = form
+            return
+        if any(form.encoding == other.encoding for other in self.shapes(form.mnemonic)):
+            # the identical word, harvested twice
+            return
+        if len(form.operands) > len(existing.operands):
+            self.forms[form.mnemonic] = form
+            self.variants.setdefault(form.mnemonic, []).append(existing)
+        else:
+            self.variants.setdefault(form.mnemonic, []).append(form)
+
+    def shapes(self, mnemonic: str) -> list[InstructionForm]:
+        """Every recorded encoding of a mnemonic, canonical first."""
+        canonical = self.forms.get(mnemonic)
+        if canonical is None:
+            return []
+        return [canonical, *self.variants.get(mnemonic, [])]
 
     def coverage(self) -> dict[str, int]:
         """Numbers the README and CI report rather than assert in prose."""
@@ -161,24 +192,10 @@ class IsaDatabase:
                 for f in CONTROL_FIELDS
             ],
             "coverage": self.coverage(),
-            "forms": {
-                name: {
-                    **asdict(form),
-                    "modifiers": list(form.modifiers),
-                    "opcode_bits": list(form.opcode_bits),
-                    "modifier_bits": list(form.modifier_bits),
-                    "inert_bits": list(form.inert_bits),
-                    "invalid_bits": list(form.invalid_bits),
-                    "operands": [
-                        {
-                            **asdict(o),
-                            "bits": list(o.bits),
-                            "subfields": {k: list(v) for k, v in sorted(o.subfields.items())},
-                        }
-                        for o in form.operands
-                    ],
-                }
-                for name, form in sorted(self.forms.items())
+            "forms": {name: _form_payload(form) for name, form in sorted(self.forms.items())},
+            "variants": {
+                name: [_form_payload(v) for v in forms]
+                for name, forms in sorted(self.variants.items())
             },
         }
         path.write_text(json.dumps(payload, indent=2, sort_keys=True))
@@ -197,28 +214,54 @@ class IsaDatabase:
             generated_utc=raw["generated_utc"],
         )
         for name, f in raw["forms"].items():
-            db.forms[name] = InstructionForm(
-                mnemonic=f["mnemonic"],
-                opcode=f["opcode"],
-                modifiers=tuple(f["modifiers"]),
-                encoding=f["encoding"],
-                payload=f["payload"],
-                operand_text=f["operand_text"],
-                operands=[
-                    OperandField(
-                        slot=o["slot"],
-                        bits=tuple(o["bits"]),
-                        example_before=o.get("example_before", ""),
-                        example_after=o.get("example_after", ""),
-                        subfields={k: tuple(v) for k, v in (o.get("subfields") or {}).items()},
-                    )
-                    for o in f["operands"]
-                ],
-                opcode_bits=tuple(f["opcode_bits"]),
-                modifier_bits=tuple(f["modifier_bits"]),
-                inert_bits=tuple(f["inert_bits"]),
-                invalid_bits=tuple(f["invalid_bits"]),
-                source_label=f.get("source_label", ""),
-                source_family=f.get("source_family", ""),
-            )
+            db.forms[name] = _read_form(f)
+        for name, forms in (raw.get("variants") or {}).items():
+            db.variants[name] = [_read_form(v) for v in forms]
         return db
+
+
+def _form_payload(form: InstructionForm) -> dict:
+    """One form as plain JSON. Shared so variants serialise identically."""
+    return {
+        **asdict(form),
+        "modifiers": list(form.modifiers),
+        "opcode_bits": list(form.opcode_bits),
+        "modifier_bits": list(form.modifier_bits),
+        "inert_bits": list(form.inert_bits),
+        "invalid_bits": list(form.invalid_bits),
+        "operands": [
+            {
+                **asdict(o),
+                "bits": list(o.bits),
+                "subfields": {k: list(v) for k, v in sorted(o.subfields.items())},
+            }
+            for o in form.operands
+        ],
+    }
+
+
+def _read_form(f: dict) -> InstructionForm:
+    return InstructionForm(
+        mnemonic=f["mnemonic"],
+        opcode=f["opcode"],
+        modifiers=tuple(f["modifiers"]),
+        encoding=f["encoding"],
+        payload=f["payload"],
+        operand_text=f["operand_text"],
+        operands=[
+            OperandField(
+                slot=o["slot"],
+                bits=tuple(o["bits"]),
+                example_before=o.get("example_before", ""),
+                example_after=o.get("example_after", ""),
+                subfields={k: tuple(v) for k, v in (o.get("subfields") or {}).items()},
+            )
+            for o in f["operands"]
+        ],
+        opcode_bits=tuple(f["opcode_bits"]),
+        modifier_bits=tuple(f["modifier_bits"]),
+        inert_bits=tuple(f["inert_bits"]),
+        invalid_bits=tuple(f["invalid_bits"]),
+        source_label=f.get("source_label", ""),
+        source_family=f.get("source_family", ""),
+    )

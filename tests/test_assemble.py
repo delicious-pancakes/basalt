@@ -74,22 +74,10 @@ class TestRefusesRatherThanGuesses:
         with pytest.raises(AssemblyError, match="not in the instruction database"):
             assembler.assemble("NOTAREALOPCODE R0, R1")
 
-    def test_an_immediate_where_the_form_holds_a_register_is_refused(self, assembler, database):
-        """One mnemonic, several encodings, and the database holds one of them."""
-        form = database.forms.get("IADD.64")
-        if form is None or "0x" not in form.operand_text:
-            pytest.skip("this database's IADD.64 is not the immediate form")
-        with pytest.raises(AssemblyError, match="different encoding"):
-            assembler.assemble("IADD.64 R4, R4, R6")
-
-    def test_a_uniform_register_is_not_a_register(self, assembler, database):
-        """`R6` and `UR6` differ outside every recorded field."""
-        form = database.forms["IMAD"]
-        tokens = form.operand_text.split(", ")
-        if len(tokens) < 3 or tokens[2].startswith("UR"):
-            pytest.skip("this database's IMAD reference already uses a uniform register")
-        with pytest.raises(AssemblyError, match="different encoding"):
-            assembler.assemble(f"IMAD {tokens[0]}, {tokens[1]}, UR7, {tokens[-1]}")
+    def test_a_shape_the_database_has_never_seen_is_refused(self, assembler):
+        """Every recorded shape is tried, and none of them fits this."""
+        with pytest.raises(AssemblyError):
+            assembler.assemble("IMAD R7, R2, c[0x0][0x0], RZ")
 
 
 class TestControlBitsAreCopiedNotInvented:
@@ -106,6 +94,53 @@ class TestControlBitsAreCopiedNotInvented:
         form = database.forms["IMAD"]
         got = assembler.assemble(f"IMAD {form.operand_text}")
         assert got.field("stall") == form.word.field("stall")
+
+
+class TestSeveralShapesOfOneMnemonic:
+    """A mnemonic covers several encodings, and the text decides which."""
+
+    @staticmethod
+    def _a_mnemonic_with_two_assemblable_shapes(assembler, database):
+        for mnemonic in database.forms:
+            shapes = database.shapes(mnemonic)
+            if len(shapes) < 2:
+                continue
+            encoded = []
+            for form in shapes:
+                try:
+                    encoded.append((form, assembler.assemble(f"{mnemonic} {form.operand_text}")))
+                except AssemblyError:
+                    break
+            if len(encoded) == len(shapes):
+                return mnemonic, encoded
+        return None, []
+
+    def test_a_mnemonic_with_several_shapes_encodes_each_of_them(self, assembler, database):
+        mnemonic, encoded = self._a_mnemonic_with_two_assemblable_shapes(assembler, database)
+        if mnemonic is None:
+            pytest.skip("no mnemonic in this database has two assemblable shapes")
+        for form, word in encoded:
+            assert word.value == form.word.value, (
+                f"{mnemonic} {form.operand_text} did not reproduce its own encoding"
+            )
+
+    def test_the_shapes_are_distinct_encodings(self, assembler, database):
+        """Two shapes of one mnemonic must not be the same word twice."""
+        mnemonic, encoded = self._a_mnemonic_with_two_assemblable_shapes(assembler, database)
+        if mnemonic is None:
+            pytest.skip("no mnemonic in this database has two assemblable shapes")
+        words = {word.value for _, word in encoded}
+        assert len(words) == len(encoded), f"{mnemonic} recorded the same encoding more than once"
+
+    def test_no_mnemonic_records_a_duplicate_word(self, database):
+        """Across the whole database, not just the first mnemonic with variants."""
+        duplicated = [
+            mnemonic
+            for mnemonic in database.forms
+            if len({f.encoding for f in database.shapes(mnemonic)})
+            != len(database.shapes(mnemonic))
+        ]
+        assert not duplicated, f"these mnemonics hold the same word twice: {duplicated[:8]}"
 
 
 class TestCompositeOperands:

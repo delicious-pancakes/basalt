@@ -23,6 +23,7 @@ from pathlib import Path
 from ..disasm import raw_arch
 from ..encoding import Word
 from ..harvest.corpus import generate as generate_scalar
+from ..harvest.corpus_shapes import generate_shapes
 from ..harvest.corpus_tensor import generate_tensor
 from ..harvest.runner import HarvestResult, Observation, harvest
 from ..probe.fields import BitRole, probe_word
@@ -32,6 +33,8 @@ from .operands import subfields
 
 __all__ = ["build_database", "collect_representatives"]
 
+_GUARD_PREFIX = re.compile(r"^@!?U?P(\d+|T)\s+")
+_KIND = re.compile(r"^-?(UR|R|UP|P)(\d+|Z|T)\b")
 _RNUM = re.compile(r"\bR(\d+)\b")
 
 
@@ -45,17 +48,76 @@ def _degeneracy(obs: Observation) -> int:
     return len(nums) - len(set(nums))
 
 
-def collect_representatives(result: HarvestResult) -> dict[str, Observation]:
-    """One encoding per mnemonic, chosen to make probing informative."""
-    buckets: dict[str, list[Observation]] = defaultdict(list)
-    for o in result.observations:
-        buckets[o.mnemonic].append(o)
+def operand_shape(operands: str) -> tuple[str, ...]:
+    """The kinds of an instruction's operands, ignoring their values.
 
-    chosen: dict[str, Observation] = {}
-    for mnemonic, obs in buckets.items():
+    One mnemonic can cover several genuinely different encodings. `IADD R2, R3,
+    0x4` and `IADD R2, R3, R4` differ in bits outside every operand field, so a
+    database holding one of them can describe the other only by accident. The
+    shape is what tells them apart.
+
+    The guard is deliberately not part of it. `@P0 IADD` and `IADD` are the same
+    encoding with one fixed field set differently, so counting the guard would
+    split every predicated form into a duplicate of itself.
+    """
+    # The guard is attached to the first operand rather than being its own
+    # comma-separated part, so `@P0 R2, R3` splits as ("@P0 R2", "R3"). Strip it
+    # before splitting; skipping the part that carries it drops a real operand
+    # and gives a predicated instruction a different shape from the same
+    # instruction unpredicated.
+    operands = _GUARD_PREFIX.sub("", operands.strip(), count=1)
+
+    kinds: list[str] = []
+    depth = 0
+    current = ""
+    parts: list[str] = []
+    for char in operands:
+        if char in "[({":
+            depth += 1
+        elif char in "])}":
+            depth -= 1
+        if char == "," and depth == 0:
+            parts.append(current)
+            current = ""
+        else:
+            current += char
+    if current.strip():
+        parts.append(current)
+
+    for part in parts:
+        text = part.strip()
+        if text.startswith("desc["):
+            kinds.append("descriptor")
+        elif text.startswith(("c[", "cx[")):
+            kinds.append("constant")
+        elif text.startswith("`"):
+            kinds.append("label")
+        elif (match := _KIND.match(text)) is not None:
+            kinds.append({"R": "reg", "UR": "ureg", "P": "pred", "UP": "upred"}[match.group(1)])
+        else:
+            kinds.append("immediate")
+    return tuple(kinds)
+
+
+def collect_representatives(
+    result: HarvestResult,
+) -> dict[tuple[str, tuple[str, ...]], Observation]:
+    """One encoding per mnemonic *and operand shape*, chosen to probe well.
+
+    Keyed on the shape as well as the mnemonic because they are different
+    encodings. Probing only the first shape seen leaves an assembler that has to
+    refuse every other one, which was 600 of the 8,560 instructions in the
+    corpus before this existed.
+    """
+    buckets: dict[tuple[str, tuple[str, ...]], list[Observation]] = defaultdict(list)
+    for o in result.observations:
+        buckets[(o.mnemonic, operand_shape(o.operands))].append(o)
+
+    chosen: dict[tuple[str, tuple[str, ...]], Observation] = {}
+    for key, obs in buckets.items():
         # prefer distinct operands, then a longer operand list (more slots to
         # attribute), then a stable tiebreak so rebuilds are deterministic
-        chosen[mnemonic] = min(
+        chosen[key] = min(
             obs,
             key=lambda o: (_degeneracy(o), -len(o.operands.split(",")), o.encoding),
         )
@@ -70,7 +132,12 @@ def build_database(
     harvest_out: Path | None = None,
     progress: bool = True,
 ) -> tuple[IsaDatabase, HarvestResult]:
-    snippets = generate_scalar()
+    # The control-flow kernels are harvested too. They were written to give the
+    # scheduler loops and branches to get wrong, and they also emit instruction
+    # forms nothing else in the corpus does: predicated arithmetic, immediate
+    # operands in positions the straight-line kernels only ever fill with a
+    # register. Those are real forms and belong in a database of real forms.
+    snippets = generate_scalar() + generate_shapes()
     if include_tensor:
         snippets = snippets + generate_tensor()
 
@@ -90,8 +157,8 @@ def build_database(
     db = IsaDatabase(arch=arch, cuda_version=tc.version)
     raw = raw_arch(arch)
 
-    def _probe_one(item: tuple[str, Observation]) -> InstructionForm | None:
-        mnemonic, obs = item
+    def _probe_one(item) -> InstructionForm | None:
+        (mnemonic, _shape), obs = item
         fmap = probe_word(tc, Word(int(obs.encoding, 16)), arch=raw)
         if fmap is None:
             return None

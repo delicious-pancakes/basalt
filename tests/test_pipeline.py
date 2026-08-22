@@ -191,7 +191,44 @@ class TestHarvest:
                 )
             )
         chosen = collect_representatives(result)
-        assert chosen["IADD"].operands == "R2, R3, 0x1"
+        # keyed by mnemonic and operand shape now, since one mnemonic covers
+        # several encodings; both of these are the same shape, so they compete
+        # and the one with distinct registers wins
+        from basalt.isa.build import operand_shape
+
+        key = ("IADD", operand_shape("R2, R3, 0x1"))
+        assert chosen[key].operands == "R2, R3, 0x1"
+
+    def test_different_operand_shapes_are_kept_apart(self, toolchain):
+        """`IADD R2, R3, 0x1` and `IADD R2, R3, R4` are different encodings."""
+        from basalt.harvest.runner import HarvestResult, Observation
+
+        result = HarvestResult(cuda_version="test", arch=ARCH, generated_utc="now")
+        for text, enc in (("R2, R3, 0x1", "a" * 32), ("R2, R3, R4", "b" * 32)):
+            result.observations.append(
+                Observation(
+                    mnemonic="IADD",
+                    opcode="IADD",
+                    modifiers=(),
+                    operands=text,
+                    encoding=enc,
+                    payload=enc,
+                    control={},
+                    source_kernel="k",
+                    source_label="add.s32",
+                    source_family="binary",
+                    opt_level=3,
+                )
+            )
+        chosen = collect_representatives(result)
+        assert len(chosen) == 2, "the two shapes were collapsed into one form"
+        assert {o.operands for o in chosen.values()} == {"R2, R3, 0x1", "R2, R3, R4"}
+
+    def test_the_guard_is_not_part_of_the_shape(self):
+        """`@P0 IADD` and `IADD` are one encoding with a field set differently."""
+        from basalt.isa.build import operand_shape
+
+        assert operand_shape("@P0 R2, R3, R4") == operand_shape("R2, R3, R4")
 
 
 def _first_covered_fixed_dependency(insns) -> tuple[int, int] | None:
