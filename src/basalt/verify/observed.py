@@ -307,7 +307,7 @@ def mine_program(program: Program, into: ObservedStalls) -> None:
     cfg = build_cfg(program)
     for block in cfg.blocks:
         # last writer of each register, and the stall accumulated since
-        last_def: dict[object, tuple[int, str, str]] = {}
+        last_def: dict[object, tuple[int, str]] = {}
         elapsed: dict[object, int] = {}
         # scoreboard each live definition signalled, and whether that signal has
         # been waited on yet. Kept per definition rather than per scoreboard: a
@@ -336,7 +336,7 @@ def mine_program(program: Program, into: ObservedStalls) -> None:
                 # it needs a different amount of lead and is mined separately.
                 # `@IMAD` and `IMAD` are two requirements, not one.
                 consumer_key = ("@" if reg == access.guard else "") + instr.opcode
-                producer_index, producer_opcode, producer_mnemonic = previous
+                producer_index, producer_mnemonic = previous
                 word = program.instructions[producer_index].word
                 if word is None:
                     continue
@@ -378,7 +378,7 @@ def mine_program(program: Program, into: ObservedStalls) -> None:
                 satisfied.discard(index)
 
             for reg in access.real_defs:
-                last_def[reg] = (index, instr.opcode, instr.mnemonic)
+                last_def[reg] = (index, instr.mnemonic)
                 elapsed[reg] = stall
 
 

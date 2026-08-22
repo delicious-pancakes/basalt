@@ -433,7 +433,7 @@
     },
     "IMAD.WIDE->STG": {
       "min_stall": 5,
-      "observations": 1,
+      "observations": 2,
       "trusted": false
     },
     "IMAD.WIDE.U32->ATOMG": {
@@ -442,33 +442,38 @@
       "trusted": false
     },
     "IMAD.WIDE.U32->IADD": {
-      "min_stall": 9,
-      "observations": 2,
-      "trusted": false
+      "min_stall": 5,
+      "observations": 7,
+      "trusted": true
     },
     "IMAD.WIDE.U32->IMAD": {
       "min_stall": 4,
+      "observations": 5,
+      "trusted": true
+    },
+    "IMAD.WIDE.U32->MOV": {
+      "min_stall": 6,
       "observations": 2,
       "trusted": false
     },
     "IMAD.WIDE.U32->STG": {
       "min_stall": 5,
-      "observations": 4,
+      "observations": 5,
       "trusted": true
     },
     "IMAD.WIDE.U32.X->IADD": {
       "min_stall": 3,
-      "observations": 1,
+      "observations": 2,
       "trusted": false
     },
     "IMAD.WIDE.U32.X->SEL": {
       "min_stall": 9,
-      "observations": 1,
+      "observations": 2,
       "trusted": false
     },
     "IMAD.WIDE.U32.X->STG": {
       "min_stall": 5,
-      "observations": 1,
+      "observations": 2,
       "trusted": false
     },
     "IMMA.16816.S8.S8->IADD3": {
@@ -1555,16 +1560,18 @@
     },
     "IMAD.WIDE": {
       "min_stall": 5,
-      "observations": 1,
+      "observations": 2,
       "samples": [
+        "IMAD.WIDE R4, R4, R5, RZ -> STG.E.64 desc[UR4][R6.64], R4",
         "IMAD.WIDE R4, R4, R5, RZ -> STG.E.64 desc[UR4][R6.64], R4"
       ],
       "trusted": false
     },
     "IMAD.WIDE.U32": {
       "min_stall": 4,
-      "observations": 9,
+      "observations": 20,
       "samples": [
+        "IMAD.WIDE.U32 R8, R5, R6, RZ -> IMAD.WIDE.U32 R10, P0, R4, R7, R8",
         "IMAD.WIDE.U32 R8, R5, R6, RZ -> IMAD.WIDE.U32 R10, P0, R4, R7, R8",
         "IMAD.WIDE.U32 R8, R5, R6, RZ -> IMAD.WIDE.U32 R10, P0, R4, R7, R8"
       ],
@@ -1572,7 +1579,7 @@
     },
     "IMAD.WIDE.U32.X": {
       "min_stall": 3,
-      "observations": 3,
+      "observations": 6,
       "samples": [
         "IMAD.WIDE.U32.X R8, R5, R7, R12, P0 -> IADD R11, P0, -R4, R8"
       ],
@@ -3017,7 +3024,7 @@
     },
     "LDG.E.64=>STG": {
       "min_stall": 8,
-      "observations": 17,
+      "observations": 16,
       "samples": [
         "LDG.E.64 R2, desc[UR4][R2.64] -> STG.E.64 desc[UR4][R4.64], R2",
         "LDG.E.64 R2, desc[UR4][R2.64] -> STG.E.64 desc[UR4][R4.64], R2",
@@ -3464,11 +3471,11 @@
     },
     "LDG.E=>STG": {
       "min_stall": 8,
-      "observations": 32,
+      "observations": 30,
       "samples": [
-        "LDG.E R5, desc[UR4][R2.64+0x4] -> STG.E.64 desc[UR4][R6.64], R4",
-        "LDG.E R5, desc[UR4][R2.64+0x4] -> STG.E.64 desc[UR4][R6.64], R4",
-        "LDG.E R3, desc[UR4][R2.64] -> STG.E.S16 desc[UR4][R4.64], R3"
+        "LDG.E R3, desc[UR4][R2.64] -> STG.E.S16 desc[UR4][R4.64], R3",
+        "LDG.E R3, desc[UR4][R2.64] -> STG.E.S16 desc[UR4][R4.64], R3",
+        "LDG.E R3, desc[UR4][R2.64] -> STG.E.U16 desc[UR4][R4.64], R3"
       ],
       "trusted": true
     },
@@ -3782,7 +3789,8 @@
       "observations": 3,
       "samples": [
         "SHFL.IDX PT, R9, R7, R0, 0x1f -> IMAD R3, R2, R3, R9",
-        "SHFL.IDX PT, R9, R7, R0, 0x1f -> IMAD R3, R2, R3, R9"
+        "SHFL.IDX PT, R9, R7, R0, 0x1f -> IMAD R3, R2, R3, R9",
+        "SHFL.IDX PT, R9, R7, R11, 0x1f -> IMAD.WIDE.U32 R8, R2, R13, R8"
       ],
       "trusted": true
     },

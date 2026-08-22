@@ -143,3 +143,31 @@ class TestGuard:
         access = operand_access("SEL", "R3, R0, R7, P1")
         assert access.guard is None
         assert RegRef(RegKind.PREDICATE, 1) in access.real_uses
+
+
+class TestWideMultiply:
+    """`IMAD.WIDE dst, a, b, c` is 64-bit in two of its four operands.
+
+    It computes `a * b + c` where `a` and `b` are 32-bit and `dst` and `c` are
+    register pairs. Nothing in the mnemonic distinguishes them beyond position,
+    and the `.U32` some forms carry describes the factors rather than the
+    result, so the ordinary suffix rule reads the whole instruction as 32-bit
+    and loses the high half of both. That lost the dependency a 64-bit atomic
+    has on the high word of its own product.
+    """
+
+    def test_the_destination_is_a_pair(self):
+        access = operand_access("IMAD.WIDE.U32", "R6, R2, UR7, RZ")
+        assert access.real_defs == {RegRef(RegKind.GENERAL, 6), RegRef(RegKind.GENERAL, 7)}
+
+    def test_the_factors_are_not(self):
+        access = operand_access("IMAD.WIDE.U32", "R6, R2, R3, RZ")
+        assert RegRef(RegKind.GENERAL, 4) not in access.real_uses
+
+    def test_the_addend_is_a_pair(self):
+        access = operand_access("IMAD.WIDE.U32", "R8, R2, R13, R8")
+        assert RegRef(RegKind.GENERAL, 9) in access.real_uses
+
+    def test_a_plain_multiply_is_untouched(self):
+        access = operand_access("IMAD", "R7, R2, UR7, RZ")
+        assert access.real_defs == {RegRef(RegKind.GENERAL, 7)}

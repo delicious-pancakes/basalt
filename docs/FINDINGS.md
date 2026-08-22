@@ -386,6 +386,13 @@ does not:
 | Signed integer divide | `div_s32` |
 | 64-bit atomic add | `atom_global_add_u64` |
 
+A further 12 kernels the harness itself cannot launch, 2 whose vendor output is not
+deterministic under 32 threads storing to one address, and any whose result is not
+reproducible once something else has used the card. That last group is why the vendor is
+run a second time, after basalt has had the GPU: a kernel reading uninitialised shared
+memory is stable until it is not, and its first result is not ground truth. Every `LDSM`
+and `MOVMATRIX` kernel read as a basalt failure until that check existed.
+
 A further 12 kernels the harness itself cannot launch, shared and local memory forms that
 need launch configuration it does not provide, and 2 whose vendor output is not
 deterministic under 32 threads storing to one address. Both groups are excluded from the

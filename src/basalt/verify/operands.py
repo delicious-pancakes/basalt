@@ -204,6 +204,15 @@ def _expand(base: RegRef, count: int) -> set[RegRef]:
 # wrong fp64 kernel from basalt's own scheduler before it was found.
 _PAIRED_OPCODES = frozenset({"DADD", "DMUL", "DFMA", "DSETP", "DMMA", "DMNMX"})
 
+# `IMAD.WIDE dst, a, b, c` computes a 64-bit `a * b + c` from 32-bit `a` and
+# `b`. The destination and the addend occupy register pairs; the two factors do
+# not. Nothing in the mnemonic says which is which beyond the position, and the
+# `.U32` that some forms carry describes the factors rather than the result, so
+# the ordinary suffix rule reads the whole thing as 32-bit and loses the high
+# half of both. `IMAD.WIDE.U32 R6, R2, UR7, RZ` writes R6 and R7, and missing R7
+# is what made basalt schedule a wrong 64-bit atomic.
+_WIDE_PAIR_SLOTS = (0, -1)
+
 
 def _width_from(mnemonic: str, tail: str) -> int:
     """How many registers a reference covers.
@@ -288,6 +297,8 @@ def operand_access(mnemonic: str, operands: str) -> Access:
     # scoreboards the returned value of an atomic or a shuffle and nothing waits
     # for it. That is silent in the checker and produced wrong answers from
     # basalt's own scheduler for every atomic in the corpus.
+    wide = "WIDE" in mnemonic.split(".")[1:]
+
     def_slots = max(1, leading_preds)
     if leading_preds == 1 and len(parts) > 1 and _REG_WITH_TAIL.match(parts[1].strip()):
         def_slots = 2
@@ -303,6 +314,8 @@ def operand_access(mnemonic: str, operands: str) -> Access:
             if ref is None:
                 continue
             width = _width_from(mnemonic, m.group(3))
+            if wide and (idx == 0 or idx == len(parts) - 1):
+                width = max(width, 2)
             regs = _expand(ref, width)
             if is_def_slot and not addressed:
                 access.defs |= regs

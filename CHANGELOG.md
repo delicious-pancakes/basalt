@@ -72,6 +72,15 @@ any release. The clean-room position in [`NOTICE`](NOTICE) will not.
   a different question from what correctness requires.
 
 ### Fixed
+- `IMAD.WIDE` writes a register pair, and its addend is one. It computes a
+  64-bit `a * b + c` from 32-bit factors, with nothing in the mnemonic to say
+  which operands are wide; the `.U32` some forms carry describes the factors
+  rather than the result. Both high halves were invisible.
+- The round trip runs the vendor a second time, after basalt has had the card,
+  and excludes any kernel that no longer agrees with itself. A kernel reading
+  uninitialised shared memory is stable until something else has used the GPU,
+  so its first result is not ground truth; every `LDSM` and `MOVMATRIX` kernel
+  read as a basalt failure until this check existed.
 - Fixed-latency pair requirements are keyed on the producer's full mnemonic, not
   its bare opcode. `IMAD.WIDE.U32.X` into `IADD` is scheduled at 3 cycles and
   plain `IMAD` into `IADD` at 5; collapsing them applied one instruction's

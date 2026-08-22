@@ -29,8 +29,12 @@ provide. The vendor side runs first and a failure there is reported against the
 harness, not the schedule.
 
 *A kernel whose output is not stable cannot be compared.* Several have 32 threads
-storing to one address, so the winner is arbitrary. Anything that does not repeat
-is excluded rather than judged.
+storing to one address, so the winner is arbitrary. Others read shared or local
+memory this runner never initialises, so they are stable until something else has
+used the card and not afterwards. The vendor is therefore run again at the end,
+after basalt has had it, and a kernel that no longer agrees with itself is
+excluded rather than judged. Without that check every `LDSM` and `MOVMATRIX`
+kernel reads as a basalt failure.
 
 *A faulted CUDA context stays faulted, and the primary context is process-wide.*
 So the work runs in a child process that exits on the first error, and the parent
@@ -77,6 +81,7 @@ ORDER = (
     "basalt-nondeterministic",
     "basalt-faulted",
     "vendor-unstable",
+    "not-reproducible",
     "unrunnable",
     "unschedulable",
 )
@@ -195,6 +200,18 @@ def worker(work: Path, start: int) -> None:
                 emit(index, "basalt-faulted", name, type(exc).__name__)
                 sys.stdout.flush()
                 os._exit(1)
+            # Run the vendor again, after basalt has had the card, and before
+            # judging basalt at all. A kernel that reads uninitialised shared or
+            # local memory is stable while nothing else has touched it and not
+            # stable once something has, so its first result is not ground truth
+            # and its instability is not basalt's. Every `LDSM` and `MOVMATRIX`
+            # kernel here is in that position and each looked like a basalt
+            # failure until this check existed. Checked before basalt's own
+            # determinism, because otherwise these land in that bucket instead.
+            again = run(work / f"{index:04d}.v.cubin", entry["entry"])
+            if again[0] != vendor[0]:
+                emit(index, "not-reproducible", name)
+                continue
             if len(set(ours)) != 1:
                 emit(index, "basalt-nondeterministic", name)
                 continue
