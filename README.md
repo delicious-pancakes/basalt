@@ -159,6 +159,7 @@ Everything else, in one place:
 | `mine-stalls` | Learn per-pair requirements from what the compiler schedules | no |
 | `verify` | Check a cubin's control bits for data hazards | no |
 | `schedule` | Assign a cubin's control bits from scratch and check the result | no |
+| `assemble` | Encode SASS text, and read it back to prove it | no |
 | `measure` | Time instruction latency on real silicon | **yes** |
 | `probe-stalls` | Find the required stall by breaking programs on purpose | **yes** |
 

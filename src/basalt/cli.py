@@ -92,6 +92,7 @@ DEFAULT_OBSERVED = "data/latency/observed-stalls-sm120a.json"
 # `--latencies` is given, so a command run from a checkout gets the measurements
 # rather than the assumptions without having to be told.
 DEFAULT_LATENCIES = "data/latency/rtx-5070-ti.json"
+DEFAULT_ISA = "data/isa/sm_120a.json"
 
 
 def _build_isa(args: argparse.Namespace) -> int:
@@ -259,6 +260,65 @@ def _mine_stalls(args: argparse.Namespace) -> int:
             if ev.trusted:
                 print(f"  {name:<10} min {ev.minimum:2d}   from {ev.observations} observations")
     return 0
+
+
+def _assemble(args: argparse.Namespace) -> int:
+    """Encode one instruction, and optionally read it back.
+
+    Reading it back is not decoration. The assembler either reproduces the bytes
+    the vendor compiler emits or refuses, and `--verify` is how that claim is
+    checked from the outside: the word goes through `nvdisasm` and the text that
+    comes out is printed beside the text that went in.
+    """
+    import sys as _sys
+    from pathlib import Path
+
+    from .asm.assemble import Assembler, AssemblyError
+    from .isa.database import IsaDatabase
+
+    database = Path(args.isa)
+    if not database.is_file():
+        print(f"error: {database} not found; run `basalt build-isa`", file=_sys.stderr)
+        return 1
+
+    text = args.text if args.text else _sys.stdin.read()
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+    if not lines:
+        print("error: nothing to assemble", file=_sys.stderr)
+        return 1
+
+    assembler = Assembler(IsaDatabase.read(database))
+    toolchain = None
+    if args.verify:
+        from .toolchain import ToolchainError, find_toolchain
+
+        try:
+            toolchain = find_toolchain(args.cuda_bin)
+        except ToolchainError as exc:
+            print(f"error: {exc}", file=_sys.stderr)
+            return 1
+
+    failures = 0
+    for line in lines:
+        try:
+            word = assembler.assemble(line)
+        except AssemblyError as exc:
+            print(f"  refused  {line}")
+            print(f"           {exc}")
+            failures += 1
+            continue
+        print(f"  {word.value:032x}  {line}")
+        if toolchain is not None:
+            from .disasm import decode_word
+
+            back = decode_word(toolchain, word)
+            reads = f"{back.mnemonic} {back.operands}".strip() if back else "(not decodable)"
+            agrees = "same" if reads == line else "DIFFERENT"
+            print(f"           reads back as {reads}  [{agrees}]")
+            if reads != line:
+                failures += 1
+
+    return 1 if failures else 0
 
 
 def _schedule(args: argparse.Namespace) -> int:
@@ -561,6 +621,22 @@ def main(argv: list[str] | None = None) -> int:
         help="exit non-zero unless the result verifies clean",
     )
 
+    a = sub.add_parser(
+        "assemble",
+        help="encode SASS text, and check it against what the vendor emits",
+    )
+    a.add_argument(
+        "text",
+        nargs="?",
+        help='one instruction, e.g. "IMAD R7, R2, R6, RZ". omit to read stdin',
+    )
+    a.add_argument("--isa", default=DEFAULT_ISA, help="instruction database to encode against")
+    a.add_argument(
+        "--verify",
+        action="store_true",
+        help="disassemble the result and show what it reads back as",
+    )
+
     args = ap.parse_args(argv)
     return {
         "doctor": _doctor,
@@ -572,6 +648,7 @@ def main(argv: list[str] | None = None) -> int:
         "probe-stalls": _probe_stalls,
         "verify": _verify,
         "schedule": _schedule,
+        "assemble": _assemble,
     }[args.command](args)
 
 

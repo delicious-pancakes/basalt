@@ -10,6 +10,16 @@ any release. The clean-room position in [`NOTICE`](NOTICE) will not.
 ## [Unreleased]
 
 ### Added
+- Assembler: SASS text to the 128-bit instruction word, and a `basalt assemble`
+  command that can read its own output back through `nvdisasm` to prove it.
+  7,597 of the 8,560 corpus instructions reassemble bit-identically to what
+  `ptxas` emitted, and none assembles to anything else; the second count is a
+  test pinned at zero. Branch targets and unsampled operand shapes are refused
+  with a reason rather than approximated.
+- Composite operands are taken apart into their sub-fields. A constant-bank
+  reference is one field holding a bank, a base register and an offset, and the
+  prober had already recorded what each bit did to the text, so decomposing it
+  costs no extra probing. Schema version 2; 35 fields decomposed.
 - `scripts/roundtrip_corpus.py`: reschedules every kernel the corpus generates
   from scratch and runs both versions on the GPU with identical input, comparing
   output bytes. All 314 comparable kernels come out byte-identical to the vendor

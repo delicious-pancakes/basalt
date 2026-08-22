@@ -36,7 +36,7 @@ vendor compiler's own output, which is what makes it useful rather than self-ref
 | 9b | Cross-check | basalt's ISA model against independently derived tables | planned |
 | 10 | Audit | Every public sm_120 SASS kernel, ptxas as the control | planned |
 | 11 | Scheduler | Assign the control bits, not only check them | **experimental** |
-| 12 | Assembler | SASS text to cubin, so basalt can emit its own test cases | planned |
+| 12 | Assembler | SASS text to the instruction word | **working** |
 
 The scheduler discards every control bit `ptxas` produced and computes its own, then hands the
 result back to the verifier and then to the GPU, for every kernel the corpus generates.
@@ -44,6 +44,13 @@ every one of the 314 comparable ones comes out byte-identical to the vendor sche
 named in the findings rather than summarised, and that count is what the work is measured
 against: it was 246 when the control was first run, and every model correction since came
 out of watching it move.
+
+The assembler encodes SASS text back into the instruction word, and its standard is the
+vendor's own bytes: 7,597 of the 8,560 instructions in the corpus reassemble bit-identically
+and none reassembles to anything else. That second number is a test pinned at zero. What it
+declines is branch targets, which need the address they are relative to, and mnemonics whose
+several operand shapes the harvest has only sampled once; both are coverage rather than
+correctness, and both show up as a refusal with a reason rather than as a wrong word.
 
 Stages 1 to 6 need no GPU and run in CI. Stage 7 needs an sm_120 card, and only the
 measurement step does; the numbers it produces are a checked-in file everyone else reads.
