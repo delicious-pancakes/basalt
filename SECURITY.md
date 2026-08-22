@@ -4,6 +4,18 @@
 
 basalt is pre-1.0 and alpha. Only the latest commit on `main` is supported.
 
+## Release integrity
+
+Every file attached to a release is built by [one workflow](.github/workflows/release.yml) from a tagged commit and signed through [Sigstore](https://www.sigstore.dev/), so you can check where a wheel came from instead of trusting the release page:
+
+```console
+$ gh attestation verify basalt_sass-<version>-py3-none-any.whl --repo sunnypatell/basalt
+```
+
+That checks a [SLSA v1](https://slsa.dev/spec/v1.0/provenance) provenance statement naming the workflow, the commit and the runner that produced the file. `SHA256SUMS` covers the same files for anyone who would rather use `sha256sum -c`.
+
+`basalt-sbom.cdx.json` is a [CycloneDX](https://cyclonedx.org/) bill of materials generated from a throwaway environment containing nothing but the wheel. It lists exactly one component, which is the machine-readable form of the claim that basalt has no runtime dependencies beyond the Python standard library.
+
 ## Reporting a vulnerability
 
 Report privately through [GitHub Security Advisories](https://github.com/sunnypatell/basalt/security/advisories/new), or by email to sunnypatel124555@gmail.com. Please do not open a public issue for a vulnerability.
