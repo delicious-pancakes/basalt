@@ -460,7 +460,44 @@ memory is stable until it is not, and its first result is not ground truth. Ever
 and `MOVMATRIX` kernel read as a basalt failure until that check existed. All three groups
 are excluded from the 303 rather than counted as passes.
 
-## 11. What is deliberately not claimed
+## 11. Where a branch keeps its destination
+
+A branch cannot be assembled on its own. The field holds a distance rather than an address,
+so `BRA \`(.L_x_0)` is a different 128 bits in every kernel it appears in, and an assembler
+that reuses a harvested encoding emits a jump to wherever the harvested kernel jumped.
+
+The field resisted probing. Flipping one bit at a time and reading the decoded text back,
+which is how every other field here was found, reports 95 bits as moving the target, because
+changing the opcode changes what the rest of the word is read as. Searching for a contiguous
+run whose value matches the distance finds nothing either, at any width, under any
+convention.
+
+It falls out immediately from real kernels instead. The label table gives the destination,
+the instruction gives its own address, and the word gives the bits, so a field and a
+convention that agree on every sample is the encoding:
+
+| Instruction at | Jumps to | Distance | Bits 16:23 | As signed |
+| ---: | ---: | ---: | ---: | ---: |
+| `0x0b0` | `0x180` | `+192` | `0x30` | `+48` |
+| `0x170` | `0x0e0` | `-160` | `0xd8` | `-40` |
+| `0x230` | `0x080` | `-448` | `0x90` | `-112` |
+| `0x270` | `0x270` | `-16` | `0xfc` | `-4` |
+
+Every distance is four times the signed byte at bits 16:23, and the sign continues into bits
+34:81, which sit far away with ten unrelated bits between them. So:
+
+> **target = address + 16 + 4 × signed(bits[16:23] ++ bits[34:81])**
+
+The split is why a contiguous search finds nothing, and the scale of four is why a search
+for the raw distance finds nothing either. All 354 branches in the corpus decode to their
+label under this rule and none decodes wrongly.
+
+The rule is a measurement, and a measurement written down as a constant is exactly what goes
+quietly wrong when a compiler version changes, so it is re-derived from the corpus by a test
+rather than trusted. With it, assembling every corpus kernel as a whole program reproduces
+8,351 of 8,560 instructions bit-identically, and none to anything else.
+
+## 12. What is deliberately not claimed
 
 Stated so the boundary of the evidence is visible.
 
@@ -487,7 +524,7 @@ Stated so the boundary of the evidence is visible.
   first conversion. An earlier run reported `I2FP` as requiring 4 cycles; the control
   retracted it, and it is listed as not established rather than quietly kept.
 
-## 12. Corrections made along the way
+## 13. Corrections made along the way
 
 Kept because a method is only as trustworthy as its error log.
 
