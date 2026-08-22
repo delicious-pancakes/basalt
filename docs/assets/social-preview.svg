@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" width="1280" height="640" role="img"
-     aria-label="basalt: the correctness layer for NVIDIA Blackwell GPU machine code. sm_120 has no hardware interlock, so one wrong stall count makes the GPU read a stale register and return a wrong answer silently.">
-  <title>basalt — the correctness layer for NVIDIA Blackwell GPU machine code</title>
+     aria-label="basalt: assembler, checker and scheduler for NVIDIA Blackwell GPU machine code, for the RTX 50 series. sm_120 has no hardware interlock, so one wrong stall count makes the GPU read a stale register and return a wrong answer silently.">
+  <title>basalt — assembler, checker and scheduler for NVIDIA Blackwell GPU machine code</title>
 
   <defs>
     <!-- basalt cools into interlocking hexagonal columns of near-uniform width,
@@ -77,8 +77,9 @@
   <text x="84" y="178" class="sans wordmark">basalt</text>
   <rect x="87" y="202" width="116" height="5" rx="2.5" fill="url(#accent)"/>
 
-  <text x="84" y="264" class="sans lede">The correctness layer for NVIDIA Blackwell</text>
-  <text x="84" y="302" class="sans lede">GPU machine code.</text>
+  <text x="84" y="230" class="mono micro" fill="#76b900">RTX 50 SERIES  ·  sm_120  ·  PROVEN ON SILICON, NOT ASSUMED</text>
+  <text x="84" y="264" class="sans lede">Assembler, checker and scheduler for</text>
+  <text x="84" y="302" class="sans lede">NVIDIA Blackwell GPU machine code.</text>
 
   <text x="84" y="354" class="sans body">sm_120 has no hardware interlock. One wrong stall count and the</text>
   <text x="84" y="381" class="sans body">GPU reads a stale register and returns a wrong answer, silently.</text>

@@ -29,20 +29,23 @@ That is a strange kind of bug. It does not crash. It does not appear in a debugg
 
 Tools that generate machine code for this architecture *assign* those control bits from a latency model. basalt is the thing that checks the answer.
 
-## What is actually new here
+## The first one that is actually checked
 
 Machine-code assemblers for NVIDIA GPUs have existed for a decade, and there is prior work
-on Blackwell specifically: people have reverse engineered the encoding, and there are
-published cycle-level characterisations of `sm_120`. So "an assembler for this
-architecture" is not a claim worth making, and this repository does not make it.
+on Blackwell: the encoding has been reverse engineered before, and there are published
+cycle-level characterisations of `sm_120`. Being first to write one is not the claim here.
 
-Every one of those tools **assigns** the scheduling control bits from a latency table
-written by hand, and then stops. None of them checks the result. There is no tool that
-takes a cubin and tells you whether its control bits are safe, and nothing published that
-verifies a control-bit assignment against the hardware rather than against an assumption.
+Being first to **prove one correct** is.
 
-That is the gap basalt fills, and all three parts are held to the same standard: agree with
-the vendor exactly, or say why not.
+Every one of those tools assigns the scheduling control bits from a latency table written
+by hand, and then stops. None of them checks the result. Nobody publishes evidence that
+their assignment is right, there is no tool that reads a cubin and tells you whether its
+control bits are safe, and on an architecture with no hardware interlock the difference
+between "it ran" and "it is correct" is invisible: a wrong stall count produces a wrong
+number at full speed, with no fault and no warning.
+
+So basalt is three tools, each held to the same standard, and the standard is the point:
+**agree with the vendor exactly, or say why not.**
 
 | | What it does | How it is checked | Result |
 | :--- | :--- | :--- | ---: |
