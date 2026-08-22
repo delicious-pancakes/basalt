@@ -10,6 +10,16 @@ any release. The clean-room position in [`NOTICE`](NOTICE) will not.
 ## [Unreleased]
 
 ### Added
+- `scripts/roundtrip_corpus.py`: reschedules every kernel the corpus generates
+  from scratch and runs both versions on the GPU with identical input, comparing
+  output bytes. 275 of the 303 comparable kernels come out byte-identical to the
+  vendor schedule, from 246 when the control was first run. Every model
+  correction in this release came out of it. Recorded as finding 10 in
+  [`docs/FINDINGS.md`](docs/FINDINGS.md), with the failures named.
+- Corpus-wide scheduler check in the test suite: every kernel is rescheduled and
+  handed back to the verifier. Needs no GPU, so it runs in CI, and it is the
+  floor rather than the ceiling; only the round trip above sees a wrong latency
+  entry that satisfies checker and scheduler alike.
 - Guard predicates modelled as their own hazard class. A predicate consumed as
   an instruction's guard needs 13 cycles from a fixed-latency producer where the
   same predicate read as data needs 5, because a guard is resolved before issue

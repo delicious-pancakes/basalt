@@ -420,3 +420,34 @@ class TestScoreboardIsNotTheWholeAnswer:
     def test_nothing_is_claimed_without_evidence(self):
         """No observations for the opcode means no finding, not a guessed one."""
         assert verify_program(self._program(1), model(), observed=None).ok
+
+
+class TestPredicatedWriteDoesNotKill:
+    """`@!P0 FMUL R7, R7, c` may not happen, so R7's earlier producer survives.
+
+    Treating a predicated write as an unconditional kill loses the dependency on
+    whatever produced the register before it, which is a real reaching
+    definition on the path where the guard comes out false.
+    """
+
+    def test_both_producers_reach_a_later_reader(self):
+        program = [
+            instr("IADD R2, R3, R4", stall=1, index=0),
+            instr("@P0 IADD R2, R5, R6", stall=1, index=1),
+            instr("IADD R7, R2, R4", stall=1, index=2),
+            instr("EXIT", index=3),
+        ]
+        report = verify_program(program, model(cycles=4))
+        # the unconditional producer at #0 is four cycles short of #2 and the
+        # predicated one at #1 does not hide it
+        assert not report.ok
+        assert any(h.def_index == 0 and h.use_index == 2 for h in report.hazards)
+
+    def test_an_unconditional_write_still_kills(self):
+        program = [
+            instr("IADD R2, R3, R4", stall=1, index=0),
+            instr("IADD R2, R5, R6", stall=4, index=1),
+            instr("IADD R7, R2, R4", stall=1, index=2),
+            instr("EXIT", index=3),
+        ]
+        assert verify_program(program, model(cycles=4)).ok

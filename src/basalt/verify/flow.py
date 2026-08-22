@@ -117,11 +117,23 @@ class FlowState:
             if (wait_mask >> sb) & 1:
                 del self.reads[sb]
 
-    def define(self, reg: RegRef, index: int, barrier: int) -> None:
-        """Record a write, killing whatever previously defined that register."""
-        self.defs[reg] = {
-            index: ReachingDef(index=index, elapsed=0, satisfied=False, barrier=barrier)
-        }
+    def define(self, reg: RegRef, index: int, barrier: int, *, conditional: bool = False) -> None:
+        """Record a write.
+
+        An unconditional write kills whatever previously defined the register.
+        A predicated one does not: `@!P0 FMUL R7, R7, c` leaves R7 holding
+        whatever produced it when the guard is false, so both that instruction
+        and the earlier producer reach any later reader and both have to be
+        covered. Treating a predicated write as a kill is how basalt dropped the
+        wait on a `MUFU.SQRT` whose result a store read directly whenever the
+        guard came out false, which the GPU reported as a non-deterministic
+        square root and no static check would have shown.
+        """
+        fresh = ReachingDef(index=index, elapsed=0, satisfied=False, barrier=barrier)
+        if conditional:
+            self.defs.setdefault(reg, {})[index] = fresh
+        else:
+            self.defs[reg] = {index: fresh}
 
     def advance(self, stall: int, *, yielded: bool = False) -> None:
         """Charge one instruction's stall to every outstanding definition."""

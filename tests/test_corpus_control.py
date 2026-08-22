@@ -119,3 +119,62 @@ class TestPositiveControl:
         for _, report in reports:
             unknown |= report.unknown_opcodes
         assert len(unknown) < 25, f"{len(unknown)} opcodes are not in the model: {sorted(unknown)}"
+
+
+class TestSchedulerOverTheWholeCorpus:
+    """basalt has to accept its own work, on every kernel, not just check others'.
+
+    The scheduler discards every control bit `ptxas` produced and computes new
+    ones. Handing the result straight back to the verifier catches the cases
+    where it cannot even satisfy itself, which is cheap, needs no GPU, and is
+    the half of the round trip that can run in CI.
+
+    It is not the whole story and is not meant to be. Checker and scheduler read
+    the same latency model, so a wrong entry satisfies both and only the silicon
+    disagrees; that is what `scripts/roundtrip_corpus.py` is for. This is the
+    floor, not the ceiling.
+    """
+
+    @staticmethod
+    @pytest.fixture(scope="class")
+    def scheduled(toolchain, model, observed):
+        from basalt.asm.cubin import Cubin
+        from basalt.sched.scheduler import schedule_program
+
+        def one(snippet):
+            with TemporaryDirectory(prefix="basalt-sched-") as tmp:
+                src = Path(tmp) / "k.ptx"
+                cubin_path = Path(tmp) / "k.cubin"
+                src.write_text(snippet.ptx)
+                built = toolchain.run(
+                    [str(toolchain.ptxas), f"-arch={ARCH}", "-O3", "-o", str(cubin_path), str(src)],
+                    check=False,
+                    timeout=60.0,
+                )
+                if built.returncode != 0:
+                    return None
+                program = disassemble_program(toolchain, cubin_path)
+                result = schedule_program(program, model, observed=observed)
+                if result.out_of_scoreboards:
+                    return (snippet.name, "out of scoreboards", result.out_of_scoreboards[0])
+                cubin = Cubin.load(cubin_path)
+                for slot, word in enumerate(result.words):
+                    if program.instructions[slot].word is not None:
+                        cubin.write_word(slot, word)
+                out = Path(tmp) / "r.cubin"
+                cubin.save(out)
+                report = verify_program(
+                    disassemble_program(toolchain, out), model, observed=observed
+                )
+                if not report.ok:
+                    return (snippet.name, "rejected its own schedule", report.hazards[0].describe())
+                return None
+
+        snippets = generate() + generate_tensor()
+        with ThreadPoolExecutor(max_workers=os.cpu_count() or 4) as pool:
+            return [r for r in pool.map(one, snippets) if r]
+
+    def test_every_kernel_can_be_scheduled_and_verifies_clean(self, scheduled):
+        if scheduled:
+            lines = "\n".join(f"  {name}: {why} ({detail})" for name, why, detail in scheduled)
+            pytest.fail(f"{len(scheduled)} kernels basalt could not schedule cleanly:\n{lines}")

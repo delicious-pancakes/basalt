@@ -304,7 +304,7 @@ def _check_instruction(
                 )
 
     for reg in access.real_defs:
-        state.define(reg, index, write_barrier)
+        state.define(reg, index, write_barrier, conditional=access.guard is not None)
 
     if access.real_uses:
         state.begin_read(read_barrier, index, frozenset(access.real_uses))

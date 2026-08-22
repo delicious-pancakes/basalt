@@ -329,7 +329,63 @@ Closing this made the loop kernel round-trip, which had been recorded here as a
 loop-carried scheduling gap. It was not one. The diagnosis was wrong and the hardware
 said so.
 
-## 10. What is deliberately not claimed
+## 10. Rescheduling the whole corpus, on the GPU
+
+The scheduler was run over seven hand-written kernels for a long time and passed all
+seven. That is a smoke test wearing the clothes of a control.
+
+`scripts/roundtrip_corpus.py` runs it over everything the corpus generates. For each of
+the 317 kernels: compile with `ptxas`, discard every control bit it produced, compute new
+ones, write them back, and run both versions on the card with identical input. The
+rescheduled kernel has to produce the same bytes.
+
+| | |
+| :--- | ---: |
+| Kernels rescheduled and run | 317 |
+| Comparable (vendor runs here, and deterministically) | 303 |
+| **Byte-identical to the vendor schedule** | **275** |
+| Wrong, deterministically | 7 |
+| Non-deterministic, so a dependency is uncovered | 21 |
+
+The first run of this scored 246. Everything between then and now was found by it:
+
+- a guard predicate needing 13 cycles where the same predicate read as data needs 5
+  (finding 9),
+- a waited-on scoreboard still leaving a residual gap the producer has to cover, and that
+  gap being a distance to the consumer rather than the producer's own stall (finding 7),
+- the conversion pipe, `POPC` and `FLO` completing out of order rather than on a fixed
+  schedule, like fp64 before them,
+- requirements having to be keyed on the full mnemonic, since `I2F.RP` needs 1 cycle and
+  every other `I2F` needs 2, and collapsing them takes the minimum,
+- a predicated write not killing the previous definition, because `@!P0 FMUL R7, R7, c`
+  leaves R7 holding whatever produced it whenever the guard is false,
+- and the scheduler refusing to allocate a seventh outstanding load instead of sharing a
+  scoreboard, which a counter permits and which rejected 45 kernels outright.
+
+None of those were reachable by reasoning, and none were visible to the checker, because
+the checker reads the same latency model the scheduler does. A wrong entry satisfies both
+at once. That is the whole argument for running the silicon.
+
+### What is still wrong
+
+Named rather than summarised, because a limitation with a name gets fixed and a percentage
+does not:
+
+| Family | Kernels |
+| :--- | :--- |
+| Global atomics | `atom_global_add` and `min`/`max` across u32, s32, u64, f32, f64 |
+| Transcendental approximations | `sqrt`, `rsqrt`, `lg2`, `ex2` on f32 |
+| Bit reversal | `brev_b32`, `brev_b64` |
+| Integer divide and remainder | `div_s32`, `div_u32`, `rem_u32` |
+| 16-bit subtract | `sub_s16`, `sub_u16` |
+| Tensor and matrix movement | two `s4` MMA shapes, one sparse MMA, `ldsm_x1_trans`, `movmatrix` |
+
+A further 12 kernels the harness itself cannot launch, shared and local memory forms that
+need launch configuration it does not provide, and 2 whose vendor output is not
+deterministic under 32 threads storing to one address. Both groups are excluded from the
+303 rather than counted as passes.
+
+## 11. What is deliberately not claimed
 
 Stated so the boundary of the evidence is visible.
 
@@ -356,7 +412,7 @@ Stated so the boundary of the evidence is visible.
   first conversion. An earlier run reported `I2FP` as requiring 4 cycles; the control
   retracted it, and it is listed as not established rather than quietly kept.
 
-## 11. Corrections made along the way
+## 12. Corrections made along the way
 
 Kept because a method is only as trustworthy as its error log.
 
@@ -377,6 +433,15 @@ Kept because a method is only as trustworthy as its error log.
   fp64 dependency was invisible.
 - A guard predicate was charged the same as a predicate read as data. It needs thirteen
   cycles against five, and the difference silently corrupts (finding 9).
+- A predicated write was treated as killing the previous definition of its register. It
+  does not: on the path where the guard is false the earlier producer is what the next
+  reader sees, and the dependency on it was being dropped.
+- Requirements were keyed on the bare opcode. The modifier decides the number, and
+  collapsing forms takes the minimum across them, so `I2F` read as 1 cycle on the strength
+  of `I2F.RP` while every other form needs 2.
+- The scheduler refused to schedule a seventh outstanding load rather than sharing a
+  scoreboard. A scoreboard is a counter, so sharing is permitted and over-synchronises
+  slightly; refusing rejected 45 of 317 corpus kernels.
 - A scoreboard wait was treated as covering a dependency completely. It does not: the
   producer still owes a per-opcode minimum stall, 2 cycles for `DADD`, and one cycle less
   is silently wrong.

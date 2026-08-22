@@ -281,8 +281,13 @@ def schedule_program(
                 live = {r: frozenset(bs - cleared) for r, bs in live.items()}
 
             barrier = barrier_of[index]
+            mine = frozenset({barrier}) if barrier != NO_BARRIER else frozenset()
             for reg in access.real_defs:
-                live[reg] = frozenset({barrier}) if barrier != NO_BARRIER else frozenset()
+                # a predicated write may not happen, so whatever was outstanding
+                # for that register is still outstanding and still needs waiting
+                # on. replacing here instead of adding drops the wait on the
+                # earlier producer entirely.
+                live[reg] = (live.get(reg, frozenset()) | mine) if access.guard else mine
         return live
 
     worklist = [0]
@@ -313,7 +318,7 @@ def schedule_program(
             result.passes += 1
             short = False
 
-            last_def: dict[RegRef, _Producer] = {}
+            last_def: dict[RegRef, list[_Producer]] = {}
             elapsed: dict[int, int] = {}
 
             for index in range(block.start, block.end):
@@ -323,61 +328,61 @@ def schedule_program(
                 access = operand_access(instr.mnemonic, instr.operands)
 
                 for reg in sorted(access.real_uses, key=str):
-                    producer = last_def.get(reg)
-                    if producer is None:
-                        continue
-                    record = model.lookup(producer.opcode)
-                    if producer.kind is LatencyClass.FIXED:
-                        needed = _requirement(
-                            producer.opcode,
-                            instr.opcode,
-                            record.cycles,
-                            observed,
-                            guard=reg == access.guard,
-                        )
-                    else:
-                        # A variable-latency producer is covered by the wait for
-                        # the long part of its result, and by a small gap for
-                        # the rest. Only the second part is scheduled here; the
-                        # wait itself was assigned above.
-                        needed = _scoreboarded_requirement(
-                            producer.mnemonic,
-                            instr.opcode,
-                            observed,
-                            guard=reg == access.guard,
-                        )
-                        if not needed:
+                    for producer in last_def.get(reg, ()):
+                        record = model.lookup(producer.opcode)
+                        if producer.kind is LatencyClass.FIXED:
+                            needed = _requirement(
+                                producer.opcode,
+                                instr.opcode,
+                                record.cycles,
+                                observed,
+                                guard=reg == access.guard,
+                            )
+                        else:
+                            # A variable-latency producer is covered by the wait for
+                            # the long part of its result, and by a small gap for
+                            # the rest. Only the second part is scheduled here; the
+                            # wait itself was assigned above.
+                            needed = _scoreboarded_requirement(
+                                producer.mnemonic,
+                                instr.opcode,
+                                observed,
+                                guard=reg == access.guard,
+                            )
+                            if not needed:
+                                continue
+                        have = elapsed.get(producer.index, 0)
+                        if have >= needed:
                             continue
-                    have = elapsed.get(producer.index, 0)
-                    if have >= needed:
-                        continue
 
-                    short = True
-                    leftover = _place_stall(stalls, pinned, producer.index, index, needed - have)
-                    result.stalls_added += (needed - have) - leftover
-                    if leftover:
-                        # the window between producer and consumer cannot hold
-                        # the requirement. covering it needs NOPs inserted, which
-                        # would change instruction addresses, so it is reported
-                        # rather than half-done.
-                        note = (
-                            f"#{producer.index} {producer.opcode} -> #{index} {instr.opcode}: "
-                            f"{leftover} of {needed} cycles will not fit in the "
-                            f"{index - producer.index} instruction window"
+                        short = True
+                        leftover = _place_stall(
+                            stalls, pinned, producer.index, index, needed - have
                         )
-                        if note not in result.unplaceable:
-                            result.unplaceable.append(note)
-                        # The window cannot hold the requirement, so fall back to
-                        # the safe stall encoding on the producer. A zero stall
-                        # waits for outstanding results as well as elapsed cycles
-                        # (see docs/FINDINGS.md), which costs about nine times a
-                        # scheduled instruction and is unconditionally correct.
-                        # Being slow is a trade; being wrong is not.
-                        stalls[producer.index] = STALL_YIELD
-                        pinned.add(producer.index)
-                        if producer.index not in result.yielded:
-                            result.yielded.append(producer.index)
-                        continue
+                        result.stalls_added += (needed - have) - leftover
+                        if leftover:
+                            # the window between producer and consumer cannot hold
+                            # the requirement. covering it needs NOPs inserted, which
+                            # would change instruction addresses, so it is reported
+                            # rather than half-done.
+                            note = (
+                                f"#{producer.index} {producer.opcode} -> #{index} {instr.opcode}: "
+                                f"{leftover} of {needed} cycles will not fit in the "
+                                f"{index - producer.index} instruction window"
+                            )
+                            if note not in result.unplaceable:
+                                result.unplaceable.append(note)
+                            # The window cannot hold the requirement, so fall back to
+                            # the safe stall encoding on the producer. A zero stall
+                            # waits for outstanding results as well as elapsed cycles
+                            # (see docs/FINDINGS.md), which costs about nine times a
+                            # scheduled instruction and is unconditionally correct.
+                            # Being slow is a trade; being wrong is not.
+                            stalls[producer.index] = STALL_YIELD
+                            pinned.add(producer.index)
+                            if producer.index not in result.yielded:
+                                result.yielded.append(producer.index)
+                            continue
 
                 charge = SATURATION if index in pinned else stalls[index]
                 for key in elapsed:
@@ -391,7 +396,12 @@ def schedule_program(
                     write_barriers[index],
                 )
                 for reg in access.real_defs:
-                    last_def[reg] = produced
+                    # a predicated write leaves the previous producer reachable,
+                    # so it joins the list rather than replacing it
+                    if access.guard:
+                        last_def.setdefault(reg, []).append(produced)
+                    else:
+                        last_def[reg] = [produced]
                     elapsed[index] = stalls[index]
 
             if not short:
