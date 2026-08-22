@@ -56,6 +56,18 @@ MAX_PASSES = 64
 # destination is computed and the control-flow graph says so.
 _OPAQUE_TRANSFERS = frozenset({"CALL", "RET", "BRX", "JMX", "RTT", "BPT"})
 
+# Instructions `ptxas` never gives the zero-stall encoding to, with the smallest
+# stall it is seen using for each. Measured over the whole corpus: `EXIT` 0 times
+# out of 329, `RET` 0 of 5, `CALL` 0 of 5, `BAR` 0 of 3. `BRA` is deliberately
+# not here, since it takes a zero stall 329 times, so this is a property of
+# these instructions rather than of control transfer in general.
+#
+# It matters because the safe stall encoding is basalt's fallback everywhere. It
+# covers any dependency, so it gets reached for at block boundaries and wherever
+# a requirement will not fit, and reaching for the safe answer on an instruction
+# the vendor never applies it to lands outside what the encoding supports.
+_NEVER_ZERO_STALL: dict[str, int] = {"EXIT": 5, "RET": 5, "CALL": 5, "BAR": 6}
+
 
 @dataclass
 class ScheduleResult:
@@ -411,6 +423,12 @@ def schedule_program(
                             # (see docs/FINDINGS.md), which costs about nine times a
                             # scheduled instruction and is unconditionally correct.
                             # Being slow is a trade; being wrong is not.
+                            floor = _NEVER_ZERO_STALL.get(producer.opcode)
+                            if floor is not None:
+                                # cannot take the safe encoding, so it gets the
+                                # smallest stall the vendor ever gives it
+                                stalls[producer.index] = max(stalls[producer.index], floor)
+                                continue
                             stalls[producer.index] = STALL_YIELD
                             pinned.add(producer.index)
                             if producer.index not in result.yielded:
@@ -450,6 +468,11 @@ def schedule_program(
     for block in cfg.blocks:
         last = block.end - 1
         if 0 <= last < count and last not in pinned:
+            instr = program.instructions[last]
+            floor = _NEVER_ZERO_STALL.get(instr.opcode if instr.word is not None else "")
+            if floor is not None:
+                stalls[last] = max(stalls[last], floor)
+                continue
             stalls[last] = STALL_YIELD
             pinned.add(last)
             result.yielded.append(last)

@@ -334,16 +334,24 @@ said so.
 The scheduler was run over seven hand-written kernels for a long time and passed all
 seven. That is a smoke test wearing the clothes of a control.
 
-`scripts/roundtrip_corpus.py` runs it over everything the corpus generates. For each of
-the 317 kernels: compile with `ptxas`, discard every control bit it produced, compute new
-ones, write them back, and run both versions on the card with identical input. The
-rescheduled kernel has to produce the same bytes.
+`scripts/roundtrip_corpus.py` runs it over everything the corpus generates, plus twelve
+hand-written kernels whose control flow is the point rather than their opcodes. For each of
+the 329: compile with `ptxas`, discard every control bit it produced, compute new ones,
+write them back, and run both versions on the card with identical input. The rescheduled
+kernel has to produce the same bytes.
+
+The twelve exist because the generated corpus is deliberately narrow. One or two
+instructions of body per kernel is right for attributing a bit to a form and wrong for
+exercising a scheduler: almost nothing in it has a loop, a barrier, a nested branch, or
+shared memory that is actually addressable. The hand-written ones have counted loops with
+accumulators carried around the back edge, nested loops, a branch inside a loop, barriers
+with traffic on both sides, predicated writes, and long unbranched dependent chains.
 
 | | |
 | :--- | ---: |
-| Kernels rescheduled and run | 317 |
-| Comparable (the vendor runs here, deterministically, and reproducibly) | 303 |
-| **Byte-identical to the vendor schedule** | **303** |
+| Kernels rescheduled and run | 329 |
+| Comparable (the vendor runs here, deterministically, and reproducibly) | 314 |
+| **Byte-identical to the vendor schedule** | **314** |
 | Wrong | 0 |
 
 Every kernel basalt can be compared on now computes exactly what the vendor's schedule

@@ -370,6 +370,10 @@ def _verify(args: argparse.Namespace) -> int:
     model = DEFAULT_MODEL
     if args.latencies:
         model = LatencyModel.assumed().overlay(Path(args.latencies))
+    elif (measured := Path(DEFAULT_LATENCIES)).is_file():
+        # the committed measurements beat the assumptions, and a checkout has
+        # them, so a bare `verify` should not quietly use the weaker model
+        model = LatencyModel.assumed().overlay(measured)
 
     observed = None
     if args.observed:

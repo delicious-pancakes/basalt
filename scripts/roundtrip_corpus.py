@@ -95,6 +95,7 @@ def build(work: Path, only: set[str] | None, opt: int) -> list[dict]:
     from basalt.asm.cubin import Cubin
     from basalt.disasm import disassemble_program
     from basalt.harvest.corpus import generate as generate_scalar
+    from basalt.harvest.corpus_shapes import generate_shapes
     from basalt.harvest.corpus_tensor import generate_tensor
     from basalt.sched.scheduler import schedule_program
     from basalt.toolchain import find_toolchain
@@ -107,7 +108,10 @@ def build(work: Path, only: set[str] | None, opt: int) -> list[dict]:
     model = LatencyModel.assumed().overlay(latencies) if latencies.is_file() else DEFAULT_MODEL
     observed = ObservedStalls.read(observed_path) if observed_path.is_file() else None
 
-    snippets = generate_scalar() + generate_tensor()
+    # the shape kernels are included here and not in the harvest: they exist to
+    # give the scheduler loops, barriers and branches to get wrong, which the
+    # generated corpus deliberately does not have
+    snippets = generate_scalar() + generate_tensor() + generate_shapes()
     if only:
         snippets = [s for s in snippets if s.name in only]
     work.mkdir(parents=True, exist_ok=True)

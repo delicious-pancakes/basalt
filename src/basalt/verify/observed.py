@@ -407,9 +407,21 @@ def mine_corpus(
 
     from ..disasm import disassemble_program
     from ..harvest.corpus import generate as generate_scalar
+    from ..harvest.corpus_shapes import generate_shapes
     from ..harvest.corpus_tensor import generate_tensor
 
-    snippets = generate_scalar() + generate_tensor()
+    # The shape kernels are mined as well as the harvest corpus. They exist for
+    # the round trip, but they also emit pairings the generated corpus never
+    # does, and an unmined pairing falls back to a number collapsed over the
+    # producer's other consumers. That collapse takes the minimum, so an unmined
+    # pairing inherits whichever consumer tolerates the shortest gap: `IADD`
+    # into `LOP3` needs 5 cycles and was being given 4, because `IADD` into
+    # `F2I` needs 4 and `F2I` reads its operand late.
+    #
+    # More evidence is the only real fix for that. Every guess about an unmined
+    # pairing is wrong in one direction or the other, and the directions are not
+    # equally bad.
+    snippets = generate_scalar() + generate_tensor() + generate_shapes()
     tasks = [(s, o) for s in snippets for o in opt_levels]
     if progress:
         print(f"mining {len(tasks)} kernels for scheduling decisions")
