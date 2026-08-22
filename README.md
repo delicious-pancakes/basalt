@@ -55,7 +55,7 @@ So basalt is three tools, each held to the same standard, and the standard is th
 | | What it does | How it is checked | Result |
 | :--- | :--- | :--- | ---: |
 | **Assembler** | SASS text to the 128-bit word | Reassemble every instruction `ptxas` emitted and compare bytes | 8,479 of 8,584 exact, **0 wrong** |
-| **Checker** | Reads a schedule, reports hazards | The vendor's own output must verify clean, and a deliberately shortened stall must be caught | 330 kernels, 6,165 dependencies, **0 errors** |
+| **Checker** | Reads a schedule, reports hazards | The vendor's own output must verify clean, and a deliberately shortened stall must be caught | 0 errors on 330 vendor kernels, **0 missed** on 162 broken ones |
 | **Scheduler** | Assigns the control bits from scratch | Discard every control bit, compute new ones, run both on the GPU against four inputs, compare output bytes | **314 of 314** byte-identical, at every optimisation level |
 
 And the part a scheduler is usually quiet about: what the correctness costs. basalt's
@@ -322,6 +322,8 @@ Three of those contradict the assumed model basalt shipped with: `DADD` was assu
 **It agrees with the vendor compiler on every kernel in the corpus.** Every kernel `ptxas` builds from the corpus is verified against its own scheduling: 6,165 dependencies, zero errors. That sweep runs in CI on every push, and every modelling error this project has made was caught by it rather than by reasoning.
 
 **The verdicts match the silicon.** For every encodable stall on a dependent producer, basalt's static answer and what the hardware actually computes agree, including the zero case. That is held as a test, not asserted here. Full evidence, including three independent methods for the required stall and the corrections made along the way, is in [findings](docs/FINDINGS.md).
+
+**And when it says a schedule is unsafe, the silicon agrees.** Take the vendor's own working schedule for 162 kernels, shorten one real dependency in each, and compare basalt's verdict against what the GPU computes: 91 that it called broken were broken, and **nothing it called safe computed a wrong answer**. That number started at 34 missed rather than zero, and [findings](docs/FINDINGS.md) says what the cause was and what fixing it cost in false alarms, because a sweep that only ever reported its final figure would be worth less than one that reported its first.
 
 ## It can assign the control bits too
 
