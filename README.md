@@ -13,7 +13,7 @@
 
 <br/><br/>
 
-<strong><a href="#the-problem">The problem</a> &nbsp;&middot;&nbsp; <a href="#how-it-works">How it works</a> &nbsp;&middot;&nbsp; <a href="#quickstart">Quickstart</a> &nbsp;&middot;&nbsp; <a href="#what-is-measured-not-assumed">What is measured</a> &nbsp;&middot;&nbsp; <a href="docs/ROADMAP.md">Roadmap</a> &nbsp;&middot;&nbsp; <a href="#clean-room-position">Clean-room</a></strong>
+<strong><a href="#the-problem">The problem</a> &nbsp;&middot;&nbsp; <a href="#how-it-works">How it works</a> &nbsp;&middot;&nbsp; <a href="#quickstart">Quickstart</a> &nbsp;&middot;&nbsp; <a href="#measured-not-assumed">Measured, not assumed</a> &nbsp;&middot;&nbsp; <a href="docs/METHOD.md">Method</a> &nbsp;&middot;&nbsp; <a href="docs/ROADMAP.md">Roadmap</a> &nbsp;&middot;&nbsp; <a href="#clean-room-position">Clean-room</a></strong>
 
 </div>
 
@@ -96,7 +96,7 @@ ok    probe oracle 16/16 mnemonics round-tripped
 both oracles healthy. no GPU required for anything above.
 ```
 
-Then rebuild the instruction database from scratch, or query the committed one:
+Rebuild the instruction database from scratch, or query the committed one:
 
 ```bash
 python -m basalt.cli build-isa          # harvest, probe, write data/isa/sm_120a.json
@@ -105,9 +105,25 @@ python -m basalt.cli isa IMAD.WIDE.U32  # one form, with its measured field layo
 python -m basalt.cli isa --opcode QMMA  # every form of one opcode
 ```
 
-## What is measured, not assumed
+Then check a cubin, whatever produced it:
 
-Numbers here are printed by the tooling and regenerate from a clean checkout. `basalt isa --stats` is the source of truth; this table is a snapshot.
+```bash
+python -m basalt.cli measure -o data/latency/your-card.json   # needs a GPU, once
+python -m basalt.cli verify kernel.cubin --latencies data/latency/your-card.json
+```
+
+```console
+$ python -m basalt.cli verify kernel.cubin --latencies data/latency/rtx-5070-ti.json
+kernel.cubin
+  32 instructions in 3 blocks, 23 dependencies checked: clean
+  latency model: measured on NVIDIA GeForce RTX 5070 Ti
+```
+
+## Measured, not assumed
+
+Numbers here are printed by the tooling and regenerate from a clean checkout. The commands above are the source of truth; these tables are snapshots.
+
+**Instruction database.** Every entry carries an encoding that really assembled and the compiler build that produced it.
 
 | | |
 | :--- | ---: |
@@ -117,10 +133,24 @@ Numbers here are printed by the tooling and regenerate from a clean checkout. `b
 | Tensor-core forms | 43 |
 | Built with | `ptxas` V13.3.73 |
 
-The tensor coverage is where the low-precision hardware lives: `HMMA` and `IMMA`, `QMMA` across the FP8, FP6 and FP4 types including asymmetric operand pairs, the scale-factor forms `QMMA.SF` and `OMMA.SF` that carry a per-block exponent, sparse `IMMA.SP`, and the matrix movement instructions `LDSM`, `STSM` and `MOVM` in every shape including the transposing variants.
+Tensor coverage is where the low-precision hardware lives: `HMMA` and `IMMA`, `QMMA` across the FP8, FP6 and FP4 types including asymmetric operand pairs, the scale-factor forms `QMMA.SF` and `OMMA.SF` that carry a per-block exponent, sparse `IMMA.SP`, and the matrix movement instructions `LDSM`, `STSM` and `MOVM` in every shape including the transposing variants.
+
+**Latency, on an RTX 5070 Ti.** 70 SMs, every fit R² ≥ 0.9998. Measured by timing dependent chains and taking the slope, with the chain length read back out of the compiled SASS rather than assumed.
+
+| Instructions | Cycles |
+| :--- | ---: |
+| `IMAD` `IADD3` `FFMA` `FADD` `FMUL` `LOP3` `SHF` | 4 |
+| `POPC` | 18 |
+| `I2FP` + `F2I` together | 24 |
+| `MUFU` | 44 |
+| `DADD` `DFMA` | 64 |
+
+Three of those contradict the assumed model basalt shipped with: `DADD` was assumed 48, `POPC` was assumed 4, and each conversion was assumed 6 against 24 measured for the round trip. An assumed latency model is not a small approximation of a measured one, which is the entire argument for measuring.
+
+The measured model verifies real `ptxas` output clean. An independently measured latency and the vendor compiler's own scheduling agreeing is the strongest evidence available that both are right.
 
 > [!NOTE]
-> **Alpha, and specific about what that means.** The instruction database is generated and grounded: every entry carries an encoding that really assembled and the compiler build that produced it. The hazard model and verifier are under construction, and the latency model they check against is not yet measured on silicon. Where something is inferred rather than measured, the tooling says so rather than rounding it up to a fact. See the [roadmap](docs/ROADMAP.md).
+> **Alpha, and specific about what that means.** What is done: both oracles, the instruction database, the field prober, the hazard checker, and latency measurement on one SKU. What is not: cross-block analysis needs a real control-flow graph and currently stops at branches, most opcodes still carry assumed latencies rather than measured ones, and only one GPU has been measured. Where something is inferred rather than measured, the tooling says so rather than rounding it up to a fact. See the [roadmap](docs/ROADMAP.md) and the [method](docs/METHOD.md).
 
 ## Repository layout
 
@@ -132,9 +162,12 @@ src/basalt/
   harvest/         PTX corpus generation and encoding extraction
   probe/           Differential bit probing and field inference
   isa/             The generated instruction database and its builder
+  asm/             ELF reader that locates and rewrites instruction words
   verify/          Register def-use analysis, hazard model, latency checking
+  gpu/             Driver-API bindings and the latency measurement harness
 data/isa/          Generated database, tracked so consumers need no harvest
-docs/              Roadmap, method notes, findings, artwork sources
+data/latency/      Measured latency, one file per GPU it was measured on
+docs/              Method, roadmap, artwork sources
 scripts/           Toolchain fetch, asset rendering, database drift check
 tests/             Unit tests, plus toolchain- and GPU-marked suites
 ```

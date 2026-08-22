@@ -27,14 +27,16 @@ vendor compiler's own output, which is what makes it useful rather than self-ref
 | 2 | Harvest | PTX corpus, encoding extraction at scale | **done** |
 | 3 | Field inference | Per-bit roles by differential mutation | **done** |
 | 4 | ISA database | Grounded, provenanced instruction forms | **done** |
-| 5 | Hazard model | Def-use analysis over decoded programs | in progress |
-| 6 | Verifier | Static latency-safety proof over any cubin | in progress |
-| 7 | Latency measurement | Per-SKU instruction latency on real silicon | planned |
-| 8 | Cross-check | basalt's ISA model against other tools' tables | planned |
-| 9 | Audit | Every public sm_120 SASS kernel, ptxas as control | planned |
-| 10 | Assembler | SASS text to cubin, so basalt can emit its own tests | planned |
+| 5 | Hazard model | Def-use analysis over decoded programs | **done** |
+| 6 | Verifier | Static hazard checking over any cubin | **done** |
+| 7 | Latency measurement | Per-SKU instruction latency on real silicon | **done**, one SKU |
+| 8 | Cross-block analysis | A real control-flow graph, so definitions survive branches | in progress |
+| 9 | Cross-check | basalt's ISA model against independently derived tables | planned |
+| 10 | Audit | Every public sm_120 SASS kernel, ptxas as the control | planned |
+| 11 | Assembler | SASS text to cubin, so basalt can emit its own test cases | planned |
 
-Stages 1 to 4 need no GPU and rebuild in CI. Stage 7 needs an sm_120 card.
+Stages 1 to 6 need no GPU and run in CI. Stage 7 needs an sm_120 card, and only the
+measurement step does; the numbers it produces are a checked-in file everyone else reads.
 
 ## Findings this is positioned to produce
 
