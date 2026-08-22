@@ -103,9 +103,16 @@ def _read(word: int, bits: tuple[int, ...]) -> int:
 
 
 def _write(word: int, bits: tuple[int, ...], value: int) -> int:
+    width = len(bits)
+    # a negative immediate is written as its two's complement in the field, which
+    # is what `IADD R4, R0, -0x1` means and how the vendor encodes it
+    if value < 0:
+        if value < -(1 << (width - 1)):
+            raise AssemblyError(f"{value} does not fit in {width} signed bits")
+        value &= (1 << width) - 1
     # refuse rather than truncate: a silently narrowed value is a wrong operand
-    if value < 0 or value >= (1 << len(bits)):
-        raise AssemblyError(f"{value} does not fit in {len(bits)} bits")
+    elif value >= (1 << width):
+        raise AssemblyError(f"{value} does not fit in {width} bits")
     for position, bit in enumerate(bits):
         word &= ~(1 << bit)
         word |= ((value >> position) & 1) << bit
@@ -124,6 +131,10 @@ def _strip_modifiers(token: str) -> tuple[frozenset[str], str]:
     """A token's modifiers and the operand underneath them."""
     roles: set[str] = set()
     text = token.strip()
+    # a sign on a number is part of the number, not a bit somewhere else in the
+    # word: `-0x1` is the immediate -1 written as two's complement in its field
+    if _IMMEDIATE.match(text):
+        return frozenset(), text
     while text and text[0] in _MODIFIER_SYMBOLS:
         roles.add(_MODIFIER_SYMBOLS[text[0]])
         text = text[1:]
@@ -390,7 +401,9 @@ class Assembler:
             value = _register_number(token)
             if value is None:
                 if _IMMEDIATE.match(token):
-                    value = int(token, 0) & ((1 << len(value_bits)) - 1)
+                    # unmasked on purpose: `_write` decides whether it fits, so
+                    # an immediate too wide for its field is refused not trimmed
+                    value = int(token, 0)
                 else:
                     raise AssemblyError(
                         f"{mnemonic} operand {slot.index} is {token!r}, which is neither a "
@@ -477,7 +490,8 @@ def _write_composite(word: int, slot: Slot, token: str, reference: str, mnemonic
                 f"never located bits for it in this form"
             )
         if role == "offset":
-            value = int(value_text or "0x0", 0) & ((1 << len(bits)) - 1)
+            # unmasked for the same reason as an immediate: too wide is a refusal
+            value = int(value_text or "0x0", 0)
         else:
             # the base register carries its access width, as in `R2.64`, and the
             # width is part of the opcode rather than of this field

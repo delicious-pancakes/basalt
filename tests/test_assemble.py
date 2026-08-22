@@ -63,6 +63,34 @@ class TestReproducesTheReference:
         assert reference.value == form.word.value
 
 
+class TestSignedImmediates:
+    """A minus on a number is part of the number, not a bit elsewhere.
+
+    `-R0` is a register plus a negate bit parked far away in the word. `-0x1` is
+    the immediate -1, written as two's complement in its own field, with no
+    separate bit involved. Treating the second like the first asks for a negate
+    bit that does not exist and refuses every subtract-by-add in the corpus,
+    which was 12 instructions.
+    """
+
+    def test_a_negative_immediate_encodes_as_twos_complement(self, assembler, database):
+        form = next(f for f in database.shapes("IADD") if f.operand_text == "R7, R5, 0x1")
+        slot = next(o for o in form.operands if len(o.bits) >= 16)
+        word = assembler.assemble("IADD R7, R5, -0x1")
+        got = 0
+        for position, bit in enumerate(slot.bits):
+            got |= ((word.value >> bit) & 1) << position
+        assert got == (1 << len(slot.bits)) - 1, "-0x1 should fill the field with ones"
+
+    def test_a_positive_immediate_is_unaffected(self, assembler, database):
+        form = next(f for f in database.shapes("IADD") if f.operand_text == "R7, R5, 0x1")
+        assert assembler.assemble("IADD R7, R5, 0x1").value == form.word.value
+
+    def test_an_immediate_too_negative_for_the_field_is_refused(self, assembler):
+        with pytest.raises(AssemblyError, match="signed bits"):
+            assembler.assemble("IADD R7, R5, -0x80000001")
+
+
 class TestRefusesRatherThanGuesses:
     """Each of these produced a wrong word before it produced an error."""
 
