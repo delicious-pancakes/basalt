@@ -190,6 +190,9 @@ _ASSUMED: dict[str, tuple[int, LatencyClass, str]] = {
     "LDC": (0, LatencyClass.VARIABLE, "constant load"),
     "LDCU": (0, LatencyClass.VARIABLE, "uniform constant load"),
     "LDSM": (0, LatencyClass.VARIABLE, "matrix load from shared"),
+    # the matrix transpose unit signals completion the same way the matrix load
+    # does, and is scheduled with a scoreboard in every instance the corpus has
+    "MOVM": (0, LatencyClass.VARIABLE, "matrix transpose, scoreboard signalled"),
     "LDGSTS": (0, LatencyClass.VARIABLE, "async global to shared copy"),
     "ATOM": (0, LatencyClass.VARIABLE, ""),
     "ATOMG": (0, LatencyClass.VARIABLE, ""),

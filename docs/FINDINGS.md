@@ -343,9 +343,9 @@ rescheduled kernel has to produce the same bytes.
 | :--- | ---: |
 | Kernels rescheduled and run | 317 |
 | Comparable (vendor runs here, and deterministically) | 303 |
-| **Byte-identical to the vendor schedule** | **295** |
-| Wrong, deterministically | 2 |
-| Non-deterministic, so a dependency is uncovered | 6 |
+| **Byte-identical to the vendor schedule** | **298** |
+| Wrong, deterministically | 1 |
+| Non-deterministic, so a dependency is uncovered | 3 |
 
 The first run of this scored 246. Everything between then and now was found by it:
 
@@ -367,6 +367,10 @@ The first run of this scored 246. Everything between then and now was found by i
 - a variable-latency unit returning results in the order it was given work, so a wait on
   something issued later covers everything that unit still owes: `ptxas` scoreboards the
   second of two consecutive shuffles and waits only on that,
+- a wait carried by a predicated instruction not being something a later consumer can lean
+  on, since the instruction carrying it may not execute,
+- `IMAD.WIDE` writing a register pair, and taking one as its addend, with nothing in the
+  mnemonic to say so,
 - and the scheduler refusing to allocate a seventh outstanding load instead of sharing a
   scoreboard, which a counter permits and which rejected 45 kernels outright.
 
@@ -381,8 +385,7 @@ does not:
 
 | Family | Kernels |
 | :--- | :--- |
-| Transcendental approximations | `sqrt`, `rsqrt`, `ex2` on f32 |
-| Tensor and matrix movement | two `s4` MMA shapes, `movmatrix` |
+| 4-bit integer tensor cores | `mma_m16n8k32_s4_s4_s32`, `mma_m16n8k64_s4_s4_s32` |
 | Signed integer divide | `div_s32` |
 | 64-bit atomic add | `atom_global_add_u64` |
 

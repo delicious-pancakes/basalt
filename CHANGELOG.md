@@ -12,7 +12,7 @@ any release. The clean-room position in [`NOTICE`](NOTICE) will not.
 ### Added
 - `scripts/roundtrip_corpus.py`: reschedules every kernel the corpus generates
   from scratch and runs both versions on the GPU with identical input, comparing
-  output bytes. 295 of the 303 comparable kernels come out byte-identical to the
+  output bytes. 298 of the 302 comparable kernels come out byte-identical to the
   vendor schedule, from 246 when the control was first run. Every model
   correction in this release came out of it. Recorded as finding 10 in
   [`docs/FINDINGS.md`](docs/FINDINGS.md), with the failures named.
@@ -72,6 +72,13 @@ any release. The clean-room position in [`NOTICE`](NOTICE) will not.
   a different question from what correctness requires.
 
 ### Fixed
+- The scheduler no longer leans on a wait carried by a predicated instruction.
+  That instruction may not execute, so a later consumer relying on its wait can
+  read a result that never landed. `MUFU.EX2`, `SQRT` and `RSQ` feeding a store
+  through a predicated `FMUL` were wrong every time until the store carried its
+  own wait. The checker deliberately keeps the permissive rule, because `ptxas`
+  does lean on predicated waits and its output runs.
+- `MOVM` is modelled as completing out of order, like the matrix load beside it.
 - `IMAD.WIDE` writes a register pair, and its addend is one. It computes a
   64-bit `a * b + c` from 32-bit factors, with nothing in the mnemonic to say
   which operands are wide; the `.U32` some forms carry describes the factors

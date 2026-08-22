@@ -275,8 +275,22 @@ def schedule_program(
             if emit:
                 waits[index] |= needed
 
-            if needed:
-                # waiting clears those scoreboards for everything downstream
+            if needed and not access.guard:
+                # Waiting clears those scoreboards for everything downstream,
+                # but only when the wait is certain to happen. A predicated
+                # instruction may not, so a later consumer that leans on its
+                # wait can read a result that never landed.
+                #
+                # Measured: `MUFU.EX2` feeding a store through a predicated
+                # `FMUL` is wrong every time basalt leaves the store without its
+                # own wait, and right as soon as it has one. Same for `SQRT` and
+                # `RSQ`. Not relying on it costs one extra wait.
+                #
+                # The checker deliberately does not apply this rule. `ptxas`
+                # does lean on predicated waits and its output runs correctly,
+                # so calling that an error would be a false positive against the
+                # reference. Being stricter about what basalt emits than about
+                # what it accepts is the right way round.
                 cleared = {sb for sb in range(SCOREBOARDS) if (needed >> sb) & 1}
                 live = {r: frozenset(bs - cleared) for r, bs in live.items()}
 
