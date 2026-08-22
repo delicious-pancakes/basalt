@@ -164,6 +164,36 @@ def _isa(args: argparse.Namespace) -> int:
     return 0
 
 
+def _probe_stalls(args: argparse.Namespace) -> int:
+    """Determine the required stall for each opcode by fault injection."""
+    from .gpu.driver import Device, cuda_available
+    from .gpu.inject import probe_required_stall
+    from .gpu.latency import _SPECS
+    from .toolchain import ToolchainError, find_toolchain
+
+    try:
+        tc = find_toolchain(args.cuda_bin)
+    except ToolchainError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    if not cuda_available():
+        print("error: no CUDA device; this command needs real silicon", file=sys.stderr)
+        return 1
+
+    print("sweeping the stall on a dependent pair and comparing against a reference")
+    with Device(args.device) as dev:
+        print(f"on {dev.info.describe()}")
+        print()
+        for spec in _SPECS:
+            if args.opcode and spec.opcode.upper() != args.opcode.upper():
+                continue
+            result = probe_required_stall(
+                tc, dev, spec, arch=args.arch, links=args.links, repeats=args.repeats
+            )
+            print(f"  {result.describe()}")
+    return 0
+
+
 def _verify(args: argparse.Namespace) -> int:
     """Check a cubin's control bits against the latency model."""
     from pathlib import Path
@@ -304,6 +334,15 @@ def main(argv: list[str] | None = None) -> int:
     )
     m.add_argument("--repeats", type=int, default=7, help="launches per length; the minimum wins")
 
+    ps = sub.add_parser(
+        "probe-stalls",
+        help="find the required stall per opcode by breaking programs on purpose",
+    )
+    ps.add_argument("--opcode", default=None, help="probe only this opcode")
+    ps.add_argument("--device", type=int, default=0)
+    ps.add_argument("--links", type=int, default=8, help="chain length to build")
+    ps.add_argument("--repeats", type=int, default=12, help="launches per candidate stall")
+
     v = sub.add_parser("verify", help="check a cubin's control bits for data hazards")
     v.add_argument("cubin", help="path to a cubin, whatever produced it")
     v.add_argument("--latencies", default=None, help="measured latency JSON to overlay")
@@ -317,6 +356,7 @@ def main(argv: list[str] | None = None) -> int:
         "build-isa": _build_isa,
         "isa": _isa,
         "measure": _measure,
+        "probe-stalls": _probe_stalls,
         "verify": _verify,
     }[args.command](args)
 

@@ -13,7 +13,7 @@
 
 <br/><br/>
 
-<strong><a href="#the-problem">The problem</a> &nbsp;&middot;&nbsp; <a href="#how-it-works">How it works</a> &nbsp;&middot;&nbsp; <a href="#quickstart">Quickstart</a> &nbsp;&middot;&nbsp; <a href="#measured-not-assumed">Measured, not assumed</a> &nbsp;&middot;&nbsp; <a href="docs/METHOD.md">Method</a> &nbsp;&middot;&nbsp; <a href="docs/ROADMAP.md">Roadmap</a> &nbsp;&middot;&nbsp; <a href="#clean-room-position">Clean-room</a></strong>
+<strong><a href="#the-problem">The problem</a> &nbsp;&middot;&nbsp; <a href="#how-it-works">How it works</a> &nbsp;&middot;&nbsp; <a href="#quickstart">Quickstart</a> &nbsp;&middot;&nbsp; <a href="#measured-not-assumed">Measured, not assumed</a> &nbsp;&middot;&nbsp; <a href="docs/FINDINGS.md">Findings</a> &nbsp;&middot;&nbsp; <a href="docs/METHOD.md">Method</a> &nbsp;&middot;&nbsp; <a href="docs/ROADMAP.md">Roadmap</a> &nbsp;&middot;&nbsp; <a href="#clean-room-position">Clean-room</a></strong>
 
 </div>
 
@@ -147,7 +147,17 @@ Tensor coverage is where the low-precision hardware lives: `HMMA` and `IMMA`, `Q
 
 Three of those contradict the assumed model basalt shipped with: `DADD` was assumed 48, `POPC` was assumed 4, and each conversion was assumed 6 against 24 measured for the round trip. An assumed latency model is not a small approximation of a measured one, which is the entire argument for measuring.
 
-The measured model verifies real `ptxas` output clean. An independently measured latency and the vendor compiler's own scheduling agreeing is the strongest evidence available that both are right.
+**And a stall of zero is not zero cycles.** It is a distinct safe encoding that waits for outstanding results, costing about 37 cycles where a scheduled instruction costs 4. That is why `ptxas -O0` emits an entirely zeroed control word and the code still computes correctly, roughly nine times slower.
+
+| `stall` | cycles/instruction | result |
+| ---: | ---: | :--- |
+| **0** | **36.85** | **correct** |
+| 1 | 4.88 | wrong |
+| 2 | 4.88 | wrong |
+| 3 | 5.88 | wrong |
+| 4 | 6.88 | correct |
+
+**The verdicts match the silicon.** For every encodable stall on a dependent producer, basalt's static answer and what the hardware actually computes agree, including the zero case. That is held as a test, not asserted here. Full evidence, including three independent methods for the required stall and the corrections made along the way, is in [findings](docs/FINDINGS.md).
 
 > [!NOTE]
 > **Alpha, and specific about what that means.** What is done: both oracles, the instruction database, the field prober, the hazard checker, and latency measurement on one SKU. What is not: cross-block analysis needs a real control-flow graph and currently stops at branches, most opcodes still carry assumed latencies rather than measured ones, and only one GPU has been measured. Where something is inferred rather than measured, the tooling says so rather than rounding it up to a fact. See the [roadmap](docs/ROADMAP.md) and the [method](docs/METHOD.md).

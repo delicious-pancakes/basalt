@@ -1,0 +1,162 @@
+# Findings
+
+Measurements of sm_120 made with basalt, each with the command that reproduces it and the
+evidence it rests on. Where a result is uncertain or not claimed, it says so.
+
+All figures below are from an **NVIDIA GeForce RTX 5070 Ti** (sm_120, 70 SMs) with
+`ptxas` **V13.3.73**. Published characterisation of this architecture has used other parts,
+so a figure differing on a different SKU is interesting rather than contradictory.
+
+---
+
+## 1. A stall count of zero is a safe encoding, not zero cycles
+
+The `stall` field is four bits. Value 0 does **not** mean "issue the next instruction
+immediately". It is a distinct encoding that waits for outstanding results as well as
+elapsed cycles.
+
+Measured over a 128-link dependent `IMAD` chain, patching the control bits of every link
+directly and comparing the answer against a reference:
+
+| `stall` | cycles per instruction | result |
+| ---: | ---: | :--- |
+| **0** | **36.85** | **correct** |
+| 1 | 4.88 | wrong |
+| 2 | 4.88 | wrong |
+| 3 | 5.88 | wrong |
+| 4 | 6.88 | correct |
+| 8 | 10.88 | correct |
+| 15 | 18.02 | correct |
+
+So a zero stall costs roughly nine times a correctly scheduled instruction and is always
+safe, while 1 to 3 corrupt silently.
+
+**Why it matters beyond the encoding.** This is why `ptxas -O0` emits an entirely zeroed
+control word, with no stalls and no scoreboards anywhere, and the code still computes the
+right answer about nine times slower. It also means unscheduled output cannot be used to
+learn anything about what a dependency requires, and that a checker reading 0 as zero
+cycles will report correct programs as broken.
+
+```bash
+python -m basalt.cli verify path/to/O0.cubin --latencies data/latency/rtx-5070-ti.json
+```
+
+## 2. Understalling corrupts silently, and basalt predicts exactly when
+
+The premise of the project, checked directly rather than argued. For each encodable stall on
+a dependent producer, basalt's static verdict is compared against what the silicon computes:
+
+| `stall` | basalt says | hardware computes | agree |
+| ---: | :--- | :--- | :--- |
+| 0 | clean | correct | yes |
+| 1 | hazard | **wrong** | yes |
+| 2 | hazard | **wrong** | yes |
+| 3 | hazard | **wrong** | yes |
+| 4 | clean | correct | yes |
+| 5 | clean | correct | yes |
+| 6 | clean | correct | yes |
+| 7 | clean | correct | yes |
+
+No crash, no fault, no warning at any of the wrong rows. The wrong answer is also
+deterministic rather than a race: every repeat produces the same incorrect value.
+
+This is held as a test (`tests/test_gpu.py::TestVerdictsMatchHardware`), so a change that
+breaks the agreement fails the suite.
+
+## 3. Required stall, by three independent methods
+
+Three ways of asking the question, which do not always agree because they are not quite the
+same question.
+
+- **Chain timing** measures `max(latency, initiation interval)`, so a rate-limited unit reads
+  high.
+- **What `ptxas` schedules** is an upper bound: the compiler may be cautious.
+- **Fault injection** measures the requirement itself, by shortening the gap until the answer
+  changes.
+
+| Instruction | Chain timing | `ptxas` leaves | Fault injection | Reading |
+| :--- | ---: | ---: | ---: | :--- |
+| `IMAD` | 4 | 4 | **4** | all three agree |
+| `IADD3` | 4 | 4 | **4** | all three agree |
+| `FFMA` | 4 | 4 | **4** | all three agree |
+| `FADD` | 4 | 4 | **4** | all three agree |
+| `FMUL` | 4 | 4 | **4** | all three agree |
+| `LOP3` | 4 | 4 | **4** | all three agree |
+| `SHF` | 4 | 4 | **4** | all three agree |
+| `I2FP` | 24 (with `F2I`) | 6 | **4** | `ptxas` is conservative by 2 |
+| `MUFU` | 44 | n/a | scoreboarded | result takes 44, covered by a scoreboard |
+| `POPC` | 18 | n/a | scoreboarded | same |
+| `DADD` | 64 | 64 | scoreboarded | see below |
+| `DFMA` | 64 | 64 | scoreboarded | see below |
+
+```bash
+python -m basalt.cli measure -o data/latency/your-card.json   # chain timing
+python -m basalt.cli probe-stalls                             # fault injection
+```
+
+**On the fp64 rows.** The 64-cycle figure is corroborated twice over: `ptxas` covers a `DFMA`
+dependency by padding with NOPs at stall 15 and accumulating exactly 64 cycles, matching the
+independently timed figure to the cycle. It also signals a scoreboard on the same
+instruction, which is belt and braces, and it is the scoreboard that makes shortening the
+stalls harmless. That is why fault injection reports the pair as scoreboarded rather than
+returning a number.
+
+**On `MUFU` and `POPC`.** A deterministic latency and a stall-covered latency are different
+things. `MUFU` produces a perfectly linear 44 cycles under timing, but `ptxas` signals a
+scoreboard on it and the dependent instruction waits on that scoreboard, so the stall does
+not have to carry the dependency. basalt keeps it classified as variable for that reason.
+
+## 4. The stall field cannot express a long latency
+
+Four bits, so 15 is the largest gap a single instruction can request. Any requirement above
+that must be covered by accumulating stalls across several instructions, or by a scoreboard.
+`ptxas` does both: for a 64-cycle fp64 dependency it emits
+
+```
+DFMA R4, R4, R6, R4     stall=15  wr=1
+NOP                     stall=15
+NOP                     stall=15
+NOP                     stall=15
+NOP                     stall= 4          <- 15+15+15+15+4 = 64
+DFMA R4, R6, R4, R4     stall=15  wait=0x02
+```
+
+Four NOPs whose only purpose is to spend cycles.
+
+## 5. What is deliberately not claimed
+
+Stated so the boundary of the evidence is visible.
+
+- **`I2FP` and `F2I` cannot be separated by timing.** A conversion cannot feed the next link
+  of a dependent chain without converting back, so the chain always contains one of each. The
+  24-cycle figure is the pair, and it is recorded in a separate `composite` section rather
+  than halved and presented as a per-instruction latency. Fault injection does give `I2FP`
+  alone, at 4.
+- **Only one SKU has been measured.** Everything here is an RTX 5070 Ti. Whether these figures
+  hold across sm_120 parts with different SM counts is exactly the sort of thing that should
+  not be assumed, and basalt records the part alongside every measurement so a second card can
+  be compared rather than merged.
+- **Most opcodes still carry assumed latencies.** The model marks them as such, and a hazard
+  derived from an assumed number is reported as a warning rather than an error. The difference
+  between a lead and a finding is where the number came from.
+- **A test that cannot detect corruption proves nothing.** An early version of the injection
+  probe multiplied by 1.0000001, so a stale read rounded back to the same float and `FMUL`
+  appeared to need only one cycle. The probe now rejects any sweep in which no value produced
+  a wrong answer, because that is a statement about the test rather than about the hardware.
+
+## 6. Corrections made along the way
+
+Kept because a method is only as trustworthy as its error log.
+
+- Scoreboards are counters, not flags. An early rule treated a second signal on the same
+  scoreboard as a hazard; several producers sharing one is ordinary.
+- A wait by any intervening instruction satisfies a dependency for everything downstream.
+  Requiring each consumer to carry its own wait produced eight false findings in a
+  thirty-two instruction kernel.
+- A guard predicate is printed before the mnemonic, so reading the first token as the opcode
+  silently misparses every predicated instruction.
+- A scoreboard covers a dependency whatever the producer's latency class. Checking stalls
+  only for fixed-latency producers missed that `ptxas` scoreboards fp64.
+
+Each of these was caught by the positive control: the vendor compiler's own output must
+verify clean, and every one of them made it fail.

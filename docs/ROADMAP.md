@@ -30,7 +30,8 @@ vendor compiler's own output, which is what makes it useful rather than self-ref
 | 5 | Hazard model | Def-use analysis over decoded programs | **done** |
 | 6 | Verifier | Static hazard checking over any cubin | **done** |
 | 7 | Latency measurement | Per-SKU instruction latency on real silicon | **done**, one SKU |
-| 8 | Cross-block analysis | A real control-flow graph, so definitions survive branches | in progress |
+| 8 | Cross-block analysis | A real control-flow graph, so definitions survive branches | **done** |
+| 8b | Fault injection | Required stall measured by breaking programs on hardware | **done** |
 | 9 | Cross-check | basalt's ISA model against independently derived tables | planned |
 | 10 | Audit | Every public sm_120 SASS kernel, ptxas as the control | planned |
 | 11 | Assembler | SASS text to cubin, so basalt can emit its own test cases | planned |
