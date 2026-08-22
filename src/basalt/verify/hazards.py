@@ -14,8 +14,14 @@ time, which is why a violation is a wrong answer rather than a crash.
 *Variable-latency results.* Memory and special-register reads finish whenever
 they finish, so they signal a scoreboard through `write_barrier` and consumers
 block on it through `wait_mask`. Here the hardware does enforce the wait, so the
-failure mode is a consumer that never waits at all, or a scoreboard reused while
-a reader is still pending.
+failure mode is a consumer that never waits at all. Scoreboards are counters
+rather than flags: several producers may signal the same one, and a single wait
+covers every outstanding signal on it, for every instruction downstream.
+
+*Operands still being read.* An instruction that consumes its sources late
+signals a `read_barrier` meaning it has not finished reading them. Anything that
+overwrites those registers must wait on that barrier, or the reader sees a value
+written after it was scheduled to read.
 
 Analysis is per basic block. Tracking a definition across a branch needs a real
 control-flow graph, and inventing one from a linear listing produces confident
@@ -74,7 +80,7 @@ class HazardKind(StrEnum):
     UNDERSTALLED = "understalled"
     NO_BARRIER_SET = "no-barrier-set"
     BARRIER_NOT_AWAITED = "barrier-not-awaited"
-    SCOREBOARD_REUSED = "scoreboard-reused"
+    OVERWRITTEN_BEFORE_READ = "overwritten-before-read"
 
 
 class Severity(StrEnum):
@@ -164,6 +170,15 @@ def split_blocks(instructions: list[Instruction]) -> list[BasicBlock]:
 
 
 @dataclass(slots=True)
+class _PendingRead:
+    """An instruction that has signalled it has not consumed its sources yet."""
+
+    index: int
+    instr: Instruction
+    registers: set[RegRef]
+
+
+@dataclass(slots=True)
 class _Def:
     """The last writer of a register inside the block under analysis."""
 
@@ -198,6 +213,8 @@ def _verify_block(
     # A scoreboard is a counter rather than a flag: several producers may signal
     # the same one, and a single wait covers every outstanding signal on it.
     pending: dict[int, list[_Def]] = {}
+    # read barrier -> instructions still consuming the registers they name
+    reads_pending: dict[int, list[_PendingRead]] = {}
 
     for local, instr in enumerate(block.instructions):
         word = instr.word
@@ -294,6 +311,36 @@ def _verify_block(
                         )
                     )
 
+        # ---- write-after-read: overwriting an operand still being read -----
+        # An instruction that consumes its sources late signals a read barrier
+        # meaning "I have not finished reading yet". Anything that overwrites
+        # those sources has to wait on it, or the reader sees the new value.
+        for reg in access.real_defs:
+            for sb, readers in list(reads_pending.items()):
+                for reader in readers:
+                    if reg in reader.registers and not (wait_mask >> sb) & 1:
+                        report.hazards.append(
+                            Hazard(
+                                kind=HazardKind.OVERWRITTEN_BEFORE_READ,
+                                severity=Severity.ERROR,
+                                confidence=record.confidence,
+                                register=str(reg),
+                                def_index=block.start + reader.index,
+                                use_index=block.start + local,
+                                def_text=reader.instr.text,
+                                use_text=instr.text,
+                                detail=(
+                                    f"the earlier instruction signals read barrier {sb} because "
+                                    f"it has not consumed {reg} yet, and this write does not "
+                                    f"wait on it (mask {wait_mask:#04x})"
+                                ),
+                            )
+                        )
+
+        for sb in list(reads_pending):
+            if (wait_mask >> sb) & 1:
+                del reads_pending[sb]
+
         # ---- define: record this instruction's results ---------------------
         this_def = _Def(index=local, instr=instr, record=record, barrier=write_barrier)
 
@@ -301,6 +348,11 @@ def _verify_block(
         # instruction may still signal one, which is legal and simply redundant
         if write_barrier != NO_BARRIER and record.kind is LatencyClass.VARIABLE:
             pending.setdefault(write_barrier, []).append(this_def)
+
+        if read_barrier != NO_BARRIER and access.real_uses:
+            reads_pending.setdefault(read_barrier, []).append(
+                _PendingRead(index=local, instr=instr, registers=set(access.real_uses))
+            )
 
         for reg in access.real_defs:
             defs[reg] = this_def

@@ -179,6 +179,31 @@ class TestVariableLatency:
         assert h.kind is HazardKind.BARRIER_NOT_AWAITED
 
 
+class TestWriteAfterRead:
+    def test_overwriting_an_operand_still_being_read_is_flagged(self):
+        prog = [
+            instr("STG.E desc[UR4][R2.64], R7", read_barrier=0, index=0),
+            instr("IADD R7, R3, R4", wait=0b0, index=1),
+        ]
+        (h,) = verify_program(prog, model()).hazards
+        assert h.kind is HazardKind.OVERWRITTEN_BEFORE_READ
+        assert h.register == "R7"
+
+    def test_waiting_on_the_read_barrier_is_clean(self):
+        prog = [
+            instr("STG.E desc[UR4][R2.64], R7", read_barrier=0, index=0),
+            instr("IADD R7, R3, R4", wait=0b1, index=1),
+        ]
+        assert verify_program(prog, model()).ok
+
+    def test_overwriting_an_unrelated_register_is_clean(self):
+        prog = [
+            instr("STG.E desc[UR4][R2.64], R7", read_barrier=0, index=0),
+            instr("IADD R9, R3, R4", wait=0b0, index=1),
+        ]
+        assert verify_program(prog, model()).ok
+
+
 class TestConfidence:
     def test_assumed_latency_downgrades_to_a_warning(self):
         """A hazard derived from a guess is a lead, not a finding."""
