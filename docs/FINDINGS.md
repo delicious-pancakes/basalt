@@ -168,7 +168,37 @@ distinction matters: a checker that treated 34 as the required stall would
 reject correct code. It is recorded here as throughput, and the number is not
 written into the latency model.
 
-## 6. The stall field cannot express a long latency
+## 6. The instruction database is usable, not just readable
+
+Knowing which bits moved an operand describes an encoding. Being able to write a
+value into those bits and get it back is what an assembler needs, and it does not
+follow automatically: a table built by observation can be a description that
+happens to be wrong.
+
+So every measured field is written through and read back, across five values
+rather than one, since a single value can agree by accident.
+
+| | |
+| :--- | ---: |
+| Forms checked | 269 |
+| Register-bearing operand slots | 726 |
+| Slots that behave as measured | **710 (97.8%)** |
+| Forms with every register slot controllable | 246 |
+
+The 207 remaining slots hold something other than a register, a branch target,
+an immediate, a named special register such as `SR_CLOCKLO`, and are counted
+apart rather than reported as failures, because reading a register number back
+out of them is the wrong question.
+
+Sixteen forms still have a slot that does not behave, mostly a carry or
+predicate input in the last position on extended-precision forms. Those are
+listed rather than rounded away.
+
+```bash
+python -m basalt.cli validate-isa --show
+```
+
+## 7. The stall field cannot express a long latency
 
 Four bits, so 15 is the largest gap a single instruction can request. Any requirement above
 that must be covered by accumulating stalls across several instructions, or by a scoreboard.
@@ -185,7 +215,7 @@ DFMA R4, R6, R4, R4     stall=15  wait=0x02
 
 Four NOPs whose only purpose is to spend cycles.
 
-## 7. What is deliberately not claimed
+## 8. What is deliberately not claimed
 
 Stated so the boundary of the evidence is visible.
 
@@ -212,7 +242,7 @@ Stated so the boundary of the evidence is visible.
   first conversion. An earlier run reported `I2FP` as requiring 4 cycles; the control
   retracted it, and it is listed as not established rather than quietly kept.
 
-## 8. Corrections made along the way
+## 9. Corrections made along the way
 
 Kept because a method is only as trustworthy as its error log.
 

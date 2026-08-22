@@ -165,6 +165,40 @@ def _isa(args: argparse.Namespace) -> int:
     return 0
 
 
+def _validate_isa(args: argparse.Namespace) -> int:
+    """Check that the measured operand fields can actually be written through."""
+    from pathlib import Path
+
+    from .isa.database import IsaDatabase
+    from .isa.validate import validate_database
+    from .toolchain import ToolchainError, find_toolchain
+
+    try:
+        tc = find_toolchain(args.cuda_bin)
+    except ToolchainError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+
+    path = Path(args.db)
+    if not path.exists():
+        print(f"error: {path} not found; run `basalt build-isa` first", file=sys.stderr)
+        return 1
+
+    db = IsaDatabase.read(path)
+    summary = validate_database(tc, db, limit=args.limit)
+    print()
+    print(summary.summary())
+    print(f"  forms with every register slot controllable: {len(summary.usable)}")
+    print(f"  forms with a slot that does not behave:      {len(summary.broken)}")
+
+    if summary.broken and args.show:
+        print()
+        for r in summary.broken:
+            print(f"  {r.mnemonic:<30} ok={r.controllable} bad={r.uncontrollable}")
+
+    return 0 if not summary.broken or not args.strict else 2
+
+
 def _probe_stalls(args: argparse.Namespace) -> int:
     """Determine the required stall for each opcode by fault injection."""
     from .gpu.driver import Device, cuda_available
@@ -385,6 +419,15 @@ def main(argv: list[str] | None = None) -> int:
     ps.add_argument("--links", type=int, default=8, help="chain length to build")
     ps.add_argument("--repeats", type=int, default=12, help="launches per candidate stall")
 
+    va = sub.add_parser(
+        "validate-isa",
+        help="check the measured operand fields can be written through, not just read",
+    )
+    va.add_argument("--db", default=DEFAULT_DB)
+    va.add_argument("--limit", type=int, default=None, help="validate only the first N forms")
+    va.add_argument("--show", action="store_true", help="list the forms that failed")
+    va.add_argument("--strict", action="store_true", help="exit non-zero if any form fails")
+
     ms = sub.add_parser(
         "mine-stalls",
         help="learn per-pair stall requirements from what the compiler schedules",
@@ -410,6 +453,7 @@ def main(argv: list[str] | None = None) -> int:
         "build-isa": _build_isa,
         "isa": _isa,
         "measure": _measure,
+        "validate-isa": _validate_isa,
         "mine-stalls": _mine_stalls,
         "probe-stalls": _probe_stalls,
         "verify": _verify,
