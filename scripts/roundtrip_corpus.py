@@ -283,9 +283,16 @@ def drive(work: Path, manifest: list[dict]) -> list[Verdict]:
     return [verdicts[k] for k in sorted(verdicts)]
 
 
+# Outcomes that count as basalt having been given a fair chance. A fault on
+# basalt's side belongs here and not among the exclusions: the vendor's kernel
+# ran, basalt's crashed the context, and calling that "not comparable" would
+# quietly move a failure out of the denominator.
+COMPARABLE = ("match", "MISMATCH", "basalt-nondeterministic", "basalt-faulted")
+
+
 def report(verdicts: list[Verdict]) -> int:
     counts = Counter(v.outcome for v in verdicts)
-    comparable = counts["match"] + counts["MISMATCH"] + counts["basalt-nondeterministic"]
+    comparable = sum(counts[outcome] for outcome in COMPARABLE)
     print(f"\n{len(verdicts)} corpus kernels rescheduled and run\n")
     for outcome in ORDER:
         if counts[outcome]:
@@ -299,7 +306,8 @@ def report(verdicts: list[Verdict]) -> int:
             print(f"\n{outcome} ({len(named)}):")
             for name in named:
                 print(f"  {name}")
-    return 0 if counts["MISMATCH"] + counts["basalt-nondeterministic"] == 0 else 1
+    failures = comparable - counts["match"]
+    return 0 if failures == 0 else 1
 
 
 def main() -> int:

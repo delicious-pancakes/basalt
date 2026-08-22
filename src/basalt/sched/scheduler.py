@@ -500,7 +500,8 @@ def schedule_program(
                 # So an opaque transfer is treated as reading everything live.
                 # Same reasoning as the wait it already emits for every
                 # outstanding scoreboard, applied to the stall side.
-                consumed = set(last_def) if instr.opcode in _OPAQUE_TRANSFERS else access.real_uses
+                opaque = instr.opcode in _OPAQUE_TRANSFERS
+                consumed = set(last_def) if opaque else access.real_uses
                 for reg in sorted(consumed, key=str):
                     for producer in last_def.get(reg, ()):
                         record = model.lookup(producer.opcode)
@@ -525,6 +526,14 @@ def schedule_program(
                             )
                             if not needed:
                                 continue
+                        if opaque:
+                            # Nothing here is attributable. The callee reads what
+                            # it likes, and the mined pairings for a transfer
+                            # describe whatever the compiler happened to leave
+                            # live rather than what it actually read. So the
+                            # producer's own latency is used, which is the
+                            # conservative reading and the only honest one.
+                            needed = max(needed, record.cycles)
                         have = elapsed.get(producer.index, 0)
                         if have >= needed:
                             continue

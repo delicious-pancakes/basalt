@@ -141,13 +141,26 @@ class TestSchedulerOverTheWholeCorpus:
         from basalt.asm.cubin import Cubin
         from basalt.sched.scheduler import schedule_program
 
-        def one(snippet):
+        def one(task):
+            # Every level that schedules, not just -O3. They emit different code
+            # from the same source: -O3 unrolls a loop into ordinary registers
+            # where -O1 keeps its counter in uniform ones, and the uniform
+            # datapath had no coverage at all until the round trip was run at
+            # -O1 and found two kernels basalt scheduled wrong.
+            snippet, opt = task
             with TemporaryDirectory(prefix="basalt-sched-") as tmp:
                 src = Path(tmp) / "k.ptx"
                 cubin_path = Path(tmp) / "k.cubin"
                 src.write_text(snippet.ptx)
                 built = toolchain.run(
-                    [str(toolchain.ptxas), f"-arch={ARCH}", "-O3", "-o", str(cubin_path), str(src)],
+                    [
+                        str(toolchain.ptxas),
+                        f"-arch={ARCH}",
+                        f"-O{opt}",
+                        "-o",
+                        str(cubin_path),
+                        str(src),
+                    ],
                     check=False,
                     timeout=60.0,
                 )
@@ -156,7 +169,11 @@ class TestSchedulerOverTheWholeCorpus:
                 program = disassemble_program(toolchain, cubin_path)
                 result = schedule_program(program, model, observed=observed)
                 if result.out_of_scoreboards:
-                    return (snippet.name, "out of scoreboards", result.out_of_scoreboards[0])
+                    return (
+                        f"{snippet.name} -O{opt}",
+                        "out of scoreboards",
+                        result.out_of_scoreboards[0],
+                    )
                 cubin = Cubin.load(cubin_path)
                 for slot, word in enumerate(result.words):
                     if program.instructions[slot].word is not None:
@@ -169,18 +186,25 @@ class TestSchedulerOverTheWholeCorpus:
                 written = disassemble_program(toolchain, out)
                 if len(written.instructions) != len(program.instructions):
                     return (
-                        snippet.name,
+                        f"{snippet.name} -O{opt}",
                         "did not disassemble after rescheduling",
                         f"{len(written.instructions)} of {len(program.instructions)} instructions",
                     )
                 report = verify_program(written, model, observed=observed)
                 if not report.ok:
-                    return (snippet.name, "rejected its own schedule", report.hazards[0].describe())
+                    return (
+                        f"{snippet.name} -O{opt}",
+                        "rejected its own schedule",
+                        report.hazards[0].describe(),
+                    )
                 return None
 
-        snippets = generate() + generate_tensor()
+        from basalt.harvest.corpus_shapes import generate_shapes
+
+        snippets = generate() + generate_tensor() + generate_shapes()
+        tasks = [(s, opt) for s in snippets for opt in (1, 2, 3)]
         with ThreadPoolExecutor(max_workers=os.cpu_count() or 4) as pool:
-            return [r for r in pool.map(one, snippets) if r]
+            return [r for r in pool.map(one, tasks) if r]
 
     def test_every_kernel_can_be_scheduled_and_verifies_clean(self, scheduled):
         if scheduled:

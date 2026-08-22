@@ -49,12 +49,6 @@ __all__ = ["ObservedStalls", "StallEvidence", "mine_program"]
 # treated as authoritative.
 MIN_OBSERVATIONS = 3
 
-# Control transfers to code this analysis has not read. Kept in step with the
-# scheduler's set of the same name: a call reads what its operands cannot show,
-# so both sides have to treat it that way or the evidence and the consumer of
-# the evidence disagree.
-_OPAQUE_TRANSFERS = frozenset({"CALL", "RET", "BRX", "JMX", "RTT", "BPT"})
-
 
 @dataclass
 class StallEvidence:
@@ -336,14 +330,20 @@ def mine_program(program: Program, into: ObservedStalls) -> None:
             wait_mask = instr.word.field("wait_mask")
             satisfied |= {producer for producer, sb in signalled.items() if (wait_mask >> sb) & 1}
 
-            # A call reads registers its operand text cannot show: the return
-            # address it was handed, and whatever the callee touches. The
-            # scheduler already treats one as reading everything live, and the
-            # miner has to agree or it collects no evidence about the pairing at
-            # all and the scheduler falls back to a guess.
-            consumed = set(last_def) if instr.opcode in _OPAQUE_TRANSFERS else access.real_uses
-
-            for reg in consumed:
+            # Only what the instruction demonstrably reads. The scheduler treats
+            # a call as consuming everything live, because the callee may read
+            # anything and being wrong there is silent, but the miner must not
+            # copy that: it records a *minimum*, so pairing a call with every
+            # live register logs whichever one happens to sit closest and calls
+            # that the requirement.
+            #
+            # Measured. Doing it the other way put `MOV -> RET` at 2 cycles from
+            # 30 observations, almost all of them a long-dead `MOV` that the
+            # `RET` never read, and the one kernel where a `RET` really does read
+            # a `MOV` needs 5 and faulted the GPU. Conservative and permissive
+            # have opposite meanings on the two sides of this, and the scheduler
+            # gets its conservatism from the latency model instead.
+            for reg in access.real_uses:
                 if (previous := last_def.get(reg)) is None:
                     continue
                 # a guard is resolved at issue rather than at operand read, so
