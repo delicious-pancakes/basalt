@@ -89,6 +89,12 @@ def operand_shape(operands: str) -> tuple[str, ...]:
             kinds.append("constant")
         elif text.startswith("`"):
             kinds.append("label")
+        elif text.startswith("SR_"):
+            # A special register is a name in an eight-bit field, and the name is
+            # the value. Collapsing them all into one shape harvests one form and
+            # leaves the assembler nothing to write the other names with, so each
+            # is its own shape and matches its own encoding exactly.
+            kinds.append(text)
         elif (match := _KIND.match(text)) is not None:
             kinds.append({"R": "reg", "UR": "ureg", "P": "pred", "UP": "upred"}[match.group(1)])
         else:

@@ -524,7 +524,7 @@ label under this rule and none decodes wrongly.
 The rule is a measurement, and a measurement written down as a constant is exactly what goes
 quietly wrong when a compiler version changes, so it is re-derived from the corpus by a test
 rather than trusted. With it, assembling every corpus kernel as a whole program reproduces
-8,528 of 8,584 instructions bit-identically, and none to anything else.
+8,540 of 8,584 instructions bit-identically, and none to anything else.
 
 ## 12. What the correctness costs
 
