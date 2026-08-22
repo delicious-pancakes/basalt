@@ -364,9 +364,9 @@ replace rather than one:
 
 | `ptxas` level | Comparable | Matching |
 | :--- | ---: | ---: |
-| `-O1` | 301 | 301 |
-| `-O2` | 300 | 300 |
-| `-O3` | 303 | 303 |
+| `-O1` | 315 | 315 |
+| `-O2` | 311 | 311 |
+| `-O3` | 314 | 314 |
 
 `-O0` is not offered. It emits a zeroed control word, so there is no schedule there to
 replace and nothing the comparison would prove.
@@ -750,7 +750,54 @@ rather than a rendering of the same one.
 | After finding 14 | 8,428 | 156 | 0 |
 | After this | **8,479** | 105 | **0** |
 
-## 16. What is deliberately not claimed
+## 16. When basalt says a schedule is unsafe, is it?
+
+The positive control says basalt stays quiet on correct code. The negative control says it
+complains about one deliberately broken instruction. Neither asks the question a user
+actually has, which is whether a hazard basalt reports is a hazard the silicon agrees with.
+
+`scripts/agreement_sweep.py` asks it across the corpus. Take the vendor's own working
+schedule, shorten one stall on a real dependency, and collect two independent verdicts: what
+basalt says statically, and what the GPU computes against four input patterns.
+
+| | GPU agrees with the reference | GPU computes something else |
+| :--- | ---: | ---: |
+| **basalt: clean** | agreed safe | **missed** |
+| **basalt: hazard** | over-strict | agreed broken |
+
+The top-right cell is the one that matters. A miss is a schedule basalt called safe that
+computes a wrong answer, which is the entire failure this repository exists to prevent.
+
+| | |
+| :--- | ---: |
+| Kernels, one dependency shortened in each | 162 |
+| Agreed broken | 91 |
+| Over-strict | 64 |
+| **Missed** | **0** |
+| Unstable, excluded | 7 |
+
+**It did not start at zero.** The first run of this sweep reported **34 misses**, all of the
+same shape: `IADD -> STG` shortened from 5 cycles to 1, computing a different answer, with
+basalt reporting a warning rather than an error. The cause was that severity was decided by
+the *producer's* generic latency confidence rather than by the evidence behind the
+requirement that was actually used. `IADD` has no measured latency entry, so a shortfall
+against a number mined from 44 of the vendor's own schedules came out as a suspicion.
+Severity now follows the requirement's own provenance: measured or mined from at least three
+vendor schedules is an error, an assumed producer latency is still a warning.
+
+**What that cost.** Precision. Before the change, 57 shortened dependencies were called clean
+and the GPU tolerated them; after it, they are flagged. Those became over-strict verdicts
+rather than misses, which is the right direction on an architecture with no interlock, and
+it is a real cost rather than a free win.
+
+**Over-strict is not the same as wrong.** A schedule can be tighter than anything the vendor
+emits and still return the right answer, because a stale read only changes the result when
+the stale value and the fresh one differ. Running four patterns instead of one moved 22
+verdicts out of over-strict and into agreed broken, which is 22 cases where basalt was right
+and a single pattern had not been enough to show it. The remaining 64 are unproven either
+way, and they are counted separately and named rather than folded into an accuracy figure.
+
+## 17. What is deliberately not claimed
 
 Stated so the boundary of the evidence is visible.
 
@@ -788,7 +835,7 @@ Stated so the boundary of the evidence is visible.
   first conversion. An earlier run reported `I2FP` as requiring 4 cycles; the control
   retracted it, and it is listed as not established rather than quietly kept.
 
-## 17. Corrections made along the way
+## 18. Corrections made along the way
 
 Kept because a method is only as trustworthy as its error log.
 
