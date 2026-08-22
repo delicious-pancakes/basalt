@@ -112,6 +112,19 @@ python -m basalt.cli measure -o data/latency/your-card.json   # needs a GPU, onc
 python -m basalt.cli verify kernel.cubin --latencies data/latency/your-card.json
 ```
 
+Everything else, in one place:
+
+| Command | What it does | Needs a GPU |
+| :--- | :--- | :--- |
+| `doctor` | Check both oracles end to end | no |
+| `build-isa` | Harvest and probe, write the instruction database | no |
+| `isa` | Query a form, an opcode, or the coverage | no |
+| `validate-isa` | Prove the measured fields can be written through | no |
+| `mine-stalls` | Learn per-pair requirements from what the compiler schedules | no |
+| `verify` | Check a cubin's control bits for data hazards | no |
+| `measure` | Time instruction latency on real silicon | **yes** |
+| `probe-stalls` | Find the required stall by breaking programs on purpose | **yes** |
+
 ```console
 $ python -m basalt.cli verify kernel.cubin --latencies data/latency/rtx-5070-ti.json
 kernel.cubin
@@ -161,8 +174,16 @@ Three of those contradict the assumed model basalt shipped with: `DADD` was assu
 
 **The verdicts match the silicon.** For every encodable stall on a dependent producer, basalt's static answer and what the hardware actually computes agree, including the zero case. That is held as a test, not asserted here. Full evidence, including three independent methods for the required stall and the corrections made along the way, is in [findings](docs/FINDINGS.md).
 
+## It can assign the control bits too
+
+The verifier answers whether a schedule is safe. The scheduler answers what a safe schedule would be, from the same measurements: it discards every control bit `ptxas` produced, computes its own, hands the result back to the verifier, and then runs it on the GPU beside the vendor's version of the same kernel.
+
+Five of seven test kernels come out computing exactly what the vendor schedule computes. The two that do not are recorded as strict expected failures with their reasons rather than removed, because a limitation that still runs is one that reports the day it is fixed.
+
+That loop is where the real bugs came from. Stall spent outside the window between a producer and its consumer counts for nothing, and spending it there ends the search with a program that is still short. A stall pinned to the safe encoding was being overwritten by a later pass, replacing a guarantee with a small number. And fp64 operands occupy register pairs with nothing in the mnemonic to say so, so half of every fp64 dependency was invisible to both the checker and the scheduler. None of those were found by reasoning; all three were found by running the output and getting the wrong number.
+
 > [!NOTE]
-> **Alpha, and specific about what that means.** What is done: both oracles, the instruction database, the field prober, the hazard checker, and latency measurement on one SKU. What is not: cross-block analysis needs a real control-flow graph and currently stops at branches, most opcodes still carry assumed latencies rather than measured ones, and only one GPU has been measured. Where something is inferred rather than measured, the tooling says so rather than rounding it up to a fact. See the [roadmap](docs/ROADMAP.md) and the [method](docs/METHOD.md).
+> **Alpha, and specific about what that means.** What is done: both oracles, the instruction database with its fields proven writable, the hazard checker over a real control-flow graph, latency measured on one SKU by three independent methods, and a scheduler that round-trips five of seven test kernels through the hardware. What is not: the scheduler does not follow a dependence around a cycle in the graph and shares a blind spot with the verifier on fp64, both recorded as expected failures; many opcodes still carry assumed latencies rather than measured ones; and only one GPU has been measured. Where something is inferred rather than measured, the tooling says so rather than rounding it up to a fact. See the [roadmap](docs/ROADMAP.md) and the [method](docs/METHOD.md).
 
 ## Repository layout
 

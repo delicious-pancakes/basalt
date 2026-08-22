@@ -34,6 +34,10 @@ any release. The clean-room position in [`NOTICE`](NOTICE) will not.
   answer changes, with a sensitivity control so a kernel that cannot detect a
   stale read reports nothing rather than reporting a small number.
 - Per-pair stall requirements mined from the vendor compiler's own scheduling.
+- Field validation: every measured operand field is written through and read back,
+  so the database is shown usable rather than merely readable.
+- Scheduler that assigns the control bits from the same model the checker uses,
+  verified against its own checker and then against the hardware.
 
 ### Found
 - A stall count of 0 is a safe long-wait encoding rather than zero cycles, which
