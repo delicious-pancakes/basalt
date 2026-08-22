@@ -28,7 +28,7 @@ from ..encoding import CONTROL_FIELDS, Word
 
 __all__ = ["InstructionForm", "IsaDatabase", "OperandField"]
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 
 def _runs(bits: list[int]) -> list[tuple[int, int]]:
@@ -50,6 +50,11 @@ class OperandField:
     bits: tuple[int, ...]
     example_before: str = ""
     example_after: str = ""
+    # For a composite operand, which bits inside this field control which part
+    # of it: the bank, the offset, the base register. Empty when the field is
+    # not composite or when the prober could not read the effect. See
+    # `basalt.isa.operands`.
+    subfields: dict[str, tuple[int, ...]] = field(default_factory=dict)
 
     @property
     def runs(self) -> list[tuple[int, int]]:
@@ -164,7 +169,14 @@ class IsaDatabase:
                     "modifier_bits": list(form.modifier_bits),
                     "inert_bits": list(form.inert_bits),
                     "invalid_bits": list(form.invalid_bits),
-                    "operands": [{**asdict(o), "bits": list(o.bits)} for o in form.operands],
+                    "operands": [
+                        {
+                            **asdict(o),
+                            "bits": list(o.bits),
+                            "subfields": {k: list(v) for k, v in sorted(o.subfields.items())},
+                        }
+                        for o in form.operands
+                    ],
                 }
                 for name, form in sorted(self.forms.items())
             },
@@ -198,6 +210,7 @@ class IsaDatabase:
                         bits=tuple(o["bits"]),
                         example_before=o.get("example_before", ""),
                         example_after=o.get("example_after", ""),
+                        subfields={k: tuple(v) for k, v in (o.get("subfields") or {}).items()},
                     )
                     for o in f["operands"]
                 ],

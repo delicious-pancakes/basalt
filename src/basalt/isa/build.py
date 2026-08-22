@@ -28,6 +28,7 @@ from ..harvest.runner import HarvestResult, Observation, harvest
 from ..probe.fields import BitRole, probe_word
 from ..toolchain import Toolchain
 from .database import InstructionForm, IsaDatabase, OperandField
+from .operands import subfields
 
 __all__ = ["build_database", "collect_representatives"]
 
@@ -97,16 +98,17 @@ def build_database(
 
         operands = []
         for slot, bits in fmap.operand_fields().items():
-            sample = next(
-                (o for o in fmap.observations if o.bit in bits and o.role is BitRole.OPERAND),
-                None,
-            )
+            mine = [o for o in fmap.observations if o.bit in bits and o.role is BitRole.OPERAND]
+            sample = mine[0] if mine else None
             operands.append(
                 OperandField(
                     slot=slot,
                     bits=tuple(bits),
                     example_before=sample.before if sample else "",
                     example_after=sample.after if sample else "",
+                    # the prober already recorded what each bit did to the text,
+                    # so taking a composite operand apart costs nothing extra
+                    subfields=subfields(mine),
                 )
             )
 
