@@ -168,7 +168,7 @@ def _verify(args: argparse.Namespace) -> int:
     """Check a cubin's control bits against the latency model."""
     from pathlib import Path
 
-    from .disasm import disassemble_cubin
+    from .disasm import disassemble_program
     from .toolchain import ToolchainError, find_toolchain
     from .verify.hazards import Severity, verify_program
     from .verify.latency import DEFAULT_MODEL, Confidence, LatencyModel
@@ -188,12 +188,12 @@ def _verify(args: argparse.Namespace) -> int:
     if args.latencies:
         model = LatencyModel.assumed().overlay(Path(args.latencies))
 
-    instructions = disassemble_cubin(tc, target)
-    if not instructions:
+    program = disassemble_program(tc, target)
+    if not program.instructions:
         print(f"error: nothing disassembled from {target}", file=sys.stderr)
         return 1
 
-    report = verify_program(instructions, model)
+    report = verify_program(program, model)
 
     print(f"{target}")
     print(f"  {report.summary()}")
@@ -201,6 +201,11 @@ def _verify(args: argparse.Namespace) -> int:
         print(f"  latency model: measured on {model.sku}")
     else:
         print(f"  latency model: {report.model_confidence}, not measured on silicon")
+    if report.incomplete_graph:
+        print(
+            "  note: some branch destinations are computed rather than named, so paths\n"
+            "        through them were not analysed"
+        )
     if report.unknown_opcodes:
         names = ", ".join(sorted(report.unknown_opcodes)[:8])
         print(f"  opcodes not in the model: {len(report.unknown_opcodes)} ({names})")

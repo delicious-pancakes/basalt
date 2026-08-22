@@ -2,30 +2,30 @@
 # Copyright (c) 2026 Sunny Patel
 """Checking that a program's control bits actually cover its data dependencies.
 
-The rule the hardware does not enforce, stated precisely:
+The rules the hardware does not enforce, stated precisely:
 
 *Fixed-latency results.* An instruction at index `i` with latency `L` makes its
 result available `L` cycles after it issues. The `stall` field of instruction
 `k` is how many cycles pass before instruction `k+1` issues, so the elapsed time
 between issuing `i` and issuing a consumer `j` is `sum(stall[i..j-1])`. The
-consumer is safe only if that sum is at least `L`. Nothing checks this at run
-time, which is why a violation is a wrong answer rather than a crash.
+consumer is safe only if that sum is at least `L` on *every* path that can reach
+it. Nothing checks this at run time, which is why a violation is a wrong answer
+rather than a crash.
 
 *Variable-latency results.* Memory and special-register reads finish whenever
 they finish, so they signal a scoreboard through `write_barrier` and consumers
-block on it through `wait_mask`. Here the hardware does enforce the wait, so the
-failure mode is a consumer that never waits at all. Scoreboards are counters
-rather than flags: several producers may signal the same one, and a single wait
-covers every outstanding signal on it, for every instruction downstream.
+block on it through `wait_mask`. Scoreboards are counters rather than flags:
+several producers may signal the same one, and a single wait covers every
+outstanding signal on it, for everything downstream.
 
 *Operands still being read.* An instruction that consumes its sources late
-signals a `read_barrier` meaning it has not finished reading them. Anything that
-overwrites those registers must wait on that barrier, or the reader sees a value
-written after it was scheduled to read.
+signals a `read_barrier`. Anything overwriting those registers must wait on it,
+or the reader sees a value written after it was scheduled to read.
 
-Analysis is per basic block. Tracking a definition across a branch needs a real
-control-flow graph, and inventing one from a linear listing produces confident
-nonsense, so blocks end at control flow and definitions do not cross.
+Analysis runs over the whole control-flow graph, so a value defined before a
+loop and consumed inside it is checked, as is one defined in one arm of a branch
+and consumed after the join. Findings are emitted only once the dataflow has
+settled, so convergence cannot report the same hazard twice.
 """
 
 from __future__ import annotations
@@ -33,13 +33,14 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import StrEnum
 
-from ..disasm import Instruction
-from ..encoding import NO_BARRIER
-from .latency import Confidence, LatencyClass, LatencyModel, LatencyRecord
-from .operands import RegRef, operand_access
+from ..disasm import Instruction, Program
+from ..encoding import STALL_YIELD, effective_stall
+from .cfg import ControlFlowGraph, build_cfg
+from .flow import FlowState
+from .latency import Confidence, LatencyClass, LatencyModel
+from .operands import operand_access
 
 __all__ = [
-    "BasicBlock",
     "Hazard",
     "HazardKind",
     "Severity",
@@ -48,32 +49,11 @@ __all__ = [
     "verify_program",
 ]
 
-# Instructions that end a basic block. Anything after one of these may be
-# reached from elsewhere, so a definition before it cannot be assumed live.
-_BLOCK_ENDERS = frozenset(
-    {
-        "BRA",
-        "BRX",
-        "JMP",
-        "JMX",
-        "CALL",
-        "RET",
-        "EXIT",
-        "BSSY",
-        "BSYNC",
-        "BAR",
-        "WARPSYNC",
-        "SYNC",
-        "BRK",
-        "CONT",
-        "PBK",
-        "PCNT",
-        "SSY",
-        "PRET",
-        "RTT",
-        "BPT",
-    }
-)
+NO_BARRIER = 7
+
+# The lattice is finite, so this is a backstop against a bug rather than a limit
+# the analysis is expected to reach.
+MAX_ITERATIONS = 10_000
 
 
 class HazardKind(StrEnum):
@@ -105,23 +85,17 @@ class Hazard:
     actual: int = 0
     detail: str = ""
 
+    @property
+    def key(self) -> tuple:
+        """Identity used to report a hazard once, however many paths reach it."""
+        return (self.kind, self.register, self.def_index, self.use_index)
+
     def describe(self) -> str:
         where = f"#{self.def_index} -> #{self.use_index}"
         if self.kind is HazardKind.UNDERSTALLED:
             gap = f"{self.actual} of {self.required} cycles"
             return f"[{self.severity}] {where} {self.register}: {gap}. {self.detail}".rstrip()
         return f"[{self.severity}] {where} {self.register}: {self.detail}"
-
-
-@dataclass
-class BasicBlock:
-    """A straight-line run of instructions with their original indices."""
-
-    start: int
-    instructions: list[Instruction] = field(default_factory=list)
-
-    def __len__(self) -> int:
-        return len(self.instructions)
 
 
 @dataclass
@@ -135,6 +109,8 @@ class VerificationReport:
     model_confidence: Confidence = Confidence.ASSUMED
     model_sku: str = ""
     unknown_opcodes: set[str] = field(default_factory=set)
+    cross_block: bool = False
+    incomplete_graph: bool = False
 
     @property
     def ok(self) -> bool:
@@ -147,231 +123,241 @@ class VerificationReport:
         errors = len(self.by_severity(Severity.ERROR))
         warnings = len(self.by_severity(Severity.WARNING))
         verdict = "clean" if not self.hazards else f"{errors} errors, {warnings} warnings"
+        scope = "across blocks" if self.cross_block else "per block"
         return (
             f"{self.instructions} instructions in {self.blocks} blocks, "
-            f"{self.checked_pairs} dependencies checked: {verdict}"
+            f"{self.checked_pairs} dependencies checked {scope}: {verdict}"
         )
 
 
-def split_blocks(instructions: list[Instruction]) -> list[BasicBlock]:
-    """Cut the listing into straight-line blocks at control flow."""
-    blocks: list[BasicBlock] = []
-    current = BasicBlock(start=0)
-
-    for idx, instr in enumerate(instructions):
-        current.instructions.append(instr)
-        if instr.opcode.upper() in _BLOCK_ENDERS:
-            blocks.append(current)
-            current = BasicBlock(start=idx + 1)
-
-    if current.instructions:
-        blocks.append(current)
-    return blocks
+def _add(report: VerificationReport, seen: set[tuple], hazard: Hazard) -> None:
+    if hazard.key not in seen:
+        seen.add(hazard.key)
+        report.hazards.append(hazard)
 
 
-@dataclass(slots=True)
-class _PendingRead:
-    """An instruction that has signalled it has not consumed its sources yet."""
-
-    index: int
-    instr: Instruction
-    registers: set[RegRef]
-
-
-@dataclass(slots=True)
-class _Def:
-    """The last writer of a register inside the block under analysis."""
-
-    index: int
-    instr: Instruction
-    record: LatencyRecord
-    barrier: int  # write_barrier it signalled, or NO_BARRIER
-    satisfied: bool = False  # some instruction has since waited on that barrier
-
-
-def _stalls_between(block: BasicBlock, lo: int, hi: int) -> int:
-    """Cycles elapsed between issuing block[lo] and issuing block[hi].
-
-    The stall on an instruction delays the *next* issue, so the span runs from
-    the definition's own stall through the instruction before the consumer.
-    """
-    total = 0
-    for i in range(lo, hi):
-        word = block.instructions[i].word
-        if word is not None:
-            total += word.field("stall")
-    return total
-
-
-def _verify_block(
-    block: BasicBlock,
+def _check_instruction(
+    program: Program,
+    index: int,
+    state: FlowState,
     model: LatencyModel,
-    report: VerificationReport,
+    report: VerificationReport | None,
+    seen: set[tuple] | None,
 ) -> None:
-    defs: dict[RegRef, _Def] = {}
-    # scoreboard -> definitions signalled on it that nothing has awaited yet.
-    # A scoreboard is a counter rather than a flag: several producers may signal
-    # the same one, and a single wait covers every outstanding signal on it.
-    pending: dict[int, list[_Def]] = {}
-    # read barrier -> instructions still consuming the registers they name
-    reads_pending: dict[int, list[_PendingRead]] = {}
+    """Apply one instruction to `state`, optionally recording what it violates.
 
-    for local, instr in enumerate(block.instructions):
-        word = instr.word
-        if word is None:
-            continue
+    Every instruction is walked twice over a run: once while the dataflow is
+    still converging, with reporting off, and once after it settles with
+    reporting on. The state transitions are identical either way, which is what
+    makes the reporting pass trustworthy.
+    """
+    instr = program.instructions[index]
+    word = instr.word
+    if word is None:
+        return
 
-        control = word.control
-        wait_mask = control["wait_mask"]
-        write_barrier = control["write_barrier"]
-        read_barrier = control["read_barrier"]
+    recording = report is not None and seen is not None
 
-        access = operand_access(instr.mnemonic, instr.operands)
-        record = model.lookup(instr.opcode)
-        if record.note.startswith("opcode not in the model"):
-            report.unknown_opcodes.add(instr.opcode)
+    control = word.control
+    wait_mask = control["wait_mask"]
+    write_barrier = control["write_barrier"]
+    read_barrier = control["read_barrier"]
+    # a zero stall is the safe encoding rather than zero cycles; see encoding.py
+    raw_stall = control["stall"]
+    yielded = raw_stall == STALL_YIELD
+    stall = effective_stall(raw_stall)
 
-        # ---- wait first: an instruction's own wait_mask takes effect before
-        # it reads its operands, and satisfies every producer still outstanding
-        # on those scoreboards, not only the one this instruction happens to
-        # consume. Later instructions inherit that: once anything has waited,
-        # the data is available to everyone downstream.
-        for sb in list(pending):
-            if (wait_mask >> sb) & 1:
-                for waiting in pending.pop(sb):
-                    waiting.satisfied = True
+    access = operand_access(instr.mnemonic, instr.operands)
+    record = model.lookup(instr.opcode)
+    if report is not None and record.note.startswith("opcode not in the model"):
+        report.unknown_opcodes.add(instr.opcode)
 
-        # ---- consume: check every read against its producer ----------------
-        for reg in sorted(access.real_uses, key=str):
-            producer = defs.get(reg)
-            if producer is None:
+    # a wait takes effect before the instruction reads its operands
+    state.satisfy(wait_mask)
+
+    for reg in sorted(access.real_uses, key=str):
+        for rd in state.reaching(reg):
+            producer = program.instructions[rd.index]
+            producer_record = model.lookup(producer.opcode)
+            if report is not None:
+                report.checked_pairs += 1
+
+            # a wait on the producer's scoreboard covers the dependency no
+            # matter how long the instruction takes, so it is checked before the
+            # latency class is consulted at all
+            if rd.yielded or (rd.barrier != NO_BARRIER and rd.satisfied):
                 continue
-            report.checked_pairs += 1
 
-            if producer.record.kind is LatencyClass.FIXED:
-                elapsed = _stalls_between(block, producer.index, local)
-                if elapsed < producer.record.cycles:
-                    severity = (
-                        Severity.ERROR
-                        if producer.record.confidence is Confidence.MEASURED
-                        else Severity.WARNING
-                    )
-                    report.hazards.append(
-                        Hazard(
-                            kind=HazardKind.UNDERSTALLED,
-                            severity=severity,
-                            confidence=producer.record.confidence,
-                            register=str(reg),
-                            def_index=block.start + producer.index,
-                            use_index=block.start + local,
-                            def_text=producer.instr.text,
-                            use_text=instr.text,
-                            required=producer.record.cycles,
-                            actual=elapsed,
-                            detail=(
-                                f"{producer.instr.opcode} latency is {producer.record.confidence}"
-                                f" ({producer.record.note or 'no note'})"
-                            ),
-                        )
-                    )
-            else:
-                if producer.barrier == NO_BARRIER:
-                    report.hazards.append(
+            if producer_record.kind is LatencyClass.FIXED:
+                if rd.elapsed >= producer_record.cycles or not recording:
+                    continue
+                severity = (
+                    Severity.ERROR
+                    if producer_record.confidence is Confidence.MEASURED
+                    else Severity.WARNING
+                )
+                _add(
+                    report,
+                    seen,
+                    Hazard(
+                        kind=HazardKind.UNDERSTALLED,
+                        severity=severity,
+                        confidence=producer_record.confidence,
+                        register=str(reg),
+                        def_index=rd.index,
+                        use_index=index,
+                        def_text=producer.text,
+                        use_text=instr.text,
+                        required=producer_record.cycles,
+                        actual=rd.elapsed,
+                        detail=(
+                            f"{producer.opcode} latency is {producer_record.confidence} "
+                            f"({producer_record.note or 'no note'})"
+                        ),
+                    ),
+                )
+
+            elif producer_record.kind is LatencyClass.VARIABLE and recording:
+                if rd.barrier == NO_BARRIER:
+                    _add(
+                        report,
+                        seen,
                         Hazard(
                             kind=HazardKind.NO_BARRIER_SET,
                             severity=Severity.ERROR,
-                            confidence=producer.record.confidence,
+                            confidence=producer_record.confidence,
                             register=str(reg),
-                            def_index=block.start + producer.index,
-                            use_index=block.start + local,
-                            def_text=producer.instr.text,
+                            def_index=rd.index,
+                            use_index=index,
+                            def_text=producer.text,
                             use_text=instr.text,
                             detail=(
-                                f"{producer.instr.opcode} completes out of order but signals no "
-                                "scoreboard, so the consumer cannot wait for it"
+                                f"{producer.opcode} completes out of order but signals no "
+                                "scoreboard, so nothing can wait for it"
                             ),
-                        )
+                        ),
                     )
-                elif not producer.satisfied:
-                    report.hazards.append(
+                elif not rd.satisfied:
+                    _add(
+                        report,
+                        seen,
                         Hazard(
                             kind=HazardKind.BARRIER_NOT_AWAITED,
                             severity=Severity.ERROR,
-                            confidence=producer.record.confidence,
+                            confidence=producer_record.confidence,
                             register=str(reg),
-                            def_index=block.start + producer.index,
-                            use_index=block.start + local,
-                            def_text=producer.instr.text,
+                            def_index=rd.index,
+                            use_index=index,
+                            def_text=producer.text,
                             use_text=instr.text,
                             detail=(
-                                f"producer signals scoreboard {producer.barrier}, but nothing "
-                                f"between the two waits on it and this consumer's mask is "
-                                f"{wait_mask:#04x}"
+                                f"producer signals scoreboard {rd.barrier}, and on at least one "
+                                f"path nothing waits on it before here (mask {wait_mask:#04x})"
                             ),
-                        )
+                        ),
                     )
 
-        # ---- write-after-read: overwriting an operand still being read -----
-        # An instruction that consumes its sources late signals a read barrier
-        # meaning "I have not finished reading yet". Anything that overwrites
-        # those sources has to wait on it, or the reader sees the new value.
-        for reg in access.real_defs:
-            for sb, readers in list(reads_pending.items()):
-                for reader in readers:
-                    if reg in reader.registers and not (wait_mask >> sb) & 1:
-                        report.hazards.append(
-                            Hazard(
-                                kind=HazardKind.OVERWRITTEN_BEFORE_READ,
-                                severity=Severity.ERROR,
-                                confidence=record.confidence,
-                                register=str(reg),
-                                def_index=block.start + reader.index,
-                                use_index=block.start + local,
-                                def_text=reader.instr.text,
-                                use_text=instr.text,
-                                detail=(
-                                    f"the earlier instruction signals read barrier {sb} because "
-                                    f"it has not consumed {reg} yet, and this write does not "
-                                    f"wait on it (mask {wait_mask:#04x})"
-                                ),
-                            )
-                        )
-
-        for sb in list(reads_pending):
+    # write-after-read: overwriting an operand something else is still reading
+    if recording:
+        for sb, pending in state.pending_readers():
             if (wait_mask >> sb) & 1:
-                del reads_pending[sb]
+                continue
+            for reg in access.real_defs:
+                if reg not in pending.registers:
+                    continue
+                reader = program.instructions[pending.index]
+                _add(
+                    report,
+                    seen,
+                    Hazard(
+                        kind=HazardKind.OVERWRITTEN_BEFORE_READ,
+                        severity=Severity.ERROR,
+                        confidence=record.confidence,
+                        register=str(reg),
+                        def_index=pending.index,
+                        use_index=index,
+                        def_text=reader.text,
+                        use_text=instr.text,
+                        detail=(
+                            f"the earlier instruction signals read barrier {sb} because it has "
+                            f"not consumed {reg} yet, and this write does not wait on it"
+                        ),
+                    ),
+                )
 
-        # ---- define: record this instruction's results ---------------------
-        this_def = _Def(index=local, instr=instr, record=record, barrier=write_barrier)
+    for reg in access.real_defs:
+        state.define(reg, index, write_barrier)
 
-        # only out-of-order results need a scoreboard; a fixed-latency
-        # instruction may still signal one, which is legal and simply redundant
-        if write_barrier != NO_BARRIER and record.kind is LatencyClass.VARIABLE:
-            pending.setdefault(write_barrier, []).append(this_def)
+    if access.real_uses:
+        state.begin_read(read_barrier, index, frozenset(access.real_uses))
 
-        if read_barrier != NO_BARRIER and access.real_uses:
-            reads_pending.setdefault(read_barrier, []).append(
-                _PendingRead(index=local, instr=instr, registers=set(access.real_uses))
-            )
+    state.advance(stall, yielded=yielded)
 
-        for reg in access.real_defs:
-            defs[reg] = this_def
+
+def _run_block(
+    cfg: ControlFlowGraph,
+    block_index: int,
+    entry: FlowState,
+    model: LatencyModel,
+    report: VerificationReport | None,
+    seen: set[tuple] | None,
+) -> FlowState:
+    state = entry.copy()
+    block = cfg.blocks[block_index]
+    for index in range(block.start, block.end):
+        _check_instruction(cfg.program, index, state, model, report, seen)
+    return state
 
 
 def verify_program(
-    instructions: list[Instruction],
+    program: Program | list[Instruction],
     model: LatencyModel,
 ) -> VerificationReport:
-    """Verify a decoded instruction stream against a latency model."""
-    blocks = split_blocks(instructions)
+    """Verify a decoded kernel against a latency model.
+
+    Accepts a `Program` for cross-block analysis, or a bare instruction list,
+    which carries no labels and so degrades to per-block checking rather than
+    guessing where branches go.
+    """
+    if not isinstance(program, Program):
+        program = Program(instructions=list(program), labels={})
+
+    cfg = build_cfg(program)
     report = VerificationReport(
-        instructions=len(instructions),
-        blocks=len(blocks),
+        instructions=len(program.instructions),
+        blocks=len(cfg.blocks),
         model_confidence=model.weakest_confidence,
         model_sku=model.sku,
+        cross_block=any(b.successors for b in cfg.blocks),
+        incomplete_graph=cfg.has_indirect_edges,
     )
-    for block in blocks:
-        _verify_block(block, model, report)
+    if not cfg.blocks:
+        return report
+
+    # ---- converge -------------------------------------------------------
+    entries: list[FlowState] = [FlowState() for _ in cfg.blocks]
+    worklist: list[int] = [0]
+    iterations = 0
+
+    while worklist and iterations < MAX_ITERATIONS:
+        iterations += 1
+        current = worklist.pop()
+        exit_state = _run_block(cfg, current, entries[current], model, None, None)
+        for succ in cfg.blocks[current].successors:
+            if entries[succ].merge(exit_state) and succ not in worklist:
+                worklist.append(succ)
+
+    # ---- report ---------------------------------------------------------
+    # one pass over the settled entry states, so a block visited many times
+    # during convergence contributes each of its findings exactly once
+    seen: set[tuple] = set()
+    for block in cfg.blocks:
+        _run_block(cfg, block.index, entries[block.index], model, report, seen)
 
     report.hazards.sort(key=lambda h: (h.use_index, h.def_index, h.register))
     return report
+
+
+def split_blocks(instructions: list[Instruction]) -> list:
+    """Basic blocks for a bare instruction list, without running the analysis."""
+    return build_cfg(Program(instructions=list(instructions), labels={})).blocks

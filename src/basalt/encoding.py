@@ -18,7 +18,17 @@ from __future__ import annotations
 import struct
 from dataclasses import dataclass
 
-__all__ = ["CONTROL_FIELDS", "BitField", "Word", "bit_diff", "popcount"]
+__all__ = [
+    "CONTROL_FIELDS",
+    "NO_BARRIER",
+    "STALL_YIELD",
+    "STALL_YIELD_EQUIVALENT",
+    "BitField",
+    "Word",
+    "bit_diff",
+    "effective_stall",
+    "popcount",
+]
 
 WORD_BITS = 128
 WORD_BYTES = 16
@@ -74,6 +84,32 @@ _CONTROL_BY_NAME = {f.name: f for f in CONTROL_FIELDS}
 # 7 in a 3-bit barrier field means "do not signal". Named because the literal
 # shows up in scheduling decisions constantly and 7 reads as a magic number.
 NO_BARRIER = 0b111
+
+# A stall count of 0 does not mean "issue the next instruction immediately".
+# It is a distinct, safe encoding: measured on an RTX 5070 Ti, a chain of
+# dependent IMADs with every stall set to 0 runs at ~37 cycles per instruction
+# and produces the correct result, while the same chain at stall 1, 2 or 3 runs
+# at 4.9 to 5.9 cycles and produces a wrong one.
+#
+# This is why `ptxas -O0` emits an entirely zeroed control word and the code
+# still computes correctly, roughly nine times slower than scheduled output.
+# Treating 0 as zero cycles makes a checker call correct programs broken and,
+# worse, makes a scheduler that emits 0 look dangerous when it is merely slow.
+STALL_YIELD = 0
+
+# What a zero stall is worth when accumulating. Larger than any latency on this
+# architecture, because the observed behaviour is "wait until safe" rather than
+# a specific figure; see docs/METHOD.md for the experiment.
+STALL_YIELD_EQUIVALENT = 1024
+
+
+def effective_stall(stall: int) -> int:
+    """Cycles an encoded stall value is worth to a dependency.
+
+    Everything except 0 is its face value. Zero is the safe encoding described
+    above and is treated as covering any latency.
+    """
+    return STALL_YIELD_EQUIVALENT if stall == STALL_YIELD else stall
 
 
 @dataclass(frozen=True, slots=True)

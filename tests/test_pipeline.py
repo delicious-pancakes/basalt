@@ -129,7 +129,9 @@ class TestVerifierControls:
         def_index, needed = pair
 
         cb = Cubin.load(sample_cubin)
-        cb.patch_control(def_index, "stall", 0)
+        # 1, not 0: a zero stall is the safe encoding on this architecture, so
+        # injecting it would make the instruction safer rather than broken
+        cb.patch_control(def_index, "stall", 1)
         patched = tmp_path / "patched.cubin"
         cb.save(patched)
 
@@ -154,7 +156,7 @@ class TestVerifierControls:
         def_index, _ = pair
 
         cb = Cubin.load(sample_cubin)
-        cb.patch_control(def_index, "stall", 0)
+        cb.patch_control(def_index, "stall", 1)
         patched = tmp_path / "patched.cubin"
         cb.save(patched)
 
@@ -196,19 +198,22 @@ def _first_covered_fixed_dependency(insns) -> tuple[int, int] | None:
     """Find a def/use pair whose latency the schedule currently covers.
 
     Returns the program-wide index of the definition and the latency it needs,
-    which is what the negative control shortens.
+    which is what the negative control shortens. Restricted to a single block so
+    the pair is unambiguous regardless of what the control-flow graph does.
     """
     for block in split_blocks(insns):
-        for i, producer in enumerate(block.instructions):
+        for i in range(block.start, block.end):
+            producer = insns[i]
             record = DEFAULT_MODEL.lookup(producer.opcode)
             if record.kind is not LatencyClass.FIXED or record.cycles == 0:
                 continue
             produced = operand_access(producer.mnemonic, producer.operands).real_defs
             if not produced:
                 continue
-            for consumer in block.instructions[i + 1 :]:
+            for j in range(i + 1, block.end):
+                consumer = insns[j]
                 if produced & operand_access(consumer.mnemonic, consumer.operands).real_uses:
                     if producer.word.field("stall") >= record.cycles:
-                        return block.start + i, record.cycles
+                        return i, record.cycles
                     break
     return None

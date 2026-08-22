@@ -27,7 +27,16 @@ from pathlib import Path
 from .encoding import WORD_BYTES, Word
 from .toolchain import Toolchain
 
-__all__ = ["Instruction", "decode_word", "decode_words", "disassemble_cubin", "raw_arch"]
+__all__ = [
+    "Instruction",
+    "Program",
+    "branch_target",
+    "decode_word",
+    "decode_words",
+    "disassemble_cubin",
+    "disassemble_program",
+    "raw_arch",
+]
 
 
 def raw_arch(arch: str) -> str:
@@ -67,10 +76,29 @@ class Instruction:
     word: Word | None
 
     @property
+    def predicate(self) -> str:
+        """The guard predicate, e.g. `@!P1`, or empty when unguarded.
+
+        A guard is printed ahead of the mnemonic, so treating the first token as
+        the opcode silently misreads every predicated instruction, which in real
+        compiler output is a large minority of them.
+        """
+        head = self.text.split()
+        return head[0] if head and head[0].startswith("@") else ""
+
+    @property
+    def _body(self) -> str:
+        """The instruction with any guard removed."""
+        text = self.text
+        if self.predicate:
+            text = text[len(self.predicate) :].lstrip()
+        return text
+
+    @property
     def mnemonic(self) -> str:
         """Opcode with its modifier suffixes, e.g. `IMAD.WIDE.U32`."""
-        head = self.text.split()[0] if self.text.split() else ""
-        return head.rstrip(";")
+        parts = self._body.split()
+        return parts[0].rstrip(";") if parts else ""
 
     @property
     def opcode(self) -> str:
@@ -83,8 +111,10 @@ class Instruction:
 
     @property
     def operands(self) -> str:
-        body = self.text.split(None, 1)
-        return body[1].rstrip(" ;") if len(body) > 1 else ""
+        """Operand text, with the guard kept so a reader of it is still a read."""
+        body = self._body.split(None, 1)
+        tail = body[1].rstrip(" ;") if len(body) > 1 else ""
+        return f"{self.predicate} {tail}".strip() if self.predicate else tail
 
     @property
     def is_valid(self) -> bool:
@@ -130,12 +160,107 @@ def _parse(listing: str) -> list[Instruction]:
     return out
 
 
-def disassemble_cubin(tc: Toolchain, cubin: Path, *, arch: str = "SM120a") -> list[Instruction]:
-    """Ground-truth oracle: disassemble a real ptxas-produced ELF."""
+@dataclass(frozen=True, slots=True)
+class Program:
+    """A disassembled kernel: its instructions and where its labels point.
+
+    Labels are needed to build a control-flow graph. Without them the only
+    honest analysis is per straight-line block, because a linear listing gives
+    no way to know where a branch goes.
+    """
+
+    instructions: list[Instruction]
+    labels: dict[str, int]  # label name -> index into `instructions`
+
+    def __len__(self) -> int:
+        return len(self.instructions)
+
+
+# a label on its own line, e.g. `.L_x_1:`
+_LABEL = re.compile(r"^\s*(\.[A-Za-z_][\w.$]*)\s*:\s*$")
+# a branch target as nvdisasm prints it, e.g. `` `(.L_x_1) ``
+_TARGET = re.compile(r"`\((?P<label>\.[A-Za-z_][\w.$]*)\)")
+
+
+def branch_target(instr: Instruction) -> str | None:
+    """The label a branch names, if it names one."""
+    m = _TARGET.search(instr.text)
+    return m.group("label") if m else None
+
+
+def _parse_program(listing: str) -> Program:
+    """Parse a listing into instructions plus a label index.
+
+    Done in one pass alongside the instructions rather than by re-scanning,
+    because a label's meaning is "the next instruction", and that is only
+    unambiguous while walking the listing in order.
+    """
+    instructions: list[Instruction] = []
+    labels: dict[str, int] = {}
+    pending_labels: list[str] = []
+    pending_lo: int | None = None
+
+    for line in listing.splitlines():
+        if not line.strip():
+            continue
+
+        if (lab := _LABEL.match(line)) is not None:
+            pending_labels.append(lab.group(1))
+            continue
+
+        if line.lstrip().startswith(("//", ".")):
+            continue
+
+        if (cont := _CONT.match(line)) is not None:
+            if instructions and pending_lo is not None:
+                hi = int(cont.group("hi"), 16)
+                last = instructions[-1]
+                instructions[-1] = Instruction(
+                    last.offset, last.text, Word.from_halves(pending_lo, hi)
+                )
+                pending_lo = None
+            continue
+
+        if (m := _LINE.match(line)) is None:
+            continue
+
+        text = m.group("text").strip().rstrip(";").strip()
+        if not text:
+            continue
+
+        for name in pending_labels:
+            labels[name] = len(instructions)
+        pending_labels.clear()
+
+        lo = m.group("lo")
+        pending_lo = int(lo, 16) if lo else None
+        instructions.append(Instruction(int(m.group("offset"), 16), text, None))
+
+    return Program(instructions=instructions, labels=labels)
+
+
+def disassemble_program(tc: Toolchain, cubin: Path, *, arch: str = "SM120a") -> Program:
+    """Ground-truth oracle, keeping the labels a control-flow graph needs."""
     res = tc.run([str(tc.nvdisasm), "-c", "-hex", str(cubin)], check=False)
     if res.returncode != 0:
-        return []
-    return [i for i in _parse(res.stdout) if i.word is not None]
+        return Program(instructions=[], labels={})
+
+    program = _parse_program(res.stdout)
+    keep = [i for i, instr in enumerate(program.instructions) if instr.word is not None]
+    if len(keep) == len(program.instructions):
+        return program
+
+    # drop instructions with no encoding and renumber the labels to match
+    remap = {old: new for new, old in enumerate(keep)}
+    return Program(
+        instructions=[program.instructions[i] for i in keep],
+        labels={name: remap[idx] for name, idx in program.labels.items() if idx in remap},
+    )
+
+
+def disassemble_cubin(tc: Toolchain, cubin: Path, *, arch: str = "SM120a") -> list[Instruction]:
+    """Ground-truth oracle: disassemble a real ptxas-produced ELF."""
+    return disassemble_program(tc, cubin, arch=arch).instructions
 
 
 # nvdisasm error   : Unrecognized operation for functional unit 'uC' at address 0x00000010
