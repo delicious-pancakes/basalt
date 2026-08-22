@@ -12,8 +12,8 @@ any release. The clean-room position in [`NOTICE`](NOTICE) will not.
 ### Added
 - `scripts/roundtrip_corpus.py`: reschedules every kernel the corpus generates
   from scratch and runs both versions on the GPU with identical input, comparing
-  output bytes. 301 of the 303 comparable kernels come out byte-identical to the
-  vendor schedule, from 246 when the control was first run. Every model
+  output bytes. All 303 comparable kernels come out byte-identical to the vendor
+  schedule, from 246 when the control was first run. Every model
   correction in this release came out of it. Recorded as finding 10 in
   [`docs/FINDINGS.md`](docs/FINDINGS.md), with the failures named.
 - Corpus-wide scheduler check in the test suite: every kernel is rescheduled and
@@ -72,6 +72,15 @@ any release. The clean-room position in [`NOTICE`](NOTICE) will not.
   a different question from what correctness requires.
 
 ### Fixed
+- The yield bit is written from the stall rather than inherited. The two are not
+  independent: across the corpus `ptxas` emits a zero stall with the bit clear
+  4205 times and set never, and a stall of one with it set 1123 times and clear
+  never. Leaving it as found produced pairs the vendor never emits, which
+  `nvdisasm` refuses and the GPU runs anyway.
+- Two checks that reschedule a kernel and hand it back to the verifier now
+  compare the instruction count first. A program `nvdisasm` will not read comes
+  back empty, an empty program has no hazards, and both had been reporting clean
+  on nothing for as long as the encoding bug existed.
 - A call waits for everything still outstanding. Control leaves for code this
   analysis has not read and the callee may use any register, so nothing may be
   in flight when it issues. Indirect branches are treated the same way, since

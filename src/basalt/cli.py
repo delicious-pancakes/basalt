@@ -88,6 +88,10 @@ def _doctor(args: argparse.Namespace) -> int:
 
 DEFAULT_DB = "data/isa/sm_120a.json"
 DEFAULT_OBSERVED = "data/latency/observed-stalls-sm120a.json"
+# The measured latencies for the one card this has been run on. Used when no
+# `--latencies` is given, so a command run from a checkout gets the measurements
+# rather than the assumptions without having to be told.
+DEFAULT_LATENCIES = "data/latency/rtx-5070-ti.json"
 
 
 def _build_isa(args: argparse.Namespace) -> int:
@@ -257,6 +261,91 @@ def _mine_stalls(args: argparse.Namespace) -> int:
     return 0
 
 
+def _schedule(args: argparse.Namespace) -> int:
+    """Throw away a cubin's control bits, compute new ones, and check them.
+
+    The verifier answers whether a schedule is safe. This answers what a safe
+    schedule would be, from the same measurements, and then hands the answer
+    straight back to the verifier. That round trip is the point: a scheduler and
+    a checker that disagree have found something, and one that agrees with
+    itself has only proved it is consistent.
+
+    Consistency is not correctness here, and the tool says so. Both halves read
+    the same latency model, so a wrong entry satisfies both at once. Only the
+    silicon is independent, which is what `scripts/roundtrip_corpus.py` is for.
+    """
+    from pathlib import Path
+
+    from .asm.cubin import Cubin
+    from .disasm import disassemble_program
+    from .sched.scheduler import schedule_program
+    from .toolchain import ToolchainError, find_toolchain
+    from .verify.hazards import verify_program
+    from .verify.latency import DEFAULT_MODEL, LatencyModel
+    from .verify.observed import ObservedStalls
+
+    try:
+        tc = find_toolchain(args.cuda_bin)
+    except ToolchainError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+
+    target = Path(args.cubin)
+    if not target.is_file():
+        print(f"error: {target} not found", file=sys.stderr)
+        return 1
+
+    model = DEFAULT_MODEL
+    if args.latencies:
+        model = LatencyModel.assumed().overlay(Path(args.latencies))
+    elif (measured := Path(DEFAULT_LATENCIES)).is_file():
+        model = LatencyModel.assumed().overlay(measured)
+
+    observed = None
+    if args.observed:
+        observed = ObservedStalls.read(Path(args.observed))
+    elif (default := Path(DEFAULT_OBSERVED)).is_file():
+        observed = ObservedStalls.read(default)
+
+    program = disassemble_program(tc, target)
+    if not program.instructions:
+        print(f"error: nothing disassembled from {target}", file=sys.stderr)
+        return 1
+
+    result = schedule_program(program, model, observed=observed)
+    print(f"{target}")
+    print(f"  {result.summary()}")
+    for note in result.out_of_scoreboards:
+        print(f"  unallocatable: {note}")
+    for note in result.unplaceable[:5]:
+        print(f"  did not fit: {note}")
+
+    destination = Path(args.output) if args.output else target.with_suffix(".resched.cubin")
+    cubin = Cubin.load(target)
+    for slot, word in enumerate(result.words):
+        if program.instructions[slot].word is not None:
+            cubin.write_word(slot, word)
+    cubin.save(destination)
+    print(f"  wrote {destination}")
+
+    written = disassemble_program(tc, destination)
+    if len(written.instructions) != len(program.instructions):
+        print(
+            f"  error: the result disassembled to {len(written.instructions)} instructions "
+            f"where the input had {len(program.instructions)}, so it cannot be checked back",
+            file=sys.stderr,
+        )
+        return 1
+    report = verify_program(written, model, observed=observed)
+    print(f"  checked back: {report.summary()}")
+    for hazard in report.hazards[:10]:
+        print(f"    {hazard.describe()}")
+
+    if args.strict and not (report.ok and result.ok):
+        return 1
+    return 0
+
+
 def _verify(args: argparse.Namespace) -> int:
     """Check a cubin's control bits against the latency model."""
     from pathlib import Path
@@ -379,7 +468,10 @@ def _slug(name: str) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(prog="basalt", description="a SASS assembler for sm_120")
+    ap = argparse.ArgumentParser(
+        prog="basalt",
+        description="the correctness layer for sm_120 machine code",
+    )
     ap.add_argument("--version", action="version", version=f"basalt {__version__}")
     ap.add_argument("--cuda-bin", default=None, help="directory holding ptxas and nvdisasm")
     ap.add_argument("--arch", default="sm_120a", help="target architecture (default sm_120a)")
@@ -447,6 +539,24 @@ def main(argv: list[str] | None = None) -> int:
     v.add_argument("--all", action="store_true", help="include informational findings")
     v.add_argument("--strict", action="store_true", help="exit non-zero when a hazard is found")
 
+    s = sub.add_parser(
+        "schedule",
+        help="assign a cubin's control bits from scratch and check the result",
+    )
+    s.add_argument("cubin", help="path to a cubin, whatever produced it")
+    s.add_argument("-o", "--output", default=None, help="write the rescheduled cubin here")
+    s.add_argument("--latencies", default=None, help="measured latency JSON to overlay")
+    s.add_argument(
+        "--observed",
+        default=None,
+        help="mined per-pair stall data (defaults to the committed file if present)",
+    )
+    s.add_argument(
+        "--strict",
+        action="store_true",
+        help="exit non-zero unless the result verifies clean",
+    )
+
     args = ap.parse_args(argv)
     return {
         "doctor": _doctor,
@@ -457,6 +567,7 @@ def main(argv: list[str] | None = None) -> int:
         "mine-stalls": _mine_stalls,
         "probe-stalls": _probe_stalls,
         "verify": _verify,
+        "schedule": _schedule,
     }[args.command](args)
 
 

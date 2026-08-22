@@ -163,9 +163,17 @@ class TestSchedulerOverTheWholeCorpus:
                         cubin.write_word(slot, word)
                 out = Path(tmp) / "r.cubin"
                 cubin.save(out)
-                report = verify_program(
-                    disassemble_program(toolchain, out), model, observed=observed
-                )
+                # content first: basalt emitted a control word `nvdisasm`
+                # refused for a while, and this check read back an empty program
+                # and passed. a check that passes on nothing is worse than none.
+                written = disassemble_program(toolchain, out)
+                if len(written.instructions) != len(program.instructions):
+                    return (
+                        snippet.name,
+                        "did not disassemble after rescheduling",
+                        f"{len(written.instructions)} of {len(program.instructions)} instructions",
+                    )
+                report = verify_program(written, model, observed=observed)
                 if not report.ok:
                     return (snippet.name, "rejected its own schedule", report.hazards[0].describe())
                 return None

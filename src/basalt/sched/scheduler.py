@@ -474,6 +474,19 @@ def schedule_program(
             wait |= word.field("wait_mask")
 
         word = word.with_field("stall", stalls[index])
+        # The yield bit is not independent of the stall. Across the whole corpus
+        # `ptxas` emits a zero stall with the bit clear 4205 times and set never,
+        # and a stall of one with it set 1123 times and clear never. Writing a
+        # stall without the matching bit produces a combination the vendor never
+        # emits, and `nvdisasm` rejects it outright: "undefined value 0x10 for
+        # table TABLES_opex_0". The GPU runs it anyway, which is worse rather
+        # than better, because it means nothing complains until something tries
+        # to read the result back.
+        #
+        # Clearing the bit at any other stall is a throughput choice rather than
+        # a correctness one, and `ptxas` is seen doing it at every stall value
+        # from 2 up, so every pair this produces is one the vendor also emits.
+        word = word.with_field("yield_", 1 if stalls[index] == 1 else 0)
         word = word.with_field("wait_mask", wait)
         word = word.with_field("write_barrier", write_barriers[index])
         word = word.with_field("read_barrier", inherited_read_barrier)

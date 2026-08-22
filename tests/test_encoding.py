@@ -142,3 +142,29 @@ class TestHelpers:
 
     def test_bit_diff_is_empty_for_identical_words(self):
         assert bit_diff(12345, 12345) == []
+
+
+class TestYieldAndStallAreNotIndependent:
+    """A zero stall carries a clear yield bit, and a stall of one carries a set one.
+
+    Across the whole corpus `ptxas` emits a zero stall with the bit clear 4205
+    times and set never, and a stall of one with it set 1123 times and clear
+    never. Writing one without the other produces a word `nvdisasm` refuses,
+    with `undefined value 0x10 for table TABLES_opex_0`, and which the GPU runs
+    regardless. That combination is worse than a clean failure: nothing
+    complains until something tries to read the result back, and two of basalt's
+    own checks reported clean on the empty program that came back.
+    """
+
+    def test_a_zero_stall_clears_the_yield_bit(self):
+        word = Word(0).with_field("stall", 5).with_field("yield_", 1)
+        assert word.field("yield_") == 1
+        rewritten = word.with_field("stall", 0).with_field("yield_", 0)
+        assert rewritten.field("stall") == 0
+        assert rewritten.field("yield_") == 0
+
+    def test_the_two_fields_do_not_overlap(self):
+        """They are set independently even though they are chosen together."""
+        word = Word(0).with_field("stall", 15).with_field("yield_", 1)
+        assert word.field("stall") == 15
+        assert word.field("yield_") == 1

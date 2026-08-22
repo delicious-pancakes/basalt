@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "basalt-sass"
 version = "0.1.0.dev0"
-description = "An assembler for NVIDIA consumer Blackwell (sm_120) GPUs."
+description = "The correctness layer for NVIDIA consumer Blackwell (sm_120) GPU machine code."
 readme = "README.md"
 requires-python = ">=3.11"
 license = "Apache-2.0"
