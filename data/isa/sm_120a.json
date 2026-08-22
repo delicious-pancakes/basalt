@@ -3035,7 +3035,7 @@
         4,
         8
       ],
-      "operand_text": "`($__internal_0_$__cuda_sm_9x_mma_sub_byte_internal_m16n8k32_s4_s4)",
+      "operand_text": "`($__internal_0_$__cuda_sm_9x_mma_sub_byte_internal_m16n8k64_s4_s4)",
       "operands": [
         {
           "bits": [
@@ -3134,7 +3134,7 @@
       ],
       "payload": "0000000003c000000000000000207944",
       "source_family": "mma.dense",
-      "source_label": "mma.sync.m16n8k32....s4.s4.s32"
+      "source_label": "mma.sync.m16n8k64....s4.s4.s32"
     },
     "CCTL.IVALL": {
       "encoding": "000fc0000200000000000000ff00798f",
@@ -3990,7 +3990,7 @@
             "negate": [
               63
             ],
-            "suffix": [
+            "value": [
               32,
               33,
               34,
@@ -4011,13 +4011,11 @@
               49,
               50,
               51,
-              56
-            ],
-            "value": [
               52,
               53,
               54,
               55,
+              56,
               57,
               58,
               59,
@@ -4228,7 +4226,7 @@
             "negate": [
               63
             ],
-            "suffix": [
+            "value": [
               32,
               33,
               34,
@@ -4245,9 +4243,7 @@
               45,
               46,
               47,
-              48
-            ],
-            "value": [
+              48,
               49,
               50,
               51,
@@ -7516,7 +7512,7 @@
       ],
       "payload": "0000000003800000000000000000791b",
       "source_family": "special",
-      "source_label": "vote.sync.b32"
+      "source_label": "match.sync.b32"
     },
     "ERRBAR": {
       "encoding": "000fc0000000000000000000000079ab",
@@ -7768,7 +7764,7 @@
       ],
       "payload": "0000000003800000000000000000794d",
       "source_family": "binary",
-      "source_label": "max.s16"
+      "source_label": "sub.s16"
     },
     "F2F.F32.F64": {
       "encoding": "004e2400003010000000000200077310",
@@ -8246,7 +8242,7 @@
       ],
       "payload": "000000000021f0000000000400057305",
       "source_family": "binary",
-      "source_label": "rem.s32"
+      "source_label": "div.s32"
     },
     "F2I.NTZ": {
       "encoding": "004e2400002031000000000200077305",
@@ -11054,7 +11050,7 @@
             "negate": [
               63
             ],
-            "suffix": [
+            "value": [
               32,
               33,
               34,
@@ -11078,13 +11074,11 @@
               52,
               53,
               54,
-              59
-            ],
-            "value": [
               55,
               56,
               57,
               58,
+              59,
               60,
               61,
               62
@@ -11646,7 +11640,7 @@
             "negate": [
               63
             ],
-            "suffix": [
+            "value": [
               32,
               33,
               34,
@@ -11670,12 +11664,10 @@
               52,
               53,
               54,
+              55,
               56,
               57,
-              58
-            ],
-            "value": [
-              55,
+              58,
               59,
               60,
               61,
@@ -11851,7 +11843,7 @@
             "negate": [
               63
             ],
-            "suffix": [
+            "value": [
               32,
               33,
               34,
@@ -11875,12 +11867,10 @@
               52,
               53,
               54,
+              55,
               56,
               57,
-              58
-            ],
-            "value": [
-              55,
+              58,
               59,
               60,
               61,
@@ -12056,7 +12046,7 @@
             "negate": [
               63
             ],
-            "suffix": [
+            "value": [
               32,
               33,
               34,
@@ -12083,9 +12073,7 @@
               55,
               56,
               57,
-              58
-            ],
-            "value": [
+              58,
               59,
               60,
               61,
@@ -12438,7 +12426,7 @@
             "negate": [
               63
             ],
-            "suffix": [
+            "value": [
               32,
               33,
               34,
@@ -12463,11 +12451,9 @@
               53,
               54,
               55,
-              57,
-              58
-            ],
-            "value": [
               56,
+              57,
+              58,
               59,
               60,
               61,
@@ -13506,7 +13492,7 @@
             "negate": [
               63
             ],
-            "suffix": [
+            "value": [
               32,
               33,
               34,
@@ -13524,9 +13510,6 @@
               46,
               47,
               48,
-              59
-            ],
-            "value": [
               49,
               50,
               51,
@@ -13537,6 +13520,7 @@
               56,
               57,
               58,
+              59,
               60,
               61,
               62
@@ -13947,7 +13931,7 @@
             "negate": [
               63
             ],
-            "suffix": [
+            "value": [
               32,
               33,
               34,
@@ -13966,9 +13950,7 @@
               47,
               48,
               49,
-              50
-            ],
-            "value": [
+              50,
               51,
               52,
               53,
@@ -14999,7 +14981,7 @@
             "negate": [
               63
             ],
-            "suffix": [
+            "value": [
               32,
               33,
               34,
@@ -15023,11 +15005,9 @@
               52,
               53,
               54,
-              57
-            ],
-            "value": [
               55,
               56,
+              57,
               58,
               59,
               60,
@@ -16601,10 +16581,6 @@
             "negate": [
               72
             ],
-            "suffix": [
-              74,
-              75
-            ],
             "value": [
               24,
               25,
@@ -16614,7 +16590,9 @@
               29,
               30,
               31,
-              73
+              73,
+              74,
+              75
             ]
           }
         },
@@ -16683,28 +16661,7 @@
           "example_after": "R3, -RZ, RZ, 5.9604644775390625e-08, 0",
           "example_before": "R3, -RZ, RZ, 0, 0",
           "slot": 3,
-          "subfields": {
-            "suffix": [
-              59,
-              60,
-              61
-            ],
-            "value": [
-              48,
-              49,
-              50,
-              51,
-              52,
-              53,
-              54,
-              55,
-              56,
-              57,
-              58,
-              62,
-              63
-            ]
-          }
+          "subfields": {}
         },
         {
           "bits": [
@@ -16728,28 +16685,7 @@
           "example_after": "R3, -RZ, RZ, 0, 5.9604644775390625e-08",
           "example_before": "R3, -RZ, RZ, 0, 0",
           "slot": 4,
-          "subfields": {
-            "suffix": [
-              43,
-              44,
-              45
-            ],
-            "value": [
-              32,
-              33,
-              34,
-              35,
-              36,
-              37,
-              38,
-              39,
-              40,
-              41,
-              42,
-              46,
-              47
-            ]
-          }
+          "subfields": {}
         }
       ],
       "payload": "00000000000001ff00000000ff037431",
@@ -20028,7 +19964,7 @@
       ],
       "payload": "00000000000000000000000000047213",
       "source_family": "binary",
-      "source_label": "rem.s32"
+      "source_label": "div.s32"
     },
     "IADD": {
       "encoding": "000fc000078200000000000c06047235",
@@ -34133,7 +34069,7 @@
       "operands": [],
       "payload": "00000000000000000000000000007918",
       "source_family": "binary",
-      "source_label": "max.s16"
+      "source_label": "sub.s16"
     },
     "OMMA.SF.16864.F32.E2M1.E2M1.E8": {
       "encoding": "000fc00000083e0c7020120a0404747f",
@@ -34788,7 +34724,7 @@
       ],
       "payload": "000000000070e170000000000080781c",
       "source_family": "binary",
-      "source_label": "rem.s32"
+      "source_label": "div.s32"
     },
     "POPC": {
       "encoding": "000e22000000000000000000000d7309",
@@ -41363,7 +41299,7 @@
       ],
       "payload": "000000000000880000000000000579c3",
       "source_family": "shape",
-      "source_label": "s_shared_stencil.mixed"
+      "source_label": "s_shared_roundtrip.mixed"
     },
     "SEL": {
       "encoding": "000fc0000400000000000001ff007807",
@@ -41526,7 +41462,7 @@
       ],
       "payload": "000000000400000000000001ff007807",
       "source_family": "compare",
-      "source_label": "setp.eq.s32"
+      "source_label": "setp.ne.s32"
     },
     "SGXT.U32": {
       "encoding": "000fc00000000000000000200000781a",
@@ -41675,7 +41611,7 @@
       ],
       "payload": "0000000000000000000000200000781a",
       "source_family": "unary",
-      "source_label": "brev.b64"
+      "source_label": "brev.b32"
     },
     "SHF.L.U32": {
       "encoding": "000fc000000006ff0000000210117819",
@@ -46548,7 +46484,7 @@
       ],
       "payload": "000000000f8ec0ff0000000405047291",
       "source_family": "shape",
-      "source_label": "s_shared_stencil.mixed"
+      "source_label": "s_shared_roundtrip.mixed"
     },
     "UMOV": {
       "encoding": "000fce00000000000000040000047882",
@@ -46686,7 +46622,7 @@
       ],
       "payload": "00000000000000000000040000047882",
       "source_family": "shape",
-      "source_label": "s_shared_stencil.mixed"
+      "source_label": "s_shared_roundtrip.mixed"
     },
     "UPOPC": {
       "encoding": "000fe2000800000000000006000772bf",
@@ -48250,10 +48186,10 @@
       ],
       "payload": "0000000003c000000000000000087348",
       "source_family": "special",
-      "source_label": "vote.sync.b32"
+      "source_label": "match.sync.b32"
     }
   },
-  "generated_utc": "2026-08-22T22:31:43+00:00",
+  "generated_utc": "2026-08-22T22:43:54+00:00",
   "schema_version": 2,
   "variants": {
     "DADD": [
@@ -48620,7 +48556,7 @@
               "negate": [
                 63
               ],
-              "suffix": [
+              "value": [
                 32,
                 33,
                 34,
@@ -48641,13 +48577,11 @@
                 49,
                 50,
                 51,
-                56
-              ],
-              "value": [
                 52,
                 53,
                 54,
                 55,
+                56,
                 57,
                 58,
                 59,
@@ -49633,7 +49567,7 @@
         ],
         "payload": "000000000000010040000000ff047221",
         "source_family": "unary",
-        "source_label": "sqrt.approx.f32"
+        "source_label": "rsqrt.approx.f32"
       },
       {
         "encoding": "000fc0000000010080000002ff007221",
@@ -51078,7 +51012,7 @@
               "negate": [
                 63
               ],
-              "suffix": [
+              "value": [
                 32,
                 33,
                 34,
@@ -51102,13 +51036,11 @@
                 52,
                 53,
                 54,
-                59
-              ],
-              "value": [
                 55,
                 56,
                 57,
                 58,
+                59,
                 60,
                 61,
                 62
@@ -51509,7 +51441,7 @@
               "negate": [
                 63
               ],
-              "suffix": [
+              "value": [
                 32,
                 33,
                 34,
@@ -51527,9 +51459,6 @@
                 46,
                 47,
                 48,
-                59
-              ],
-              "value": [
                 49,
                 50,
                 51,
@@ -51540,6 +51469,7 @@
                 56,
                 57,
                 58,
+                59,
                 60,
                 61,
                 62
@@ -51951,7 +51881,7 @@
               "negate": [
                 63
               ],
-              "suffix": [
+              "value": [
                 32,
                 33,
                 34,
@@ -51970,9 +51900,7 @@
                 47,
                 48,
                 49,
-                50
-              ],
-              "value": [
+                50,
                 51,
                 52,
                 53,
@@ -52940,7 +52868,7 @@
         ],
         "payload": "00000000078e0200000000ff02047235",
         "source_family": "mma.dense",
-        "source_label": "mma.sync.m16n8k16....f16.f16.f32"
+        "source_label": "mma.sync.m16n8k8....f16.f16.f32"
       }
     ],
     "IADD.X": [
@@ -58732,7 +58660,7 @@
         ],
         "payload": "000000000fffe0ff000000fffffff290",
         "source_family": "mma.dense",
-        "source_label": "mma.sync.m16n8k32....u8.u8.s32"
+        "source_label": "mma.sync.m16n8k32....s8.s8.s32"
       }
     ],
     "UMOV": [

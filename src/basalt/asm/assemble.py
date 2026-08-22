@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import dataclasses
 import re
+import struct
 from dataclasses import dataclass, field
 
 from ..encoding import CONTROL_FIELDS, Word
@@ -188,6 +189,14 @@ def _kind(token: str) -> str:
         return file + suffix
     if _IMMEDIATE.match(token):
         return "immediate"
+    # `0.5` and `16777216` are both literals for the same float field, and
+    # calling one of them something else refuses an operand it can encode
+    try:
+        float(token)
+    except ValueError:
+        pass
+    else:
+        return "immediate"
     if token.startswith("c[") or token.startswith("cx["):
         return "constant"
     if token.startswith("desc["):
@@ -195,6 +204,33 @@ def _kind(token: str) -> str:
     if token.startswith("`"):
         return "label"
     return "other"
+
+
+def _float_bits(text: str, width: int) -> int | None:
+    """A float literal as the bits its field holds, or None if that is a guess.
+
+    `FADD R7, R7, -24` and `FMUL R0, R0, 16777216` look like integers and are
+    not: the field holds a float, so the text is a value to convert rather than
+    bits to copy. Writing the integer straight through is how a half-precision
+    field once received the number 15.
+
+    NaN is refused. Every NaN has the same meaning and many encodings, so there
+    is no way to reproduce the vendor's payload from the word `QNAN` alone, and
+    guessing one would put a wrong word in a file that looks right.
+    """
+    layout = {16: "<e", 32: "<f", 64: "<d"}.get(width)
+    if layout is None:
+        return None
+    try:
+        value = float(text.strip())
+    except ValueError:
+        return None
+    if value != value:
+        return None
+    try:
+        return int.from_bytes(struct.pack(layout, value), "little")
+    except (OverflowError, struct.error):
+        return None
 
 
 def _token_value(token: str) -> int | None:
@@ -411,6 +447,15 @@ class Assembler:
             # Either way what the field holds still decides: splitting a negate
             # bit off a float immediate does not turn the rest into an integer.
             value_bits = slot.parts.get(SubRole.VALUE) or slot.bits
+            if slot.holds == "float":
+                bits = _float_bits(token, len(value_bits))
+                if bits is None:
+                    raise AssemblyError(
+                        f"{mnemonic} operand {slot.index} is {token!r} in a {len(value_bits)}-bit "
+                        f"float field, and that is not a value this can encode exactly"
+                    )
+                word = _write(word, tuple(value_bits), bits)
+                continue
             if slot.holds != "value":
                 raise AssemblyError(
                     f"{mnemonic} operand {slot.index} sits in a field the prober found to hold "
@@ -562,6 +607,12 @@ def _classify(operand, tokens: tuple[str, ...]) -> tuple[int, str] | None:
     before, after = operand.example_before, operand.example_after
     if not before or not after:
         return None
+    # The example text carries the guard and the reference tokens do not, so a
+    # guarded form counted one token more than it was compared against and every
+    # slot in it was dropped. That is why `FMUL @!P0 R0, R0, 0.5` could describe
+    # no field at all: not a missing measurement, an off-by-one against it.
+    before = _GUARD.sub("", before + " ", count=1).strip()
+    after = _GUARD.sub("", after + " ", count=1).strip()
     left, right = _tokenise(before), _tokenise(after)
     if len(left) != len(right) or len(left) != len(tokens):
         return None
@@ -571,8 +622,11 @@ def _classify(operand, tokens: tuple[str, ...]) -> tuple[int, str] | None:
     position = moved[0]
     was, now = left[position], right[position]
 
-    # the token gained or lost a dotted suffix, so the field is a modifier
-    if was.split(".")[0] == now.split(".")[0] and "." in (was + now).replace(was.split(".")[0], ""):
+    # The token gained or lost a dotted suffix, so the field is a modifier. Only
+    # where the thing before the dot is a name: `0.5` against `0.50000005960464`
+    # shares the digit 0 and is a float field, not a suffix on a register.
+    head = was.split(".")[0]
+    if head[:1].isalpha() and head == now.split(".")[0] and "." in (was + now).replace(head, ""):
         return position, "modifier"
     if _REGISTER.match(was.lstrip("-")) and _REGISTER.match(now.lstrip("-")):
         return position, "value"
