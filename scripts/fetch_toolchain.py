@@ -33,8 +33,11 @@ REDIST_BASE = "https://developer.download.nvidia.com/compute/cuda/redist"
 # changing this default changes which build is "primary", not which are used.
 DEFAULT_VERSION = "13.3.1"
 
-# nvrtc is deliberately excluded: it is 300 MB and the pipeline never calls it.
-COMPONENTS = ("cuda_nvcc", "cuda_nvdisasm", "cuda_cuobjdump", "cuda_cudart")
+# nvrtc is excluded because it is 300 MB and nothing here calls it, and cudart
+# because basalt reaches the GPU through the driver API rather than the runtime.
+# A fresh clone with neither of them present passes `basalt doctor` and the whole
+# toolchain-marked suite, which is how both were shown to be unnecessary.
+COMPONENTS = ("cuda_nvcc", "cuda_nvdisasm", "cuda_cuobjdump")
 
 ROOT = Path(__file__).resolve().parent.parent
 DEST = ROOT / "third_party" / "cuda"
@@ -63,25 +66,63 @@ def fetch(url: str, dest: Path) -> Path:
     return dest
 
 
-def extract(archive: Path, dest: Path) -> None:
-    """Unpack a redistributable.
+def _wanted(name: str) -> str | None:
+    """The flat filename to write for an archive member, or None to skip it.
+
+    Only executables and the libraries beside them are taken, and they are
+    written straight into one directory rather than reproducing the archive's
+    tree. That is not tidiness: an NVIDIA redistributable nests its payload
+    under a long versioned directory name, and reproducing that under a
+    checkout that is itself several directories deep exceeds Windows' 260
+    character path limit and the extraction fails outright. Found by cloning
+    into a deep path and following the README, which is the only way this kind
+    of thing gets found.
+    """
+    parts = name.replace("\\", "/").split("/")
+    if len(parts) < 2 or parts[-2] != "bin" or not parts[-1]:
+        return None
+    return parts[-1]
+
+
+def extract(archive: Path, bindir: Path) -> int:
+    """Unpack the executables from a redistributable into one flat directory.
 
     NVIDIA ships Windows components as `.zip` and Linux ones as `.tar.xz`, so
     the extension decides. `filter="data"` is passed to tarfile because the
-    default became an error in 3.14 and, more to the point, an archive from the
-    network should not be able to write outside the directory it is told to.
+    default became an error in 3.14 and, more to the point, an archive fetched
+    over the network should not be able to write outside the directory it is
+    handed.
     """
-    dest.mkdir(parents=True, exist_ok=True)
+    bindir.mkdir(parents=True, exist_ok=True)
+    written = 0
+
     if archive.suffix == ".zip":
         with zipfile.ZipFile(archive) as zf:
-            zf.extractall(dest)
-        return
+            for member in zf.namelist():
+                flat = _wanted(member)
+                if flat is None:
+                    continue
+                with zf.open(member) as src, (bindir / flat).open("wb") as out:
+                    shutil.copyfileobj(src, out)
+                written += 1
+        return written
 
     with tarfile.open(archive) as tf:
-        try:
-            tf.extractall(dest, filter="data")
-        except TypeError:  # pragma: no cover - Python older than 3.12
-            tf.extractall(dest)
+        for member in tf.getmembers():
+            flat = _wanted(member.name)
+            if flat is None or not member.isfile():
+                continue
+            src = tf.extractfile(member)
+            if src is None:
+                continue
+            target = bindir / flat
+            with src, target.open("wb") as out:
+                shutil.copyfileobj(src, out)
+            # tarfile does not carry the mode across a manual copy, and a
+            # toolchain binary that is not executable is no toolchain at all
+            target.chmod(target.stat().st_mode | 0o755)
+            written += 1
+    return written
 
 
 def manifest(version: str) -> dict:
@@ -114,7 +155,8 @@ def main() -> int:
         return 0
 
     root = (args.dest or DEST) / args.version
-    root.mkdir(parents=True, exist_ok=True)
+    bindir = root / "bin"
+    bindir.mkdir(parents=True, exist_ok=True)
     cache = (args.dest or DEST) / "_archives"
 
     print(f"CUDA {man.get('release_label', args.version)} for {key} -> {root}")
@@ -133,15 +175,8 @@ def main() -> int:
                 f"checksum mismatch for {archive.name}\n  expected {expected}\n  got      {digest}"
             )
 
-        extract(archive, root / "_raw")
-
-    # flatten every component's bin/ into one directory so BASALT_CUDA_BIN is a
-    # single path regardless of how many archives were unpacked
-    bindir = root / "bin"
-    bindir.mkdir(exist_ok=True)
-    for src in (root / "_raw").rglob("*"):
-        if src.is_file() and src.parent.name == "bin":
-            shutil.copy2(src, bindir / src.name)
+        count = extract(archive, bindir)
+        print(f"  unpack  {count} files from {comp}")
 
     tools = sorted(p.name for p in bindir.iterdir() if p.is_file())
     print(f"\ninstalled {len(tools)} files into {bindir}")
