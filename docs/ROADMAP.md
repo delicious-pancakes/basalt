@@ -35,15 +35,20 @@ vendor compiler's own output, which is what makes it useful rather than self-ref
 | 9 | Field validation | Prove the measured fields can be written through | **done** |
 | 9b | Cross-check | basalt's ISA model against independently derived tables | planned |
 | 10 | Audit | Every public sm_120 SASS kernel, ptxas as the control | planned |
-| 11 | Scheduler | Assign the control bits, not only check them | **experimental** |
+| 11 | Scheduler | Assign the control bits, not only check them | **working**, read barriers inherited |
 | 12 | Assembler | SASS text to the instruction word | **working** |
 
 The scheduler discards every control bit `ptxas` produced and computes its own, then hands the
 result back to the verifier and then to the GPU, for every kernel the corpus generates.
-every one of the 314 comparable ones comes out byte-identical to the vendor schedule. The rest are
-named in the findings rather than summarised, and that count is what the work is measured
-against: it was 246 when the control was first run, and every model correction since came
-out of watching it move.
+Every one of the 314 comparable ones comes out byte-identical to the vendor schedule, at all
+three optimisation levels. The rest are named in the findings rather than summarised, and
+that count is what the work is measured against: it was 246 when the control was first run,
+and every model correction since came out of watching it move.
+
+One thing it does not do from scratch is read barriers, which it inherits from the schedule
+it is replacing. Those guard an instruction that consumes its operands late, basalt has no
+measured model of how long that takes, and finding 13 is what happened the one time it
+treated the surrounding gaps as free to compress.
 
 The assembler encodes SASS text back into the instruction word, and its standard is the
 vendor's own bytes: assembling every corpus kernel as a whole program, with its labels
