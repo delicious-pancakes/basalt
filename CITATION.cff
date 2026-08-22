@@ -1,0 +1,24 @@
+cff-version: 1.2.0
+message: "If you use basalt in your work, please cite it as below."
+title: "basalt: a SASS assembler for NVIDIA consumer Blackwell (sm_120)"
+type: software
+version: 0.1.0
+authors:
+  - family-names: Patel
+    given-names: Sunny
+    email: sunnypatel124555@gmail.com
+    affiliation: Independent
+    orcid: "https://orcid.org/0009-0005-3863-7642"
+repository-code: "https://github.com/sunnypatell/basalt"
+url: "https://www.sunnypatel.net"
+license: Apache-2.0
+license-url: "https://github.com/sunnypatell/basalt/blob/main/LICENSE"
+keywords:
+  - GPU
+  - SASS
+  - assembler
+  - CUDA
+  - Blackwell
+  - sm_120
+  - instruction set architecture
+  - reverse engineering

@@ -1,0 +1,11 @@
+# default owner for everything in the repository
+*                       @sunnypatell
+
+# the clean-room position and licensing are not delegated
+/LICENSE                @sunnypatell
+/NOTICE                 @sunnypatell
+/SECURITY.md            @sunnypatell
+/CONTRIBUTING.md        @sunnypatell
+
+# generated data: changes here should come from a rebuild, not a hand edit
+/data/isa/              @sunnypatell

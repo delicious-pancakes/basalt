@@ -1,0 +1,98 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 Sunny Patel
+name: ISA gap or wrong encoding
+description: basalt produced the wrong bits, or cannot produce a form at all
+title: "[isa] "
+labels: ["isa", "needs-repro"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This is the highest-value report in the project. A single corrected encoding is a real contribution.
+
+        Everything below except the PTX file is needed to reproduce without your machine.
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What kind of gap
+      options:
+        - basalt assembled it, but to the wrong bits
+        - basalt rejects a form it should accept
+        - the form is missing from the ISA database entirely
+        - a field layout looks wrong (operand lands in the wrong bits)
+        - control bits / latency behaviour looks wrong
+    validations:
+      required: true
+
+  - type: input
+    id: sass
+    attributes:
+      label: The SASS you expected
+      description: Exactly as you would write it, one instruction.
+      placeholder: IMAD.WIDE.U32 R2, R5, 0x4, R2
+    validations:
+      required: true
+
+  - type: input
+    id: produced
+    attributes:
+      label: The encoding basalt produced
+      description: 32 hex characters, high half first. Leave blank if basalt refused to assemble it.
+      placeholder: 041fe200078e00020000000405027825
+    validations:
+      required: false
+
+  - type: textarea
+    id: decoded
+    attributes:
+      label: What nvdisasm decodes that encoding to
+      description: |
+        Write the 16 bytes to a file and run `nvdisasm -b SM120a <file>`.
+        If basalt refused to assemble, paste the error instead.
+      render: text
+    validations:
+      required: true
+
+  - type: input
+    id: ptxas
+    attributes:
+      label: ptxas version
+      description: From `ptxas --version`, the `VX.Y.Z` string.
+      placeholder: V13.3.73
+    validations:
+      required: true
+
+  - type: input
+    id: arch
+    attributes:
+      label: Target architecture
+      placeholder: sm_120a
+    validations:
+      required: true
+
+  - type: textarea
+    id: ptx
+    attributes:
+      label: PTX that provokes the form (optional)
+      description: A bonus, not a requirement. If you have PTX that makes ptxas emit this instruction, it goes straight into the corpus.
+      render: text
+    validations:
+      required: false
+
+  - type: input
+    id: gpu
+    attributes:
+      label: GPU, if you ran it
+      description: Published sm_120 measurements come from one SKU, so which part you are on matters.
+      placeholder: RTX 5070 Ti
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: cleanroom
+    attributes:
+      label: Clean-room
+      options:
+        - label: This report contains no NVIDIA source, headers, documentation text, or anything decompiled or extracted from their binaries.
+          required: true
