@@ -204,6 +204,11 @@ def _expand(base: RegRef, count: int) -> set[RegRef]:
 # wrong fp64 kernel from basalt's own scheduler before it was found.
 _PAIRED_OPCODES = frozenset({"DADD", "DMUL", "DFMA", "DSETP", "DMMA", "DMNMX"})
 
+# Opcodes whose register destination follows their leading predicate outputs.
+# The min/max family: `IMNMX`, and its float and double counterparts, which are
+# the same instruction over a different type.
+_PREDICATES_THEN_REGISTER = frozenset({"IMNMX", "FMNMX", "DMNMX", "HMNMX", "HMNMX2"})
+
 # `IMAD.WIDE dst, a, b, c` computes a 64-bit `a * b + c` from 32-bit `a` and
 # `b`. The destination and the addend occupy register pairs; the two factors do
 # not. Nothing in the mnemonic says which is which beyond the position, and the
@@ -302,6 +307,24 @@ def operand_access(mnemonic: str, operands: str) -> Access:
     def_slots = max(1, leading_preds)
     if leading_preds == 1 and len(parts) > 1 and _REG_WITH_TAIL.match(parts[1].strip()):
         def_slots = 2
+    elif (
+        leading_preds >= 2
+        and opcode in _PREDICATES_THEN_REGISTER
+        and len(parts) > leading_preds
+        and _REG_WITH_TAIL.match(parts[leading_preds].strip())
+    ):
+        # `IMNMX.S64 PT, PT, R4, R4, R6, !PT, !PT` computes a minimum into R4,
+        # behind two predicate outputs nothing uses. Every other opcode with two
+        # leading predicates, `ISETP` and the rest of the compare family, has a
+        # source in that position, so this cannot be inferred from the shape and
+        # is listed instead.
+        #
+        # Reading it wrong is not cosmetic: the register never appears as a
+        # definition at all, so nothing depends on it, the checker reports no
+        # hazard and the scheduler leaves no gap. It was found when a scheduling
+        # optimisation removed the stall in front of one and the GPU returned a
+        # different answer.
+        def_slots = leading_preds + 1
 
     for idx, part in enumerate(parts):
         is_def_slot = defines_first and idx < def_slots

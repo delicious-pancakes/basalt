@@ -171,3 +171,37 @@ class TestWideMultiply:
     def test_a_plain_multiply_is_untouched(self):
         access = operand_access("IMAD", "R7, R2, UR7, RZ")
         assert access.real_defs == {RegRef(RegKind.GENERAL, 7)}
+
+
+class TestMinMaxWritesARegister:
+    """`IMNMX.S64 PT, PT, R4, R4, R6, !PT, !PT` computes a minimum into R4.
+
+    Two predicate outputs come first and nothing uses them, so the register
+    destination sits where every other opcode with two leading predicates keeps
+    a source. `ISETP.GE.AND P0, PT, R2, R3, PT` reads R2; `IMNMX` writes R4.
+
+    Reading it wrong is not cosmetic. The register never appears as a definition
+    at all, so nothing depends on it, the checker reports no hazard and the
+    scheduler leaves no gap in front of it. It was found when a scheduling
+    change removed the stall before one and the GPU returned a different answer.
+    """
+
+    def test_the_register_after_the_predicates_is_written(self):
+        access = operand_access("IMNMX.S64", "PT, PT, R4, R4, R6, !PT, !PT")
+        assert RegRef(RegKind.GENERAL, 4) in access.real_defs
+
+    def test_it_is_read_as_well(self):
+        """`R4 = min(R4, R6)` reads what it writes."""
+        access = operand_access("IMNMX.S64", "PT, PT, R4, R4, R6, !PT, !PT")
+        assert RegRef(RegKind.GENERAL, 4) in access.real_uses
+        assert RegRef(RegKind.GENERAL, 6) in access.real_uses
+
+    def test_a_compare_still_keeps_its_source(self):
+        """The same shape, and the register is a source. Hence the opcode list."""
+        access = operand_access("ISETP.GE.AND", "P0, PT, R2, R3, PT")
+        assert access.real_defs == {RegRef(RegKind.PREDICATE, 0)}
+        assert RegRef(RegKind.GENERAL, 2) in access.real_uses
+
+    def test_the_ordinary_three_operand_form_is_unchanged(self):
+        access = operand_access("IMNMX", "R2, R3, R4, !PT")
+        assert access.real_defs == {RegRef(RegKind.GENERAL, 2)}
