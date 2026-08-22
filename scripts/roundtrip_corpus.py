@@ -87,6 +87,8 @@ PATTERNS: tuple[bytes, ...] = (
 BUFFER = 256
 REPEATS = 5
 THREADS = 32
+# a kernel that hangs the card would otherwise leave a worker behind
+WORKER_TIMEOUT = 300.0
 
 # reaches the worker through the environment, since it is a separate process.
 # four is the default and what any published number should come from
@@ -260,20 +262,24 @@ def drive(work: Path, manifest: list[dict]) -> list[Verdict]:
 
     while position < len(manifest) and restarts < limit:
         restarts += 1
-        finished = subprocess.run(
-            [
-                sys.executable,
-                str(Path(__file__).resolve()),
-                "--worker",
-                str(position),
-                "--work",
-                str(work),
-            ],
-            capture_output=True,
-            text=True,
-            cwd=str(ROOT),
-        )
-        lines = [line for line in finished.stdout.splitlines() if "\t" in line]
+        command = [
+            sys.executable,
+            str(Path(__file__).resolve()),
+            "--worker",
+            str(position),
+            "--work",
+            str(work),
+        ]
+        # bounded, because a kernel that hangs the card rather than faulting
+        # would otherwise leave a worker running long after this returns
+        try:
+            output = subprocess.run(
+                command, capture_output=True, text=True, cwd=str(ROOT), timeout=WORKER_TIMEOUT
+            ).stdout
+        except subprocess.TimeoutExpired as expired:
+            raw = expired.stdout or ""
+            output = raw.decode(errors="replace") if isinstance(raw, bytes) else raw
+        lines = [line for line in output.splitlines() if "\t" in line]
         for line in lines:
             index, outcome, name, *rest = line.split("\t")
             verdicts[int(index)] = Verdict(name, outcome, rest[0] if rest else "")

@@ -64,6 +64,8 @@ ARCH = "sm_120a"
 BUFFER = 256
 REPEATS = 5
 THREADS = 32
+# a broken kernel can hang the card, and an unbounded worker outlives its run
+WORKER_TIMEOUT = 300.0
 
 
 @dataclass(frozen=True)
@@ -293,20 +295,25 @@ def _drive(work: Path, manifest: list[dict]) -> list[Case]:
     restarts = 0
     while position < len(manifest) and restarts < len(manifest) + 8:
         restarts += 1
-        finished = subprocess.run(
-            [
-                sys.executable,
-                str(Path(__file__).resolve()),
-                "--worker",
-                str(position),
-                "--work",
-                str(work),
-            ],
-            capture_output=True,
-            text=True,
-            cwd=str(ROOT),
-        )
-        lines = [line for line in finished.stdout.splitlines() if "\t" in line]
+        command = [
+            sys.executable,
+            str(Path(__file__).resolve()),
+            "--worker",
+            str(position),
+            "--work",
+            str(work),
+        ]
+        # A deliberately broken kernel can hang the card rather than fault, and
+        # without a bound the worker outlives the run that started it and goes
+        # on competing with everything measured afterwards.
+        try:
+            output = subprocess.run(
+                command, capture_output=True, text=True, cwd=str(ROOT), timeout=WORKER_TIMEOUT
+            ).stdout
+        except subprocess.TimeoutExpired as expired:
+            raw = expired.stdout or ""
+            output = raw.decode(errors="replace") if isinstance(raw, bytes) else raw
+        lines = [line for line in output.splitlines() if "\t" in line]
         for line in lines:
             index, outcome = line.split("\t")[:2]
             behaviour[int(index)] = outcome
