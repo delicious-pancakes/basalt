@@ -53,6 +53,9 @@ basalt = ["py.typed"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# the working tree wins over whatever is installed, so a stale editable install
+# elsewhere on the machine cannot quietly be the thing under test
+pythonpath = ["src"]
 addopts = "-q --strict-markers"
 markers = [
   "toolchain: needs ptxas and nvdisasm on the machine",

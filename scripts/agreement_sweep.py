@@ -48,8 +48,11 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT / "src"))
+import _repo
+
+_repo.use_repo_source()
+
+ROOT = _repo.ROOT
 
 ARCH = "sm_120a"
 PATTERN = bytes((i * 37 + 11) & 0xFF for i in range(256))
@@ -132,6 +135,7 @@ def main() -> int:
 
     results = _drive(work, cases)
     counts = Counter(case.cell for case in results)
+    print(f"\n{_repo.provenance()}")
     print(f"\n{len(results)} kernels, one dependency shortened in each\n")
     for cell in ("agreed broken", "agreed safe", "over-strict", "MISSED"):
         if counts[cell]:

@@ -68,8 +68,11 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT / "src"))
+import _repo
+
+_repo.use_repo_source()
+
+ROOT = _repo.ROOT
 
 ARCH = "sm_120a"
 # Several inputs rather than one, and the same ones for both schedules.
@@ -311,6 +314,7 @@ COMPARABLE = ("match", "MISMATCH", "basalt-nondeterministic", "basalt-faulted")
 def report(verdicts: list[Verdict]) -> int:
     counts = Counter(v.outcome for v in verdicts)
     comparable = sum(counts[outcome] for outcome in COMPARABLE)
+    print(f"\n{_repo.provenance()}")
     print(f"\n{len(verdicts)} corpus kernels rescheduled and run\n")
     for outcome in ORDER:
         if counts[outcome]:
