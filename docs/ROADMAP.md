@@ -5,22 +5,19 @@ stages land. Anything claimed here as done has a command that demonstrates it.
 
 ## The position
 
-basalt is not another assembler. [cubit](https://github.com/kacper-daftcode/cubit) already
-assembles sm_120 SASS well, produces loadable cubins, and schedules control bits automatically.
-[RCAsm](https://github.com/RetiredC/RCAsm) extends CuAssembler to sm_120.
-[openptxas](https://github.com/garrick99/openptxas) has sm_120 encoders and a scoreboard
-emulator. Building a fourth would be duplication.
+basalt is a **checker**, not a code generator.
 
-What none of them have, and what no public tool has, is a **checker**. Every one of them
-*assigns* control bits from a latency model. Nothing verifies the result, and the latency models
-were validated against a single GPU SKU.
+Tools that emit sm_120 machine code *assign* the scheduling control word from a latency model.
+Nothing publicly available verifies the result afterwards, and the latency models in use were
+validated against a single GPU part.
 
 That matters because sm_120 has no hardware interlock on fixed-latency instructions. The
 hardware does not validate the scheduling control word; it trusts whatever produced it. A stall
 count shorter than the latency of the value it consumes does not fault and does not stall. It
-reads a stale register and returns a wrong answer at full speed.
+reads a stale register and returns a wrong answer at full speed, silently, every time.
 
-basalt is the check.
+basalt is the check. It works on machine code regardless of what produced it, including the
+vendor compiler's own output, which is what makes it useful rather than self-referential.
 
 ## Stages
 
@@ -66,11 +63,10 @@ A tool can be ignored; a measurement cannot.
 
 Stated so the boundary is deliberate rather than accidental.
 
-- **Competing with cubit on assembly.** basalt must work on *other* tools' output, not only its
-  own. The stage 10 assembler exists to generate test programs, not to win a comparison.
-- **Optimising schedules.** Making SASS faster is a different problem, and
-  [CuAsmRL](https://arxiv.org/abs/2501.08071) already works on it. basalt answers whether a
-  schedule is *safe*, not whether it is *good*.
+- **Competing on code generation.** basalt must work on *other* tools' output, not only its own.
+  The stage 10 assembler exists to generate test programs, not to win a comparison.
+- **Optimising schedules.** Making SASS faster is a separate problem with existing research
+  behind it. basalt answers whether a schedule is *safe*, not whether it is *good*.
 - **Architectures other than sm_120.** The method generalises; the measurements do not. Claiming
   coverage that has not been measured on the silicon in question is the exact failure basalt
   exists to catch.
