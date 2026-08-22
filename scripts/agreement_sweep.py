@@ -50,12 +50,17 @@ from pathlib import Path
 
 import _repo
 
+# The same four input patterns the round trip uses, taken from the one place
+# they are defined. A stale read only changes the answer when the stale value
+# and the fresh one differ, so a single pattern is a single chance to notice and
+# an "over-strict" verdict reached on one is mostly a claim about that pattern.
+from roundtrip_corpus import PATTERNS
+
 _repo.use_repo_source()
 
 ROOT = _repo.ROOT
 
 ARCH = "sm_120a"
-PATTERN = bytes((i * 37 + 11) & 0xFF for i in range(256))
 BUFFER = 256
 REPEATS = 5
 THREADS = 32
@@ -235,20 +240,25 @@ def _worker(work: Path, start: int) -> int:
     with Device(0) as device:
         source = device.alloc(BUFFER)
         destination = device.alloc(BUFFER)
-        device.upload(source, PATTERN)
 
         def run(path, entry):
             module = device.load_cubin(Path(path).read_bytes())
             function = module.function(entry)
             seen = []
             for _ in range(REPEATS):
-                device.upload(destination, b"\0" * BUFFER)
-                device.launch(
-                    function,
-                    [ctypes.c_size_t(source), ctypes.c_size_t(destination)],
-                    block=(THREADS, 1, 1),
-                )
-                seen.append(device.download(destination, BUFFER))
+                # every pattern joined into one result, so a disagreement on any
+                # of them is a disagreement
+                outputs = []
+                for pattern in PATTERNS:
+                    device.upload(source, pattern)
+                    device.upload(destination, b"\0" * BUFFER)
+                    device.launch(
+                        function,
+                        [ctypes.c_size_t(source), ctypes.c_size_t(destination)],
+                        block=(THREADS, 1, 1),
+                    )
+                    outputs.append(device.download(destination, BUFFER))
+                seen.append(b"".join(outputs))
             module.unload()
             return seen
 

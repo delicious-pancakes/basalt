@@ -33,8 +33,12 @@ jobs:
       - run: pip install ruff mypy
       - run: ruff check .
       - run: ruff format --check .
-      # a checker whose own types are unchecked is a poor advertisement for one
-      - run: mypy
+      # a checker whose own types are unchecked is a poor advertisement for one.
+      # both platforms from the one runner, because the driver loads a different
+      # library on each and only the host's branch would otherwise be looked at:
+      # `ctypes.WinDLL` does not exist on Linux and this is where that shows up
+      - run: mypy --platform linux
+      - run: mypy --platform win32
 
   unit:
     # the pure unit tests touch no NVIDIA binary, so they run everywhere and
