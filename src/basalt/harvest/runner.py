@@ -125,9 +125,19 @@ def _one(tc: Toolchain, snip: Snippet, arch: str, opt: int) -> tuple[list[Observ
             timeout=60.0,
         )
         if res.returncode != 0 or not cubin.exists():
-            # first stderr line is the useful one; the rest is a source echo
-            reason = next((ln.strip() for ln in res.stderr.splitlines() if ln.strip()), "unknown")
-            return [], reason
+            # ptxas splits diagnostics across both streams depending on the kind
+            # of failure, so scan them together and keep the first line that
+            # actually names an error rather than echoing the source
+            blob = res.stderr + "\n" + res.stdout
+            reason = next(
+                (
+                    ln.split("error", 1)[-1].lstrip(" :\t")
+                    for ln in blob.splitlines()
+                    if "error" in ln.lower()
+                ),
+                next((ln.strip() for ln in blob.splitlines() if ln.strip()), "unknown"),
+            )
+            return [], reason.strip()
 
         instrs = disassemble_cubin(tc, cubin)
 

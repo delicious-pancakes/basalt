@@ -123,6 +123,27 @@ def _binary(op: str, ptx_type: str, mods: tuple[str, ...] = ()) -> Snippet:
     return Snippet(name, _kernel(name, body, ""), "binary", op, ptx_type, mods)
 
 
+def _widening(op: str, ptx_type: str) -> Snippet:
+    """mul.wide and mad.wide produce a result twice the operand width.
+
+    Using one type for all three operands, which is right for every other
+    binary form, silently produces a corpus entry ptxas always rejects.
+    """
+    wide = {"s16": "s32", "u16": "u32", "s32": "s64", "u32": "u64"}[ptx_type]
+    _, size, _ = _TYPES[ptx_type]
+    a, b, d = _reg(ptx_type, 1), _reg(ptx_type, 2), _reg(wide, 5)
+    body = "\n".join(
+        [
+            _load(ptx_type, a, 0),
+            _load(ptx_type, b, size),
+            f"    {op}.wide.{ptx_type} {d}, {a}, {b};",
+            _store(wide, d),
+        ]
+    )
+    name = f"k_{op}_wide_{ptx_type}"
+    return Snippet(name, _kernel(name, body, ""), "widening", op, ptx_type, ("wide",))
+
+
 def _ternary(op: str, ptx_type: str, mods: tuple[str, ...] = ()) -> Snippet:
     _, size, _ = _TYPES[ptx_type]
     a, b, c, d = (_reg(ptx_type, i) for i in (1, 2, 3, 4))
@@ -244,7 +265,8 @@ def generate() -> list[Snippet]:
         out += [_binary(op, t) for op in ("add", "sub", "min", "max")]
         out.append(_binary("mul", t, ("lo",)))
         out.append(_binary("mul", t, ("hi",)))
-        out.append(_binary("mul", t, ("wide",)) if t in ("s32", "u32", "s16", "u16") else _binary("mul", t, ("lo",)))
+        if t in ("s16", "u16", "s32", "u32"):
+            out.append(_widening("mul", t))
     for t in _INT32:
         out += [_ternary("mad", t, ("lo",)), _ternary("mad", t, ("hi",))]
         out += [_binary("div", t), _binary("rem", t)]
