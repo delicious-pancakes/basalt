@@ -88,6 +88,16 @@ BUFFER = 256
 REPEATS = 5
 THREADS = 32
 
+# How many patterns the worker actually uses. It runs as a separate process, so
+# `--patterns` reaches it through the environment rather than an argument.
+#
+# All four is the default and what any published number should come from.
+# Fewer exists because the full sweep across three optimisation levels takes the
+# better part of an hour and a contributor bisecting one kernel does not need
+# all of it. Lowering it makes the run faster and the result weaker, in that
+# order.
+PATTERNS_ENV = "BASALT_PATTERNS"
+
 
 @dataclass(frozen=True)
 class Verdict:
@@ -185,6 +195,8 @@ def worker(work: Path, start: int) -> None:
     def emit(index, outcome, name, detail=""):
         print(f"{index}\t{outcome}\t{name}\t{detail}", flush=True)
 
+    patterns = PATTERNS[: int(os.environ.get(PATTERNS_ENV, len(PATTERNS)))]
+
     with Device(0) as device:
         source = device.alloc(BUFFER)
         destination = device.alloc(BUFFER)
@@ -197,7 +209,7 @@ def worker(work: Path, start: int) -> None:
                 # every pattern joined into one result, so a disagreement on any
                 # of them is a disagreement
                 outputs = []
-                for pattern in PATTERNS:
+                for pattern in patterns:
                     device.upload(source, pattern)
                     device.upload(destination, b"\0" * BUFFER)
                     device.launch(
@@ -324,6 +336,15 @@ def main() -> int:
     parser.add_argument("--report", type=Path, default=None, help="write the verdicts as JSON")
     parser.add_argument("--only", nargs="*", default=None, help="restrict to these kernel names")
     parser.add_argument(
+        "--patterns",
+        type=int,
+        default=len(PATTERNS),
+        choices=range(1, len(PATTERNS) + 1),
+        help="how many input patterns to run each kernel against (default all of them). "
+        "fewer is faster and weaker: a stale read only changes the answer when the stale "
+        "value and the fresh one differ, so each pattern dropped is a chance to miss one",
+    )
+    parser.add_argument(
         "--opt",
         type=int,
         default=3,
@@ -335,6 +356,8 @@ def main() -> int:
     args = parser.parse_args()
 
     work = args.work or Path(os.environ.get("TMP", "/tmp")) / f"basalt-roundtrip-O{args.opt}"
+    # the worker is a separate process, so this rides across in the environment
+    os.environ[PATTERNS_ENV] = str(args.patterns)
 
     if args.worker is not None:
         worker(work, args.worker)
