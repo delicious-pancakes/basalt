@@ -113,3 +113,33 @@ class TestSplitting:
     def test_empty_operands_are_handled(self):
         access = operand_access("NOP", "")
         assert not access.defs and not access.uses
+
+
+class TestGuard:
+    """The guard is recorded apart from the other reads.
+
+    Not a stylistic split: a guard gates issue and needs about two and a half
+    times the lead of the same predicate read as data, so the two have to be
+    told apart before either can be charged correctly.
+    """
+
+    def test_the_guard_is_identified_and_still_a_read(self):
+        access = operand_access("IMAD", "@P1 R3, R0, R7, R5")
+        assert access.guard == RegRef(RegKind.PREDICATE, 1)
+        assert RegRef(RegKind.PREDICATE, 1) in access.real_uses
+
+    def test_a_negated_guard_is_the_same_register(self):
+        assert operand_access("BRA", "@!P0 `(.L_1)").guard == RegRef(RegKind.PREDICATE, 0)
+
+    def test_no_guard_means_none(self):
+        assert operand_access("IMAD", "R3, R0, R7, R5").guard is None
+
+    def test_the_always_true_guard_is_not_a_dependency(self):
+        """`@PT` reads as a constant, so nothing can ever be waiting on it."""
+        assert operand_access("IMAD", "@PT R3, R0, R7, R5").guard is None
+
+    def test_a_predicate_read_as_data_is_not_a_guard(self):
+        """`SEL` reads P1 as an operand. Same register, different requirement."""
+        access = operand_access("SEL", "R3, R0, R7, P1")
+        assert access.guard is None
+        assert RegRef(RegKind.PREDICATE, 1) in access.real_uses

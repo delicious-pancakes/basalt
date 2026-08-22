@@ -239,7 +239,75 @@ DFMA R4, R6, R4, R4     stall=15  wait=0x02
 
 Four NOPs whose only purpose is to spend cycles.
 
-## 9. What is deliberately not claimed
+## 9. A guard predicate costs two and a half times an ordinary read
+
+`@P1 IMAD` and `SEL R3, R0, R7, P1` both read `P1`. They do not need the same lead.
+
+A guard decides whether the instruction issues at all, so it has to be resolved before
+issue. An ordinary source is read later, once the instruction is already going. The gap
+between the two is large enough to corrupt a result:
+
+| how the predicate is read | cycles needed from a fixed-latency producer |
+| --- | --- |
+| as the instruction's guard, `@P1 IMAD` | 13 |
+| as a data operand, `SEL ..., P1` | 5 |
+| as a general register, for comparison | 5 |
+
+Measured twice, two ways.
+
+**On hardware.** A loop kernel where `ISETP.GT.AND P1, PT, R5, 0x1, PT` feeds
+`@P1 IMAD R3, R0, R7, R5`, with the stall on the `ISETP` swept and everything else held:
+
+| stall | result | |
+| --- | --- | --- |
+| 1 to 5 | 17 or 668, varying between launches | wrong |
+| 6 to 8 | 17 or 53 | wrong |
+| 9 to 11 | 17 | wrong |
+| 12 | 13 | wrong |
+| 13 | 2005 | correct |
+| 14, 15 | 2005 | correct |
+
+The staircase is the useful part. A single wrong answer could be anything; a value that
+climbs monotonically toward the right one as the gap widens, and then stops changing, is a
+timing requirement being met.
+
+**Across the corpus.** Every dependent pair in the 317 kernel corpus, split by how the
+consumer reads the value, scoreboard-covered pairs excluded because there the stall says
+nothing:
+
+| bucket | pairings | samples | median requirement |
+| --- | --- | --- | --- |
+| guard predicate | 15 | 55 | 13 |
+| predicate as data | 7 | 51 | 5 |
+| general register | 102 | 785 | 5 |
+
+The discriminating case is `LOP3 -> MOV`, which appears in the corpus both ways: 13 cycles
+when `MOV` is guarded by the result, 5 when it reads it as data. Same producer, same
+consumer, same distance available, different requirement. So this is a property of issue,
+not of the predicate file, and not of the opcode pair.
+
+`ptxas` has clearly always known. It leaves 13 cycles in front of a guard and 5 in front of
+a data read, consistently, across every kernel that has both.
+
+### Why this one matters more than its size suggests
+
+Getting it wrong is silent in the dangerous direction. Charging a guard the cheaper
+requirement produces a schedule that assembles, loads, launches, returns a plausible
+number, and is wrong. Nothing faults. Basalt did exactly this until the sweep above, and
+its own checker agreed with its own scheduler the whole time, because both consulted the
+same figure.
+
+It also cannot be found by reasoning about the corpus alone. The mined minimum for
+`ISETP -> IMAD` is 5, which is correct and useless: it is mined from the unguarded pairs.
+Basalt now mines guards under their own key, `ISETP -> @IMAD`, and keeps the two apart in
+the per-producer fallback as well. Collapsing them would let one 5 cycle `ISETP -> SEL`
+answer for every guard in the program.
+
+Closing this made the loop kernel round-trip, which had been recorded here as a
+loop-carried scheduling gap. It was not one. The diagnosis was wrong and the hardware
+said so.
+
+## 10. What is deliberately not claimed
 
 Stated so the boundary of the evidence is visible.
 
@@ -266,7 +334,7 @@ Stated so the boundary of the evidence is visible.
   first conversion. An earlier run reported `I2FP` as requiring 4 cycles; the control
   retracted it, and it is listed as not established rather than quietly kept.
 
-## 10. Corrections made along the way
+## 11. Corrections made along the way
 
 Kept because a method is only as trustworthy as its error log.
 
@@ -285,6 +353,12 @@ Kept because a method is only as trustworthy as its error log.
   `IMAD` is scheduled at four cycles and `IMAD` into `IADD` at three.
 - fp64 operands are register pairs with nothing in the mnemonic to say so, so half of every
   fp64 dependency was invisible.
+- A guard predicate was charged the same as a predicate read as data. It needs thirteen
+  cycles against five, and the difference silently corrupts (finding 9).
+- The `loop` kernel's failure to round-trip was recorded as a loop-carried scheduling gap
+  for longer than it should have been. Bisecting the schedule one instruction at a time
+  against hardware showed a single guard predicate, in a straight line of code, with
+  nothing loop-carried about it.
 
 Each of these was caught by the positive control: the vendor compiler's own output must
 verify clean, and every one of them made it fail.

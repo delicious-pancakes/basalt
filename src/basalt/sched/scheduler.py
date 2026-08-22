@@ -31,7 +31,7 @@ from dataclasses import dataclass, field
 from ..disasm import Instruction, Program
 from ..encoding import NO_BARRIER, STALL_YIELD, Word
 from ..verify.cfg import build_cfg
-from ..verify.latency import LatencyClass, LatencyModel
+from ..verify.latency import GUARD_CYCLES, LatencyClass, LatencyModel
 from ..verify.observed import ObservedStalls
 from ..verify.operands import RegRef, operand_access
 
@@ -91,13 +91,22 @@ def _requirement(
     consumer: str,
     cycles: int,
     observed: ObservedStalls | None,
+    *,
+    guard: bool = False,
 ) -> int:
-    """Cycles this pairing needs, preferring evidence about the exact pairing."""
+    """Cycles this pairing needs, preferring evidence about the exact pairing.
+
+    A guard is its own pairing. It gates issue rather than feeding an operand
+    port, so it needs about two and a half times the lead of the same predicate
+    read as data, and getting this wrong produces a schedule that runs and
+    quietly returns the wrong answer.
+    """
+    key = ("@" if guard else "") + consumer
     if observed is not None:
-        evidence = observed.requirement(producer, consumer)
+        evidence = observed.requirement(producer, key)
         if evidence is not None:
             return evidence.minimum
-    return cycles
+    return GUARD_CYCLES if guard else cycles
 
 
 def _place_stall(
@@ -278,7 +287,13 @@ def schedule_program(
                     if producer is None or producer.kind is not LatencyClass.FIXED:
                         continue
                     record = model.lookup(producer.opcode)
-                    needed = _requirement(producer.opcode, instr.opcode, record.cycles, observed)
+                    needed = _requirement(
+                        producer.opcode,
+                        instr.opcode,
+                        record.cycles,
+                        observed,
+                        guard=reg == access.guard,
+                    )
                     have = elapsed.get(producer.index, 0)
                     if have >= needed:
                         continue

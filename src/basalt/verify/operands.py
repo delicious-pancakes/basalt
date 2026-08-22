@@ -20,6 +20,12 @@ a wrong guess here is silent.
 
 *Predicates are registers too.* A guard `@!P0` is a read, and `ISETP` writes
 predicates before it writes anything else.
+
+*A guard is not an ordinary read.* It decides whether the instruction issues at
+all, so it has to be resolved before issue rather than at operand-read time, and
+it needs roughly two and a half times the lead. That is measured, not assumed:
+see `docs/FINDINGS.md`. The guard is therefore recorded separately from the
+other uses, so the checker and the scheduler can charge it correctly.
 """
 
 from __future__ import annotations
@@ -69,6 +75,10 @@ class Access:
 
     defs: set[RegRef] = field(default_factory=set)
     uses: set[RegRef] = field(default_factory=set)
+    # The predicate in a guard such as `@!P0`, if there is one. Kept apart from
+    # the rest of `uses` because it is needed earlier in the pipeline than an
+    # ordinary source and therefore costs more to wait for; see `guards` below.
+    guard: RegRef | None = None
 
     @property
     def real_defs(self) -> set[RegRef]:
@@ -249,6 +259,8 @@ def operand_access(mnemonic: str, operands: str) -> Access:
     if (guard := _GUARD.match(body)) is not None:
         if (p := _mk(guard.group(2), guard.group(3))) is not None:
             access.uses.add(p)
+            if not p.is_sink:
+                access.guard = p
         body = body[guard.end() :]
 
     parts = _split_operands(body)

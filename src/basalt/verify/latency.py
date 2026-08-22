@@ -25,6 +25,7 @@ from pathlib import Path
 
 __all__ = [
     "DEFAULT_MODEL",
+    "GUARD_CYCLES",
     "Confidence",
     "LatencyClass",
     "LatencyModel",
@@ -71,6 +72,22 @@ class LatencyRecord:
 # conventions the analysis needs in order to run at all; stage 7 replaces them
 # with numbers measured on real silicon, at which point every finding produced
 # against an assumed number has to be re-examined.
+# Cycles a predicate needs before it can be used as an instruction's guard,
+# rather than as an ordinary source operand.
+#
+# Measured, and the gap is large: a guard consumed at issue needs 13 cycles from
+# a fixed-latency producer where the same predicate read as data needs 5. Both
+# numbers come from the same 317 kernel corpus, split by how the consumer reads
+# the value, and 13 was confirmed on hardware by sweeping the stall on a real
+# `ISETP` feeding an `@P1 IMAD` and finding the answer wrong at 12 and right at
+# 13. `docs/FINDINGS.md` records the experiment.
+#
+# The reason to believe it rather than treat it as noise is that the same
+# producer and consumer pairing shows both numbers depending only on how the
+# predicate is read, and a predicate read as data behaves exactly like a
+# register. So this is a property of issue, not of the predicate file.
+GUARD_CYCLES = 13
+
 _ASSUMED: dict[str, tuple[int, LatencyClass, str]] = {
     # core integer and float ALU, the classic four-stage result bus
     "IADD": (4, LatencyClass.FIXED, "integer add pipeline"),

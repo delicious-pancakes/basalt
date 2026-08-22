@@ -37,7 +37,7 @@ from ..disasm import Instruction, Program
 from ..encoding import STALL_YIELD, effective_stall
 from .cfg import ControlFlowGraph, build_cfg
 from .flow import FlowState
-from .latency import Confidence, LatencyClass, LatencyModel, LatencyRecord
+from .latency import GUARD_CYCLES, Confidence, LatencyClass, LatencyModel, LatencyRecord
 from .observed import ObservedStalls
 from .operands import operand_access
 
@@ -192,7 +192,11 @@ def _check_instruction(
 
             if producer_record.kind is LatencyClass.FIXED:
                 required, source = _requirement(
-                    producer.opcode, instr.opcode, producer_record, observed
+                    producer.opcode,
+                    instr.opcode,
+                    producer_record,
+                    observed,
+                    guard=reg == access.guard,
                 )
                 if rd.elapsed >= required or not recording:
                     continue
@@ -384,6 +388,8 @@ def _requirement(
     consumer: str,
     record: LatencyRecord,
     observed: ObservedStalls | None,
+    *,
+    guard: bool = False,
 ) -> tuple[int, str]:
     """How many cycles this pairing needs, and where that number came from.
 
@@ -392,15 +398,27 @@ def _requirement(
     reads its operands later tolerates a shorter gap. Falling back to the
     producer figure keeps a pairing the compiler never emitted checkable, just
     more strictly.
+
+    When the value is the consumer's guard the pairing is a different one. A
+    guard has to be resolved before the instruction issues at all, so it needs
+    far more lead than the same predicate read as data, and it is looked up and
+    reported under its own key.
     """
+    key = ("@" if guard else "") + consumer
     if observed is not None:
-        evidence = observed.requirement(producer, consumer)
+        evidence = observed.requirement(producer, key)
         if evidence is not None:
             return (
                 evidence.minimum,
                 f"{producer} -> {evidence.consumer} is scheduled no tighter than "
                 f"{evidence.minimum} cycles across {evidence.observations} observations",
             )
+    if guard:
+        return (
+            GUARD_CYCLES,
+            f"a guard predicate needs {GUARD_CYCLES} cycles, measured "
+            f"(see docs/FINDINGS.md); {producer} is fixed latency",
+        )
     return (
         record.cycles,
         f"{producer} latency is {record.confidence} ({record.note or 'no note'})",

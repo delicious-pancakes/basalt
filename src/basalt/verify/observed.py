@@ -92,17 +92,38 @@ class ObservedStalls:
         self.by_pair[key].observe(stall, sample)
 
         # the same evidence collapsed over consumers, which is what a
-        # single-number-per-opcode latency model needs
-        if producer not in self.by_producer:
-            self.by_producer[producer] = StallEvidence(producer, "*", minimum=stall)
-        self.by_producer[producer].observe(stall, sample)
+        # single-number-per-opcode latency model needs.
+        #
+        # Guards are collapsed separately, under `@OPCODE`. Mixing them would be
+        # actively unsafe: the collapse keeps the minimum, guards need about two
+        # and a half times what a data read needs, and one `ISETP -> SEL` at 5
+        # cycles would drag the whole of `ISETP` down to 5 and then answer 5 to
+        # a guard that needs 13. That is a wrong answer in the dangerous
+        # direction, and it is how this was found.
+        collapsed = self._collapse_key(producer, consumer)
+        if collapsed not in self.by_producer:
+            self.by_producer[collapsed] = StallEvidence(producer, "*", minimum=stall)
+        self.by_producer[collapsed].observe(stall, sample)
+
+    @staticmethod
+    def _collapse_key(producer: str, consumer: str) -> str:
+        """Where a pairing's evidence is collapsed to, per producer.
+
+        Guard and non-guard evidence never share a bucket.
+        """
+        return f"@{producer}" if consumer.startswith("@") else producer
 
     def requirement(self, producer: str, consumer: str | None = None) -> StallEvidence | None:
-        """The tightest trusted gap seen for a pairing, or for the producer alone."""
+        """The tightest trusted gap seen for a pairing, or for the producer alone.
+
+        A guard consumer is spelled `@OPCODE` and only ever matches guard
+        evidence, both for the exact pairing and for the fallback.
+        """
         pair = self.by_pair.get((producer, consumer)) if consumer is not None else None
         if pair is not None and pair.trusted:
             return pair
-        evidence = self.by_producer.get(producer)
+        key = self._collapse_key(producer, consumer) if consumer is not None else producer
+        evidence = self.by_producer.get(key)
         return evidence if evidence and evidence.trusted else None
 
     def summary(self) -> str:
@@ -192,6 +213,10 @@ def mine_program(program: Program, into: ObservedStalls) -> None:
             for reg in access.real_uses:
                 if (previous := last_def.get(reg)) is None:
                     continue
+                # a guard is resolved at issue rather than at operand read, so
+                # it needs a different amount of lead and is mined separately.
+                # `@IMAD` and `IMAD` are two requirements, not one.
+                consumer_key = ("@" if reg == access.guard else "") + instr.opcode
                 producer_index, producer_opcode = previous
                 word = program.instructions[producer_index].word
                 if word is None:
@@ -202,7 +227,7 @@ def mine_program(program: Program, into: ObservedStalls) -> None:
                     continue
                 into.observe(
                     producer_opcode,
-                    instr.opcode,
+                    consumer_key,
                     elapsed.get(reg, 0),
                     f"{program.instructions[producer_index].text} -> {instr.text}",
                 )

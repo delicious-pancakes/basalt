@@ -76,28 +76,28 @@
       "observations": 1,
       "trusted": false
     },
-    "FSETP->BRA": {
+    "FSETP->@BRA": {
       "min_stall": 14,
       "observations": 4,
       "trusted": true
     },
-    "FSETP->FADD": {
+    "FSETP->@FADD": {
       "min_stall": 13,
       "observations": 2,
       "trusted": false
     },
-    "FSETP->FMUL": {
+    "FSETP->@FMUL": {
       "min_stall": 13,
       "observations": 7,
       "trusted": true
     },
-    "FSETP->FSEL": {
-      "min_stall": 5,
+    "FSETP->@MOV": {
+      "min_stall": 13,
       "observations": 2,
       "trusted": false
     },
-    "FSETP->MOV": {
-      "min_stall": 13,
+    "FSETP->FSEL": {
+      "min_stall": 5,
       "observations": 2,
       "trusted": false
     },
@@ -158,8 +158,8 @@
     },
     "IADD->DFMA": {
       "min_stall": 6,
-      "observations": 2,
-      "trusted": false
+      "observations": 4,
+      "trusted": true
     },
     "IADD->F2I": {
       "min_stall": 4,
@@ -291,37 +291,37 @@
       "observations": 6,
       "trusted": true
     },
-    "ISETP->ATOMG": {
+    "ISETP->@ATOMG": {
       "min_stall": 13,
       "observations": 3,
       "trusted": true
     },
-    "ISETP->BRA": {
+    "ISETP->@BRA": {
       "min_stall": 13,
       "observations": 5,
       "trusted": true
     },
-    "ISETP->IADD": {
+    "ISETP->@IADD": {
       "min_stall": 13,
       "observations": 16,
       "trusted": true
     },
-    "ISETP->IADD3": {
+    "ISETP->@IADD3": {
       "min_stall": 18,
       "observations": 1,
       "trusted": false
     },
-    "ISETP->LOP3": {
+    "ISETP->@LOP3": {
       "min_stall": 13,
       "observations": 5,
       "trusted": true
     },
-    "ISETP->MOV": {
+    "ISETP->@MOV": {
       "min_stall": 14,
       "observations": 1,
       "trusted": false
     },
-    "ISETP->PLOP3": {
+    "ISETP->@PLOP3": {
       "min_stall": 14,
       "observations": 1,
       "trusted": false
@@ -341,10 +341,20 @@
       "observations": 6,
       "trusted": true
     },
-    "LOP3->BRA": {
+    "LOP3->@BRA": {
       "min_stall": 14,
       "observations": 1,
       "trusted": false
+    },
+    "LOP3->@MOV": {
+      "min_stall": 13,
+      "observations": 1,
+      "trusted": false
+    },
+    "LOP3->@PRMT": {
+      "min_stall": 64,
+      "observations": 4,
+      "trusted": true
     },
     "LOP3->IADD": {
       "min_stall": 5,
@@ -373,17 +383,12 @@
     },
     "LOP3->MOV": {
       "min_stall": 5,
-      "observations": 3,
-      "trusted": true
+      "observations": 2,
+      "trusted": false
     },
     "LOP3->POPC": {
       "min_stall": 4,
       "observations": 3,
-      "trusted": true
-    },
-    "LOP3->PRMT": {
-      "min_stall": 64,
-      "observations": 4,
       "trusted": true
     },
     "LOP3->SEL": {
@@ -588,6 +593,34 @@
     }
   },
   "by_producer": {
+    "@FSETP": {
+      "min_stall": 13,
+      "observations": 15,
+      "samples": [
+        "FSETP.GEU.AND P0, PT, |R0|, 1.175494350822287508e-38, PT -> @!P0 FMUL R0, R0, 16777216",
+        "FSETP.GEU.AND P0, PT, |R0|, 1.175494350822287508e-38, PT -> @!P0 FMUL R0, R0, 16777216",
+        "FSETP.GEU.AND P0, PT, |R0|, 1.175494350822287508e-38, PT -> @!P0 FMUL R0, R0, 16777216"
+      ],
+      "trusted": true
+    },
+    "@ISETP": {
+      "min_stall": 13,
+      "observations": 32,
+      "samples": [
+        "ISETP.GT.U32.AND P0, PT, R9, R2, PT -> @!P0 IADD R2, R2, -R9",
+        "ISETP.GE.U32.AND P1, PT, R2, R9, PT -> @P1 IADD R5, R5, 0x1",
+        "ISETP.NE.AND P1, PT, R7, RZ, PT -> @!P1 LOP3.LUT R5, RZ, R7, RZ, 0x33, !PT"
+      ],
+      "trusted": true
+    },
+    "@LOP3": {
+      "min_stall": 13,
+      "observations": 6,
+      "samples": [
+        "LOP3.LUT P0, RZ, R0, 0x7fffffff, RZ, 0xc0, !PT -> @!P0 MOV R2, R0"
+      ],
+      "trusted": true
+    },
     "BREV": {
       "min_stall": 3,
       "observations": 1,
@@ -652,7 +685,7 @@
     },
     "FSETP": {
       "min_stall": 5,
-      "observations": 28,
+      "observations": 13,
       "samples": [
         "FSETP.GEU.AND P1, PT, |R2|.reuse, 1.175494350822287508e-38, PT -> FSEL R0, R0, 1, !P1",
         "FSETP.NEU.AND P0, PT, R0, R5, PT -> SEL R7, RZ, 0x1, P0",
@@ -701,7 +734,7 @@
     },
     "IADD": {
       "min_stall": 4,
-      "observations": 62,
+      "observations": 64,
       "samples": [
         "IADD R4, R6, 0xffffffe -> F2I.FTZ.U32.TRUNC.NTZ R5, R4",
         "IADD R4, R6, 0xffffffe -> F2I.FTZ.U32.TRUNC.NTZ R5, R4",
@@ -746,7 +779,7 @@
     },
     "ISETP": {
       "min_stall": 5,
-      "observations": 55,
+      "observations": 23,
       "samples": [
         "ISETP.NE.AND P0, PT, R0, R5, PT -> SEL R7, RZ, 0x1, P0",
         "ISETP.NE.AND P0, PT, R0, R5, PT -> SEL R7, RZ, 0x1, !P0",
@@ -765,7 +798,7 @@
     },
     "LOP3": {
       "min_stall": 4,
-      "observations": 213,
+      "observations": 207,
       "samples": [
         "LOP3.LUT R6, R6, UR6, RZ, 0xc0, !PT -> POPC R3, R6",
         "LOP3.LUT R6, R6, UR6, RZ, 0xc0, !PT -> POPC R3, R6",

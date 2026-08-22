@@ -56,6 +56,8 @@ def model(cycles: int = 4, confidence: Confidence = Confidence.MEASURED) -> Late
             "IMAD": LatencyRecord(cycles, LatencyClass.FIXED, confidence),
             "LDG": LatencyRecord(0, LatencyClass.VARIABLE, confidence),
             "S2R": LatencyRecord(0, LatencyClass.VARIABLE, confidence),
+            "ISETP": LatencyRecord(cycles, LatencyClass.FIXED, confidence),
+            "SEL": LatencyRecord(cycles, LatencyClass.FIXED, confidence),
             "STG": LatencyRecord(0, LatencyClass.CONTROL, confidence),
             "EXIT": LatencyRecord(0, LatencyClass.CONTROL, confidence),
             "BRA": LatencyRecord(0, LatencyClass.CONTROL, confidence),
@@ -285,3 +287,91 @@ class TestReporting:
         report = verify_program([], model())
         assert report.ok
         assert report.instructions == 0
+
+
+class TestGuardPredicate:
+    """A guard costs more than the same predicate read as data.
+
+    A guard decides whether the instruction issues at all, so it has to be
+    resolved before issue rather than at operand read, and it needs roughly two
+    and a half times the lead. Measured on hardware by sweeping the stall on a
+    real `ISETP` feeding an `@P1 IMAD`: wrong at 12 cycles, right at 13. The
+    corpus agrees, and splits the same way for every producer that writes a
+    predicate.
+
+    This is the one rule where being wrong is silent in the dangerous
+    direction. Charging a guard the cheaper data-read requirement produces a
+    schedule that runs, returns a plausible number, and is wrong.
+    """
+
+    def test_a_guard_short_of_its_lead_is_a_finding(self):
+        program = [
+            instr("ISETP.GT.AND P1, PT, R5, 0x1, PT", stall=5, index=0),
+            instr("@P1 IMAD R3, R0, R7, R5", stall=1, index=1),
+            instr("EXIT", index=2),
+        ]
+        report = verify_program(program, model())
+        assert not report.ok
+        assert any(
+            h.kind is HazardKind.UNDERSTALLED and h.register == "P1" and h.use_index == 1
+            for h in report.hazards
+        )
+
+    def test_the_same_gap_is_fine_for_an_ordinary_read(self):
+        """Identical distance, identical opcodes: only the guard differs."""
+        program = [
+            instr("ISETP.GT.AND P1, PT, R5, 0x1, PT", stall=5, index=0),
+            instr("SEL R3, R0, R7, P1", stall=1, index=1),
+            instr("EXIT", index=2),
+        ]
+        assert verify_program(program, model()).ok
+
+    def test_a_guard_given_its_full_lead_is_accepted(self):
+        program = [
+            instr("ISETP.GT.AND P1, PT, R5, 0x1, PT", stall=13, index=0),
+            instr("@P1 IMAD R3, R0, R7, R5", stall=1, index=1),
+            instr("EXIT", index=2),
+        ]
+        assert verify_program(program, model()).ok
+
+    def test_the_always_true_guard_is_not_a_dependency(self):
+        """`@PT` reads as a constant, so it can never be short of anything."""
+        program = [
+            instr("ISETP.GT.AND P1, PT, R5, 0x1, PT", stall=1, index=0),
+            instr("@PT IMAD R3, R0, R7, R2", stall=1, index=1),
+            instr("EXIT", index=2),
+        ]
+        assert verify_program(program, model()).ok
+
+
+class TestGuardEvidenceIsKeptApart:
+    """Guard and data evidence must never share a bucket.
+
+    The collapse keeps the minimum. One `ISETP -> SEL` at 5 cycles in the same
+    bucket as the guards would drag the whole of `ISETP` down to 5 and then
+    answer 5 to a guard needing 13, which is a wrong answer in the direction
+    that produces working-looking, silently wrong code. This is the exact bug
+    the split was written to prevent, so it is pinned here.
+    """
+
+    def _mined(self):
+        from basalt.verify.observed import MIN_OBSERVATIONS, ObservedStalls
+
+        obs = ObservedStalls(cuda_version="test", arch="sm_120a")
+        for _ in range(MIN_OBSERVATIONS + 1):
+            obs.observe("ISETP", "SEL", 5, "data read")
+            obs.observe("ISETP", "@IMAD", 13, "guard")
+        return obs
+
+    def test_a_guard_does_not_inherit_the_cheaper_data_requirement(self):
+        assert self._mined().requirement("ISETP", "@IMAD").minimum == 13
+
+    def test_a_data_read_keeps_its_own(self):
+        assert self._mined().requirement("ISETP", "SEL").minimum == 5
+
+    def test_an_unseen_guard_falls_back_to_guard_evidence_only(self):
+        """The fallback is per producer, and it is also split."""
+        assert self._mined().requirement("ISETP", "@NEVERSEEN").minimum == 13
+
+    def test_an_unseen_data_read_falls_back_to_data_evidence_only(self):
+        assert self._mined().requirement("ISETP", "NEVERSEEN").minimum == 5
