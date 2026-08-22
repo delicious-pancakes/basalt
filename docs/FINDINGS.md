@@ -453,12 +453,21 @@ the instruction set they contain between them:
 | | |
 | :--- | ---: |
 | Opcodes in the database | 77 |
-| Opcodes the round trip executes on the GPU | **73 (95%)** |
+| Opcodes the round trip executes on the GPU | **74 (96%)** |
 
-The four it never runs are `BMSK`, `ENDCOLLECTIVE`, `R2UR` and `WARPSYNC`. They are in the
-database because the harvest reached them, and the round trip does not because the kernels
-carrying them are among the excluded ones below. Nothing is claimed about how basalt
-schedules those four.
+The three it never runs are `ENDCOLLECTIVE`, `R2UR` and `WARPSYNC`, and the reason is
+specific rather than incidental. The harvest compiles at `-O0` as well as `-O3`, and those
+three appear only at `-O0`: `shfl.sync` and `bar.sync` lower to them there and the optimiser
+folds them away by `-O3`. The round trip deliberately does not run `-O0`, because that level
+emits a zeroed control word, so there is no schedule to replace and nothing the comparison
+would prove.
+
+So they are in the database legitimately and are unreachable by this control by
+construction. Nothing is claimed about how basalt schedules them.
+
+`BMSK` used to be in that group for the same reason, reachable only through `bfi.b32` at
+`-O0`. Written directly as `bmsk.clamp.b32` it survives `-O3`, so a kernel was added that
+does, and it is now covered.
 
 This is the number to attack. Every correction in this document came from widening what
 gets run, twice from the corpus growing and once from running the same kernels against more

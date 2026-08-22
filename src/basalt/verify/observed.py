@@ -49,6 +49,12 @@ __all__ = ["ObservedStalls", "StallEvidence", "mine_program"]
 # treated as authoritative.
 MIN_OBSERVATIONS = 3
 
+# Control transfers to code this analysis has not read. Kept in step with the
+# scheduler's set of the same name: a call reads what its operands cannot show,
+# so both sides have to treat it that way or the evidence and the consumer of
+# the evidence disagree.
+_OPAQUE_TRANSFERS = frozenset({"CALL", "RET", "BRX", "JMX", "RTT", "BPT"})
+
 
 @dataclass
 class StallEvidence:
@@ -330,7 +336,14 @@ def mine_program(program: Program, into: ObservedStalls) -> None:
             wait_mask = instr.word.field("wait_mask")
             satisfied |= {producer for producer, sb in signalled.items() if (wait_mask >> sb) & 1}
 
-            for reg in access.real_uses:
+            # A call reads registers its operand text cannot show: the return
+            # address it was handed, and whatever the callee touches. The
+            # scheduler already treats one as reading everything live, and the
+            # miner has to agree or it collects no evidence about the pairing at
+            # all and the scheduler falls back to a guess.
+            consumed = set(last_def) if instr.opcode in _OPAQUE_TRANSFERS else access.real_uses
+
+            for reg in consumed:
                 if (previous := last_def.get(reg)) is None:
                     continue
                 # a guard is resolved at issue rather than at operand read, so
@@ -387,11 +400,18 @@ def mine_corpus(
     tc,
     *,
     arch: str = "sm_120a",
-    # -O3 only, deliberately. At -O0 ptxas does not run its scheduling pass at
-    # all: every control word comes out zeroed, no stalls and no scoreboards,
-    # and the code still runs correctly because a zero stall is the safe
-    # encoding. Mining that would record a requirement of zero for everything.
-    opt_levels: tuple[int, ...] = (3,),
+    # Every level that actually schedules. `-O0` is excluded and always will be:
+    # `ptxas` does not run its scheduling pass there at all, every control word
+    # comes out zeroed, and the code still runs because a zero stall is the safe
+    # encoding, so mining it would record a requirement of zero for everything.
+    #
+    # `-O1` and `-O2` are included because they emit code `-O3` does not. The
+    # uniform datapath is the case that forced this: at `-O3` a loop is unrolled
+    # into ordinary registers, and at `-O1` the same loop keeps its counter in
+    # uniform ones, so `UIADD3` and `UIMAD` had no mined pairings at all and
+    # fell back to an assumed latency of 4 when the requirement is 5. That is a
+    # wrong answer in the silent direction, and the round trip at `-O1` found it.
+    opt_levels: tuple[int, ...] = (1, 2, 3),
     jobs: int | None = None,
     progress: bool = True,
 ) -> ObservedStalls:

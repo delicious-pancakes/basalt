@@ -232,6 +232,19 @@ LOOP5:
     add.s32 %r5, %r4, %r2;
     st.global.u32 [%out], %r5;""",
         ),
+        # `BMSK` is in the database from the -O0 harvest, where `bfi.b32`
+        # lowers to it, and at -O3 that kernel folds it away. Written directly
+        # it survives, which puts the opcode inside the hardware round trip
+        # instead of only inside the database.
+        _kernel(
+            "s_bit_mask",
+            """    ld.global.u32 %r1, [%in];
+    ld.global.u32 %r2, [%in+4];
+    bmsk.clamp.b32 %r3, %r1, %r2;
+    bmsk.wrap.b32 %r4, %r1, %r2;
+    add.s32 %r5, %r3, %r4;
+    st.global.u32 [%out], %r5;""",
+        ),
         # Nested loops, so one back edge sits inside another.
         _kernel(
             "s_nested_loops",

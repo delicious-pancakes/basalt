@@ -490,7 +490,18 @@ def schedule_program(
                     continue
                 access = operand_access(instr.mnemonic, instr.operands)
 
-                for reg in sorted(access.real_uses, key=str):
+                # A call reads registers its operand text cannot show. The
+                # return address is the plain case: `MOV R4, 0x90` puts the
+                # address of the instruction after the call into R4, and
+                # `CALL.REL.NOINC` consumes it without naming it, so the
+                # dependency is invisible and the `MOV` gets no gap in front of
+                # the call. The callee is free to read anything else too.
+                #
+                # So an opaque transfer is treated as reading everything live.
+                # Same reasoning as the wait it already emits for every
+                # outstanding scoreboard, applied to the stall side.
+                consumed = set(last_def) if instr.opcode in _OPAQUE_TRANSFERS else access.real_uses
+                for reg in sorted(consumed, key=str):
                     for producer in last_def.get(reg, ()):
                         record = model.lookup(producer.opcode)
                         if producer.kind is LatencyClass.FIXED:
