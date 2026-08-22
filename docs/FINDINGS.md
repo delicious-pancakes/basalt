@@ -445,6 +445,25 @@ write scoreboards, so treating every scoreboarded instruction as a late reader i
 conservative approximation of anything. Recorded so the next attempt does not spend the
 same afternoon on it.
 
+### How much of the ISA this actually covers
+
+"Every comparable kernel" is a claim about kernels, and the useful question is how much of
+the instruction set they contain between them:
+
+| | |
+| :--- | ---: |
+| Opcodes in the database | 77 |
+| Opcodes the round trip executes on the GPU | **73 (95%)** |
+
+The four it never runs are `BMSK`, `ENDCOLLECTIVE`, `R2UR` and `WARPSYNC`. They are in the
+database because the harvest reached them, and the round trip does not because the kernels
+carrying them are among the excluded ones below. Nothing is claimed about how basalt
+schedules those four.
+
+This is the number to attack. Every correction in this document came from widening what
+gets run, twice from the corpus growing and once from running the same kernels against more
+than one input, so the ceiling here is coverage rather than cleverness.
+
 ### What is still excluded
 
 12 kernels that are not runnable by construction, 2 whose vendor output is not
