@@ -442,7 +442,11 @@ def generate() -> list[Snippet]:
         ),
         _special(
             "loop",
+            # the trip count comes from the input, and the round trip feeds four
+            # arbitrary byte patterns, so unmasked this runs up to 2^31 times per
+            # launch and costs more than the rest of the corpus put together
             "    ld.global.b32 %r1, [%in];\n"
+            "    and.b32 %r1, %r1, 63;\n"
             "    mov.u32 %r2, 0;\n"
             "LOOP:\n"
             "    add.s32 %r2, %r2, %r1;\n"

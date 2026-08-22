@@ -63,6 +63,7 @@ import json
 import os
 import subprocess
 import sys
+import time
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
@@ -351,12 +352,17 @@ def main() -> int:
         worker(work, args.worker)
         return 0
 
+    started = time.perf_counter()
     manifest = build(work, set(args.only) if args.only else None, args.opt)
     if not manifest:
         raise SystemExit("nothing built; is the toolchain on PATH or BASALT_CUDA_BIN?")
-    print(f"built {len(manifest)} vendor and rescheduled cubin pairs")
+    compiled = time.perf_counter()
+    print(f"built {len(manifest)} vendor and rescheduled cubin pairs in {compiled - started:.1f}s")
 
     verdicts = drive(work, manifest)
+    # timed because a single kernel once took 165 of the 170 seconds this spends
+    # on the card, and nothing in the output said so
+    print(f"ran them in {time.perf_counter() - compiled:.1f}s")
     if args.report:
         args.report.write_text(
             json.dumps(
