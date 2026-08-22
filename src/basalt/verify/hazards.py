@@ -199,7 +199,7 @@ def _check_instruction(
                 continue
 
             if producer_record.kind is LatencyClass.FIXED:
-                required, source = _requirement(
+                required, source, grounded = _requirement(
                     producer.mnemonic,
                     instr.opcode,
                     producer_record,
@@ -208,9 +208,12 @@ def _check_instruction(
                 )
                 if rd.elapsed >= required or not recording:
                     continue
+                # grounded means the number came from hardware or from what
+                # the vendor actually schedules, either of which is enough to
+                # call a shortfall an error rather than a suspicion
                 severity = (
                     Severity.ERROR
-                    if producer_record.confidence is Confidence.MEASURED
+                    if grounded or producer_record.confidence is Confidence.MEASURED
                     else Severity.WARNING
                 )
                 _add(
@@ -475,8 +478,16 @@ def _requirement(
     observed: ObservedStalls | None,
     *,
     guard: bool = False,
-) -> tuple[int, str]:
-    """How many cycles this pairing needs, and where that number came from.
+) -> tuple[int, str, bool]:
+    """How many cycles this pairing needs, where that came from, and how firmly.
+
+    The third value says whether the number is grounded: measured on hardware or
+    mined from what the vendor actually schedules, as opposed to an assumed
+    producer latency. It decides whether falling short is an error or a warning,
+    and it has to come from here because the strength of a requirement belongs to
+    the requirement rather than to the producer's generic latency entry. Deciding
+    it from the latter reported `IADD -> STG` at one cycle of the five the vendor
+    never goes below as a warning, and the GPU computes a different answer there.
 
     A per-pair observation beats the producer's generic latency when one exists,
     because the requirement really does depend on both ends: a consumer that
@@ -497,14 +508,17 @@ def _requirement(
                 evidence.minimum,
                 f"{evidence.producer} -> {evidence.consumer} is scheduled no tighter than "
                 f"{evidence.minimum} cycles across {evidence.observations} observations",
+                True,  # only trusted evidence reaches here, three observations or more
             )
     if guard:
         return (
             GUARD_CYCLES,
             f"a guard predicate needs {GUARD_CYCLES} cycles, measured "
             f"(see docs/FINDINGS.md); {producer} is fixed latency",
+            True,
         )
     return (
         record.cycles,
         f"{producer} latency is {record.confidence} ({record.note or 'no note'})",
+        False,
     )
