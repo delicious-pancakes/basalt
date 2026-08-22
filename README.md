@@ -122,8 +122,15 @@ Everything else, in one place:
 | `validate-isa` | Prove the measured fields can be written through | no |
 | `mine-stalls` | Learn per-pair requirements from what the compiler schedules | no |
 | `verify` | Check a cubin's control bits for data hazards | no |
+| `schedule` | Assign a cubin's control bits from scratch and check the result | no |
 | `measure` | Time instruction latency on real silicon | **yes** |
 | `probe-stalls` | Find the required stall by breaking programs on purpose | **yes** |
+
+And the control that keeps the rest honest, which does need a card:
+
+```bash
+python scripts/roundtrip_corpus.py    # reschedule all 317 corpus kernels, run both on the GPU
+```
 
 ```console
 $ python -m basalt.cli verify kernel.cubin --latencies data/latency/rtx-5070-ti.json
@@ -203,7 +210,7 @@ src/basalt/
 data/isa/          Generated database, tracked so consumers need no harvest
 data/latency/      Measured latency, one file per GPU it was measured on
 docs/              Method, roadmap, artwork sources
-scripts/           Toolchain fetch, asset rendering, database drift check
+scripts/           Toolchain fetch, asset rendering, database drift, corpus round trip
 tests/             Unit tests, plus toolchain- and GPU-marked suites
 ```
 
