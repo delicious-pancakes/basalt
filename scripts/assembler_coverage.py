@@ -29,8 +29,10 @@ No GPU is needed. `ptxas` and `nvdisasm` are enough.
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 from collections import Counter
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import _repo
@@ -76,12 +78,10 @@ def main() -> int:
         wanted = {name.strip() for name in args.only.split(",")}
         snippets = [s for s in snippets if s.name in wanted]
 
-    exact = wrong = refused = 0
-    kernels = 0
-    reasons: Counter[str] = Counter()
-    wrong_kernels: list[tuple[str, int]] = []
-
-    for index, snippet in enumerate(snippets):
+    # every kernel is independent, and the work is two subprocess calls apiece,
+    # so this is one core's worth of waiting per kernel unless it is spread out
+    def one(numbered: tuple[int, object]):
+        index, snippet = numbered
         src = work / f"{index:04d}.ptx"
         src.write_text(snippet.ptx)
         cubin = work / f"{index:04d}.cubin"
@@ -91,28 +91,40 @@ def main() -> int:
             timeout=60.0,
         )
         if built.returncode != 0:
-            continue
+            return None
 
         program = disassemble_program(tc, cubin)
         result = assemble_program(program, database)
-        kernels += 1
 
+        counted = Counter()
         mismatched = 0
         for instruction, produced in zip(program.instructions, result.words, strict=True):
             if instruction.word is None:
                 continue
             if produced is None:
-                refused += 1
+                counted["refused"] += 1
             elif produced.value == instruction.word.value:
-                exact += 1
+                counted["exact"] += 1
             else:
-                wrong += 1
+                counted["wrong"] += 1
                 mismatched += 1
-        for _, _, reason in result.refused:
-            # the field name is the useful part; the operand text is not
-            reasons[reason.split(":")[0][:70]] += 1
-        if mismatched:
-            wrong_kernels.append((snippet.name, mismatched))
+        # the field name is the useful part; the operand text is not
+        why = Counter(reason.split(":")[0][:70] for _, _, reason in result.refused)
+        return counted, why, (snippet.name, mismatched) if mismatched else None
+
+    with ThreadPoolExecutor(max_workers=os.cpu_count() or 4) as pool:
+        outcomes = [r for r in pool.map(one, enumerate(snippets)) if r is not None]
+
+    kernels = len(outcomes)
+    totals: Counter[str] = Counter()
+    reasons: Counter[str] = Counter()
+    wrong_kernels: list[tuple[str, int]] = []
+    for counted, why, bad in outcomes:
+        totals.update(counted)
+        reasons.update(why)
+        if bad:
+            wrong_kernels.append(bad)
+    exact, refused, wrong = totals["exact"], totals["refused"], totals["wrong"]
 
     considered = exact + refused + wrong
     print(f"\n{_repo.provenance()}")
