@@ -195,6 +195,20 @@ Adding the second, third and fourth immediately exposed a carry-out predicate th
 model had been reading as a source since the beginning, which had survived every control
 above it including the round trip.
 
+**Three optimisation levels, not one.** `-O1`, `-O2` and `-O3` are three different vendor
+schedules to replace rather than one, and they exercise different machinery: `-O3` unrolls a
+loop into ordinary registers where `-O1` keeps its counter in uniform ones. The uniform
+datapath had no coverage at all while only `-O3` was run, and two kernels were being
+scheduled wrong in it. A third bug lived at `-O1` alone, in a tensor kernel whose read
+barrier depended on gaps basalt had compressed. A control that runs at one level is a
+control over one code generator setting.
+
+**Every result names the code that produced it.** Each sweep prints the source tree and
+commit it imported above its verdicts. That is not bookkeeping: an editable install pointing
+at a stale clone elsewhere on the disk shadowed the working tree for fifty-four commits, and
+because the output was only verdicts there was nothing in it to show that the numbers
+described different source than the one being edited.
+
 **Assembling back to the vendor's bytes.** Every instruction `ptxas` emits is disassembled
 to text and assembled back, and the result has to be the same 128 bits. Coverage is allowed
 to be partial and is reported; the count of instructions that assemble to *different* bytes
