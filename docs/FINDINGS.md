@@ -640,6 +640,29 @@ runs once, and pinning their stalls would cost cycles to protect nothing. More g
 control can arrive at a branch target from anywhere, so whatever gap the fall-through path
 happened to have is not a guarantee `ptxas` is relying on either.
 
+**What the window actually needs, and what the rule costs.** The rule above is conservative
+by construction, and it is worth knowing by how much. Holding the kernel at the vendor's
+schedule and sweeping only the stall on the run of four loads:
+
+| Stall on each load | Result |
+| ---: | :--- |
+| 0 | correct, and 0 is the long-wait encoding rather than a short gap |
+| **1** | **wrong** |
+| 2 | correct |
+| 3 to 8 | correct |
+| *vendor leaves 4* | |
+
+Reproducible across repeated runs, and deterministic rather than a race. Two things follow.
+The hazard is real: one cycle is not enough and the answer is wrong every time, so the
+window is not an artifact of the harness. And the true requirement here is 2 where `ptxas`
+leaves 4 and basalt therefore also leaves 4, which is two cycles per load spent to avoid
+guessing.
+
+That is deliberately not turned into a model. One pattern of four `LDG.E` in one kernel is a
+data point, not a latency, and this is exactly the shape of evidence that produced the wrong
+answer in finding 7. The rule stays "do not make the window tighter than the vendor made
+it", and the number above records what it costs rather than justifying a shortcut.
+
 ## 14. A modifier is one bit, and it is nowhere near its operand
 
 `IADD R5, R4, -R0` and `IADD R5, R4, R0` differ by one character of text and one bit of
