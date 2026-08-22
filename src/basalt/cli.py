@@ -68,17 +68,95 @@ def _doctor(args: argparse.Namespace) -> int:
             print(f"FAIL  probe oracle nvdisasm -b {arch_raw} rejected the batch", file=sys.stderr)
             return 1
 
-        agree = sum(1 for a, b in zip(insns, back) if a.mnemonic == b.mnemonic)
+        agree = sum(1 for a, b in zip(insns, back) if b is not None and a.mnemonic == b.mnemonic)
         status = "ok   " if agree == len(insns) else "WARN "
         print(f"{status} probe oracle {agree}/{len(insns)} mnemonics round-tripped")
 
         if agree != len(insns):
             for a, b in zip(insns, back):
-                if a.mnemonic != b.mnemonic:
-                    print(f"        cubin={a.text!r}  probe={b.text!r}")
+                if b is None or a.mnemonic != b.mnemonic:
+                    print(f"        cubin={a.text!r}  probe={b.text if b else None!r}")
             return 1
 
     print("\nboth oracles healthy. no GPU required for anything above.")
+    return 0
+
+
+DEFAULT_DB = "data/isa/sm_120a.json"
+
+
+def _build_isa(args: argparse.Namespace) -> int:
+    """Run harvest and probe, then write the database."""
+    from pathlib import Path
+
+    from .isa.build import build_database
+    from .toolchain import ToolchainError, find_toolchain
+
+    try:
+        tc = find_toolchain(args.cuda_bin)
+    except ToolchainError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+
+    db, _ = build_database(
+        tc,
+        arch=args.arch,
+        include_tensor=not args.no_tensor,
+        harvest_out=Path(args.harvest_out) if args.harvest_out else None,
+    )
+    out = Path(args.out)
+    db.write(out)
+    print(f"\nwrote {out} ({out.stat().st_size / 1e6:.1f} MB)")
+    return 0
+
+
+def _isa(args: argparse.Namespace) -> int:
+    """Query the database."""
+    from pathlib import Path
+
+    from .isa.database import IsaDatabase
+
+    path = Path(args.db)
+    if not path.exists():
+        print(f"error: {path} not found; run `basalt build-isa` first", file=sys.stderr)
+        return 1
+
+    db = IsaDatabase.read(path)
+
+    if args.stats:
+        print(f"arch {db.arch}  built with ptxas {db.cuda_version}  {db.generated_utc}")
+        for k, v in db.coverage().items():
+            print(f"  {k.replace('_', ' '):<24} {v}")
+        return 0
+
+    if args.opcode:
+        forms = db.by_opcode(args.opcode.upper())
+        if not forms:
+            print(f"no forms for opcode {args.opcode.upper()}", file=sys.stderr)
+            return 1
+        for f in forms:
+            print(f.describe())
+        return 0
+
+    if args.mnemonic:
+        form = db.get(args.mnemonic.upper())
+        if form is None:
+            print(f"unknown form {args.mnemonic.upper()}", file=sys.stderr)
+            return 1
+        print(f"{form.mnemonic}")
+        print(f"  example    {form.operand_text}")
+        print(f"  encoding   {form.encoding}")
+        print(f"  from       {form.source_label} ({form.source_family})")
+        for o in form.operands:
+            print(f"  operand[{o.slot}] {o.width:3d} bits at {o.describe()}")
+            if o.example_before:
+                print(f"              {o.example_before}  ->  {o.example_after}")
+        print(f"  opcode     {len(form.opcode_bits)} bits")
+        print(f"  inert      {len(form.inert_bits)} bits")
+        return 0
+
+    for name in sorted(db.forms):
+        print(name)
     return 0
 
 
@@ -91,8 +169,19 @@ def main(argv: list[str] | None = None) -> int:
     sub = ap.add_subparsers(dest="command", required=True)
     sub.add_parser("doctor", help="verify the toolchain and both oracles")
 
+    b = sub.add_parser("build-isa", help="harvest and probe, then write the ISA database")
+    b.add_argument("-o", "--out", default=DEFAULT_DB)
+    b.add_argument("--harvest-out", default=None, help="also write the raw harvest record")
+    b.add_argument("--no-tensor", action="store_true", help="skip the tensor-core corpus")
+
+    q = sub.add_parser("isa", help="query the ISA database")
+    q.add_argument("mnemonic", nargs="?", help="show one form in detail")
+    q.add_argument("--db", default=DEFAULT_DB)
+    q.add_argument("--opcode", help="list every form of one opcode")
+    q.add_argument("--stats", action="store_true", help="print coverage")
+
     args = ap.parse_args(argv)
-    return {"doctor": _doctor}[args.command](args)
+    return {"doctor": _doctor, "build-isa": _build_isa, "isa": _isa}[args.command](args)
 
 
 if __name__ == "__main__":

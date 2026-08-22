@@ -146,7 +146,7 @@ def probe_word(
     batching is the difference between a usable probe and an unusable one.
     """
     decoded = decode_words(tc, [base], arch=arch)
-    if not decoded or not decoded[0].is_valid:
+    if not decoded or decoded[0] is None or not decoded[0].is_valid:
         return None
     origin = decoded[0]
 
@@ -155,15 +155,6 @@ def probe_word(
     results = decode_words(tc, mutants, arch=arch)
 
     fmap = FieldMap(mnemonic=origin.mnemonic, base_encoding=str(base))
-
-    if len(results) != len(mutants):
-        # nvdisasm bailed partway through the batch; fall back to per-word calls
-        # for the tail so one undecodable mutation does not blind the whole probe
-        results = list(results) + [None] * (len(mutants) - len(results))  # type: ignore[list-item]
-        for i in range(len(results)):
-            if results[i] is None:
-                got = decode_words(tc, [mutants[i]], arch=arch)
-                results[i] = got[0] if got else None  # type: ignore[index]
 
     for bit, mutant in zip(bits, results):
         role = _classify(origin, mutant, bit)

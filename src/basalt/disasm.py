@@ -24,7 +24,7 @@ import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
-from .encoding import Word
+from .encoding import WORD_BYTES, Word
 from .toolchain import Toolchain
 
 __all__ = ["Instruction", "disassemble_cubin", "decode_words", "decode_word", "raw_arch"]
@@ -138,42 +138,80 @@ def disassemble_cubin(tc: Toolchain, cubin: Path, *, arch: str = "SM120a") -> li
     return [i for i in _parse(res.stdout) if i.word is not None]
 
 
+# nvdisasm error   : Unrecognized operation for functional unit 'uC' at address 0x00000010
+_ERR_ADDR = re.compile(r"at address\s+(0x[0-9a-fA-F]+)")
+
+
+def _run_raw(tc: Toolchain, words: list[Word], arch: str) -> tuple[int, str, str]:
+    blob = b"".join(w.to_bytes() for w in words)
+    with tempfile.TemporaryDirectory(prefix="basalt-probe-") as tmp:
+        path = Path(tmp) / "probe.bin"
+        path.write_bytes(blob)
+        res = tc.run([str(tc.nvdisasm), "-b", arch, str(path)], check=False, timeout=300.0)
+    return res.returncode, res.stdout, res.stderr
+
+
+def _decode_span(
+    tc: Toolchain,
+    words: list[Word],
+    arch: str,
+    start: int,
+    end: int,
+    out: list[Instruction | None],
+) -> None:
+    """Decode words[start:end], recording None for any word nvdisasm rejects.
+
+    Raw mode aborts the whole file on the first illegal instruction and prints
+    nothing, so a batch containing one bad word yields no output for the good
+    ones either. It does name the offset it choked on, which is enough to split
+    the span around the offender instead of falling back to one process per
+    word. That difference is roughly two orders of magnitude on a full probe.
+    """
+    if start >= end:
+        return
+
+    rc, stdout, stderr = _run_raw(tc, words[start:end], arch)
+
+    if rc == 0:
+        for instr in _parse(stdout):
+            idx = start + instr.offset // WORD_BYTES
+            if start <= idx < end:
+                out[idx] = Instruction(instr.offset, instr.text, words[idx])
+        return
+
+    if (m := _ERR_ADDR.search(stderr)) is not None:
+        bad = start + int(m.group(1), 16) // WORD_BYTES
+        if start <= bad < end:
+            _decode_span(tc, words, arch, start, bad, out)      # clean prefix
+            out[bad] = None                                     # the offender
+            _decode_span(tc, words, arch, bad + 1, end, out)    # the rest
+            return
+
+    # no usable address in the diagnostic: bisect rather than give up, so a
+    # single unparseable failure costs log(n) calls instead of the whole span
+    if end - start == 1:
+        out[start] = None
+        return
+    mid = (start + end) // 2
+    _decode_span(tc, words, arch, start, mid, out)
+    _decode_span(tc, words, arch, mid, end, out)
+
+
 def decode_words(
     tc: Toolchain,
     words: list[Word] | list[int],
     *,
     arch: str = "SM120a",
-) -> list[Instruction]:
+) -> list[Instruction | None]:
     """Probe oracle: ask nvdisasm what an arbitrary sequence of words means.
 
-    Words are decoded in one batch because process startup dominates the cost
-    by two orders of magnitude; the prober routinely pushes tens of thousands
-    of candidates through a single call.
+    Returns a list positionally aligned with the input, holding None wherever
+    nvdisasm refused to decode. Callers rely on that alignment: for the prober,
+    "this word is not a legal instruction" is a measurement, not a failure.
     """
     normalised = [w if isinstance(w, Word) else Word(w) for w in words]
-    blob = b"".join(w.to_bytes() for w in normalised)
-
-    with tempfile.TemporaryDirectory(prefix="basalt-probe-") as tmp:
-        path = Path(tmp) / "probe.bin"
-        path.write_bytes(blob)
-        res = tc.run(
-            [str(tc.nvdisasm), "-b", arch, str(path)],
-            check=False,
-            timeout=300.0,
-        )
-
-    if res.returncode != 0:
-        # a whole-batch failure tells us nothing about which word caused it;
-        # callers that care re-run the batch one word at a time.
-        return []
-
-    parsed = _parse(res.stdout)
-
-    # raw mode emits one line per input word in order, so we can re-attach the
-    # encodings we supplied rather than asking nvdisasm to print them back.
-    out: list[Instruction] = []
-    for idx, instr in enumerate(parsed[: len(normalised)]):
-        out.append(Instruction(instr.offset, instr.text, normalised[idx]))
+    out: list[Instruction | None] = [None] * len(normalised)
+    _decode_span(tc, normalised, arch, 0, len(normalised), out)
     return out
 
 
