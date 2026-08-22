@@ -158,3 +158,15 @@ any release. The clean-room position in [`NOTICE`](NOTICE) will not.
   predicate read as data needs 5. The discriminating case is `LOP3 -> MOV`,
   which appears in the corpus both ways with both numbers, so the cost belongs
   to issue rather than to the predicate file or the opcode pair.
+- A waited-on scoreboard does not settle a dependency on its own: the producer
+  still owes a gap to its consumer, 2 cycles for `DADD`, and one cycle less
+  changes what the GPU computes.
+- The yield bit is not independent of the stall count. `ptxas` emits a zero
+  stall with the bit clear 4,205 times and set never, and a stall of one with it
+  set 1,123 times and clear never. The unseen combinations are words `nvdisasm`
+  refuses and the GPU runs anyway.
+- Where a branch keeps its destination: a field split across bits 16..23 and
+  34..81, holding the distance from the following instruction scaled by four.
+  All 354 branches in the corpus decode to their label.
+- `EXIT`, `RET`, `CALL` and `BAR` never take the zero-stall encoding, in 0 of
+  329, 0 of 5, 0 of 5 and 0 of 3 instances, while `BRA` takes it 329 times.
