@@ -1,0 +1,62 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 Sunny Patel
+name: Bug report
+description: Something in the tooling behaves incorrectly
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For a wrong or missing **instruction encoding**, use the ISA gap template instead;
+        it collects the specific evidence that report needs.
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: Include the exact command and its full output.
+      render: shell
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected instead
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: basalt version or commit
+      placeholder: 0.1.0.dev0, or a commit SHA
+    validations:
+      required: true
+
+  - type: input
+    id: ptxas
+    attributes:
+      label: ptxas version
+      description: From `ptxas --version`. Most behaviour here depends on it.
+      placeholder: V13.3.73
+    validations:
+      required: true
+
+  - type: input
+    id: platform
+    attributes:
+      label: OS and Python version
+      placeholder: Windows 11, Python 3.13
+    validations:
+      required: true
+
+  - type: input
+    id: gpu
+    attributes:
+      label: GPU, if the command needed one
+      description: Only `measure` and `probe-stalls` do.
+      placeholder: RTX 5070 Ti
+    validations:
+      required: false
