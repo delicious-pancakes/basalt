@@ -346,13 +346,15 @@ src/basalt/
   harvest/         PTX corpus generation and encoding extraction
   probe/           Differential bit probing and field inference
   isa/             The generated instruction database and its builder
-  asm/             ELF reader that locates and rewrites instruction words
+  asm/             The assembler, and the ELF reader that rewrites words in place
+  sched/           Assigning the control bits, and costing the result
   verify/          Register def-use analysis, hazard model, latency checking
   gpu/             Driver-API bindings and the latency measurement harness
 data/isa/          Generated database, tracked so consumers need no harvest
-data/latency/      Measured latency, one file per GPU it was measured on
-docs/              Method, roadmap, artwork sources
-scripts/           Toolchain fetch, asset rendering, database drift, corpus round trip
+data/latency/      Measured latency and mined stalls, one file per GPU
+docs/              Findings, method, roadmap, artwork sources
+scripts/           Toolchain fetch, asset rendering, drift check, and the two
+                   hardware controls: the corpus round trip and the agreement sweep
 tests/             Unit tests, plus toolchain- and GPU-marked suites
 ```
 
