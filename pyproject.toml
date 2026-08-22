@@ -35,7 +35,7 @@ classifiers = [
 dependencies = []
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "pytest-cov>=5", "ruff>=0.6"]
+dev = ["pytest>=8", "pytest-cov>=5", "ruff>=0.6", "mypy>=1.11"]
 
 [project.urls]
 Homepage = "https://github.com/sunnypatell/basalt"
@@ -62,6 +62,12 @@ markers = [
   "gpu: needs a physical sm_120 device",
   "slow: takes minutes; the full-corpus control lives here",
 ]
+
+[tool.mypy]
+python_version = "3.11"
+files = ["src/basalt"]
+# ctypes-heavy driver code and the NVIDIA binaries have no stubs to find
+ignore_missing_imports = true
 
 [tool.ruff]
 line-length = 100

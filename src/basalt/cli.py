@@ -63,7 +63,8 @@ def _doctor(args: argparse.Namespace) -> int:
         print(f"ok    cubin oracle{'':1s} {len(insns)} instructions with encodings")
 
         arch_raw = raw_arch(args.arch)
-        back = decode_words(tc, [i.word for i in insns], arch=arch_raw)
+        # an instruction the listing gave no encoding for has nothing to decode
+        back = decode_words(tc, [i.word for i in insns if i.word is not None], arch=arch_raw)
         if not back:
             print(f"FAIL  probe oracle nvdisasm -b {arch_raw} rejected the batch", file=sys.stderr)
             return 1

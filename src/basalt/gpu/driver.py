@@ -126,7 +126,8 @@ class Module:
 
     def __init__(self, device: Device, handle: CUmodule) -> None:
         self._device = device
-        self._handle = handle
+        # cleared on unload, so it outlives the handle it was given
+        self._handle: CUmodule | None = handle
         self._lib = device._lib
 
     def function(self, name: str) -> CUfunction:

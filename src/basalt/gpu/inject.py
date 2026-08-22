@@ -210,11 +210,8 @@ def probe_required_stall(
                 rejected=f"no adjacent dependent {spec.opcode} pair survived compilation",
             )
         producer, consumer = pair
-        scheduled = sum(
-            program.instructions[i].word.field("stall")
-            for i in range(producer, consumer)
-            if program.instructions[i].word is not None
-        )
+        between = [program.instructions[i].word for i in range(producer, consumer)]
+        scheduled = sum(word.field("stall") for word in between if word is not None)
 
         # if the compiler covered this dependency with a scoreboard, the stall
         # is not what makes it safe, and sweeping the stall would report a

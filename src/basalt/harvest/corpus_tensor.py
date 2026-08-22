@@ -267,11 +267,11 @@ def generate_tensor() -> list[Snippet]:
                 )
             )
 
-            loads = "\n".join(f"    ld.global.b32 %r{i + 1}, [%in+{4 * i}];" for i in range(n))
+            load_text = "\n".join(f"    ld.global.b32 %r{i + 1}, [%in+{4 * i}];" for i in range(n))
             regs = _regs("r", n)
             shape = f"m8n8.{count}{trans}"
             body = (
-                f"{loads}\n"
+                f"{load_text}\n"
                 "    mov.u32 %m1, tile;\n"
                 f"    stmatrix.sync.aligned.{shape}.shared.b16 [%m1], {regs};\n"
                 "    st.global.b32 [%out], %r1;"

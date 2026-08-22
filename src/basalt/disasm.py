@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import re
 import tempfile
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -324,7 +325,7 @@ def _decode_span(
 
 def decode_words(
     tc: Toolchain,
-    words: list[Word] | list[int],
+    words: Sequence[Word | int],
     *,
     arch: str = "SM120a",
 ) -> list[Instruction | None]:

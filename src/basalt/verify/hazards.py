@@ -131,7 +131,11 @@ class VerificationReport:
         )
 
 
-def _add(report: VerificationReport, seen: set[tuple], hazard: Hazard) -> None:
+def _add(report: VerificationReport | None, seen: set[tuple] | None, hazard: Hazard) -> None:
+    # callers only reach here on the recording pass; taking the optional rather
+    # than asserting keeps the convergence pass free of a branch it never takes
+    if report is None or seen is None:
+        return
     if hazard.key not in seen:
         seen.add(hazard.key)
         report.hazards.append(hazard)
