@@ -500,8 +500,7 @@ rather than trusted. With it, assembling every corpus kernel as a whole program 
 ## 12. What the correctness costs
 
 A scheduler that reports only whether it was right is hiding the trade it made. basalt's
-schedules are correct on every comparable corpus kernel and they are slower than the
-vendor's:
+schedules are correct on every comparable corpus kernel, and here is what they cost:
 
 | | Issue cycles |
 | :--- | ---: |
@@ -576,6 +575,14 @@ Stated so the boundary of the evidence is visible.
   hold across sm_120 parts with different SM counts is exactly the sort of thing that should
   not be assumed, and basalt records the part alongside every measurement so a second card can
   be compared rather than merged.
+- **The scoreboard residual is not checked across a block boundary.** A waited-on
+  scoreboard still leaves a gap the producer has to cover (finding 7), and that gap is
+  mined one block at a time because a distance that spans a branch depends on which path
+  was taken. So a definition that reaches its consumer through an edge is exempted from
+  that one rule rather than judged against evidence collected somewhere looser. Reaching
+  definitions carry a `crossed` flag for exactly this, and every other rule still applies
+  to them. It is a gap in the checker's coverage, not a wrong answer, and the round trip
+  covers the same ground from the other side.
 - **Most opcodes still carry assumed latencies.** The model marks them as such, and a hazard
   derived from an assumed number is reported as a warning rather than an error. The difference
   between a lead and a finding is where the number came from.
