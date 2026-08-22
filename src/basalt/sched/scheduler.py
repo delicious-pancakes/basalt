@@ -362,6 +362,13 @@ def schedule_program(
 
             record = model.lookup(instr.opcode)
             if record.kind is LatencyClass.VARIABLE and access.real_defs:
+                # Read barriers are inherited with the vendor's numbering and are
+                # deliberately not reserved here. A scoreboard is a counter, so
+                # landing a write barrier on one already carrying a read barrier
+                # makes every wait on it cover both, which is longer than needed
+                # and never shorter. `k_mma_m16n8k32_s4_s4_s32` is that case and
+                # matches the vendor on the card.
+                #
                 # lowest free index, so a kernel's scoreboards read in issue order
                 free = next((sb for sb in range(SCOREBOARDS) if sb not in protects), None)
                 if free is not None:
