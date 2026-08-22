@@ -57,21 +57,27 @@ def fetch(url: str, dest: Path) -> Path:
         print(f"  cached  {dest.name}")
         return dest
     print(f"  fetch   {dest.name}")
-    with urllib.request.urlopen(url) as resp, dest.open("wb") as out:  # noqa: S310
+    with urllib.request.urlopen(url) as resp, dest.open("wb") as out:
         shutil.copyfileobj(resp, out)
     return dest
 
 
 def manifest(version: str) -> dict:
     url = f"{REDIST_BASE}/redistrib_{version}.json"
-    with urllib.request.urlopen(url) as resp:  # noqa: S310
+    with urllib.request.urlopen(url) as resp:
         return json.load(resp)
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--version", default=DEFAULT_VERSION, help=f"CUDA release (default {DEFAULT_VERSION})")
-    ap.add_argument("--dest", type=Path, default=None, help="install root (default third_party/cuda)")
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    ap.add_argument(
+        "--version", default=DEFAULT_VERSION, help=f"CUDA release (default {DEFAULT_VERSION})"
+    )
+    ap.add_argument(
+        "--dest", type=Path, default=None, help="install root (default third_party/cuda)"
+    )
     ap.add_argument("--list", action="store_true", help="list components in the manifest and exit")
     args = ap.parse_args()
 
@@ -82,7 +88,7 @@ def main() -> int:
         for name, entry in sorted(man.items()):
             if isinstance(entry, dict) and key in entry:
                 mb = entry[key]["size"] / 1e6
-                print(f"{name:22s} {mb:8.1f} MB  {entry.get('version','')}")
+                print(f"{name:22s} {mb:8.1f} MB  {entry.get('version', '')}")
         return 0
 
     root = (args.dest or DEST) / args.version
@@ -95,11 +101,15 @@ def main() -> int:
         if entry is None:
             print(f"  skip    {comp} (not published for {key})")
             continue
-        archive = fetch(f"{REDIST_BASE}/{entry['relative_path']}", cache / Path(entry["relative_path"]).name)
+        archive = fetch(
+            f"{REDIST_BASE}/{entry['relative_path']}", cache / Path(entry["relative_path"]).name
+        )
 
         digest = hashlib.sha256(archive.read_bytes()).hexdigest()
         if (expected := entry.get("sha256")) and digest != expected:
-            raise SystemExit(f"checksum mismatch for {archive.name}\n  expected {expected}\n  got      {digest}")
+            raise SystemExit(
+                f"checksum mismatch for {archive.name}\n  expected {expected}\n  got      {digest}"
+            )
 
         with zipfile.ZipFile(archive) as zf:
             zf.extractall(root / "_raw")

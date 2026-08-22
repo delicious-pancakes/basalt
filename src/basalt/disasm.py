@@ -27,7 +27,7 @@ from pathlib import Path
 from .encoding import WORD_BYTES, Word
 from .toolchain import Toolchain
 
-__all__ = ["Instruction", "disassemble_cubin", "decode_words", "decode_word", "raw_arch"]
+__all__ = ["Instruction", "decode_word", "decode_words", "disassemble_cubin", "raw_arch"]
 
 
 def raw_arch(arch: str) -> str:
@@ -182,9 +182,9 @@ def _decode_span(
     if (m := _ERR_ADDR.search(stderr)) is not None:
         bad = start + int(m.group(1), 16) // WORD_BYTES
         if start <= bad < end:
-            _decode_span(tc, words, arch, start, bad, out)      # clean prefix
-            out[bad] = None                                     # the offender
-            _decode_span(tc, words, arch, bad + 1, end, out)    # the rest
+            _decode_span(tc, words, arch, start, bad, out)  # clean prefix
+            out[bad] = None  # the offender
+            _decode_span(tc, words, arch, bad + 1, end, out)  # the rest
             return
 
     # no usable address in the diagnostic: bisect rather than give up, so a

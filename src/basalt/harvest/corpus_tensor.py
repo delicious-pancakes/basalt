@@ -28,15 +28,15 @@ __all__ = ["generate_tensor"]
 class MmaForm:
     """One `mma.sync` variant and the operand widths it expects."""
 
-    shape: str          # e.g. m16n8k32
+    shape: str  # e.g. m16n8k32
     atype: str
     btype: str
-    ctype: str          # accumulator / result element type
-    na: int             # number of 32-bit A fragment registers
+    ctype: str  # accumulator / result element type
+    na: int  # number of 32-bit A fragment registers
     nb: int
     nc: int
-    kind: str = ""      # e.g. kind::f8f6f4
-    scale: str = ""     # e.g. ue8m0, implies block_scale
+    kind: str = ""  # e.g. kind::f8f6f4
+    scale: str = ""  # e.g. ue8m0, implies block_scale
     scale_vec: str = ""  # e.g. scale_vec::4X
     layout: str = "row.col"
 
@@ -78,12 +78,7 @@ def _mma_kernel(name: str, form: MmaForm) -> str:
         types += f".{form.scale}"
 
     dst = _regs(acc_reg, form.nc, base=form.nc + 1)
-    operands = (
-        f"{dst},"
-        f"{_regs('a', form.na)},"
-        f"{_regs('b', form.nb)},"
-        f"{_regs(acc_reg, form.nc)}"
-    )
+    operands = f"{dst},{_regs('a', form.na)},{_regs('b', form.nb)},{_regs(acc_reg, form.nc)}"
     if form.scale:
         operands += ",%s1,{0,0},%s2,{0,0}"
 
@@ -183,9 +178,16 @@ def _block_scaled_forms() -> list[MmaForm]:
     for scale, vec in (("ue8m0", ""), ("ue4m3", "scale_vec::4X"), ("ue8m0", "scale_vec::2X")):
         forms.append(
             MmaForm(
-                "m16n8k64", "e2m1", "e2m1", "f32", 4, 2, 4,
+                "m16n8k64",
+                "e2m1",
+                "e2m1",
+                "f32",
+                4,
+                2,
+                4,
                 kind="kind::mxf4nvf4" if vec else "kind::mxf4",
-                scale=scale, scale_vec=vec,
+                scale=scale,
+                scale_vec=vec,
             )
         )
     return forms
@@ -223,12 +225,10 @@ def generate_tensor() -> list[Snippet]:
         ("m16n8k128", "e2m1", "f32", 4, 4, 4),
     ):
         acc = "f" if ctype == "f32" else "c"
+        acc_ld = "f32" if ctype == "f32" else "b32"
         loads = [f"    ld.global.b32 %a{i + 1}, [%in+{4 * i}];" for i in range(na)]
         loads += [f"    ld.global.b32 %b{i + 1}, [%in+{64 + 4 * i}];" for i in range(nb)]
-        loads += [
-            f"    ld.global.{'f32' if ctype == 'f32' else 'b32'} %{acc}{i + 1}, [%in+{128 + 4 * i}];"
-            for i in range(nc)
-        ]
+        loads += [f"    ld.global.{acc_ld} %{acc}{i + 1}, [%in+{128 + 4 * i}];" for i in range(nc)]
         loads.append("    ld.global.b32 %s1, [%in+192];")
         kind = ".kind::f8f6f4" if atype in _LOW_PRECISION else ""
         body = "\n".join(
@@ -237,7 +237,7 @@ def generate_tensor() -> list[Snippet]:
                 f"    mma.sp.sync.aligned.{shape}.row.col{kind}.{ctype}.{atype}.{atype}.{ctype} "
                 f"{_regs(acc, nc, base=nc + 1)},{_regs('a', na)},{_regs('b', nb)},"
                 f"{_regs(acc, nc)},%s1,0x0;",
-                f"    st.global.{'f32' if ctype == 'f32' else 'b32'} [%out], %{acc}{nc + 1};",
+                f"    st.global.{acc_ld} [%out], %{acc}{nc + 1};",
             ]
         )
         name = f"k_mmasp_{shape}_{atype}_{ctype}"
@@ -257,19 +257,35 @@ def generate_tensor() -> list[Snippet]:
             )
             name = f"k_ldsm_{count}{trans.replace('.', '_')}"
             out.append(
-                Snippet(name, _matrix_kernel(name, body), "matrix", "ldmatrix", "b16", (count, trans.strip(".")))
+                Snippet(
+                    name,
+                    _matrix_kernel(name, body),
+                    "matrix",
+                    "ldmatrix",
+                    "b16",
+                    (count, trans.strip(".")),
+                )
             )
 
             loads = "\n".join(f"    ld.global.b32 %r{i + 1}, [%in+{4 * i}];" for i in range(n))
+            regs = _regs("r", n)
+            shape = f"m8n8.{count}{trans}"
             body = (
                 f"{loads}\n"
                 "    mov.u32 %m1, tile;\n"
-                f"    stmatrix.sync.aligned.m8n8.{count}{trans}.shared.b16 [%m1], {_regs('r', n)};\n"
+                f"    stmatrix.sync.aligned.{shape}.shared.b16 [%m1], {regs};\n"
                 "    st.global.b32 [%out], %r1;"
             )
             name = f"k_stsm_{count}{trans.replace('.', '_')}"
             out.append(
-                Snippet(name, _matrix_kernel(name, body), "matrix", "stmatrix", "b16", (count, trans.strip(".")))
+                Snippet(
+                    name,
+                    _matrix_kernel(name, body),
+                    "matrix",
+                    "stmatrix",
+                    "b16",
+                    (count, trans.strip(".")),
+                )
             )
 
     # m16n8 ldmatrix over 8-bit elements, and the register-to-register transpose
@@ -288,7 +304,9 @@ def generate_tensor() -> list[Snippet]:
         "    movmatrix.sync.aligned.m8n8.trans.b16 %r2, %r1;\n"
         "    st.global.b32 [%out], %r2;"
     )
-    out.append(Snippet("k_movmatrix", _matrix_kernel("k_movmatrix", body), "matrix", "movmatrix", "b16"))
+    out.append(
+        Snippet("k_movmatrix", _matrix_kernel("k_movmatrix", body), "matrix", "movmatrix", "b16")
+    )
 
     return out
 

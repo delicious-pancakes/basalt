@@ -23,7 +23,7 @@ from __future__ import annotations
 import itertools
 from dataclasses import dataclass, field
 
-__all__ = ["Snippet", "generate", "PTX_VERSION"]
+__all__ = ["PTX_VERSION", "Snippet", "generate"]
 
 PTX_VERSION = "9.0"
 
@@ -98,8 +98,7 @@ def _reg(ptx_type: str, idx: int) -> str:
 
 
 def _load(ptx_type: str, dst: str, off: int) -> str:
-    ld_type = ptx_type if ptx_type[0] in "fs u" and ptx_type not in _BITS else ptx_type
-    return f"    ld.global.{ld_type} {dst}, [%in+{off}];"
+    return f"    ld.global.{ptx_type} {dst}, [%in+{off}];"
 
 
 def _store(ptx_type: str, src: str) -> str:
@@ -207,7 +206,6 @@ def _convert(dst_type: str, src_type: str, mods: tuple[str, ...] = ()) -> Snippe
 
 
 def _shift(op: str, ptx_type: str) -> Snippet:
-    _, size, _ = _TYPES[ptx_type]
     a, d = _reg(ptx_type, 1), _reg(ptx_type, 3)
     body = "\n".join(
         [
@@ -276,10 +274,17 @@ def generate() -> list[Snippet]:
         out += [_binary(op, t) for op in ("add", "sub", "mul", "min", "max", "div")]
         out += [_ternary("fma", t, ("rn",))]
         out += [_unary(op, t) for op in ("abs", "neg")]
-    out += [_binary("add", "f32", ("rn",)), _binary("add", "f32", ("rz",)),
-            _binary("add", "f32", ("rm",)), _binary("add", "f32", ("rp",))]
+    out += [
+        _binary("add", "f32", ("rn",)),
+        _binary("add", "f32", ("rz",)),
+        _binary("add", "f32", ("rm",)),
+        _binary("add", "f32", ("rp",)),
+    ]
     out += [_binary("add", "f32", ("ftz",)), _binary("mul", "f32", ("sat",))]
-    out += [_unary(op, "f32", ("approx",)) for op in ("rcp", "sqrt", "rsqrt", "sin", "cos", "lg2", "ex2")]
+    out += [
+        _unary(op, "f32", ("approx",))
+        for op in ("rcp", "sqrt", "rsqrt", "sin", "cos", "lg2", "ex2")
+    ]
     out += [_unary("sqrt", "f32", ("rn",)), _unary("rcp", "f64", ("rn",))]
 
     # half precision, packed and scalar
@@ -299,8 +304,10 @@ def generate() -> list[Snippet]:
 
     # comparison across every predicate ptxas accepts for the type class
     for t in ("s32", "u32", "s64", "f32", "f64"):
-        cmps = ("eq", "ne", "lt", "le", "gt", "ge") if not t.startswith("f") else (
-            "eq", "ne", "lt", "le", "gt", "ge", "equ", "neu", "ltu", "num", "nan"
+        cmps = (
+            ("eq", "ne", "lt", "le", "gt", "ge")
+            if not t.startswith("f")
+            else ("eq", "ne", "lt", "le", "gt", "ge", "equ", "neu", "ltu", "num", "nan")
         )
         out += [_compare("setp", c, t) for c in cmps]
 
@@ -375,16 +382,12 @@ def generate() -> list[Snippet]:
         ),
         _special(
             "bar",
-            "    ld.global.b32 %r1, [%in];\n"
-            "    bar.sync 0;\n"
-            "    st.global.b32 [%out], %r1;",
+            "    ld.global.b32 %r1, [%in];\n    bar.sync 0;\n    st.global.b32 [%out], %r1;",
             "bar.sync",
         ),
         _special(
             "membar",
-            "    ld.global.b32 %r1, [%in];\n"
-            "    membar.gl;\n"
-            "    st.global.b32 [%out], %r1;",
+            "    ld.global.b32 %r1, [%in];\n    membar.gl;\n    st.global.b32 [%out], %r1;",
             "membar",
         ),
         _special(

@@ -18,16 +18,15 @@ import json
 import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import asdict, dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from ..disasm import Instruction, disassemble_cubin
-from ..encoding import Word
 from ..toolchain import Toolchain
 from .corpus import Snippet
 
-__all__ = ["Observation", "HarvestResult", "harvest", "OPT_LEVELS"]
+__all__ = ["OPT_LEVELS", "HarvestResult", "Observation", "harvest"]
 
 # -O0 keeps the shape of the PTX and exposes plain forms; -O3 is what real code
 # gets and exposes fused and rescheduled forms. Both are worth having.
@@ -42,8 +41,8 @@ class Observation:
     opcode: str
     modifiers: tuple[str, ...]
     operands: str
-    encoding: str          # 32 hex chars, high half first
-    payload: str           # encoding with control bits zeroed
+    encoding: str  # 32 hex chars, high half first
+    payload: str  # encoding with control bits zeroed
     control: dict[str, int]
     source_kernel: str
     source_label: str
@@ -51,7 +50,7 @@ class Observation:
     opt_level: int
 
     @classmethod
-    def build(cls, instr: Instruction, snip: Snippet, opt: int) -> "Observation":
+    def build(cls, instr: Instruction, snip: Snippet, opt: int) -> Observation:
         word = instr.word
         assert word is not None
         return cls(
@@ -158,7 +157,7 @@ def harvest(
     result = HarvestResult(
         cuda_version=tc.version,
         arch=arch,
-        generated_utc=datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        generated_utc=datetime.now(UTC).isoformat(timespec="seconds"),
     )
 
     tasks = [(s, o) for s in snippets for o in opt_levels]

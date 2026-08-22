@@ -21,12 +21,12 @@ from __future__ import annotations
 
 import json
 from dataclasses import asdict, dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from ..encoding import CONTROL_FIELDS, Word
 
-__all__ = ["OperandField", "InstructionForm", "IsaDatabase"]
+__all__ = ["InstructionForm", "IsaDatabase", "OperandField"]
 
 SCHEMA_VERSION = 1
 
@@ -70,8 +70,8 @@ class InstructionForm:
     mnemonic: str
     opcode: str
     modifiers: tuple[str, ...]
-    encoding: str                 # 32 hex chars, high half first
-    payload: str                  # control bits zeroed
+    encoding: str  # 32 hex chars, high half first
+    payload: str  # control bits zeroed
     operand_text: str
     operands: list[OperandField] = field(default_factory=list)
     opcode_bits: tuple[int, ...] = ()
@@ -105,7 +105,7 @@ class IsaDatabase:
 
     def __post_init__(self) -> None:
         if not self.generated_utc:
-            self.generated_utc = datetime.now(timezone.utc).isoformat(timespec="seconds")
+            self.generated_utc = datetime.now(UTC).isoformat(timespec="seconds")
 
     # ---- queries -------------------------------------------------------
 
@@ -164,9 +164,7 @@ class IsaDatabase:
                     "modifier_bits": list(form.modifier_bits),
                     "inert_bits": list(form.inert_bits),
                     "invalid_bits": list(form.invalid_bits),
-                    "operands": [
-                        {**asdict(o), "bits": list(o.bits)} for o in form.operands
-                    ],
+                    "operands": [{**asdict(o), "bits": list(o.bits)} for o in form.operands],
                 }
                 for name, form in sorted(self.forms.items())
             },
@@ -174,7 +172,7 @@ class IsaDatabase:
         path.write_text(json.dumps(payload, indent=2, sort_keys=True))
 
     @classmethod
-    def read(cls, path: Path) -> "IsaDatabase":
+    def read(cls, path: Path) -> IsaDatabase:
         raw = json.loads(path.read_text())
         if raw.get("schema_version") != SCHEMA_VERSION:
             raise ValueError(

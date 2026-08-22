@@ -18,7 +18,7 @@ from __future__ import annotations
 import struct
 from dataclasses import dataclass
 
-__all__ = ["Word", "BitField", "CONTROL_FIELDS", "popcount", "bit_diff"]
+__all__ = ["CONTROL_FIELDS", "BitField", "Word", "bit_diff", "popcount"]
 
 WORD_BITS = 128
 WORD_BYTES = 16
@@ -47,9 +47,7 @@ class BitField:
 
     def set(self, word: int, value: int) -> int:
         if not 0 <= value < (1 << self.width):
-            raise ValueError(
-                f"{value:#x} does not fit in {self.width}-bit field {self.name}"
-            )
+            raise ValueError(f"{value:#x} does not fit in {self.width}-bit field {self.name}")
         return (word & ~self.mask) | (value << self.lo)
 
     def __repr__(self) -> str:  # pragma: no cover - debugging aid
@@ -91,12 +89,12 @@ class Word:
     # ---- construction -------------------------------------------------
 
     @classmethod
-    def from_halves(cls, lo: int, hi: int) -> "Word":
+    def from_halves(cls, lo: int, hi: int) -> Word:
         """Build from the two 64-bit words as nvdisasm prints them."""
         return cls((hi << 64) | lo)
 
     @classmethod
-    def from_bytes(cls, raw: bytes) -> "Word":
+    def from_bytes(cls, raw: bytes) -> Word:
         if len(raw) != WORD_BYTES:
             raise ValueError(f"expected {WORD_BYTES} bytes, got {len(raw)}")
         lo, hi = struct.unpack("<QQ", raw)
@@ -123,7 +121,7 @@ class Word:
     def field(self, name: str) -> int:
         return _CONTROL_BY_NAME[name].get(self.value)
 
-    def with_field(self, name: str, value: int) -> "Word":
+    def with_field(self, name: str, value: int) -> Word:
         return Word(_CONTROL_BY_NAME[name].set(self.value, value))
 
     @property

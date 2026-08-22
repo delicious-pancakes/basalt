@@ -22,13 +22,13 @@ from __future__ import annotations
 import re
 from collections import defaultdict
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 
 from ..disasm import Instruction, decode_words
-from ..encoding import WORD_BITS, CONTROL_FIELDS, Word
+from ..encoding import CONTROL_FIELDS, WORD_BITS, Word
 from ..toolchain import Toolchain
 
-__all__ = ["BitRole", "BitObservation", "FieldMap", "probe_word", "infer_fields"]
+__all__ = ["BitObservation", "BitRole", "FieldMap", "infer_fields", "probe_word"]
 
 _CONTROL_BITS = {b for f in CONTROL_FIELDS for b in range(f.lo, f.lo + f.width)}
 
@@ -37,16 +37,16 @@ _REG = re.compile(r"\b(?:UR|R|P|UP|SR_|SB)\w*", re.IGNORECASE)
 _IMM = re.compile(r"\b0x[0-9a-fA-F]+\b")
 
 
-class BitRole(str, Enum):
+class BitRole(StrEnum):
     """What flipping a single bit was observed to do."""
 
-    OPCODE = "opcode"          # the mnemonic changed
-    MODIFIER = "modifier"      # same opcode, different suffixes
-    OPERAND = "operand"        # same mnemonic, different operand text
-    PREDICATE = "predicate"    # guard predicate changed
-    CONTROL = "control"        # inside the known scheduling section
-    INVALID = "invalid"        # decoder rejected the mutation
-    INERT = "inert"            # nothing observable changed
+    OPCODE = "opcode"  # the mnemonic changed
+    MODIFIER = "modifier"  # same opcode, different suffixes
+    OPERAND = "operand"  # same mnemonic, different operand text
+    PREDICATE = "predicate"  # guard predicate changed
+    CONTROL = "control"  # inside the known scheduling section
+    INVALID = "invalid"  # decoder rejected the mutation
+    INERT = "inert"  # nothing observable changed
 
 
 @dataclass(frozen=True, slots=True)
@@ -65,7 +65,7 @@ class BitObservation:
         b = [t.strip() for t in self.after.split(",")]
         if len(a) != len(b):
             return None
-        moved = [i for i, (x, y) in enumerate(zip(a, b)) if x != y]
+        moved = [i for i, (x, y) in enumerate(zip(a, b, strict=True)) if x != y]
         return moved[0] if len(moved) == 1 else None
 
 
@@ -156,7 +156,7 @@ def probe_word(
 
     fmap = FieldMap(mnemonic=origin.mnemonic, base_encoding=str(base))
 
-    for bit, mutant in zip(bits, results):
+    for bit, mutant in zip(bits, results, strict=True):
         role = _classify(origin, mutant, bit)
         fmap.observations.append(
             BitObservation(bit, role, origin.operands, mutant.operands if mutant else "")

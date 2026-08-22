@@ -1,0 +1,78 @@
+# Roadmap
+
+What basalt is building toward, what is done, and what is deliberately out of scope. Updated as
+stages land. Anything claimed here as done has a command that demonstrates it.
+
+## The position
+
+basalt is not another assembler. [cubit](https://github.com/kacper-daftcode/cubit) already
+assembles sm_120 SASS well, produces loadable cubins, and schedules control bits automatically.
+[RCAsm](https://github.com/RetiredC/RCAsm) extends CuAssembler to sm_120.
+[openptxas](https://github.com/garrick99/openptxas) has sm_120 encoders and a scoreboard
+emulator. Building a fourth would be duplication.
+
+What none of them have, and what no public tool has, is a **checker**. Every one of them
+*assigns* control bits from a latency model. Nothing verifies the result, and the latency models
+were validated against a single GPU SKU.
+
+That matters because sm_120 has no hardware interlock on fixed-latency instructions. The
+hardware does not validate the scheduling control word; it trusts whatever produced it. A stall
+count shorter than the latency of the value it consumes does not fault and does not stall. It
+reads a stale register and returns a wrong answer at full speed.
+
+basalt is the check.
+
+## Stages
+
+| # | Stage | Delivers | State |
+| :-- | :--- | :--- | :--- |
+| 1 | Oracles | `ptxas`/`nvdisasm` round-trip harness, raw-word probe | **done** |
+| 2 | Harvest | PTX corpus, encoding extraction at scale | **done** |
+| 3 | Field inference | Per-bit roles by differential mutation | **done** |
+| 4 | ISA database | Grounded, provenanced instruction forms | **done** |
+| 5 | Hazard model | Def-use analysis over decoded programs | in progress |
+| 6 | Verifier | Static latency-safety proof over any cubin | in progress |
+| 7 | Latency measurement | Per-SKU instruction latency on real silicon | planned |
+| 8 | Cross-check | basalt's ISA model against other tools' tables | planned |
+| 9 | Audit | Every public sm_120 SASS kernel, ptxas as control | planned |
+| 10 | Assembler | SASS text to cubin, so basalt can emit its own tests | planned |
+
+Stages 1 to 4 need no GPU and rebuild in CI. Stage 7 needs an sm_120 card.
+
+## Findings this is positioned to produce
+
+Each of these yields a result whether the answer is positive or negative, which is the point.
+A tool can be ignored; a measurement cannot.
+
+1. **ISA disagreements.** basalt derives its instruction model by differential bit probing.
+   Other tools extract tables. Two independent derivations of one ISA that disagree mean one is
+   wrong, and finding out which is a contribution either way.
+2. **Per-SKU latency.** Published sm_120 characterisation covers single parts. If latency varies
+   across sm_120 SKUs then scheduling tuned on one part is unsound on the others, which would be
+   a significant result. If it does not vary, that is a useful negative result that lets every
+   existing scheduler claim portability with evidence.
+3. **Unsafe control bits in shipped kernels.** Hand-written SASS is now in production use. The
+   verifier either finds hazards there or establishes that it does not.
+
+## The control that keeps the audit honest
+
+> [!IMPORTANT]
+> The verifier runs against `ptxas` output first, always. The vendor compiler's scheduling is
+> the reference: if basalt flags it, basalt is wrong, and that is chased to root cause before
+> any finding about anyone else's code is published. An audit tool with no control is an
+> opinion generator.
+
+## Out of scope
+
+Stated so the boundary is deliberate rather than accidental.
+
+- **Competing with cubit on assembly.** basalt must work on *other* tools' output, not only its
+  own. The stage 10 assembler exists to generate test programs, not to win a comparison.
+- **Optimising schedules.** Making SASS faster is a different problem, and
+  [CuAsmRL](https://arxiv.org/abs/2501.08071) already works on it. basalt answers whether a
+  schedule is *safe*, not whether it is *good*.
+- **Architectures other than sm_120.** The method generalises; the measurements do not. Claiming
+  coverage that has not been measured on the silicon in question is the exact failure basalt
+  exists to catch.
+- **Anything requiring NVIDIA source, headers, or decompilation.** See
+  [`NOTICE`](../NOTICE) and [`CONTRIBUTING.md`](../CONTRIBUTING.md).

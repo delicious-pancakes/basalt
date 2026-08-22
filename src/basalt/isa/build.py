@@ -140,8 +140,5 @@ def build_database(
 
     if progress:
         cov = db.coverage()
-        print(
-            "database: "
-            + ", ".join(f"{k.replace('_', ' ')}={v}" for k, v in cov.items())
-        )
+        print("database: " + ", ".join(f"{k.replace('_', ' ')}={v}" for k, v in cov.items()))
     return db, result

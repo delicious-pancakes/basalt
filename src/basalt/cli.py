@@ -68,12 +68,16 @@ def _doctor(args: argparse.Namespace) -> int:
             print(f"FAIL  probe oracle nvdisasm -b {arch_raw} rejected the batch", file=sys.stderr)
             return 1
 
-        agree = sum(1 for a, b in zip(insns, back) if b is not None and a.mnemonic == b.mnemonic)
+        agree = sum(
+            1
+            for a, b in zip(insns, back, strict=True)
+            if b is not None and a.mnemonic == b.mnemonic
+        )
         status = "ok   " if agree == len(insns) else "WARN "
         print(f"{status} probe oracle {agree}/{len(insns)} mnemonics round-tripped")
 
         if agree != len(insns):
-            for a, b in zip(insns, back):
+            for a, b in zip(insns, back, strict=True):
                 if b is None or a.mnemonic != b.mnemonic:
                     print(f"        cubin={a.text!r}  probe={b.text if b else None!r}")
             return 1

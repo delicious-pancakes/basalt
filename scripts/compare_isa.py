@@ -25,11 +25,13 @@ def load(path: Path) -> dict:
     try:
         return json.loads(path.read_text())
     except FileNotFoundError:
-        raise SystemExit(f"error: {path} does not exist")
+        raise SystemExit(f"error: {path} does not exist") from None
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     ap.add_argument("committed", type=Path)
     ap.add_argument("rebuilt", type=Path)
     ap.add_argument(
@@ -59,7 +61,11 @@ def main() -> int:
     )
 
     print(f"committed {len(fa)} forms, rebuilt {len(fb)} forms")
-    for label, names in (("missing from rebuild", missing), ("new in rebuild", added), ("changed", changed)):
+    for label, names in (
+        ("missing from rebuild", missing),
+        ("new in rebuild", added),
+        ("changed", changed),
+    ):
         if names:
             print(f"\n{label} ({len(names)}):")
             for n in names[:40]:
