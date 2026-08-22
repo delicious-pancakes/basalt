@@ -52,7 +52,7 @@ treated the surrounding gaps as free to compress.
 
 The assembler encodes SASS text back into the instruction word, and its standard is the
 vendor's own bytes: assembling every corpus kernel as a whole program, with its labels
-resolved, reproduces 8,479 of 8,584 instructions bit-identically and none to anything else.
+resolved, reproduces 8,514 of 8,584 instructions bit-identically and none to anything else.
 That second number is a test pinned at zero.
 
 Whole programs rather than lone instructions because a branch cannot be assembled alone.

@@ -187,10 +187,17 @@ def _promote_rendered_operands(
         return
 
     reference = _operands_of(origin.operands)
+    already = fmap.operand_fields()
     promoted: set[int] = set()
 
     for slot, found in candidates.items():
-        bits = sorted(found)
+        # merged with the bits already attributed to this slot, because the
+        # candidates are usually only the part of the field whose flip happened
+        # to make the value render differently: `IMAD R8, R2, 0x5, RZ` hides
+        # exactly the two bits that are set, since clearing either leaves a
+        # power of two. Verifying them alone cannot work, as writing a value
+        # into two bits of a 32-bit field does not produce that value.
+        bits = sorted(set(found) | set(already.get(slot, ())))
         if slot >= len(reference) or not _IMM.fullmatch(reference[slot]):
             # only immediates are recovered this way; a register that moves a
             # suffix is a genuinely different encoding rather than a rendering

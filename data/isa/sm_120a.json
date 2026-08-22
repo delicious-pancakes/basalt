@@ -7512,7 +7512,7 @@
       ],
       "payload": "0000000003800000000000000000791b",
       "source_family": "special",
-      "source_label": "vote.sync.b32"
+      "source_label": "shfl.sync.b32"
     },
     "ERRBAR": {
       "encoding": "000fc0000000000000000000000079ab",
@@ -7764,7 +7764,7 @@
       ],
       "payload": "0000000003800000000000000000794d",
       "source_family": "binary",
-      "source_label": "max.s16"
+      "source_label": "add.s16"
     },
     "F2F.F32.F64": {
       "encoding": "004e2400003010000000000200077310",
@@ -12084,7 +12084,7 @@
       ],
       "payload": "000000000040c0003e22f98302007820",
       "source_family": "unary",
-      "source_label": "sin.approx.f32"
+      "source_label": "cos.approx.f32"
     },
     "FMUL.SAT": {
       "encoding": "000fc000004020000000000206027220",
@@ -19902,7 +19902,7 @@
       ],
       "payload": "00000000000000000000000000047213",
       "source_family": "binary",
-      "source_label": "div.s32"
+      "source_label": "rem.s32"
     },
     "IADD": {
       "encoding": "000fc000078200000000000c06047235",
@@ -20859,8 +20859,6 @@
       "mnemonic": "IMAD",
       "modifier_bits": [
         0,
-        32,
-        34,
         73,
         74
       ],
@@ -20907,7 +20905,9 @@
         },
         {
           "bits": [
+            32,
             33,
+            34,
             35,
             36,
             37,
@@ -20938,7 +20938,7 @@
             62,
             63
           ],
-          "example_after": "R8, R2, 0x7, RZ",
+          "example_after": "R8, R2, 0x4, RZ",
           "example_before": "R8, R2, 0x5, RZ",
           "slot": 2,
           "subfields": {}
@@ -21527,7 +21527,6 @@
       "mnemonic": "IMAD.U32",
       "modifier_bits": [
         0,
-        48,
         73,
         74
       ],
@@ -21592,6 +21591,7 @@
             45,
             46,
             47,
+            48,
             49,
             50,
             51,
@@ -24600,8 +24600,8 @@
         }
       ],
       "payload": "0000000003f24270000000010000780c",
-      "source_family": "special",
-      "source_label": "bra.loop.b32"
+      "source_family": "shape",
+      "source_label": "s_loop_accumulate.mixed"
     },
     "ISETP.GT.OR": {
       "encoding": "000fda0000704670000000ff0000720c",
@@ -27557,7 +27557,7 @@
       ],
       "payload": "000000000800080000007000ff0477ac",
       "source_family": "memory",
-      "source_label": "ld.local.b32"
+      "source_label": "ld.local.b64"
     },
     "LDCU.64": {
       "encoding": "000e220008000a0000006b00ff0477ac",
@@ -29739,7 +29739,7 @@
       ],
       "payload": "000000000c1e15000000020402047981",
       "source_family": "binary",
-      "source_label": "min.u16"
+      "source_label": "max.u16"
     },
     "LDL": {
       "encoding": "001ea2000810080000000004ff057983",
@@ -32201,7 +32201,7 @@
       ],
       "payload": "0000000000000f000000000000057802",
       "source_family": "unary",
-      "source_label": "rcp.rn.f64"
+      "source_label": "sqrt.rn.f32"
     },
     "MOV.64": {
       "encoding": "000fc000003ff0000000000000087402",
@@ -34494,7 +34494,7 @@
       ],
       "payload": "000000000070e170000000000080781c",
       "source_family": "binary",
-      "source_label": "div.s32"
+      "source_label": "rem.s32"
     },
     "POPC": {
       "encoding": "000e22000000000000000000000d7309",
@@ -40848,7 +40848,7 @@
       ],
       "payload": "00000000000000000000000000057919",
       "source_family": "atomic",
-      "source_label": "atom.add.global.s32"
+      "source_label": "atom.add.global.u32"
     },
     "S2UR": {
       "encoding": "000e22000000880000000000000579c3",
@@ -43335,7 +43335,7 @@
       ],
       "payload": "000000000c1017040000000004007986",
       "source_family": "binary",
-      "source_label": "mul.lo.s16"
+      "source_label": "mul.hi.s16"
     },
     "STG.E.STRONG.GPU": {
       "encoding": "000fc0000c10f9040000000204007986",
@@ -46461,7 +46461,7 @@
       ],
       "payload": "000000000800000000000006000772bf",
       "source_family": "atomic",
-      "source_label": "atom.add.global.s32"
+      "source_label": "atom.add.global.u32"
     },
     "VIADD.S32.ISAT": {
       "encoding": "000fc000000104000000000206027236",
@@ -47619,7 +47619,7 @@
       ],
       "payload": "00000000038e01000000000000067886",
       "source_family": "atomic",
-      "source_label": "atom.add.global.s32"
+      "source_label": "atom.add.global.u32"
     },
     "WARPSYNC.ALL": {
       "encoding": "000fc000038000000000000000007948",
@@ -47873,10 +47873,10 @@
       ],
       "payload": "0000000003c000000000000000087348",
       "source_family": "special",
-      "source_label": "vote.sync.b32"
+      "source_label": "shfl.sync.b32"
     }
   },
-  "generated_utc": "2026-08-22T17:15:41+00:00",
+  "generated_utc": "2026-08-22T19:37:55+00:00",
   "schema_version": 2,
   "variants": {
     "DADD": [
@@ -49970,7 +49970,7 @@
         ],
         "payload": "00000000080e00000000000600007d00",
         "source_family": "atomic",
-        "source_label": "atom.add.global.s32"
+        "source_label": "atom.add.global.u32"
       }
     ],
     "FMNMX": [
@@ -50956,7 +50956,7 @@
         ],
         "payload": "00000000000000000000000206037208",
         "source_family": "binary",
-        "source_label": "max.f64"
+        "source_label": "min.f64"
       }
     ],
     "FSETP.GEU.AND": [
@@ -53493,7 +53493,7 @@
         ],
         "payload": "000000000f8e02ff0000000702077c24",
         "source_family": "atomic",
-        "source_label": "atom.add.global.s32"
+        "source_label": "atom.add.global.u32"
       }
     ],
     "IMAD.U32": [
@@ -56148,7 +56148,7 @@
         ],
         "payload": "0000000000000f000000000000027202",
         "source_family": "binary",
-        "source_label": "max.f64"
+        "source_label": "min.f64"
       }
     ],
     "MOV.64": [

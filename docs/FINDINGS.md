@@ -524,7 +524,7 @@ label under this rule and none decodes wrongly.
 The rule is a measurement, and a measurement written down as a constant is exactly what goes
 quietly wrong when a compiler version changes, so it is re-derived from the corpus by a test
 rather than trusted. With it, assembling every corpus kernel as a whole program reproduces
-8,479 of 8,584 instructions bit-identically, and none to anything else.
+8,514 of 8,584 instructions bit-identically, and none to anything else.
 
 ## 12. What the correctness costs
 
@@ -749,7 +749,17 @@ rather than a rendering of the same one.
 | :--- | ---: | ---: | ---: |
 | Before finding 14 | 8,374 | 210 | 0 |
 | After finding 14 | 8,428 | 156 | 0 |
-| After this | **8,479** | 105 | **0** |
+| After this | 8,479 | 105 | 0 |
+| After signed immediates | 8,491 | 93 | 0 |
+| After merging the candidates | **8,514** | 70 | **0** |
+
+The last two rows are the same idea applied twice more. A minus on a *number* is part of
+the number rather than a bit somewhere else in the word, and treating `-0x1` like `-R0`
+refused every subtract-by-add in the corpus. And the recovery above only worked where the
+hidden bits were the whole field: in `IMAD R8, R2, 0x5, RZ` they are bits 32 and 34, exactly
+the two that are set, because clearing either leaves a power of two. Two bits of a 32-bit
+field cannot reproduce a written value on their own, so the candidates have to be merged
+with the bits already attributed to that operand before being checked.
 
 ## 16. When basalt says a schedule is unsafe, is it?
 

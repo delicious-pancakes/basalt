@@ -54,7 +54,7 @@ So basalt is three tools, each held to the same standard, and the standard is th
 
 | | What it does | How it is checked | Result |
 | :--- | :--- | :--- | ---: |
-| **Assembler** | SASS text to the 128-bit word | Reassemble every instruction `ptxas` emitted and compare bytes | 8,479 of 8,584 exact, **0 wrong** |
+| **Assembler** | SASS text to the 128-bit word | Reassemble every instruction `ptxas` emitted and compare bytes | 8,514 of 8,584 exact, **0 wrong** |
 | **Checker** | Reads a schedule, reports hazards | The vendor's own output must verify clean, and a deliberately shortened stall must be caught | 0 errors on 330 vendor kernels, **0 missed** on 162 broken ones |
 | **Scheduler** | Assigns the control bits from scratch | Discard every control bit, compute new ones, run both on the GPU against four inputs, compare output bytes | **314 of 314** byte-identical, at every optimisation level |
 
@@ -82,7 +82,7 @@ every kernel against a second, third and fourth pattern immediately found a carr
 predicate the operand model had been reading as a source since the beginning. It had
 survived every control up to that point, including the round trip itself.
 
-The same discipline decides what the assembler is allowed to do. It reached 98% of the
+The same discipline decides what the assembler is allowed to do. It reached 99% of the
 corpus only after six separate rounds of being confidently incorrect:
 
 - writing a register number into the encoding of an immediate form,
