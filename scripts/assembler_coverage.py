@@ -49,6 +49,7 @@ def main() -> int:
     parser.add_argument("--work", type=Path, default=None, help="scratch directory for cubins")
     parser.add_argument("--show-refusals", action="store_true", help="list the reasons, by count")
     parser.add_argument("--only", default=None, help="comma separated kernel names")
+    parser.add_argument("--db", type=Path, default=None, help="ISA database to assemble against")
     args = parser.parse_args()
 
     from basalt.asm.assemble import assemble_program
@@ -59,7 +60,7 @@ def main() -> int:
     from basalt.isa.database import IsaDatabase
     from basalt.toolchain import find_toolchain
 
-    database_path = ROOT / "data" / "isa" / f"{ARCH}.json"
+    database_path = args.db or ROOT / "data" / "isa" / f"{ARCH}.json"
     if not database_path.is_file():
         print(f"error: {database_path} does not exist; run `basalt build-isa`", file=sys.stderr)
         return 2
