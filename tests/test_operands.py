@@ -1,0 +1,115 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 Sunny Patel
+"""Register def/use extraction.
+
+Every hazard the verifier can find depends on getting this right, and getting it
+wrong is silent in both directions: a missed definition hides a real hazard, and
+an invented one reports a hazard that is not there. So the cases below are drawn
+from instruction text nvdisasm actually printed rather than from imagination.
+"""
+
+from __future__ import annotations
+
+import pytest
+
+from basalt.verify.operands import RegKind, RegRef, operand_access
+
+
+def defs(mnemonic: str, operands: str) -> set[str]:
+    return {str(r) for r in operand_access(mnemonic, operands).real_defs}
+
+
+def uses(mnemonic: str, operands: str) -> set[str]:
+    return {str(r) for r in operand_access(mnemonic, operands).real_uses}
+
+
+class TestDirection:
+    def test_arithmetic_defines_first_operand(self):
+        assert defs("IADD", "R5, R5, 0x2a") == {"R5"}
+        assert uses("IADD", "R5, R5, 0x2a") == {"R5"}
+
+    def test_store_defines_nothing(self):
+        assert defs("STG.E", "desc[UR4][R2.64], R7") == set()
+
+    def test_store_reads_its_address_and_value(self):
+        assert uses("STG.E", "desc[UR4][R2.64], R7") == {"R2", "R3", "R7", "UR4"}
+
+    def test_exit_touches_nothing(self):
+        assert defs("EXIT", "") == set()
+        assert uses("EXIT", "") == set()
+
+    def test_branch_defines_nothing(self):
+        assert defs("BRA", "`(.L_x_0)") == set()
+
+
+class TestWidth:
+    def test_64_bit_load_defines_a_register_pair(self):
+        assert defs("LDG.E.64", "R2, desc[UR4][R6.64]") == {"R2", "R3"}
+
+    def test_128_bit_load_defines_a_quad(self):
+        assert defs("LDG.E.128", "R4, desc[UR4][R2.64]") == {"R4", "R5", "R6", "R7"}
+
+    def test_width_on_the_register_wins_over_the_mnemonic(self):
+        """`R6.64` in an address is two registers even on a 32-bit load."""
+        assert uses("LDG.E", "R2, desc[UR4][R6.64]") >= {"R6", "R7"}
+
+    def test_narrow_types_stay_single_register(self):
+        assert defs("LDG.E.U16", "R2, desc[UR4][R6.64]") == {"R2"}
+
+
+class TestAddressing:
+    def test_registers_inside_brackets_are_reads_even_in_the_first_slot(self):
+        """A destination slot holding an address is still a read of that address."""
+        access = operand_access("LDS.64", "[R2.64], R4")
+        assert RegRef(RegKind.GENERAL, 2) in access.real_uses
+
+    def test_uniform_registers_are_tracked_separately(self):
+        assert "UR4" in uses("STG.E", "desc[UR4][R2.64], R7")
+
+
+class TestPredicates:
+    def test_guard_predicate_is_a_read(self):
+        assert "P0" in uses("IADD", "@P0 R2, R3, R4")
+
+    def test_negated_guard_predicate_is_a_read(self):
+        assert "P1" in uses("IADD", "@!P1 R2, R3, R4")
+
+    def test_setp_defines_a_predicate(self):
+        assert defs("ISETP.GE.AND", "P0, PT, R2, R3, PT") == {"P0"}
+
+    def test_setp_reads_its_comparands(self):
+        assert uses("ISETP.GE.AND", "P0, PT, R2, R3, PT") == {"R2", "R3"}
+
+
+class TestSinkRegisters:
+    def test_rz_is_not_a_real_definition(self):
+        assert defs("IADD", "RZ, R3, R4") == set()
+
+    def test_rz_is_not_a_real_use(self):
+        assert uses("IADD", "R2, RZ, R4") == {"R4"}
+
+    def test_pt_is_not_a_real_predicate(self):
+        assert "P7" not in defs("ISETP.GE.AND", "PT, PT, R2, R3, PT")
+
+    def test_urz_is_not_a_real_use(self):
+        assert "UR63" not in uses("IADD", "R2, R3, URZ")
+
+    @pytest.mark.parametrize(
+        ("kind", "number"),
+        [(RegKind.GENERAL, 255), (RegKind.UNIFORM, 63), (RegKind.PREDICATE, 7)],
+    )
+    def test_sink_registers_are_identified(self, kind, number):
+        assert RegRef(kind, number).is_sink
+
+    def test_ordinary_registers_are_not_sinks(self):
+        assert not RegRef(RegKind.GENERAL, 5).is_sink
+
+
+class TestSplitting:
+    def test_commas_inside_brackets_do_not_split_operands(self):
+        access = operand_access("LDSM.16.M88.4", "R4, [R2+0x10]")
+        assert "R4" in {str(r) for r in access.real_defs}
+
+    def test_empty_operands_are_handled(self):
+        access = operand_access("NOP", "")
+        assert not access.defs and not access.uses

@@ -164,6 +164,66 @@ def _isa(args: argparse.Namespace) -> int:
     return 0
 
 
+def _verify(args: argparse.Namespace) -> int:
+    """Check a cubin's control bits against the latency model."""
+    from pathlib import Path
+
+    from .disasm import disassemble_cubin
+    from .toolchain import ToolchainError, find_toolchain
+    from .verify.hazards import Severity, verify_program
+    from .verify.latency import DEFAULT_MODEL, Confidence, LatencyModel
+
+    try:
+        tc = find_toolchain(args.cuda_bin)
+    except ToolchainError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+
+    target = Path(args.cubin)
+    if not target.is_file():
+        print(f"error: {target} not found", file=sys.stderr)
+        return 1
+
+    model = DEFAULT_MODEL
+    if args.latencies:
+        model = LatencyModel.assumed().overlay(Path(args.latencies))
+
+    instructions = disassemble_cubin(tc, target)
+    if not instructions:
+        print(f"error: nothing disassembled from {target}", file=sys.stderr)
+        return 1
+
+    report = verify_program(instructions, model)
+
+    print(f"{target}")
+    print(f"  {report.summary()}")
+    if model.sku:
+        print(f"  latency model: measured on {model.sku}")
+    else:
+        print(f"  latency model: {report.model_confidence}, not measured on silicon")
+    if report.unknown_opcodes:
+        names = ", ".join(sorted(report.unknown_opcodes)[:8])
+        print(f"  opcodes not in the model: {len(report.unknown_opcodes)} ({names})")
+
+    shown = [h for h in report.hazards if args.all or h.severity is not Severity.INFO]
+    if shown:
+        print()
+        for h in shown[: args.limit]:
+            print(f"  {h.describe()}")
+            print(f"      def  {h.def_text}")
+            print(f"      use  {h.use_text}")
+        if len(shown) > args.limit:
+            print(f"  ... and {len(shown) - args.limit} more (raise --limit to see them)")
+
+    if report.model_confidence is Confidence.ASSUMED and report.hazards:
+        print(
+            "\nnote: the latency model is assumed rather than measured, so these are leads\n"
+            "      rather than confirmed hazards. measure the model first."
+        )
+
+    return 0 if report.ok or not args.strict else 2
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="basalt", description="a SASS assembler for sm_120")
     ap.add_argument("--version", action="version", version=f"basalt {__version__}")
@@ -184,8 +244,20 @@ def main(argv: list[str] | None = None) -> int:
     q.add_argument("--opcode", help="list every form of one opcode")
     q.add_argument("--stats", action="store_true", help="print coverage")
 
+    v = sub.add_parser("verify", help="check a cubin's control bits for data hazards")
+    v.add_argument("cubin", help="path to a cubin, whatever produced it")
+    v.add_argument("--latencies", default=None, help="measured latency JSON to overlay")
+    v.add_argument("--limit", type=int, default=25, help="maximum hazards to print")
+    v.add_argument("--all", action="store_true", help="include informational findings")
+    v.add_argument("--strict", action="store_true", help="exit non-zero when a hazard is found")
+
     args = ap.parse_args(argv)
-    return {"doctor": _doctor, "build-isa": _build_isa, "isa": _isa}[args.command](args)
+    return {
+        "doctor": _doctor,
+        "build-isa": _build_isa,
+        "isa": _isa,
+        "verify": _verify,
+    }[args.command](args)
 
 
 if __name__ == "__main__":
