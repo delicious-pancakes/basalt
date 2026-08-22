@@ -25,3 +25,6 @@ scratch/
 # under data/isa/ is tracked
 data/harvest/
 data/probe/
+
+# scratch output from the corpus scripts
+.work/

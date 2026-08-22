@@ -35,6 +35,7 @@ from dataclasses import dataclass, field
 
 from ..encoding import CONTROL_FIELDS, Word
 from ..isa.database import IsaDatabase
+from ..isa.operands import SubRole
 
 __all__ = [
     "BRANCH_SCALE",
@@ -125,6 +126,51 @@ def _write(word: int, bits: tuple[int, ...], value: int) -> int:
         word &= ~(1 << bit)
         word |= ((value >> position) & 1) << bit
     return word
+
+
+# The parts of a bracket operand, as opposed to the modifier parts below. A
+# slot carrying any of these is a composite operand and goes through
+# `_write_composite`; one carrying only modifiers is an ordinary field with a
+# sign bit parked somewhere else in the word.
+_COMPOSITE_ROLES = frozenset({SubRole.BANK, SubRole.OFFSET, SubRole.BASE, SubRole.DESCRIPTOR})
+_MODIFIER_SYMBOLS = {"-": SubRole.NEGATE, "~": SubRole.NOT, "!": SubRole.INVERT}
+
+
+def _strip_modifiers(token: str) -> tuple[frozenset[str], str]:
+    """A token's modifiers and the operand underneath them."""
+    roles: set[str] = set()
+    text = token.strip()
+    while text and text[0] in _MODIFIER_SYMBOLS:
+        roles.add(_MODIFIER_SYMBOLS[text[0]])
+        text = text[1:]
+    if len(text) > 2 and text.startswith("|") and text.endswith("|"):
+        roles.add(SubRole.ABSOLUTE)
+        text = text[1:-1]
+    return frozenset(roles), text.strip()
+
+
+def _apply_modifiers(
+    word: int, slot: Slot, token: str, reference: str, mnemonic: str, reference_word: int
+) -> tuple[int, str, str]:
+    """Encode the modifiers that differ, and return the bare operands.
+
+    The polarity is read off the form rather than assumed. The reference text
+    says whether its own encoding is negated, so the bit that has to change is
+    simply the opposite of whatever the reference holds. That keeps this correct
+    without depending on which way round the prober happened to record a bit.
+    """
+    want, bare_token = _strip_modifiers(token)
+    have, bare_reference = _strip_modifiers(reference)
+
+    for role in sorted(want ^ have):
+        bits = slot.parts.get(role)
+        if not bits or len(bits) != 1:
+            raise AssemblyError(
+                f"{mnemonic} operand {slot.index} needs the {role} on {token!r} and the prober "
+                f"never located a single bit for it in this form"
+            )
+        word = _write(word, tuple(bits), 1 - ((reference_word >> bits[0]) & 1))
+    return word, bare_token, bare_reference
 
 
 def _kind(token: str) -> str:
@@ -337,6 +383,18 @@ class Assembler:
             reference_token = form.tokens[slot.token] if slot.token < len(form.tokens) else ""
             if token == reference_token:
                 continue  # already what the reference encoding holds
+
+            # A modifier is one character of text and one bit of encoding, and
+            # the bit is nowhere near the operand it belongs to: negating source
+            # 1 of IADD is bit 72 while the register number is bits 24:31. Take
+            # it off first so everything below sees the bare operand, which is
+            # what lets `R5` be assembled from a form harvested as `-R0` instead
+            # of refused for being a different shape.
+            word, token, reference_token = _apply_modifiers(
+                word, slot, token, reference_token, mnemonic, form.reference
+            )
+            if token == reference_token:
+                continue  # only the modifier differed, and it is now encoded
             if _kind(token) != _kind(reference_token):
                 # One mnemonic can cover several operand shapes with genuinely
                 # different encodings, and the database records one of them.
@@ -350,10 +408,14 @@ class Assembler:
                     f"recorded form has {_kind(reference_token)} {reference_token!r}; that is a "
                     f"different encoding of the same mnemonic and this database holds one"
                 )
-            if slot.parts:
+            if _COMPOSITE_ROLES.intersection(slot.parts):
                 word = _write_composite(word, slot, token, reference_token, mnemonic)
                 continue
-            if slot.holds != "value":
+
+            # When the prober separated a modifier out, the rest of the field is
+            # the value and is named; otherwise the whole field is the value.
+            value_bits = slot.parts.get(SubRole.VALUE) or slot.bits
+            if slot.holds != "value" and SubRole.VALUE not in slot.parts:
                 raise AssemblyError(
                     f"{mnemonic} operand {slot.index} sits in a field the prober found to hold "
                     f"a {slot.holds} rather than a plain value, so writing {token!r} into it "
@@ -362,14 +424,14 @@ class Assembler:
             value = _register_number(token)
             if value is None:
                 if _IMMEDIATE.match(token):
-                    value = int(token, 0) & ((1 << slot.width) - 1)
+                    value = int(token, 0) & ((1 << len(value_bits)) - 1)
                 else:
                     raise AssemblyError(
                         f"{mnemonic} operand {slot.index} is {token!r}, which is neither a "
                         f"register nor an immediate; the database describes this field but not "
                         f"how to spell that"
                     )
-            word = _write(word, slot.bits, value)
+            word = _write(word, tuple(value_bits), value)
 
         # anything the slots did not cover has to match the reference, or the
         # result would silently be a different instruction

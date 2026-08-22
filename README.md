@@ -186,8 +186,8 @@ affect is reproducibility, which is why `basalt measure --board` records it.
 
 **Most of basalt needs no GPU at all.** Both oracles, the instruction database, the
 assembler and the hazard checker run against `ptxas` and `nvdisasm` as ordinary
-subprocesses, which is why they run in CI on a machine with no graphics card in it. 162 of
-the 177 tests are in that group.
+subprocesses, which is why they run in CI on a machine with no graphics card in it. 187 of
+the 202 tests are in that group.
 
 A GPU is needed for exactly two things, and they are the two that turn a plausible tool
 into a believable one:
