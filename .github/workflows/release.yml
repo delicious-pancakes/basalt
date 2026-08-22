@@ -1,0 +1,89 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 Sunny Patel
+#
+# Builds the distributions for a tagged release and attaches cryptographic
+# provenance to them.
+#
+# The provenance is the point. basalt's whole argument is that a claim without
+# evidence is worth nothing, and "these are the files I built from that commit"
+# is a claim like any other. `actions/attest-build-provenance` signs a SLSA v1
+# statement naming the workflow, the commit and the runner, backed by Sigstore,
+# so anyone can check that a wheel came from this repository and this source
+# rather than taking the release page's word for it:
+#
+#     gh attestation verify basalt-<version>-py3-none-any.whl --repo sunnypatell/basalt
+#
+# Nothing is published to an index from here. That is a deliberate separation:
+# a release should be reproducible and verifiable before it is distributed, and
+# wiring publication into the same run makes it harder to stop one without
+# stopping the other.
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "tag or commit to build"
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build and attest
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # attach the artefacts to the release
+      id-token: write # Sigstore needs an OIDC token to sign with
+      attestations: write # store the provenance alongside the artefacts
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+          persist-credentials: false
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Build the distributions
+        run: |
+          python -m pip install --upgrade build
+          python -m build
+
+      - name: Check the metadata is well formed
+        run: |
+          python -m pip install --upgrade twine
+          python -m twine check dist/*
+
+      # a release whose tests were never run is a release nobody should install,
+      # and the GPU-free suite is the part a hosted runner can actually verify
+      - name: Run the tests that need no GPU or toolchain
+        run: |
+          python -m pip install -e ".[dev]"
+          python -m pytest -m "not toolchain and not gpu and not slow" -q
+
+      - name: Record the checksums
+        run: |
+          cd dist
+          sha256sum ./* | tee SHA256SUMS
+
+      - name: Attest the build provenance
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-path: "dist/*.whl, dist/*.tar.gz"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: distributions
+          path: dist/
+          if-no-files-found: error
+
+      - name: Attach everything to the release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${GITHUB_REF_NAME}" dist/* --clobber

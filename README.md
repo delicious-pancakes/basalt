@@ -108,6 +108,50 @@ Eight-bit register fields and a 32-bit immediate, arrived at by experiment rathe
 
 The layout validates itself on contact. In a trivial kernel, `S2R` sets `write_barrier=0` and the `IMAD` consuming its result carries `wait_mask=0x01`; `LDCU.64` sets `write_barrier=1` and the dependent `STG.E` carries `wait_mask=0x02`. Every producer and consumer pair lines up, and instructions that `nvdisasm` annotates `.reuse` have the matching reuse bit set.
 
+## Which GPUs, and what needs one
+
+`sm_120` is not a model number. It is the compute capability shared by the whole consumer
+Blackwell line, so the instruction encoding, the database, the assembler and the checker
+apply to every card in it:
+
+| Card | Compute capability |
+| :--- | :--- |
+| GeForce RTX 5090, 5090D, 5080, 5070 Ti, 5070, 5060 Ti, 5060, 5050 | 12.0 (`sm_120`) |
+| GeForce RTX 50 series laptop parts | 12.0 (`sm_120`) |
+| RTX PRO Blackwell workstation cards | 12.0 (`sm_120`) |
+
+Datacentre Blackwell is a different target (`sm_100`) with its own encoding, and nothing
+here claims to cover it.
+
+**Most of basalt needs no GPU at all.** Both oracles, the instruction database, the
+assembler and the hazard checker run against `ptxas` and `nvdisasm` as ordinary
+subprocesses, which is why they run in CI on a machine with no graphics card in it. 162 of
+the 177 tests are in that group.
+
+A GPU is needed for exactly two things, and they are the two that turn a plausible tool
+into a believable one:
+
+| Needs a card | Why |
+| :--- | :--- |
+| `measure`, `probe-stalls` | Timing an instruction, and finding what a dependency really requires by breaking it |
+| `scripts/roundtrip_corpus.py` | Rescheduling every corpus kernel and running both versions to compare output bytes |
+
+### About the numbers
+
+Everything measured here was measured on one card, an RTX 5070 Ti, and basalt records the
+SKU alongside every measurement rather than presenting them as universal. A 5090 has more
+than twice the SMs and its own clock behaviour; the encoding will be identical and the
+latencies should be re-measured rather than assumed:
+
+```bash
+python -m basalt.cli measure -o data/latency/your-card.json
+python -m basalt.cli verify kernel.cubin --latencies data/latency/your-card.json
+```
+
+That is not a caveat added for modesty. A latency model shared between a checker and a
+scheduler is exactly where a wrong number hides, so a second card is the most useful thing
+anyone can contribute.
+
 ## Quickstart
 
 No CUDA installation and no GPU. The toolchain script fetches pinned redistributables, roughly 45 MB, no administrator rights, nothing added to your PATH.
