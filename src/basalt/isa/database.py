@@ -107,11 +107,8 @@ class IsaDatabase:
     cuda_version: str
     generated_utc: str = ""
     forms: dict[str, InstructionForm] = field(default_factory=dict)
-    # Other operand shapes of a mnemonic already in `forms`. One mnemonic can
-    # cover several genuinely different encodings, `IADD R2, R3, 0x4` against
-    # `IADD R2, R3, R4`, and they differ in bits outside every operand field.
-    # Kept beside the canonical form rather than replacing it, so every existing
-    # lookup keeps working and an assembler can pick the shape it needs.
+    # the other operand shapes of a mnemonic already in `forms`, kept beside the
+    # canonical one so existing lookups keep working
     variants: dict[str, list[InstructionForm]] = field(default_factory=dict)
 
     def __post_init__(self) -> None:

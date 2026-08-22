@@ -44,10 +44,7 @@ __all__ = [
     "schedule_program",
 ]
 
-# What the safe stall encoding costs when counting issue cycles. A zero stall is
-# a long wait rather than no wait, measured at about 37 cycles per instruction
-# (see docs/FINDINGS.md), so costing it as zero would flatter a schedule that
-# leans on it, which is exactly the schedule basalt produces.
+# a zero stall is a long wait, not no wait: ~37 cycles (finding 1)
 YIELD_COST = 37
 
 # Four bits of stall, so 15 is the most a single instruction can request.
@@ -63,22 +60,11 @@ SATURATION = 512
 # Termination guard. The lattice is finite, so reaching this means a bug.
 MAX_PASSES = 64
 
-# Control transfers to somewhere this analysis has not followed. What runs next
-# may use any register, so nothing may still be in flight when one of these
-# issues. Indirect branches are here for the same reason a call is: the
-# destination is computed and the control-flow graph says so.
+# transfers to code this analysis has not read, so nothing may be in flight
 _OPAQUE_TRANSFERS = frozenset({"CALL", "RET", "BRX", "JMX", "RTT", "BPT"})
 
-# Instructions `ptxas` never gives the zero-stall encoding to, with the smallest
-# stall it is seen using for each. Measured over the whole corpus: `EXIT` 0 times
-# out of 329, `RET` 0 of 5, `CALL` 0 of 5, `BAR` 0 of 3. `BRA` is deliberately
-# not here, since it takes a zero stall 329 times, so this is a property of
-# these instructions rather than of control transfer in general.
-#
-# It matters because the safe stall encoding is basalt's fallback everywhere. It
-# covers any dependency, so it gets reached for at block boundaries and wherever
-# a requirement will not fit, and reaching for the safe answer on an instruction
-# the vendor never applies it to lands outside what the encoding supports.
+# instructions ptxas never gives the zero-stall encoding, and its floor for each.
+# basalt reaches for that encoding as a fallback, so these need somewhere else
 _NEVER_ZERO_STALL: dict[str, int] = {"EXIT": 5, "RET": 5, "CALL": 5, "BAR": 6}
 
 
@@ -90,9 +76,7 @@ class ScheduleResult:
     passes: int = 0
     stalls_added: int = 0
     scoreboards_used: int = 0
-    # Producers that had to share an already-busy scoreboard because all six
-    # were guarding something. Correct but slightly over-synchronised, so it is
-    # counted rather than hidden.
+    # shared an already-busy scoreboard: over-synchronised, so counted not hidden
     scoreboards_shared: int = 0
     unplaceable: list[str] = field(default_factory=list)
     out_of_scoreboards: list[str] = field(default_factory=list)
@@ -330,24 +314,12 @@ def schedule_program(
     cfg = build_cfg(program)
 
     # ---- scoreboards
-    # Allocation is per block, which is fine: a scoreboard is a counter, so
-    # reusing an index across blocks makes a wait cover more than it needs to
-    # rather than less. The waits themselves cannot be per block, though. A
-    # value loaded before a loop and consumed inside it is the ordinary shape of
-    # real code, and a block-local analysis starts with an empty map and emits
-    # no wait at all for it, which is silently wrong.
-    #
-    # So allocation runs per block and then the outstanding barriers are
-    # propagated along control-flow edges to a fixed point, exactly as the
-    # verifier propagates reaching definitions, and the waits are emitted from
-    # the settled state.
+    # allocated per block, then propagated along edges to a fixed point: a value
+    # loaded before a loop and used inside it gets no wait from a block-local pass
     barrier_of: list[int] = [NO_BARRIER] * count
 
     for block in cfg.blocks:
-        # barrier -> the registers it is currently protecting. A barrier is free
-        # again once something has consumed every register it was guarding,
-        # because the wait that consumer will carry is what releases it. Without
-        # this the six scoreboards are exhausted by the seventh load in a block.
+        # barrier -> registers it guards; freed once a consumer has read them all
         protects: dict[int, set[RegRef]] = {}
 
         for index in range(block.start, block.end):
@@ -362,34 +334,16 @@ def schedule_program(
 
             record = model.lookup(instr.opcode)
             if record.kind is LatencyClass.VARIABLE and access.real_defs:
-                # Read barriers are inherited with the vendor's numbering and are
-                # deliberately not reserved here. A scoreboard is a counter, so
-                # landing a write barrier on one already carrying a read barrier
-                # makes every wait on it cover both, which is longer than needed
-                # and never shorter. `k_mma_m16n8k32_s4_s4_s32` is that case and
-                # matches the vendor on the card.
-                #
-                # lowest free index, so a kernel's scoreboards read in issue order
+                # lowest free index, so a kernel's scoreboards read in issue order.
+                # inherited read barriers are not reserved: sharing a counter only
+                # ever makes a wait cover more
                 free = next((sb for sb in range(SCOREBOARDS) if sb not in protects), None)
                 if free is not None:
                     protects[free] = set(access.real_defs)
                     result.scoreboards_used += 1
                 else:
-                    # Every scoreboard is already guarding something, so share
-                    # one. A scoreboard is a counter rather than a flag: several
-                    # producers can signal the same index, and a wait on it
-                    # blocks until all of them have reported. Sharing therefore
-                    # makes the wait cover more than it strictly needs to, which
-                    # costs a little parallelism and cannot be unsafe.
-                    #
-                    # Not an edge case. Six loads in flight is ordinary in a
-                    # tensor kernel, and refusing to schedule the seventh
-                    # rejected 45 of the 317 corpus kernels outright. The vendor
-                    # compiler shares for the same reason.
-                    #
-                    # The one holding the fewest registers is chosen, so the
-                    # extra waiting lands where the fewest consumers will feel
-                    # it.
+                    # all six are busy, so share the one guarding fewest registers;
+                    # refusing instead rejected 45 of 317 kernels outright
                     free = min(protects, key=lambda sb: (len(protects[sb]), sb))
                     protects[free] |= set(access.real_defs)
                     result.scoreboards_shared += 1
@@ -415,14 +369,8 @@ def schedule_program(
                     needed |= 1 << sb
 
             if instr.opcode in _OPAQUE_TRANSFERS:
-                # Control is about to leave for code this analysis has not read,
-                # and the callee is free to use any register. Everything still
-                # outstanding has to have landed first, so every live scoreboard
-                # is waited on rather than only the ones this instruction reads.
-                #
-                # `ptxas` does the same: the `CALL.REL.NOINC` in the 4-bit MMA
-                # kernels waits on two scoreboards it has no operand interest in.
-                # basalt waited on none and the kernel came out non-deterministic.
+                # the callee may read anything, so wait on every live scoreboard
+                # rather than only the ones named here
                 for barriers in live.values():
                     for sb in barriers:
                         needed |= 1 << sb
@@ -430,31 +378,16 @@ def schedule_program(
                 waits[index] |= needed
 
             if needed and not access.guard:
-                # Waiting clears those scoreboards for everything downstream,
-                # but only when the wait is certain to happen. A predicated
-                # instruction may not, so a later consumer that leans on its
-                # wait can read a result that never landed.
-                #
-                # Measured: `MUFU.EX2` feeding a store through a predicated
-                # `FMUL` is wrong every time basalt leaves the store without its
-                # own wait, and right as soon as it has one. Same for `SQRT` and
-                # `RSQ`. Not relying on it costs one extra wait.
-                #
-                # The checker deliberately does not apply this rule. `ptxas`
-                # does lean on predicated waits and its output runs correctly,
-                # so calling that an error would be a false positive against the
-                # reference. Being stricter about what basalt emits than about
-                # what it accepts is the right way round.
+                # a predicated wait may not happen, so downstream cannot lean on it.
+                # the checker stays lenient here because ptxas does lean on it
                 cleared = {sb for sb in range(SCOREBOARDS) if (needed >> sb) & 1}
                 live = {r: frozenset(bs - cleared) for r, bs in live.items()}
 
             barrier = barrier_of[index]
             mine = frozenset({barrier}) if barrier != NO_BARRIER else frozenset()
             for reg in access.real_defs:
-                # a predicated write may not happen, so whatever was outstanding
-                # for that register is still outstanding and still needs waiting
-                # on. replacing here instead of adding drops the wait on the
-                # earlier producer entirely.
+                # a predicated write may not happen, so the earlier producer is
+                # still outstanding: add rather than replace
                 live[reg] = (live.get(reg, frozenset()) | mine) if access.guard else mine
         return live
 
@@ -497,16 +430,8 @@ def schedule_program(
                     continue
                 access = operand_access(instr.mnemonic, instr.operands)
 
-                # A call reads registers its operand text cannot show. The
-                # return address is the plain case: `MOV R4, 0x90` puts the
-                # address of the instruction after the call into R4, and
-                # `CALL.REL.NOINC` consumes it without naming it, so the
-                # dependency is invisible and the `MOV` gets no gap in front of
-                # the call. The callee is free to read anything else too.
-                #
-                # So an opaque transfer is treated as reading everything live.
-                # Same reasoning as the wait it already emits for every
-                # outstanding scoreboard, applied to the stall side.
+                # a call reads registers its operand text never names, the return
+                # address among them, so treat it as reading everything live
                 opaque = instr.opcode in _OPAQUE_TRANSFERS
                 consumed = set(last_def) if opaque else access.real_uses
                 for reg in sorted(consumed, key=str):
@@ -521,10 +446,7 @@ def schedule_program(
                                 guard=reg == access.guard,
                             )
                         else:
-                            # A variable-latency producer is covered by the wait for
-                            # the long part of its result, and by a small gap for
-                            # the rest. Only the second part is scheduled here; the
-                            # wait itself was assigned above.
+                            # the wait covers the long part; this is the residue
                             needed = _scoreboarded_requirement(
                                 producer.mnemonic,
                                 instr.opcode,
@@ -534,12 +456,8 @@ def schedule_program(
                             if not needed:
                                 continue
                         if opaque:
-                            # Nothing here is attributable. The callee reads what
-                            # it likes, and the mined pairings for a transfer
-                            # describe whatever the compiler happened to leave
-                            # live rather than what it actually read. So the
-                            # producer's own latency is used, which is the
-                            # conservative reading and the only honest one.
+                            # mined pairings for a transfer describe what was live,
+                            # not what was read, so use the producer's own latency
                             needed = max(needed, record.cycles)
                         have = elapsed.get(producer.index, 0)
                         if have >= needed:
@@ -551,10 +469,8 @@ def schedule_program(
                         )
                         result.stalls_added += (needed - have) - leftover
                         if leftover:
-                            # the window between producer and consumer cannot hold
-                            # the requirement. covering it needs NOPs inserted, which
-                            # would change instruction addresses, so it is reported
-                            # rather than half-done.
+                            # covering this needs NOPs, which would move every
+                            # address, so it is reported rather than half-done
                             note = (
                                 f"#{producer.index} {producer.opcode} -> #{index} {instr.opcode}: "
                                 f"{leftover} of {needed} cycles will not fit in the "
@@ -562,12 +478,8 @@ def schedule_program(
                             )
                             if note not in result.unplaceable:
                                 result.unplaceable.append(note)
-                            # The window cannot hold the requirement, so fall back to
-                            # the safe stall encoding on the producer. A zero stall
-                            # waits for outstanding results as well as elapsed cycles
-                            # (see docs/FINDINGS.md), which costs about nine times a
-                            # scheduled instruction and is unconditionally correct.
-                            # Being slow is a trade; being wrong is not.
+                            # window too small, so fall back to the safe encoding:
+                            # nine times the cost and unconditionally correct
                             floor = _NEVER_ZERO_STALL.get(producer.opcode)
                             if floor is not None:
                                 # cannot take the safe encoding, so it gets the
@@ -604,21 +516,8 @@ def schedule_program(
                 break
 
     # ---- take back what nothing needs
-    # The fixed point above only ever adds. It walks the block, finds a consumer
-    # that is short, and spends cycles in the window before it, and a cycle
-    # spent for one pair also separates every other pair spanning that point.
-    # So a later pair can be satisfied by stall that was placed for an earlier
-    # one, and the earlier placement is then larger than anything requires.
-    #
-    # This walks it back: lower a stall while every dependency in the block is
-    # still met, one cycle at a time, cheapest instruction first. Purely
-    # subtractive and checked against the same requirement function that put the
-    # cycles there, so it cannot introduce a shortfall the fixed point would
-    # have caught.
-    #
-    # Worth about a fifth of the gap against the vendor. `LDC` alone accounted
-    # for half the excess before this existed, almost all of it overshoot rather
-    # than a real requirement.
+    # the fixed point only ever adds, so stall placed for one pair can already
+    # cover a later one; lowering is checked against the same requirement
     for block in cfg.blocks:
         for index in range(block.end - 1, block.start - 1, -1):
             if index in pinned or program.instructions[index].word is None:
@@ -632,21 +531,8 @@ def schedule_program(
                 result.stalls_added -= 1
 
     # ---- anything crossing a block boundary
-    # The stall analysis above is per block, so a value defined in one block and
-    # consumed in another gets no coverage from it. The safe stall encoding on
-    # the block's last instruction covers anything that leaves, because it waits
-    # for outstanding results as well as elapsed cycles.
-    #
-    # It is only placed where something actually leaves. Doing it at every
-    # boundary regardless is unconditionally correct and costs about 37 cycles
-    # each time, which was most of the difference between basalt's schedules and
-    # the vendor's. A block whose definitions are all consumed before its end
-    # needs nothing, and that is the common case for straight-line code.
-    #
-    # Live-out is computed properly rather than guessed: a definition is live out
-    # if any block reachable from here reads it before redefining it, which is
-    # the ordinary backwards fixed point. Guessing would trade a known cost for
-    # an unknown correctness risk, which is the wrong way round.
+    # the safe stall encoding covers what leaves a block, and costs ~37 cycles,
+    # so it goes only where liveness says something actually does
     live_out = _live_out(cfg, program)
     for block in cfg.blocks:
         last = block.end - 1
@@ -663,25 +549,9 @@ def schedule_program(
         pinned.add(last)
         result.yielded.append(last)
 
-    # A read barrier says "signal once my operands have been read", and what it
-    # covers is not only its own read. `ptxas` puts one on the last of a run of
-    # loads and lets in-order issue plus the gaps it chose carry the rest: by
-    # the time the last one has read its address register, the earlier ones
-    # have too. Compress those gaps and the guarantee goes with them.
-    #
-    # That is the whole of `k_mma_m16n8k32_s4_s4_s32` at `-O1`. Four `LDG.E`
-    # take their address from `R4`, the vendor spaces them four cycles apart and
-    # puts a read barrier on the fourth, and the `MOV R4, 0x90` after them waits
-    # for it. basalt issued them one cycle apart, the barrier fired while the
-    # earlier loads were still reading, `R4` was overwritten under them and they
-    # loaded from the wrong address.
-    #
-    # basalt has no measured model of how long an operand read takes, so it
-    # cannot compute a safe gap here; FINDINGS records that as the one hazard
-    # class it reports rather than solves. What it can do is decline to make the
-    # window tighter than the vendor made it, which is what this does. The
-    # window is bounded by the previous read barrier and the enclosing block, so
-    # this pins a handful of instructions rather than a kernel.
+    # ---- windows a read barrier covers
+    # one barrier stands in for a whole run of reads, so the vendor's gaps
+    # inside the window are a floor rather than something to compress (finding 13)
     block_of_index: dict[int, int] = {}
     for block in cfg.blocks:
         for index in range(block.start, block.end):
@@ -698,18 +568,7 @@ def schedule_program(
                 stalls[covered] = max(stalls[covered], original.word.field("stall"))
         previous_barrier = index
 
-    # Scoreboards the original schedule used as read barriers. basalt does not
-    # recompute those, so the waits that serviced them have to survive too, and
-    # they belong on the instruction that did the waiting rather than the one
-    # that set the barrier.
-    #
-    # Keeping them only where the barrier is set is what this used to do, and it
-    # leaves the overwrite unguarded. In `k_mma_m16n8k32_s4_s4_s32` at `-O1`,
-    # four loads take their address from `R4` and the last one signals a read
-    # barrier; the next instruction is `MOV R4, 0x90`. The vendor makes that MOV
-    # wait for the barrier. basalt kept the barrier, dropped the wait, and the
-    # loads read an address that had already been overwritten: a write after
-    # read, no fault, wrong answer.
+    # read barriers keep the vendor's numbering, so waits on them are kept too
     read_barrier_mask = 0
     for instr in program.instructions:
         if instr.word is None:
@@ -725,37 +584,18 @@ def schedule_program(
             continue
         word = instr.word
 
-        # Read barriers are carried over rather than recomputed. They guard an
-        # instruction that consumes its sources late, and basalt has no measured
-        # model for how long that takes: FINDINGS records it as the one hazard
-        # class reported as a warning for exactly this reason. Inventing a value
-        # would be worse than preserving one that is known to work, so the
-        # original barrier is kept and the waits that serviced it are folded into
-        # the new wait mask. Everything else here is computed from scratch.
+        # inherited, not recomputed: no measured model of a late operand read
         inherited_read_barrier = word.field("read_barrier")
-        # every original wait on a read barrier is kept; the rest are recomputed
         wait = waits[index] | (word.field("wait_mask") & read_barrier_mask)
 
         word = word.with_field("stall", stalls[index])
-        # The yield bit is not independent of the stall. Across the whole corpus
-        # `ptxas` emits a zero stall with the bit clear 4205 times and set never,
-        # and a stall of one with it set 1123 times and clear never. Writing a
-        # stall without the matching bit produces a combination the vendor never
-        # emits, and `nvdisasm` rejects it outright: "undefined value 0x10 for
-        # table TABLES_opex_0". The GPU runs it anyway, which is worse rather
-        # than better, because it means nothing complains until something tries
-        # to read the result back.
-        #
-        # Clearing the bit at any other stall is a throughput choice rather than
-        # a correctness one, and `ptxas` is seen doing it at every stall value
-        # from 2 up, so every pair this produces is one the vendor also emits.
+        # the yield bit tracks the stall; other pairings are words the vendor
+        # never emits and nvdisasm refuses while the GPU runs them anyway
         word = word.with_field("yield_", 1 if stalls[index] == 1 else 0)
         word = word.with_field("wait_mask", wait)
         word = word.with_field("write_barrier", write_barriers[index])
         word = word.with_field("read_barrier", inherited_read_barrier)
-        # the reuse cache is an optimisation rather than a correctness mechanism,
-        # and a reuse flag left over from a different schedule is a hazard, so it
-        # is cleared instead of carried
+        # a reuse flag from a different schedule is a hazard, so it is cleared
         word = word.with_field("reuse", 0)
         result.words.append(word)
 

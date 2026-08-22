@@ -64,28 +64,10 @@ class LatencyRecord:
         return self.kind is LatencyClass.FIXED
 
 
-# Opcode prefixes grouped by pipeline. Matching is longest-prefix on the bare
-# opcode, so `IMAD` is found before `I`, and an unknown opcode falls through to
-# a conservative default rather than being silently treated as free.
-#
-# Confidence is ASSUMED throughout at this stage. These are the architectural
-# conventions the analysis needs in order to run at all; stage 7 replaces them
-# with numbers measured on real silicon, at which point every finding produced
-# against an assumed number has to be re-examined.
-# Cycles a predicate needs before it can be used as an instruction's guard,
-# rather than as an ordinary source operand.
-#
-# Measured, and the gap is large: a guard consumed at issue needs 13 cycles from
-# a fixed-latency producer where the same predicate read as data needs 5. Both
-# numbers come from the same 317 kernel corpus, split by how the consumer reads
-# the value, and 13 was confirmed on hardware by sweeping the stall on a real
-# `ISETP` feeding an `@P1 IMAD` and finding the answer wrong at 12 and right at
-# 13. `docs/FINDINGS.md` records the experiment.
-#
-# The reason to believe it rather than treat it as noise is that the same
-# producer and consumer pairing shows both numbers depending only on how the
-# predicate is read, and a predicate read as data behaves exactly like a
-# register. So this is a property of issue, not of the predicate file.
+# opcode prefixes by pipeline, longest-prefix on the bare opcode. ASSUMED
+# throughout: stage 7 replaces these with numbers measured on silicon
+# a guard is consumed at issue and needs 13 cycles where the same predicate read
+# as data needs 5, so this is a property of issue rather than of the file
 GUARD_CYCLES = 13
 
 _ASSUMED: dict[str, tuple[int, LatencyClass, str]] = {
@@ -104,11 +86,8 @@ _ASSUMED: dict[str, tuple[int, LatencyClass, str]] = {
     "PRMT": (4, LatencyClass.FIXED, "byte permute"),
     "SEL": (4, LatencyClass.FIXED, ""),
     "PLOP3": (4, LatencyClass.FIXED, "predicate lookup"),
-    # timed at 18 cycles; ptxas also scoreboards it, but fp64 showed that a
-    # scoreboard alongside a long stall does not mean the stall is redundant,
-    # so this stays fixed and the cycles are respected
-    # Scoreboarded in every instance the corpus contains where the result is
-    # consumed, so they complete out of order however long the pipe is.
+    # timed at 18 and scoreboarded, but a scoreboard beside a long stall does not
+    # make the stall redundant, so this stays fixed
     "POPC": (18, LatencyClass.VARIABLE, "population count, measured, scoreboard signalled"),
     "FLO": (4, LatencyClass.VARIABLE, "find leading one, scoreboard signalled"),
     # Scoreboarded in two of the three dependent instances in the corpus, and the
@@ -132,43 +111,21 @@ _ASSUMED: dict[str, tuple[int, LatencyClass, str]] = {
     "VIADD": (4, LatencyClass.FIXED, ""),
     "VABSDIFF": (4, LatencyClass.FIXED, ""),
     "IDP": (4, LatencyClass.FIXED, "dot-product accumulate"),
-    # conversions run a longer fixed pipeline
-    # The conversion pipe signals a scoreboard. `I2F` and `F2I` are seen doing so
-    # in every dependent instance in the corpus; `F2F` and `I2I` share the unit
-    # and are classed with them. Treating the pipe as fixed latency is what made
-    # basalt's own schedule for the conversion kernels non-deterministic on
-    # hardware, which no amount of static checking would have shown, because the
-    # checker was reading the same wrong class.
+    # the conversion pipe signals a scoreboard; calling it fixed latency made
+    # basalt's own conversion schedules non-deterministic on hardware
     "I2F": (6, LatencyClass.VARIABLE, "conversion pipeline, scoreboard signalled"),
     "F2I": (6, LatencyClass.VARIABLE, "conversion pipeline, scoreboard signalled"),
     "F2F": (6, LatencyClass.VARIABLE, "conversion pipeline, scoreboard signalled"),
-    # `I2FP` is not `I2F` with a suffix, it is a different instruction, and the
-    # longest-prefix lookup would otherwise hand it the conversion pipe's entry.
-    # ptxas emits it with no scoreboard in every instance, so it is fixed, and
-    # saying so explicitly is what stops the prefix rule from guessing. Caught by
-    # the positive control the moment the pipe was reclassified.
+    # `I2FP` is a different instruction, not `I2F` with a suffix, and the
+    # longest-prefix rule would otherwise hand it the conversion pipe's entry
     "I2FP": (6, LatencyClass.FIXED, "packed integer to float, never scoreboarded"),
     # `I2I` does not appear anywhere in the corpus, so there is no evidence for
     # its class either way and it keeps the conservative default rather than
     # being classed with the rest of the pipe on the strength of its name.
     "I2I": (6, LatencyClass.FIXED, "conversion pipeline, class unobserved"),
     "FRND": (6, LatencyClass.FIXED, ""),
-    # Double precision completes out of order and must be scoreboarded. `ptxas`
-    # puts a write scoreboard on all 41 fp64 instructions in the corpus and none
-    # without, and the scoreboard is what carries the dependency: with every
-    # wait left in place, cutting the fp64 stalls to 1 still computes the right
-    # answer.
-    #
-    # An earlier note here said the opposite, that the cycles were load-bearing
-    # and the scoreboard was belt and braces. That experiment cut the stall on
-    # the `LDC.64` that sets up the store address as well, which breaks the
-    # kernel on its own and has nothing to do with fp64. Confining the cut to
-    # the fp64 stretch reverses the conclusion.
-    #
-    # The 64 cycles are still the right latency figure and are still what a
-    # dependent chain costs. They are not what correctness needs, given a wait.
-    # What correctness needs on top of the wait is the per-opcode minimum in
-    # `by_scoreboarded`, which is 2 for DADD and DSETP and 1 for DFMA and DMUL.
+    # fp64 completes out of order and is always scoreboarded; the wait carries
+    # the dependency and `by_scoreboarded` carries what it still owes
     "DADD": (64, LatencyClass.VARIABLE, "fp64 add, measured, scoreboard signalled"),
     "DMUL": (64, LatencyClass.VARIABLE, "fp64 multiply, assumed equal to DADD"),
     "DFMA": (64, LatencyClass.VARIABLE, "fp64 fused multiply-add, measured"),

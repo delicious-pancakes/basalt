@@ -130,12 +130,8 @@ _SPECS: tuple[ChainSpec, ...] = (
         seed="    ld.global.f32 %f1, [%in];",
         note="single precision multiply",
     ),
-    # fp64 completes out of order and is always scoreboarded, so the class is
-    # stated here rather than left at the fixed default. The chain still times
-    # cleanly and 64 cycles is a real number; it is the cost of a dependent
-    # chain, not the requirement a wait leaves behind. Writing `fixed` here is
-    # what let a corrected class be silently overwritten by the next
-    # measurement run.
+    # stated rather than left at the fixed default, or the next measurement run
+    # silently overwrites a corrected class
     ChainSpec(
         opcode="DADD",
         ptx_type="f64",

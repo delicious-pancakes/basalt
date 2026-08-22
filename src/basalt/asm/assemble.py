@@ -47,28 +47,12 @@ __all__ = [
     "branch_target",
 ]
 
-# Where a branch keeps its destination, and what the number means.
-#
-# Solved from real kernels rather than probed: the label table gives the
-# destination, the instruction gives its own address, and the word gives the
-# bits, so a field and a convention agreeing on every sample is the encoding.
-# All 354 branches in the corpus decode correctly and none decodes wrongly.
-#
-# The field is split, which is why searching contiguous runs finds nothing: the
-# low eight bits sit at 16..23 and the rest at 34..81, low part first. The value
-# is the distance from the *following* instruction, in units of four bytes,
-# signed. `tests/test_assemble.py` re-derives this from the corpus so it cannot
-# quietly rot when a compiler version changes.
+# a split field, low eight bits at 16..23 and the rest at 34..81, holding the
+# signed distance from the following instruction in units of four (finding 11)
 BRANCH_TARGET_BITS: tuple[int, ...] = (*range(16, 24), *range(34, 82))
 BRANCH_SCALE = 4
 
-# `R7`, `UR4`, `P0`, `UP1`, and the sinks that read as constants.
-#
-# `.reuse` is allowed on the end and ignored. It is not part of the operand: it
-# is a hint in the control word saying the operand collector may serve this
-# source from the reuse cache, and the control word is copied wholesale rather
-# than assembled. Treating `R6.reuse` as an unencodable token refuses perfectly
-# ordinary instructions, and treating it as a distinct register would be worse.
+# `.reuse` is allowed and ignored: it is a control-word hint, not the operand
 _REGISTER = re.compile(r"^(UR|R|UP|P)(\d+|Z|T)(?:\.reuse)?$")
 _IMMEDIATE = re.compile(r"^-?0[xX][0-9a-fA-F]+$|^-?\d+$")
 _GUARD = re.compile(r"^@(!)?(U?P)(\d+|T)\s+")
@@ -255,12 +239,8 @@ class Assembler:
                     # text that disagrees is refused rather than mis-encoded
                     continue
                 token, holds = classified
-                # A field has to be able to reproduce the reference operand's
-                # own value. If reading it back does not give what the reference
-                # text says, the prober attributed only part of the field, and
-                # writing a different value leaves the rest encoding the old
-                # one. `IMAD R?, R?, 0x1, R?` with two of the immediate's bits
-                # unattributed assembles `0x3` into something that is neither.
+                # a field that cannot reproduce its own reference value was only
+                # partly attributed, so writing through it leaves the rest behind
                 if holds == "value" and token < len(tokens):
                     expected = _token_value(tokens[token])
                     if (
@@ -359,13 +339,8 @@ class Assembler:
         word = form.reference
         tokens = _tokenise(operands)
 
-        # A branch target is an offset from this instruction, so identical label
-        # text means a different encoding in every kernel it appears in. The
-        # database has no field for it either, so nothing below would touch
-        # those bits and the result would branch wherever the harvested kernel
-        # branched: a word that assembles, disassembles to the right text, and
-        # jumps somewhere else. Checked here rather than per slot because the
-        # field is unrecorded and the slot loop never sees it.
+        # the same label text is a different encoding in every kernel, and the
+        # database records no field for it, so the slot loop would never see it
         for position, token in enumerate(tokens):
             if _kind(token) == "label":
                 raise AssemblyError(
@@ -384,25 +359,16 @@ class Assembler:
             if token == reference_token:
                 continue  # already what the reference encoding holds
 
-            # A modifier is one character of text and one bit of encoding, and
-            # the bit is nowhere near the operand it belongs to: negating source
-            # 1 of IADD is bit 72 while the register number is bits 24:31. Take
-            # it off first so everything below sees the bare operand, which is
-            # what lets `R5` be assembled from a form harvested as `-R0` instead
-            # of refused for being a different shape.
+            # take the modifier off first so everything below sees the bare
+            # operand; its bit is nowhere near the operand (finding 14)
             word, token, reference_token = _apply_modifiers(
                 word, slot, token, reference_token, mnemonic, form.reference
             )
             if token == reference_token:
                 continue  # only the modifier differed, and it is now encoded
             if _kind(token) != _kind(reference_token):
-                # One mnemonic can cover several operand shapes with genuinely
-                # different encodings, and the database records one of them.
-                # `IADD.64 R4, R2, 0x4` and `IADD.64 R4, R4, R6` differ in two
-                # bits outside every recorded field, so writing a register
-                # number into the immediate form's encoding produces a word that
-                # assembles, disassembles to the right text, and is a different
-                # instruction. Refusing is the only safe answer available.
+                # one mnemonic can cover shapes that differ in bits outside every
+                # recorded field, so writing across them encodes something else
                 raise AssemblyError(
                     f"{mnemonic} operand {slot.index} is {_kind(token)} {token!r} where the "
                     f"recorded form has {_kind(reference_token)} {reference_token!r}; that is a "

@@ -175,11 +175,8 @@ def optimise(path: Path) -> tuple[str, str]:
         if lossless <= TARGET_BYTES:
             return px, "lossless"
 
-        # Try progressively smaller palettes, keeping the first that fits and
-        # still matches the original. Fidelity is measured rather than assumed:
-        # the mean per-channel drift has to stay under MAX_MEAN_DRIFT, so a
-        # future artwork with a steep gradient refuses the trade instead of
-        # shipping banded.
+        # smaller palettes until one fits, and the drift is measured rather than
+        # assumed, so a steep gradient refuses the trade instead of banding
         for colors in (256, 192, 128):
             candidate = im.quantize(colors=colors, dither=Image.Dither.FLOYDSTEINBERG)
             drift = ImageStat.Stat(ImageChops.difference(im, candidate.convert("RGB"))).mean

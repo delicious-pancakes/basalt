@@ -292,11 +292,8 @@ def _check_instruction(
                     seen,
                     Hazard(
                         kind=HazardKind.OVERWRITTEN_BEFORE_READ,
-                        # a warning, not an error: an explicit wait is one way to
-                        # cover this, but elapsed cycles are another, and basalt
-                        # has no measured model for how many a late read needs.
-                        # ptxas relies on the second, so treating this as an error
-                        # flags correct compiler output.
+                        # a warning: elapsed cycles cover this as well as a wait
+                        # does, and ptxas relies on the second (finding 13)
                         severity=Severity.WARNING,
                         confidence=record.confidence,
                         register=str(reg),

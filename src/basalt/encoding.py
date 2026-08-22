@@ -65,11 +65,8 @@ class BitField:
         return f"BitField({self.name} @ {span})"
 
 
-# The control section of the word. Layout is from Huerta et al. on Ampere,
-# re-measured on sm_120 by the probe suite; see docs/control-bits.md for the
-# experiments that pin each field. These are declared here rather than loaded
-# from the ISA database because the assembler needs them before any database
-# exists, and because they are architectural rather than per-instruction.
+# the control section, re-measured on sm_120 by the probe suite. declared here
+# rather than loaded, because the assembler needs it before a database exists
 CONTROL_FIELDS: tuple[BitField, ...] = (
     BitField("stall", 105, 4, "cycles to stall before issuing the next instruction"),
     BitField("yield_", 109, 1, "hint that the warp scheduler may switch warps"),
@@ -85,16 +82,8 @@ _CONTROL_BY_NAME = {f.name: f for f in CONTROL_FIELDS}
 # shows up in scheduling decisions constantly and 7 reads as a magic number.
 NO_BARRIER = 0b111
 
-# A stall count of 0 does not mean "issue the next instruction immediately".
-# It is a distinct, safe encoding: measured on an RTX 5070 Ti, a chain of
-# dependent IMADs with every stall set to 0 runs at ~37 cycles per instruction
-# and produces the correct result, while the same chain at stall 1, 2 or 3 runs
-# at 4.9 to 5.9 cycles and produces a wrong one.
-#
-# This is why `ptxas -O0` emits an entirely zeroed control word and the code
-# still computes correctly, roughly nine times slower than scheduled output.
-# Treating 0 as zero cycles makes a checker call correct programs broken and,
-# worse, makes a scheduler that emits 0 look dangerous when it is merely slow.
+# a stall of 0 is a long safe wait, ~37 cycles, not zero cycles. reading it as
+# zero makes a checker call correct programs broken (finding 1)
 STALL_YIELD = 0
 
 # What a zero stall is worth when accumulating. Larger than any latency on this

@@ -198,11 +198,8 @@ def _expand(base: RegRef, count: int) -> set[RegRef]:
     return {RegRef(base.kind, base.number + i) for i in range(count)}
 
 
-# Opcodes whose register operands are 64-bit and therefore occupy a pair, with
-# no suffix anywhere to say so. `DFMA R4, R4, R6, R4` writes R4 and R5 and reads
-# R6 and R7; reading it as single registers loses half of every dependency it
-# has, which is silent in both the checker and the scheduler and produced a
-# wrong fp64 kernel from basalt's own scheduler before it was found.
+# 64-bit operands occupy a register pair with no suffix saying so, and reading
+# them as single registers loses half of every dependency
 _PAIRED_OPCODES = frozenset({"DADD", "DMUL", "DFMA", "DSETP", "DMMA", "DMNMX"})
 
 # Opcodes whose register destination follows their leading predicate outputs.
@@ -210,13 +207,8 @@ _PAIRED_OPCODES = frozenset({"DADD", "DMUL", "DFMA", "DSETP", "DMMA", "DMNMX"})
 # the same instruction over a different type.
 _PREDICATES_THEN_REGISTER = frozenset({"IMNMX", "FMNMX", "DMNMX", "HMNMX", "HMNMX2"})
 
-# `IMAD.WIDE dst, a, b, c` computes a 64-bit `a * b + c` from 32-bit `a` and
-# `b`. The destination and the addend occupy register pairs; the two factors do
-# not. Nothing in the mnemonic says which is which beyond the position, and the
-# `.U32` that some forms carry describes the factors rather than the result, so
-# the ordinary suffix rule reads the whole thing as 32-bit and loses the high
-# half of both. `IMAD.WIDE.U32 R6, R2, UR7, RZ` writes R6 and R7, and missing R7
-# is what made basalt schedule a wrong 64-bit atomic.
+# in `IMAD.WIDE dst, a, b, c` the destination and addend are register pairs and
+# the factors are not; `.U32` describes the factors, so the suffix rule misreads it
 _WIDE_PAIR_SLOTS = (0, -1)
 
 
@@ -293,34 +285,16 @@ def operand_access(mnemonic: str, operands: str) -> Access:
         else:
             break
 
-    # A single leading predicate followed by a register means both are written:
-    # `SHFL.IDX PT, R9, R7, R0, 0x1f` and `ATOMG.E.ADD PT, R7, desc[...], R7`
-    # return a value as well as a predicate. Two or more leading predicates are
-    # the whole destination list and everything after them is a source, which is
-    # the `ISETP.GE.AND P0, PT, R2, R3, PT` shape.
-    #
-    # Reading only the predicate loses the register entirely, so nothing
-    # scoreboards the returned value of an atomic or a shuffle and nothing waits
-    # for it. That is silent in the checker and produced wrong answers from
-    # basalt's own scheduler for every atomic in the corpus.
+    # one leading predicate then a register means both are written, as an atomic
+    # or a shuffle does; two or more are the whole destination list
     wide = "WIDE" in mnemonic.split(".")[1:]
 
     def_slots = max(1, leading_preds)
     if leading_preds == 1 and len(parts) > 1 and _REG_WITH_TAIL.match(parts[1].strip()):
         def_slots = 2
     elif leading_preds == 0 and len(parts) > 1 and _PREDICATE_ONLY.match(parts[1].strip()):
-        # A predicate straight after the register destination is written, not
-        # read: it is the carry out of `IADD RZ, P0, R9, R10`, or the vote result
-        # of `VOTEU.ANY UR6, UPT, PT`. Every opcode in the corpus that puts a
-        # predicate there uses it that way, `IADD`, `IADD3`, `IMAD`, `UIADD3`,
-        # `VOTE` and `VOTEU`, and a predicate that is genuinely a source appears
-        # last instead, as in `SEL R11, R11, R8, P1`.
-        #
-        # Reading it as a source is wrong twice over: the definition disappears,
-        # so an `.X` instruction consuming the carry depends on nothing, and a
-        # false read of whatever defined that predicate earlier is invented. It
-        # was found by running the corpus against four input patterns instead of
-        # one, which is the only reason the wrong answer ever differed.
+        # a predicate straight after the register destination is a carry out, not
+        # a source; a real predicate source appears last, as in `SEL ..., P1`
         def_slots = 2
     elif (
         leading_preds >= 2
@@ -328,17 +302,8 @@ def operand_access(mnemonic: str, operands: str) -> Access:
         and len(parts) > leading_preds
         and _REG_WITH_TAIL.match(parts[leading_preds].strip())
     ):
-        # `IMNMX.S64 PT, PT, R4, R4, R6, !PT, !PT` computes a minimum into R4,
-        # behind two predicate outputs nothing uses. Every other opcode with two
-        # leading predicates, `ISETP` and the rest of the compare family, has a
-        # source in that position, so this cannot be inferred from the shape and
-        # is listed instead.
-        #
-        # Reading it wrong is not cosmetic: the register never appears as a
-        # definition at all, so nothing depends on it, the checker reports no
-        # hazard and the scheduler leaves no gap. It was found when a scheduling
-        # optimisation removed the stall in front of one and the GPU returned a
-        # different answer.
+        # these write a register behind two predicate outputs, where the compare
+        # family has a source instead, so the shape cannot tell them apart
         def_slots = leading_preds + 1
 
     for idx, part in enumerate(parts):

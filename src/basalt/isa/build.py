@@ -60,11 +60,8 @@ def operand_shape(operands: str) -> tuple[str, ...]:
     encoding with one fixed field set differently, so counting the guard would
     split every predicated form into a duplicate of itself.
     """
-    # The guard is attached to the first operand rather than being its own
-    # comma-separated part, so `@P0 R2, R3` splits as ("@P0 R2", "R3"). Strip it
-    # before splitting; skipping the part that carries it drops a real operand
-    # and gives a predicated instruction a different shape from the same
-    # instruction unpredicated.
+    # the guard rides on the first operand, so `@P0 R2, R3` splits as
+    # ("@P0 R2", "R3"); skipping that part would drop a real operand
     operands = _GUARD_PREFIX.sub("", operands.strip(), count=1)
 
     kinds: list[str] = []
@@ -132,11 +129,8 @@ def build_database(
     harvest_out: Path | None = None,
     progress: bool = True,
 ) -> tuple[IsaDatabase, HarvestResult]:
-    # The control-flow kernels are harvested too. They were written to give the
-    # scheduler loops and branches to get wrong, and they also emit instruction
-    # forms nothing else in the corpus does: predicated arithmetic, immediate
-    # operands in positions the straight-line kernels only ever fill with a
-    # register. Those are real forms and belong in a database of real forms.
+    # the control-flow kernels are harvested too: they emit predicated forms and
+    # immediate positions the straight-line corpus never reaches
     snippets = generate_scalar() + generate_shapes()
     if include_tensor:
         snippets = snippets + generate_tensor()

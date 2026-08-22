@@ -75,12 +75,8 @@ _repo.use_repo_source()
 ROOT = _repo.ROOT
 
 ARCH = "sm_120a"
-# Several inputs rather than one, and the same ones for both schedules.
-#
-# A stale read only changes the answer when the stale value and the fresh one
-# differ, so a single pattern of bytes is a single chance to notice. These four
-# are chosen to disagree with each other everywhere: an odd stride, a different
-# odd stride, a run of alternating extremes, and a quadratic.
+# a stale read only shows when the stale and fresh values differ, so these four
+# are chosen to disagree with each other everywhere
 PATTERNS: tuple[bytes, ...] = (
     bytes((i * 37 + 11) & 0xFF for i in range(256)),
     bytes((i * 211 + 173) & 0xFF for i in range(256)),
@@ -91,14 +87,8 @@ BUFFER = 256
 REPEATS = 5
 THREADS = 32
 
-# How many patterns the worker actually uses. It runs as a separate process, so
-# `--patterns` reaches it through the environment rather than an argument.
-#
-# All four is the default and what any published number should come from.
-# Fewer exists because the full sweep across three optimisation levels takes the
-# better part of an hour and a contributor bisecting one kernel does not need
-# all of it. Lowering it makes the run faster and the result weaker, in that
-# order.
+# reaches the worker through the environment, since it is a separate process.
+# four is the default and what any published number should come from
 PATTERNS_ENV = "BASALT_PATTERNS"
 
 
@@ -245,14 +235,8 @@ def worker(work: Path, start: int) -> None:
                 emit(index, "basalt-faulted", name, type(exc).__name__)
                 sys.stdout.flush()
                 os._exit(1)
-            # Run the vendor again, after basalt has had the card, and before
-            # judging basalt at all. A kernel that reads uninitialised shared or
-            # local memory is stable while nothing else has touched it and not
-            # stable once something has, so its first result is not ground truth
-            # and its instability is not basalt's. Every `LDSM` and `MOVMATRIX`
-            # kernel here is in that position and each looked like a basalt
-            # failure until this check existed. Checked before basalt's own
-            # determinism, because otherwise these land in that bucket instead.
+            # a kernel reading uninitialised memory is stable until something else
+            # has used the card, so re-run the vendor before judging basalt
             again = run(work / f"{index:04d}.v.cubin", entry["entry"])
             if again[0] != vendor[0]:
                 emit(index, "not-reproducible", name)

@@ -83,19 +83,8 @@ class ObservedStalls:
     arch: str
     by_pair: dict[tuple[str, str], StallEvidence] = field(default_factory=dict)
     by_producer: dict[str, StallEvidence] = field(default_factory=dict)
-    # Minimum stall the compiler leaves on a producer that also carries a write
-    # scoreboard. Not redundant with the above: a scoreboard does not make the
-    # producer's own stall irrelevant. `DADD` is scoreboarded and still never
-    # given less than 2, and shortening it to 1 changes the answer on hardware.
-    #
-    # Keyed on the producer's full mnemonic and its consumer, because both
-    # decide the number. Collapsing forms takes the minimum across variants:
-    # `I2F` reads as 1 only because of `I2F.RP`, `MUFU` as 1 only because of
-    # `MUFU.RCP64H`, `ATOMG` as 1 while its float and min/max forms need 4. And
-    # collapsing consumers is just as wrong: `FLO.U32` is scheduled 1 cycle from
-    # a consumer three instructions later and 2 from the one straight after it.
-    # Every one of those collapses errs in the direction that silently
-    # corrupts.
+    # what a scoreboarded producer still owes its consumer. keyed on the full
+    # mnemonic and the consumer, because collapsing either errs toward corruption
     by_scoreboarded: dict[tuple[str, str], StallEvidence] = field(default_factory=dict)
     kernels: int = 0
 
@@ -105,15 +94,8 @@ class ObservedStalls:
             self.by_pair[key] = StallEvidence(producer, consumer, minimum=stall)
         self.by_pair[key].observe(stall, sample)
 
-        # the same evidence collapsed over consumers, which is what a
-        # single-number-per-opcode latency model needs.
-        #
-        # Guards are collapsed separately, under `@OPCODE`. Mixing them would be
-        # actively unsafe: the collapse keeps the minimum, guards need about two
-        # and a half times what a data read needs, and one `ISETP -> SEL` at 5
-        # cycles would drag the whole of `ISETP` down to 5 and then answer 5 to
-        # a guard that needs 13. That is a wrong answer in the dangerous
-        # direction, and it is how this was found.
+        # collapsed over consumers, for a per-opcode model. guards collapse
+        # separately under `@OPCODE`, or one drags the other down to its minimum
         collapsed = self._collapse_key(producer, consumer)
         if collapsed not in self.by_producer:
             self.by_producer[collapsed] = StallEvidence(producer, "*", minimum=stall)
@@ -198,15 +180,8 @@ class ObservedStalls:
         """
         bare = producer.split(".")[0]
         if consumer is not None:
-            # This exact form against this exact consumer, however few times it
-            # was seen. The `trusted` gate belongs on the collapsed evidence,
-            # where a thin sample really is a guess; on an exact pairing it is
-            # the only evidence there is, and skipping it falls through to the
-            # bare opcode's number, which is a different instruction's
-            # requirement wearing this one's name. `IMAD.WIDE.U32.X` into
-            # `IADD` is scheduled at 3 and plain `IMAD` into `IADD` at 5, and
-            # taking the second for the first reports a hazard in the vendor's
-            # own output.
+            # an exact pairing however thin, because falling through to the bare
+            # opcode answers with a different instruction's requirement
             if (pair := self.by_pair.get((producer, consumer))) is not None:
                 return pair
             if (pair := self.by_pair.get((bare, consumer))) is not None and pair.trusted:
@@ -310,13 +285,8 @@ def mine_program(program: Program, into: ObservedStalls) -> None:
         # last writer of each register, and the stall accumulated since
         last_def: dict[object, tuple[int, str]] = {}
         elapsed: dict[object, int] = {}
-        # scoreboard each live definition signalled, and whether that signal has
-        # been waited on yet. Kept per definition rather than per scoreboard: a
-        # scoreboard is a counter, so a later producer signalling the same index
-        # does not undo an earlier wait, and `FLO.U32` at #5 stays satisfied by
-        # the wait at #8 even though `LDC.64` signals the same index at #9.
-        # Tracking it per scoreboard makes the miner blind to that pairing, and
-        # then the pairing gets judged against a floor mined from looser company.
+        # per definition, not per scoreboard: a counter means a later producer on
+        # the same index does not undo an earlier wait
         signalled: dict[int, int] = {}
         satisfied: set[int] = set()
 
@@ -330,19 +300,8 @@ def mine_program(program: Program, into: ObservedStalls) -> None:
             wait_mask = instr.word.field("wait_mask")
             satisfied |= {producer for producer, sb in signalled.items() if (wait_mask >> sb) & 1}
 
-            # Only what the instruction demonstrably reads. The scheduler treats
-            # a call as consuming everything live, because the callee may read
-            # anything and being wrong there is silent, but the miner must not
-            # copy that: it records a *minimum*, so pairing a call with every
-            # live register logs whichever one happens to sit closest and calls
-            # that the requirement.
-            #
-            # Measured. Doing it the other way put `MOV -> RET` at 2 cycles from
-            # 30 observations, almost all of them a long-dead `MOV` that the
-            # `RET` never read, and the one kernel where a `RET` really does read
-            # a `MOV` needs 5 and faulted the GPU. Conservative and permissive
-            # have opposite meanings on the two sides of this, and the scheduler
-            # gets its conservatism from the latency model instead.
+            # only what the instruction demonstrably reads: this records a minimum,
+            # so pairing a call with everything live logs the nearest register
             for reg in access.real_uses:
                 if (previous := last_def.get(reg)) is None:
                     continue
@@ -357,25 +316,8 @@ def mine_program(program: Program, into: ObservedStalls) -> None:
                 sample = f"{program.instructions[producer_index].text} -> {instr.text}"
                 barrier = word.field("write_barrier")
                 if barrier != 7:
-                    # A scoreboarded producer. The wait carries most of the
-                    # dependency but not the whole of it, so the gap still says
-                    # something, and it is recorded in its own keyspace.
-                    #
-                    # Only where the barrier has actually been waited on by the
-                    # time the consumer runs. Otherwise the gap is covering the
-                    # full latency the ordinary way and the evidence belongs
-                    # with the unscoreboarded pairs.
-                    #
-                    # Any instruction's wait counts, not just this consumer's,
-                    # which is the same rule the checker applies. Requiring the
-                    # consumer to carry the wait itself makes the miner blind to
-                    # exactly the tightest cases, because those are the ones
-                    # where something earlier already waited. That mined 28
-                    # cycles for `LDCU.64` into `ATOMG` from a kernel where the
-                    # compiler had other work to fit in, and then flagged the
-                    # kernel that really does it in 17. The same applies to a
-                    # scoreboard reused by a later producer, which is why
-                    # satisfaction is tracked per definition above.
+                    # its own keyspace, and only where the barrier was already
+                    # waited on. any instruction's wait counts, as in the checker
                     if producer_index in satisfied:
                         into.observe_scoreboarded(
                             producer_mnemonic, consumer_key, elapsed.get(reg, 0), sample
@@ -400,17 +342,8 @@ def mine_corpus(
     tc,
     *,
     arch: str = "sm_120a",
-    # Every level that actually schedules. `-O0` is excluded and always will be:
-    # `ptxas` does not run its scheduling pass there at all, every control word
-    # comes out zeroed, and the code still runs because a zero stall is the safe
-    # encoding, so mining it would record a requirement of zero for everything.
-    #
-    # `-O1` and `-O2` are included because they emit code `-O3` does not. The
-    # uniform datapath is the case that forced this: at `-O3` a loop is unrolled
-    # into ordinary registers, and at `-O1` the same loop keeps its counter in
-    # uniform ones, so `UIADD3` and `UIMAD` had no mined pairings at all and
-    # fell back to an assumed latency of 4 when the requirement is 5. That is a
-    # wrong answer in the silent direction, and the round trip at `-O1` found it.
+    # every level that schedules. -O0 zeroes the control word, and -O1 keeps a
+    # loop counter in the uniform datapath that -O3 unrolls away
     opt_levels: tuple[int, ...] = (1, 2, 3),
     jobs: int | None = None,
     progress: bool = True,
@@ -431,17 +364,8 @@ def mine_corpus(
     from ..harvest.corpus_shapes import generate_shapes
     from ..harvest.corpus_tensor import generate_tensor
 
-    # The shape kernels are mined as well as the harvest corpus. They exist for
-    # the round trip, but they also emit pairings the generated corpus never
-    # does, and an unmined pairing falls back to a number collapsed over the
-    # producer's other consumers. That collapse takes the minimum, so an unmined
-    # pairing inherits whichever consumer tolerates the shortest gap: `IADD`
-    # into `LOP3` needs 5 cycles and was being given 4, because `IADD` into
-    # `F2I` needs 4 and `F2I` reads its operand late.
-    #
-    # More evidence is the only real fix for that. Every guess about an unmined
-    # pairing is wrong in one direction or the other, and the directions are not
-    # equally bad.
+    # the shape kernels are mined too: an unmined pairing falls back to a number
+    # collapsed over other consumers, which takes whichever tolerates least
     snippets = generate_scalar() + generate_tensor() + generate_shapes()
     tasks = [(s, o) for s in snippets for o in opt_levels]
     if progress:

@@ -57,12 +57,8 @@ class SubRole:
     UNKNOWN = "unknown"  # the effect was not readable
 
 
-# A modifier is one character in the text and one bit in the word, and the bit
-# is nowhere near the operand it modifies: negating source 1 of `IADD` is bit
-# 72 while the register number is bits 24:31. The prober groups both into the
-# same slot because both change that operand's text, which is correct and too
-# coarse to write through. Splitting them is what lets `R5` be assembled from a
-# form harvested as `-R0` instead of refused.
+# a modifier is one bit, and it sits nowhere near the operand it modifies, so
+# the prober groups the two together and this splits them (finding 14)
 _MODIFIERS = {"-": SubRole.NEGATE, "~": SubRole.NOT, "!": SubRole.INVERT}
 _MODIFIER_ROLES = frozenset({*_MODIFIERS.values(), SubRole.ABSOLUTE})
 
@@ -195,16 +191,8 @@ def subfields(observations) -> dict[str, tuple[int, ...]]:
             continue
         grouped.setdefault(role, []).append(observation.bit)
 
-    # A field is only worth splitting if something in it is not the value. When
-    # a modifier is present the remaining bits stop being "the field" and become
-    # the value the modifier applies to, so they have to be named; without one
-    # the field is plain and the ordinary whole-field path already handles it.
-    #
-    # Splitting is refused outright if any bit in the field could not be read.
-    # A value written into the bits that were readable is a value truncated by
-    # however many were not, which encodes a different register in silence. A
-    # bracket operand is different: its parts are separately addressable, so an
-    # unreadable bit there costs only the part it belonged to.
+    # only worth splitting when a modifier is present, and refused outright if
+    # any bit was unreadable: a truncated value is a different register
     if plain and _MODIFIER_ROLES.intersection(grouped):
         if unreadable:
             return {}

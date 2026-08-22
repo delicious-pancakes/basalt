@@ -168,12 +168,8 @@ def probe_required_stall(
     repeats: int = DEFAULT_REPEATS,
 ) -> InjectionResult:
     """Walk every encodable stall for one opcode and see what the silicon accepts."""
-    # Values chosen so that skipping one link changes the answer unmistakably.
-    # An operand near the identity for the operation, such as a float multiplier
-    # close to 1.0, lets a stale read round back to the same result: the probe
-    # then sees no difference and reports a requirement of 1 for an instruction
-    # that plainly needs more. That is a statement about the test, not the
-    # hardware, which is why the sensitivity check below exists as well.
+    # far from the identity, or a stale read rounds back to the same answer and
+    # the probe reports a requirement of 1 for something that needs more
     payload = (
         struct.pack("<4I", 3, 5, 7, 11)
         + struct.pack("<2I", 3, 1)
