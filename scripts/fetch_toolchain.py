@@ -21,6 +21,7 @@ import json
 import platform
 import shutil
 import sys
+import tarfile
 import urllib.request
 import zipfile
 from pathlib import Path
@@ -60,6 +61,27 @@ def fetch(url: str, dest: Path) -> Path:
     with urllib.request.urlopen(url) as resp, dest.open("wb") as out:
         shutil.copyfileobj(resp, out)
     return dest
+
+
+def extract(archive: Path, dest: Path) -> None:
+    """Unpack a redistributable.
+
+    NVIDIA ships Windows components as `.zip` and Linux ones as `.tar.xz`, so
+    the extension decides. `filter="data"` is passed to tarfile because the
+    default became an error in 3.14 and, more to the point, an archive from the
+    network should not be able to write outside the directory it is told to.
+    """
+    dest.mkdir(parents=True, exist_ok=True)
+    if archive.suffix == ".zip":
+        with zipfile.ZipFile(archive) as zf:
+            zf.extractall(dest)
+        return
+
+    with tarfile.open(archive) as tf:
+        try:
+            tf.extractall(dest, filter="data")
+        except TypeError:  # pragma: no cover - Python older than 3.12
+            tf.extractall(dest)
 
 
 def manifest(version: str) -> dict:
@@ -111,8 +133,7 @@ def main() -> int:
                 f"checksum mismatch for {archive.name}\n  expected {expected}\n  got      {digest}"
             )
 
-        with zipfile.ZipFile(archive) as zf:
-            zf.extractall(root / "_raw")
+        extract(archive, root / "_raw")
 
     # flatten every component's bin/ into one directory so BASALT_CUDA_BIN is a
     # single path regardless of how many archives were unpacked
@@ -122,7 +143,7 @@ def main() -> int:
         if src.is_file() and src.parent.name == "bin":
             shutil.copy2(src, bindir / src.name)
 
-    tools = sorted(p.name for p in bindir.iterdir() if p.suffix in {".exe", ""} and p.is_file())
+    tools = sorted(p.name for p in bindir.iterdir() if p.is_file())
     print(f"\ninstalled {len(tools)} files into {bindir}")
 
     missing = [t for t in ("ptxas", "nvdisasm") if not any(n.startswith(t) for n in tools)]
