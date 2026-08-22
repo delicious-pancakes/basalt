@@ -1,0 +1,13 @@
+basalt
+Copyright (c) 2026 Sunny Patel
+
+This product includes software developed by Sunny Patel
+(https://www.sunnypatel.net).
+
+basalt is an independent, clean-room work. It does not incorporate, link
+against, or redistribute any NVIDIA source code, headers, libraries, or
+documentation. It drives the publicly distributed `ptxas` and `nvdisasm`
+executables as external processes and records their observable behaviour.
+
+NVIDIA, CUDA, and Blackwell are trademarks of NVIDIA Corporation. This
+project is not affiliated with, endorsed by, or sponsored by NVIDIA.

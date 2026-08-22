@@ -1,0 +1,11 @@
+* text=auto eol=lf
+*.png binary
+*.pdf binary
+*.cubin binary
+*.bin binary
+
+# keep the language bar honest: the artefact is the Python package, the ISA
+# database is generated data, and docs are documentation.
+data/** linguist-generated
+docs/** linguist-documentation
+research/** linguist-documentation

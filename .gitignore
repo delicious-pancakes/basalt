@@ -1,0 +1,27 @@
+# python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# toolchain: pinned redistributables are fetched, never vendored
+third_party/cuda/
+*.zip
+
+# build artefacts from the harvester
+*.cubin
+*.ptx.out
+*.sass
+scratch/
+
+# harvest output is large and regenerable; only the distilled ISA database
+# under data/isa/ is tracked
+data/harvest/
+data/probe/
