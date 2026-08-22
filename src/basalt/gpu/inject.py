@@ -64,6 +64,11 @@ class InjectionResult:
     # stall is then irrelevant to correctness, so sweeping it measures nothing
     # about latency and the result must not be read as one.
     scoreboarded: bool = False
+    # Whether the kernel can distinguish a skipped link at all, established
+    # independently of the stall sweep by shortening the chain. Without this,
+    # "no value produced a wrong answer" is ambiguous between "every value is
+    # genuinely safe" and "this kernel cannot tell", which are opposite claims.
+    sensitive: bool = True
     safe: list[int] = field(default_factory=list)
     unsafe: list[int] = field(default_factory=list)
     note: str = ""
@@ -95,6 +100,10 @@ class InjectionResult:
             )
         req = ">15" if self.required is None else str(self.required)
         flag = "" if self.monotone else "  NON-MONOTONE"
+        if not self.unsafe:
+            # sensitivity was established separately, so this is a real result:
+            # the smallest encodable stall is genuinely enough
+            flag += "  (no value was unsafe)"
         window = f", span {self.span}" if self.span > 1 else ""
         return (
             f"{self.opcode:<8} requires {req:>3} cycles  "
@@ -217,6 +226,25 @@ def probe_required_stall(
             consumer_word and barrier != 7 and (consumer_word.field("wait_mask") >> barrier) & 1
         )
 
+        # Sensitivity control: a chain one link shorter must produce a
+        # different answer. If it does not, this kernel cannot detect a stale
+        # read and the sweep below would be measuring nothing.
+        shorter = tmpdir / "shorter.cubin"
+        shorter_src = tmpdir / "shorter.ptx"
+        shorter_src.write_text(_build_kernel(spec, links - 1, arch))
+        sensitive = True
+        if (
+            tc.run(
+                [str(tc.ptxas), f"-arch={arch}", "-O3", "-o", str(shorter), str(shorter_src)],
+                check=False,
+                timeout=120.0,
+            ).returncode
+            == 0
+        ):
+            full = _run(dev, cubin.read_bytes(), payload, repeats=2)
+            fewer = _run(dev, shorter.read_bytes(), payload, repeats=2)
+            sensitive = full != fewer
+
         # the reference comes from the safe encoding, not from the compiler's
         # own schedule, so this does not assume the compiler was right
         reference_path = tmpdir / "reference.cubin"
@@ -279,7 +307,8 @@ def probe_required_stall(
         safe=safe,
         unsafe=unsafe,
         note=spec.note,
-        rejected=_rejection(required, waited, ceiling, unsafe),
+        sensitive=sensitive,
+        rejected=_rejection(required, waited, ceiling, sensitive),
     )
 
 
@@ -287,18 +316,17 @@ def _rejection(
     required: int | None,
     scoreboarded: bool,
     ceiling: int,
-    unsafe: list[int],
+    sensitive: bool,
 ) -> str:
     """Why no requirement was produced, distinguishing the interesting cases."""
+    if not sensitive:
+        # shortening the chain did not change the answer, so this kernel cannot
+        # detect a skipped link and nothing it reports means anything
+        return "the chain cannot detect a skipped link, so it establishes no requirement"
     if scoreboarded:
         # not a failure: the dependency really is covered, just not by the field
         # being swept
         return ""
     if required is None:
         return f"no accumulated stall up to {ceiling} was sufficient"
-    if not unsafe:
-        # every value tried, down to the smallest, produced the reference answer.
-        # the kernel cannot detect a stale read, so it establishes nothing about
-        # what the hardware requires.
-        return "the chain is insensitive to a stale read, so it establishes no requirement"
     return ""

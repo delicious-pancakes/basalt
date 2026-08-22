@@ -21,6 +21,11 @@ concurrency:
 
 jobs:
   analyse:
+    # Code scanning needs GitHub Advanced Security, which a private repository
+    # does not have. The analysis itself runs fine there; only the upload fails,
+    # so the job would sit red for a reason that says nothing about the code.
+    # Gated rather than deleted, so it starts working the moment this is public.
+    if: ${{ !github.event.repository.private }}
     runs-on: ubuntu-latest
     permissions:
       security-events: write

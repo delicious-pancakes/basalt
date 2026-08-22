@@ -83,7 +83,7 @@ same question.
 | `FMUL` | 4 | 4 | **4** | all three agree |
 | `LOP3` | 4 | 4 | **4** | all three agree |
 | `SHF` | 4 | 4 | **4** | all three agree |
-| `I2FP` | 24 (with `F2I`) | 6 | **4** | `ptxas` is conservative by 2 |
+| `I2FP` | 24 (with `F2I`) | 6 | not established | see below |
 | `MUFU` | 44 | n/a | scoreboarded | result takes 44, covered by a scoreboard |
 | `POPC` | 18 | n/a | scoreboarded | same |
 | `DADD` | 64 | 64 | scoreboarded | see below |
@@ -106,7 +106,41 @@ things. `MUFU` produces a perfectly linear 44 cycles under timing, but `ptxas` s
 scoreboard on it and the dependent instruction waits on that scoreboard, so the stall does
 not have to carry the dependency. basalt keeps it classified as variable for that reason.
 
-## 4. The stall field cannot express a long latency
+## 4. Tensor cores: throughput and requirement are far apart
+
+Timed with a dependent chain that accumulates through the D operand, so each
+`mma.sync` cannot issue until the previous one has written the accumulator back.
+`ptxas` emits these back to back with nothing between them, so the slope is the
+instruction and nothing else.
+
+| Instruction | Cycles per instruction, one warp | R² |
+| :--- | ---: | ---: |
+| `HMMA.16816.F32` (f16) | 34.52 | 0.99999 |
+| `HMMA.16816.F32.BF16` | 34.44 | 1.00000 |
+| `HMMA.1688.F32.TF32` | 34.37 | 1.00000 |
+| `IMMA.16832.S8.S8` | 26.86 | 1.00000 |
+| `QMMA.16832.F32.E4M3.E4M3` | 34.36 | 1.00000 |
+| `QMMA.16832.F32.E5M2.E5M2` | 34.41 | 1.00000 |
+| `QMMA.16832.F32.E3M2.E3M2` | 34.48 | 1.00000 |
+| `QMMA.16832.F32.E2M1.E2M1` | 34.50 | 1.00000 |
+
+Two things stand out.
+
+**The low-precision format does not change this number.** E4M3, E5M2, E3M2 and
+E2M1 all land within a tenth of a cycle of each other and of f16. Whatever FP4
+buys on this part, it is not a shorter dependent-accumulate interval.
+
+**Integer is faster than float here**, at 26.9 against 34.4.
+
+**These are not latencies.** `ptxas` schedules the same back-to-back chain with
+`stall=11`, and shortening it further still computes the right answer, so the
+figure above is the interval at which one warp can push dependent matrix
+operations through the unit rather than the time a result takes to appear. The
+distinction matters: a checker that treated 34 as the required stall would
+reject correct code. It is recorded here as throughput, and the number is not
+written into the latency model.
+
+## 5. The stall field cannot express a long latency
 
 Four bits, so 15 is the largest gap a single instruction can request. Any requirement above
 that must be covered by accumulating stalls across several instructions, or by a scoreboard.
@@ -123,7 +157,7 @@ DFMA R4, R6, R4, R4     stall=15  wait=0x02
 
 Four NOPs whose only purpose is to spend cycles.
 
-## 5. What is deliberately not claimed
+## 6. What is deliberately not claimed
 
 Stated so the boundary of the evidence is visible.
 
@@ -141,10 +175,16 @@ Stated so the boundary of the evidence is visible.
   between a lead and a finding is where the number came from.
 - **A test that cannot detect corruption proves nothing.** An early version of the injection
   probe multiplied by 1.0000001, so a stale read rounded back to the same float and `FMUL`
-  appeared to need only one cycle. The probe now rejects any sweep in which no value produced
-  a wrong answer, because that is a statement about the test rather than about the hardware.
+  appeared to need only one cycle. Every probe now runs a sensitivity control first: a chain
+  one link shorter must produce a different answer, established independently of the stall
+  sweep. Without that control, "no value was unsafe" is ambiguous between "every value is
+  genuinely safe" and "this kernel cannot tell", which are opposite claims.
+- **`POPC` and `I2FP` fail that control**, because their chains reach a fixed point: `popc`
+  of a `popc` stops changing, and an integer round trip through float is idempotent after the
+  first conversion. An earlier run reported `I2FP` as requiring 4 cycles; the control
+  retracted it, and it is listed as not established rather than quietly kept.
 
-## 6. Corrections made along the way
+## 7. Corrections made along the way
 
 Kept because a method is only as trustworthy as its error log.
 
