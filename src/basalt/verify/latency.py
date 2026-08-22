@@ -150,7 +150,12 @@ _ASSUMED: dict[str, tuple[int, LatencyClass, str]] = {
     "S2UR": (0, LatencyClass.VARIABLE, ""),
     "CS2R": (4, LatencyClass.FIXED, "the fast special-register path, unlike S2R"),
     "SHFL": (0, LatencyClass.VARIABLE, "warp shuffle"),
-    "VOTEU": (0, LatencyClass.VARIABLE, ""),
+    # ptxas emits VOTEU with no scoreboard and reads UR the next instruction,
+    # so it cannot be completing out of order
+    "VOTEU": (2, LatencyClass.FIXED, "warp vote on the uniform datapath"),
+    "UPOPC": (4, LatencyClass.FIXED, "uniform population count"),
+    "UFLO": (4, LatencyClass.FIXED, ""),
+    "CS2UR": (4, LatencyClass.FIXED, "uniform special-register read, fast path"),
     "MATCH": (0, LatencyClass.VARIABLE, ""),
     "R2UR": (0, LatencyClass.VARIABLE, ""),
     # uniform datapath mirrors the vector one

@@ -70,7 +70,13 @@ jobs:
           BASALT_CUDA_BIN="$PWD/third_party/cuda/13.3.1/bin" python -m basalt.cli doctor
 
       - name: Run the toolchain-marked tests
-        run: pytest -m toolchain
+        run: pytest -m "toolchain and not slow"
+
+      - name: Positive control over the whole corpus
+        # every kernel ptxas builds from the corpus must verify clean. this is
+        # the check that decides whether anything else basalt reports is worth
+        # reading, so it runs on every push rather than on a schedule.
+        run: pytest -m slow
 
       - name: Rebuild the ISA database and check it against the committed copy
         # the database is generated data. if a ptxas update changes what we

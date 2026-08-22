@@ -87,6 +87,7 @@ def _doctor(args: argparse.Namespace) -> int:
 
 
 DEFAULT_DB = "data/isa/sm_120a.json"
+DEFAULT_OBSERVED = "data/latency/observed-stalls-sm120a.json"
 
 
 def _build_isa(args: argparse.Namespace) -> int:
@@ -202,6 +203,7 @@ def _verify(args: argparse.Namespace) -> int:
     from .toolchain import ToolchainError, find_toolchain
     from .verify.hazards import Severity, verify_program
     from .verify.latency import DEFAULT_MODEL, Confidence, LatencyModel
+    from .verify.observed import ObservedStalls
 
     try:
         tc = find_toolchain(args.cuda_bin)
@@ -218,15 +220,23 @@ def _verify(args: argparse.Namespace) -> int:
     if args.latencies:
         model = LatencyModel.assumed().overlay(Path(args.latencies))
 
+    observed = None
+    if args.observed:
+        observed = ObservedStalls.read(Path(args.observed))
+    elif (default := Path(DEFAULT_OBSERVED)).is_file():
+        observed = ObservedStalls.read(default)
+
     program = disassemble_program(tc, target)
     if not program.instructions:
         print(f"error: nothing disassembled from {target}", file=sys.stderr)
         return 1
 
-    report = verify_program(program, model)
+    report = verify_program(program, model, observed=observed)
 
     print(f"{target}")
     print(f"  {report.summary()}")
+    if observed is not None:
+        print(f"  pair data: {len(observed.by_pair)} pairs mined from {observed.kernels} kernels")
     if model.sku:
         print(f"  latency model: measured on {model.sku}")
     else:
@@ -346,6 +356,11 @@ def main(argv: list[str] | None = None) -> int:
     v = sub.add_parser("verify", help="check a cubin's control bits for data hazards")
     v.add_argument("cubin", help="path to a cubin, whatever produced it")
     v.add_argument("--latencies", default=None, help="measured latency JSON to overlay")
+    v.add_argument(
+        "--observed",
+        default=None,
+        help="mined per-pair stall data (defaults to the committed file if present)",
+    )
     v.add_argument("--limit", type=int, default=25, help="maximum hazards to print")
     v.add_argument("--all", action="store_true", help="include informational findings")
     v.add_argument("--strict", action="store_true", help="exit non-zero when a hazard is found")

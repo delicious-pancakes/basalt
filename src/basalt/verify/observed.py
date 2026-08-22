@@ -220,7 +220,11 @@ def mine_corpus(
     tc,
     *,
     arch: str = "sm_120a",
-    opt_levels: tuple[int, ...] = (0, 3),
+    # -O3 only, deliberately. At -O0 ptxas does not run its scheduling pass at
+    # all: every control word comes out zeroed, no stalls and no scoreboards,
+    # and the code still runs correctly because a zero stall is the safe
+    # encoding. Mining that would record a requirement of zero for everything.
+    opt_levels: tuple[int, ...] = (3,),
     jobs: int | None = None,
     progress: bool = True,
 ) -> ObservedStalls:

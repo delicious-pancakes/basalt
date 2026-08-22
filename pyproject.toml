@@ -57,6 +57,7 @@ addopts = "-q --strict-markers"
 markers = [
   "toolchain: needs ptxas and nvdisasm on the machine",
   "gpu: needs a physical sm_120 device",
+  "slow: takes minutes; the full-corpus control lives here",
 ]
 
 [tool.ruff]

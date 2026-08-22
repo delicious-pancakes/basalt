@@ -37,7 +37,8 @@ from ..disasm import Instruction, Program
 from ..encoding import STALL_YIELD, effective_stall
 from .cfg import ControlFlowGraph, build_cfg
 from .flow import FlowState
-from .latency import Confidence, LatencyClass, LatencyModel
+from .latency import Confidence, LatencyClass, LatencyModel, LatencyRecord
+from .observed import ObservedStalls
 from .operands import operand_access
 
 __all__ = [
@@ -143,6 +144,7 @@ def _check_instruction(
     model: LatencyModel,
     report: VerificationReport | None,
     seen: set[tuple] | None,
+    observed: ObservedStalls | None = None,
 ) -> None:
     """Apply one instruction to `state`, optionally recording what it violates.
 
@@ -189,7 +191,10 @@ def _check_instruction(
                 continue
 
             if producer_record.kind is LatencyClass.FIXED:
-                if rd.elapsed >= producer_record.cycles or not recording:
+                required, source = _requirement(
+                    producer.opcode, instr.opcode, producer_record, observed
+                )
+                if rd.elapsed >= required or not recording:
                     continue
                 severity = (
                     Severity.ERROR
@@ -208,12 +213,9 @@ def _check_instruction(
                         use_index=index,
                         def_text=producer.text,
                         use_text=instr.text,
-                        required=producer_record.cycles,
+                        required=required,
                         actual=rd.elapsed,
-                        detail=(
-                            f"{producer.opcode} latency is {producer_record.confidence} "
-                            f"({producer_record.note or 'no note'})"
-                        ),
+                        detail=source,
                     ),
                 )
 
@@ -271,7 +273,12 @@ def _check_instruction(
                     seen,
                     Hazard(
                         kind=HazardKind.OVERWRITTEN_BEFORE_READ,
-                        severity=Severity.ERROR,
+                        # a warning, not an error: an explicit wait is one way to
+                        # cover this, but elapsed cycles are another, and basalt
+                        # has no measured model for how many a late read needs.
+                        # ptxas relies on the second, so treating this as an error
+                        # flags correct compiler output.
+                        severity=Severity.WARNING,
                         confidence=record.confidence,
                         register=str(reg),
                         def_index=pending.index,
@@ -301,23 +308,32 @@ def _run_block(
     model: LatencyModel,
     report: VerificationReport | None,
     seen: set[tuple] | None,
+    observed: ObservedStalls | None = None,
 ) -> FlowState:
     state = entry.copy()
     block = cfg.blocks[block_index]
     for index in range(block.start, block.end):
-        _check_instruction(cfg.program, index, state, model, report, seen)
+        _check_instruction(cfg.program, index, state, model, report, seen, observed)
     return state
 
 
 def verify_program(
     program: Program | list[Instruction],
     model: LatencyModel,
+    observed: ObservedStalls | None = None,
 ) -> VerificationReport:
     """Verify a decoded kernel against a latency model.
 
     Accepts a `Program` for cross-block analysis, or a bare instruction list,
     which carries no labels and so degrades to per-block checking rather than
     guessing where branches go.
+
+    `observed`, when supplied, refines the requirement per producer/consumer
+    pairing rather than per producer. The requirement is genuinely a property of
+    the pair: `IMAD` feeding another `IMAD` needs four cycles, while `IMAD`
+    feeding an `IADD` is scheduled at three, because the consumer reads its
+    operands a cycle later. Without that refinement a checker calibrated on the
+    stricter pairing rejects real compiler output.
     """
     if not isinstance(program, Program):
         program = Program(instructions=list(program), labels={})
@@ -342,7 +358,7 @@ def verify_program(
     while worklist and iterations < MAX_ITERATIONS:
         iterations += 1
         current = worklist.pop()
-        exit_state = _run_block(cfg, current, entries[current], model, None, None)
+        exit_state = _run_block(cfg, current, entries[current], model, None, None, observed)
         for succ in cfg.blocks[current].successors:
             if entries[succ].merge(exit_state) and succ not in worklist:
                 worklist.append(succ)
@@ -352,7 +368,7 @@ def verify_program(
     # during convergence contributes each of its findings exactly once
     seen: set[tuple] = set()
     for block in cfg.blocks:
-        _run_block(cfg, block.index, entries[block.index], model, report, seen)
+        _run_block(cfg, block.index, entries[block.index], model, report, seen, observed)
 
     report.hazards.sort(key=lambda h: (h.use_index, h.def_index, h.register))
     return report
@@ -361,3 +377,31 @@ def verify_program(
 def split_blocks(instructions: list[Instruction]) -> list:
     """Basic blocks for a bare instruction list, without running the analysis."""
     return build_cfg(Program(instructions=list(instructions), labels={})).blocks
+
+
+def _requirement(
+    producer: str,
+    consumer: str,
+    record: LatencyRecord,
+    observed: ObservedStalls | None,
+) -> tuple[int, str]:
+    """How many cycles this pairing needs, and where that number came from.
+
+    A per-pair observation beats the producer's generic latency when one exists,
+    because the requirement really does depend on both ends: a consumer that
+    reads its operands later tolerates a shorter gap. Falling back to the
+    producer figure keeps a pairing the compiler never emitted checkable, just
+    more strictly.
+    """
+    if observed is not None:
+        evidence = observed.requirement(producer, consumer)
+        if evidence is not None:
+            return (
+                evidence.minimum,
+                f"{producer} -> {evidence.consumer} is scheduled no tighter than "
+                f"{evidence.minimum} cycles across {evidence.observations} observations",
+            )
+    return (
+        record.cycles,
+        f"{producer} latency is {record.confidence} ({record.note or 'no note'})",
+    )
