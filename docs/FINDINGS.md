@@ -342,7 +342,7 @@ rescheduled kernel has to produce the same bytes.
 | | |
 | :--- | ---: |
 | Kernels rescheduled and run | 317 |
-| Comparable (vendor runs here, and deterministically) | 303 |
+| Comparable (the vendor runs here, deterministically, and reproducibly) | 302 |
 | **Byte-identical to the vendor schedule** | **298** |
 | Wrong, deterministically | 1 |
 | Non-deterministic, so a dependency is uncovered | 3 |
@@ -416,7 +416,7 @@ reproducible once something else has used the card. That last group is why the v
 run a second time, after basalt has had the GPU: a kernel reading uninitialised shared
 memory is stable until it is not, and its first result is not ground truth. Every `LDSM`
 and `MOVMATRIX` kernel read as a basalt failure until that check existed. All three groups
-are excluded from the 303 rather than counted as passes.
+are excluded from the 302 rather than counted as passes.
 
 ## 11. What is deliberately not claimed
 
