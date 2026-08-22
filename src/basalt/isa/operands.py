@@ -52,6 +52,7 @@ class SubRole:
     NOT = "not"  # the `~` on `~R5`
     ABSOLUTE = "absolute"  # the bars on `|R3|`
     INVERT = "invert"  # the `!` on `!P0`
+    SUFFIX = "suffix"  # the `.ROW` on `R12.ROW`, which is not part of the number
     VALUE = "value"  # the register number or immediate the modifiers apply to
     WHOLE = "whole"  # the field is not composite; the bit is the value
     UNKNOWN = "unknown"  # the effect was not readable
@@ -60,7 +61,7 @@ class SubRole:
 # a modifier is one bit, and it sits nowhere near the operand it modifies, so
 # the prober groups the two together and this splits them (finding 14)
 _MODIFIERS = {"-": SubRole.NEGATE, "~": SubRole.NOT, "!": SubRole.INVERT}
-_MODIFIER_ROLES = frozenset({*_MODIFIERS.values(), SubRole.ABSOLUTE})
+_MODIFIER_ROLES = frozenset({*_MODIFIERS.values(), SubRole.ABSOLUTE, SubRole.SUFFIX})
 
 
 def _parts(text: str) -> tuple[str, ...] | None:
@@ -117,6 +118,14 @@ def _modifier_change(before: str, after: str) -> str | None:
             return role
     if a == f"|{b}|" or b == f"|{a}|":
         return SubRole.ABSOLUTE
+    # `R5.COL` against `R5.ROW` is one operand with a selector attached, and the
+    # bit that moves it is not part of the register number: reading it as one
+    # makes `IMMA`'s second source read 261 where the text says 5. Bracket
+    # operands are excluded because a dot inside one is an access width, and
+    # `desc[UR4][R2.64]` against `desc[UR4][R2.64+0x8]` is an offset.
+    plain = "[" not in a and "[" not in b
+    if plain and a.split(".")[0] == b.split(".")[0] and a.split(".")[1:] != b.split(".")[1:]:
+        return SubRole.SUFFIX
     return None
 
 

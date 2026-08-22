@@ -53,7 +53,7 @@ BRANCH_TARGET_BITS: tuple[int, ...] = (*range(16, 24), *range(34, 82))
 BRANCH_SCALE = 4
 
 # `.reuse` is allowed and ignored: it is a control-word hint, not the operand
-_REGISTER = re.compile(r"^(UR|R|UP|P)(\d+|Z|T)(?:\.reuse)?$")
+_REGISTER = re.compile(r"^(UR|R|UP|P)(\d+|Z|T)((?:\.\w+)*)$")
 _IMMEDIATE = re.compile(r"^-?0[xX][0-9a-fA-F]+$|^-?\d+$")
 _GUARD = re.compile(r"^@(!)?(U?P)(\d+|T)\s+")
 _LABEL = re.compile(r"`\(([^)]+)\)")
@@ -177,9 +177,15 @@ def _kind(token: str) -> str:
     database holds one of them.
     """
     if (match := _REGISTER.match(token)) is not None:
-        return {"R": "register", "UR": "uniform", "P": "predicate", "UP": "upredicate"}[
+        file = {"R": "register", "UR": "uniform", "P": "predicate", "UP": "upredicate"}[
             match.group(1)
         ]
+        # A suffix other than `.reuse` is part of the encoding, not decoration:
+        # `R4.ROW` and `R4.COL` are the two operands of a matrix multiply and
+        # are not interchangeable, so they have to read as different kinds while
+        # `R4.ROW` and `R12.ROW` read as the same one.
+        suffix = match.group(3).replace(".reuse", "")
+        return file + suffix
     if _IMMEDIATE.match(token):
         return "immediate"
     if token.startswith("c[") or token.startswith("cx["):
@@ -216,7 +222,7 @@ def _register_number(token: str) -> int | None:
     match = _REGISTER.match(token)
     if match is None:
         return None
-    kind, number = match.groups()
+    kind, number, _suffix = match.groups()
     if number == "Z":
         return 255 if kind == "R" else 63
     if number == "T":

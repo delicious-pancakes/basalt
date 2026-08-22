@@ -3035,7 +3035,7 @@
         4,
         8
       ],
-      "operand_text": "`($__internal_0_$__cuda_sm_9x_mma_sub_byte_internal_m16n8k32_s4_s4)",
+      "operand_text": "`($__internal_0_$__cuda_sm_9x_mma_sub_byte_internal_m16n8k64_s4_s4)",
       "operands": [
         {
           "bits": [
@@ -3134,7 +3134,7 @@
       ],
       "payload": "0000000003c000000000000000207944",
       "source_family": "mma.dense",
-      "source_label": "mma.sync.m16n8k32....s4.s4.s32"
+      "source_label": "mma.sync.m16n8k64....s4.s4.s32"
     },
     "CCTL.IVALL": {
       "encoding": "000fc0000200000000000000ff00798f",
@@ -3990,7 +3990,7 @@
             "negate": [
               63
             ],
-            "value": [
+            "suffix": [
               32,
               33,
               34,
@@ -4011,11 +4011,13 @@
               49,
               50,
               51,
+              56
+            ],
+            "value": [
               52,
               53,
               54,
               55,
-              56,
               57,
               58,
               59,
@@ -4226,7 +4228,7 @@
             "negate": [
               63
             ],
-            "value": [
+            "suffix": [
               32,
               33,
               34,
@@ -4243,7 +4245,9 @@
               45,
               46,
               47,
-              48,
+              48
+            ],
+            "value": [
               49,
               50,
               51,
@@ -7764,7 +7768,7 @@
       ],
       "payload": "0000000003800000000000000000794d",
       "source_family": "binary",
-      "source_label": "mul.lo.s16"
+      "source_label": "add.s16"
     },
     "F2F.F32.F64": {
       "encoding": "004e2400003010000000000200077310",
@@ -11050,7 +11054,7 @@
             "negate": [
               63
             ],
-            "value": [
+            "suffix": [
               32,
               33,
               34,
@@ -11074,11 +11078,13 @@
               52,
               53,
               54,
+              59
+            ],
+            "value": [
               55,
               56,
               57,
               58,
-              59,
               60,
               61,
               62
@@ -11640,7 +11646,7 @@
             "negate": [
               63
             ],
-            "value": [
+            "suffix": [
               32,
               33,
               34,
@@ -11664,10 +11670,12 @@
               52,
               53,
               54,
-              55,
               56,
               57,
-              58,
+              58
+            ],
+            "value": [
+              55,
               59,
               60,
               61,
@@ -11843,7 +11851,7 @@
             "negate": [
               63
             ],
-            "value": [
+            "suffix": [
               32,
               33,
               34,
@@ -11867,10 +11875,12 @@
               52,
               53,
               54,
-              55,
               56,
               57,
-              58,
+              58
+            ],
+            "value": [
+              55,
               59,
               60,
               61,
@@ -12046,7 +12056,7 @@
             "negate": [
               63
             ],
-            "value": [
+            "suffix": [
               32,
               33,
               34,
@@ -12073,7 +12083,9 @@
               55,
               56,
               57,
-              58,
+              58
+            ],
+            "value": [
               59,
               60,
               61,
@@ -12426,7 +12438,7 @@
             "negate": [
               63
             ],
-            "value": [
+            "suffix": [
               32,
               33,
               34,
@@ -12451,9 +12463,11 @@
               53,
               54,
               55,
-              56,
               57,
-              58,
+              58
+            ],
+            "value": [
+              56,
               59,
               60,
               61,
@@ -13492,7 +13506,7 @@
             "negate": [
               63
             ],
-            "value": [
+            "suffix": [
               32,
               33,
               34,
@@ -13510,6 +13524,9 @@
               46,
               47,
               48,
+              59
+            ],
+            "value": [
               49,
               50,
               51,
@@ -13520,7 +13537,6 @@
               56,
               57,
               58,
-              59,
               60,
               61,
               62
@@ -13931,7 +13947,7 @@
             "negate": [
               63
             ],
-            "value": [
+            "suffix": [
               32,
               33,
               34,
@@ -13950,7 +13966,9 @@
               47,
               48,
               49,
-              50,
+              50
+            ],
+            "value": [
               51,
               52,
               53,
@@ -14981,7 +14999,7 @@
             "negate": [
               63
             ],
-            "value": [
+            "suffix": [
               32,
               33,
               34,
@@ -15005,9 +15023,11 @@
               52,
               53,
               54,
+              57
+            ],
+            "value": [
               55,
               56,
-              57,
               58,
               59,
               60,
@@ -16581,6 +16601,10 @@
             "negate": [
               72
             ],
+            "suffix": [
+              74,
+              75
+            ],
             "value": [
               24,
               25,
@@ -16590,9 +16614,7 @@
               29,
               30,
               31,
-              73,
-              74,
-              75
+              73
             ]
           }
         },
@@ -16622,6 +16644,11 @@
             "negate": [
               84
             ],
+            "suffix": [
+              81,
+              82,
+              86
+            ],
             "value": [
               64,
               65,
@@ -16630,10 +16657,7 @@
               68,
               69,
               70,
-              71,
-              81,
-              82,
-              86
+              71
             ]
           }
         },
@@ -16659,7 +16683,28 @@
           "example_after": "R3, -RZ, RZ, 5.9604644775390625e-08, 0",
           "example_before": "R3, -RZ, RZ, 0, 0",
           "slot": 3,
-          "subfields": {}
+          "subfields": {
+            "suffix": [
+              59,
+              60,
+              61
+            ],
+            "value": [
+              48,
+              49,
+              50,
+              51,
+              52,
+              53,
+              54,
+              55,
+              56,
+              57,
+              58,
+              62,
+              63
+            ]
+          }
         },
         {
           "bits": [
@@ -16683,7 +16728,28 @@
           "example_after": "R3, -RZ, RZ, 0, 5.9604644775390625e-08",
           "example_before": "R3, -RZ, RZ, 0, 0",
           "slot": 4,
-          "subfields": {}
+          "subfields": {
+            "suffix": [
+              43,
+              44,
+              45
+            ],
+            "value": [
+              32,
+              33,
+              34,
+              35,
+              36,
+              37,
+              38,
+              39,
+              40,
+              41,
+              42,
+              46,
+              47
+            ]
+          }
         }
       ],
       "payload": "00000000000001ff00000000ff037431",
@@ -18062,7 +18128,22 @@
           "example_after": "R4, R3",
           "example_before": "R4, R2",
           "slot": 1,
-          "subfields": {}
+          "subfields": {
+            "suffix": [
+              60,
+              61
+            ],
+            "value": [
+              32,
+              33,
+              34,
+              35,
+              36,
+              37,
+              38,
+              39
+            ]
+          }
         }
       ],
       "payload": "0000000000101c000000000200047312",
@@ -18346,7 +18427,22 @@
           "example_after": "R4, R3",
           "example_before": "R4, R2",
           "slot": 1,
-          "subfields": {}
+          "subfields": {
+            "suffix": [
+              60,
+              61
+            ],
+            "value": [
+              32,
+              33,
+              34,
+              35,
+              36,
+              37,
+              38,
+              39
+            ]
+          }
         }
       ],
       "payload": "00000000001018000000000200047312",
@@ -18912,7 +19008,22 @@
           "example_after": "R7, R3",
           "example_before": "R7, R2",
           "slot": 1,
-          "subfields": {}
+          "subfields": {
+            "suffix": [
+              60,
+              61
+            ],
+            "value": [
+              32,
+              33,
+              34,
+              35,
+              36,
+              37,
+              38,
+              39
+            ]
+          }
         }
       ],
       "payload": "00000000001014000000000200077306",
@@ -19194,7 +19305,22 @@
           "example_after": "R2, R3",
           "example_before": "R2, R2",
           "slot": 1,
-          "subfields": {}
+          "subfields": {
+            "suffix": [
+              60,
+              61
+            ],
+            "value": [
+              32,
+              33,
+              34,
+              35,
+              36,
+              37,
+              38,
+              39
+            ]
+          }
         }
       ],
       "payload": "00000000001010000000000200027306",
@@ -22299,7 +22425,21 @@
           "example_after": "R4, R13.ROW, R5.COL, RZ",
           "example_before": "R4, R12.ROW, R5.COL, RZ",
           "slot": 1,
-          "subfields": {}
+          "subfields": {
+            "suffix": [
+              73
+            ],
+            "value": [
+              24,
+              25,
+              26,
+              27,
+              28,
+              29,
+              30,
+              31
+            ]
+          }
         },
         {
           "bits": [
@@ -22316,7 +22456,21 @@
           "example_after": "R4, R12.ROW, R4.COL, RZ",
           "example_before": "R4, R12.ROW, R5.COL, RZ",
           "slot": 2,
-          "subfields": {}
+          "subfields": {
+            "suffix": [
+              74
+            ],
+            "value": [
+              32,
+              33,
+              34,
+              35,
+              36,
+              37,
+              38,
+              39
+            ]
+          }
         },
         {
           "bits": [
@@ -22454,7 +22608,21 @@
           "example_after": "R4, R5.ROW, R18.COL, R12",
           "example_before": "R4, R4.ROW, R18.COL, R12",
           "slot": 1,
-          "subfields": {}
+          "subfields": {
+            "suffix": [
+              73
+            ],
+            "value": [
+              24,
+              25,
+              26,
+              27,
+              28,
+              29,
+              30,
+              31
+            ]
+          }
         },
         {
           "bits": [
@@ -22471,7 +22639,21 @@
           "example_after": "R4, R4.ROW, R19.COL, R12",
           "example_before": "R4, R4.ROW, R18.COL, R12",
           "slot": 2,
-          "subfields": {}
+          "subfields": {
+            "suffix": [
+              74
+            ],
+            "value": [
+              32,
+              33,
+              34,
+              35,
+              36,
+              37,
+              38,
+              39
+            ]
+          }
         },
         {
           "bits": [
@@ -22609,7 +22791,21 @@
           "example_after": "R4, R5.ROW, R18.COL, R12",
           "example_before": "R4, R4.ROW, R18.COL, R12",
           "slot": 1,
-          "subfields": {}
+          "subfields": {
+            "suffix": [
+              73
+            ],
+            "value": [
+              24,
+              25,
+              26,
+              27,
+              28,
+              29,
+              30,
+              31
+            ]
+          }
         },
         {
           "bits": [
@@ -22626,7 +22822,21 @@
           "example_after": "R4, R4.ROW, R19.COL, R12",
           "example_before": "R4, R4.ROW, R18.COL, R12",
           "slot": 2,
-          "subfields": {}
+          "subfields": {
+            "suffix": [
+              74
+            ],
+            "value": [
+              32,
+              33,
+              34,
+              35,
+              36,
+              37,
+              38,
+              39
+            ]
+          }
         },
         {
           "bits": [
@@ -22764,7 +22974,21 @@
           "example_after": "R4, R5.ROW, R18.COL, R12",
           "example_before": "R4, R4.ROW, R18.COL, R12",
           "slot": 1,
-          "subfields": {}
+          "subfields": {
+            "suffix": [
+              73
+            ],
+            "value": [
+              24,
+              25,
+              26,
+              27,
+              28,
+              29,
+              30,
+              31
+            ]
+          }
         },
         {
           "bits": [
@@ -22781,7 +23005,21 @@
           "example_after": "R4, R4.ROW, R19.COL, R12",
           "example_before": "R4, R4.ROW, R18.COL, R12",
           "slot": 2,
-          "subfields": {}
+          "subfields": {
+            "suffix": [
+              74
+            ],
+            "value": [
+              32,
+              33,
+              34,
+              35,
+              36,
+              37,
+              38,
+              39
+            ]
+          }
         },
         {
           "bits": [
@@ -22910,7 +23148,21 @@
           "example_after": "R4, R17.ROW, R4.COL, R8, R0, 0x0",
           "example_before": "R4, R16.ROW, R4.COL, R8, R0, 0x0",
           "slot": 1,
-          "subfields": {}
+          "subfields": {
+            "suffix": [
+              73
+            ],
+            "value": [
+              24,
+              25,
+              26,
+              27,
+              28,
+              29,
+              30,
+              31
+            ]
+          }
         },
         {
           "bits": [
@@ -22927,7 +23179,21 @@
           "example_after": "R4, R16.ROW, R5.COL, R8, R0, 0x0",
           "example_before": "R4, R16.ROW, R4.COL, R8, R0, 0x0",
           "slot": 2,
-          "subfields": {}
+          "subfields": {
+            "suffix": [
+              74
+            ],
+            "value": [
+              32,
+              33,
+              34,
+              35,
+              36,
+              37,
+              38,
+              39
+            ]
+          }
         },
         {
           "bits": [
@@ -27557,7 +27823,7 @@
       ],
       "payload": "000000000800080000007000ff0477ac",
       "source_family": "memory",
-      "source_label": "ld.local.b32"
+      "source_label": "ld.local.b64"
     },
     "LDCU.64": {
       "encoding": "000e220008000a0000006b00ff0477ac",
@@ -29008,7 +29274,7 @@
       ],
       "payload": "000000000c1e17000000020402047981",
       "source_family": "binary",
-      "source_label": "min.s16"
+      "source_label": "max.s16"
     },
     "LDG.E.STRONG.GPU": {
       "encoding": "001eac000c1ef9000000000402037981",
@@ -31611,7 +31877,7 @@
       ],
       "payload": "00000000078ec0ff0000000002007211",
       "source_family": "matrix",
-      "source_label": "stmatrix.x2.trans.b16"
+      "source_label": "stmatrix.x2..b16"
     },
     "LOP3.LUT": {
       "encoding": "000fc0000780c0ff000000010cff7812",
@@ -33867,7 +34133,7 @@
       "operands": [],
       "payload": "00000000000000000000000000007918",
       "source_family": "binary",
-      "source_label": "mul.hi.s16"
+      "source_label": "add.s16"
     },
     "OMMA.SF.16864.F32.E2M1.E2M1.E8": {
       "encoding": "000fc00000083e0c7020120a0404747f",
@@ -34055,7 +34321,21 @@
           "example_after": "R4, R4, R10, R12, R18, R2.reuse, URZ",
           "example_before": "R4, R4, R10, R12, R18, R2, URZ",
           "slot": 5,
-          "subfields": {}
+          "subfields": {
+            "suffix": [
+              51
+            ],
+            "value": [
+              52,
+              53,
+              54,
+              55,
+              56,
+              57,
+              58,
+              59
+            ]
+          }
         },
         {
           "bits": [
@@ -34265,7 +34545,21 @@
           "example_after": "R4, R4, R10, R12, R18, R2.reuse, URZ",
           "example_before": "R4, R4, R10, R12, R18, R2, URZ",
           "slot": 5,
-          "subfields": {}
+          "subfields": {
+            "suffix": [
+              51
+            ],
+            "value": [
+              52,
+              53,
+              54,
+              55,
+              56,
+              57,
+              58,
+              59
+            ]
+          }
         },
         {
           "bits": [
@@ -39589,7 +39883,21 @@
           "example_after": "R4, R4, R10, R12, R18, R2.reuse, URZ",
           "example_before": "R4, R4, R10, R12, R18, R2, URZ",
           "slot": 5,
-          "subfields": {}
+          "subfields": {
+            "suffix": [
+              51
+            ],
+            "value": [
+              52,
+              53,
+              54,
+              55,
+              56,
+              57,
+              58,
+              59
+            ]
+          }
         },
         {
           "bits": [
@@ -39798,7 +40106,21 @@
           "example_after": "R4, R4, R10, R12, R18, R2.reuse, URZ",
           "example_before": "R4, R4, R10, R12, R18, R2, URZ",
           "slot": 5,
-          "subfields": {}
+          "subfields": {
+            "suffix": [
+              51
+            ],
+            "value": [
+              52,
+              53,
+              54,
+              55,
+              56,
+              57,
+              58,
+              59
+            ]
+          }
         },
         {
           "bits": [
@@ -40007,7 +40329,21 @@
           "example_after": "R4, R4, R10, R12, R18, R2.reuse, URZ",
           "example_before": "R4, R4, R10, R12, R18, R2, URZ",
           "slot": 5,
-          "subfields": {}
+          "subfields": {
+            "suffix": [
+              51
+            ],
+            "value": [
+              52,
+              53,
+              54,
+              55,
+              56,
+              57,
+              58,
+              59
+            ]
+          }
         },
         {
           "bits": [
@@ -40216,7 +40552,21 @@
           "example_after": "R4, R4, R10, R12, R18, R2.reuse, URZ",
           "example_before": "R4, R4, R10, R12, R18, R2, URZ",
           "slot": 5,
-          "subfields": {}
+          "subfields": {
+            "suffix": [
+              51
+            ],
+            "value": [
+              52,
+              53,
+              54,
+              55,
+              56,
+              57,
+              58,
+              59
+            ]
+          }
         },
         {
           "bits": [
@@ -40425,7 +40775,21 @@
           "example_after": "R4, R4, R10, R12, R18, R2.reuse, URZ",
           "example_before": "R4, R4, R10, R12, R18, R2, URZ",
           "slot": 5,
-          "subfields": {}
+          "subfields": {
+            "suffix": [
+              51
+            ],
+            "value": [
+              52,
+              53,
+              54,
+              55,
+              56,
+              57,
+              58,
+              59
+            ]
+          }
         },
         {
           "bits": [
@@ -41149,7 +41513,7 @@
       ],
       "payload": "000000000400000000000001ff007807",
       "source_family": "compare",
-      "source_label": "setp.eq.s32"
+      "source_label": "setp.ne.s32"
     },
     "SGXT.U32": {
       "encoding": "000fc00000000000000000200000781a",
@@ -44094,7 +44458,7 @@
       ],
       "payload": "000000000c1015040000000004007986",
       "source_family": "binary",
-      "source_label": "mul.hi.u16"
+      "source_label": "mul.lo.u16"
     },
     "STL": {
       "encoding": "000fc000001008000000000200007387",
@@ -47876,7 +48240,7 @@
       "source_label": "shfl.sync.b32"
     }
   },
-  "generated_utc": "2026-08-22T20:51:17+00:00",
+  "generated_utc": "2026-08-22T22:24:00+00:00",
   "schema_version": 2,
   "variants": {
     "DADD": [
@@ -48243,7 +48607,7 @@
               "negate": [
                 63
               ],
-              "value": [
+              "suffix": [
                 32,
                 33,
                 34,
@@ -48264,11 +48628,13 @@
                 49,
                 50,
                 51,
+                56
+              ],
+              "value": [
                 52,
                 53,
                 54,
                 55,
-                56,
                 57,
                 58,
                 59,
@@ -49254,7 +49620,7 @@
         ],
         "payload": "000000000000010040000000ff047221",
         "source_family": "unary",
-        "source_label": "rsqrt.approx.f32"
+        "source_label": "sqrt.approx.f32"
       },
       {
         "encoding": "000fc0000000010080000002ff007221",
@@ -50699,7 +51065,7 @@
               "negate": [
                 63
               ],
-              "value": [
+              "suffix": [
                 32,
                 33,
                 34,
@@ -50723,11 +51089,13 @@
                 52,
                 53,
                 54,
+                59
+              ],
+              "value": [
                 55,
                 56,
                 57,
                 58,
-                59,
                 60,
                 61,
                 62
@@ -51128,7 +51496,7 @@
               "negate": [
                 63
               ],
-              "value": [
+              "suffix": [
                 32,
                 33,
                 34,
@@ -51146,6 +51514,9 @@
                 46,
                 47,
                 48,
+                59
+              ],
+              "value": [
                 49,
                 50,
                 51,
@@ -51156,7 +51527,6 @@
                 56,
                 57,
                 58,
-                59,
                 60,
                 61,
                 62
@@ -51568,7 +51938,7 @@
               "negate": [
                 63
               ],
-              "value": [
+              "suffix": [
                 32,
                 33,
                 34,
@@ -51587,7 +51957,9 @@
                 47,
                 48,
                 49,
-                50,
+                50
+              ],
+              "value": [
                 51,
                 52,
                 53,
@@ -52555,7 +52927,7 @@
         ],
         "payload": "00000000078e0200000000ff02047235",
         "source_family": "mma.dense",
-        "source_label": "mma.sync.m16n8k16....bf16.bf16.f32"
+        "source_label": "mma.sync.m16n8k16....f16.f16.f32"
       }
     ],
     "IADD.X": [
