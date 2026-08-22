@@ -12,7 +12,7 @@ any release. The clean-room position in [`NOTICE`](NOTICE) will not.
 ### Added
 - `scripts/roundtrip_corpus.py`: reschedules every kernel the corpus generates
   from scratch and runs both versions on the GPU with identical input, comparing
-  output bytes. 298 of the 302 comparable kernels come out byte-identical to the
+  output bytes. 301 of the 303 comparable kernels come out byte-identical to the
   vendor schedule, from 246 when the control was first run. Every model
   correction in this release came out of it. Recorded as finding 10 in
   [`docs/FINDINGS.md`](docs/FINDINGS.md), with the failures named.
@@ -72,6 +72,10 @@ any release. The clean-room position in [`NOTICE`](NOTICE) will not.
   a different question from what correctness requires.
 
 ### Fixed
+- A call waits for everything still outstanding. Control leaves for code this
+  analysis has not read and the callee may use any register, so nothing may be
+  in flight when it issues. Indirect branches are treated the same way, since
+  their destination is computed. Fixed both 4-bit integer MMA kernels.
 - The scheduler no longer leans on a wait carried by a predicated instruction.
   That instruction may not execute, so a later consumer relying on its wait can
   read a result that never landed. `MUFU.EX2`, `SQRT` and `RSQ` feeding a store

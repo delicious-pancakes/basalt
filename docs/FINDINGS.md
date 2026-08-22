@@ -342,10 +342,10 @@ rescheduled kernel has to produce the same bytes.
 | | |
 | :--- | ---: |
 | Kernels rescheduled and run | 317 |
-| Comparable (the vendor runs here, deterministically, and reproducibly) | 302 |
-| **Byte-identical to the vendor schedule** | **298** |
-| Wrong, deterministically | 1 |
-| Non-deterministic, so a dependency is uncovered | 3 |
+| Comparable (the vendor runs here, deterministically, and reproducibly) | 303 |
+| **Byte-identical to the vendor schedule** | **301** |
+| Wrong, deterministically | 2 |
+| Non-deterministic, so a dependency is uncovered | 0 |
 
 The first run of this scored 246. Everything between then and now was found by it:
 
@@ -371,6 +371,8 @@ The first run of this scored 246. Everything between then and now was found by i
   on, since the instruction carrying it may not execute,
 - `IMAD.WIDE` writing a register pair, and taking one as its addend, with nothing in the
   mnemonic to say so,
+- a call needing everything outstanding to have landed first, because control leaves for
+  code this analysis has not read and the callee may use any register,
 - and the scheduler refusing to allocate a seventh outstanding load instead of sharing a
   scoreboard, which a counter permits and which rejected 45 kernels outright.
 
@@ -385,7 +387,6 @@ does not:
 
 | Family | Kernels |
 | :--- | :--- |
-| 4-bit integer tensor cores | `mma_m16n8k32_s4_s4_s32`, `mma_m16n8k64_s4_s4_s32` |
 | Signed integer divide | `div_s32` |
 | 64-bit atomic add | `atom_global_add_u64` |
 
@@ -416,7 +417,7 @@ reproducible once something else has used the card. That last group is why the v
 run a second time, after basalt has had the GPU: a kernel reading uninitialised shared
 memory is stable until it is not, and its first result is not ground truth. Every `LDSM`
 and `MOVMATRIX` kernel read as a basalt failure until that check existed. All three groups
-are excluded from the 302 rather than counted as passes.
+are excluded from the 303 rather than counted as passes.
 
 ## 11. What is deliberately not claimed
 

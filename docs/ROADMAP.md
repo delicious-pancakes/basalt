@@ -40,7 +40,7 @@ vendor compiler's own output, which is what makes it useful rather than self-ref
 
 The scheduler discards every control bit `ptxas` produced and computes its own, then hands the
 result back to the verifier and then to the GPU, for every kernel the corpus generates.
-298 of the 302 comparable ones come out byte-identical to the vendor schedule. The rest are
+301 of the 303 comparable ones come out byte-identical to the vendor schedule. The rest are
 named in the findings rather than summarised, and that count is what the work is measured
 against: it was 246 when the control was first run, and every model correction since came
 out of watching it move.

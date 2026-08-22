@@ -50,6 +50,12 @@ SATURATION = 512
 # Termination guard. The lattice is finite, so reaching this means a bug.
 MAX_PASSES = 64
 
+# Control transfers to somewhere this analysis has not followed. What runs next
+# may use any register, so nothing may still be in flight when one of these
+# issues. Indirect branches are here for the same reason a call is: the
+# destination is computed and the control-flow graph says so.
+_OPAQUE_TRANSFERS = frozenset({"CALL", "RET", "BRX", "JMX", "RTT", "BPT"})
+
 
 @dataclass
 class ScheduleResult:
@@ -272,6 +278,19 @@ def schedule_program(
             for reg in access.real_uses:
                 for sb in live.get(reg, ()):
                     needed |= 1 << sb
+
+            if instr.opcode in _OPAQUE_TRANSFERS:
+                # Control is about to leave for code this analysis has not read,
+                # and the callee is free to use any register. Everything still
+                # outstanding has to have landed first, so every live scoreboard
+                # is waited on rather than only the ones this instruction reads.
+                #
+                # `ptxas` does the same: the `CALL.REL.NOINC` in the 4-bit MMA
+                # kernels waits on two scoreboards it has no operand interest in.
+                # basalt waited on none and the kernel came out non-deterministic.
+                for barriers in live.values():
+                    for sb in barriers:
+                        needed |= 1 << sb
             if emit:
                 waits[index] |= needed
 
