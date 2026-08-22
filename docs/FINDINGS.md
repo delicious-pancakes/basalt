@@ -782,10 +782,12 @@ computes a wrong answer, which is the entire failure this repository exists to p
 | | |
 | :--- | ---: |
 | Kernels, one dependency shortened in each | 162 |
-| Agreed broken | 91 |
-| Over-strict | 64 |
+| Agreed broken | 74 to 76 |
+| Over-strict | 67 to 69 |
 | **Missed** | **0** |
-| Unstable, excluded | 7 |
+| Unstable or unrunnable, excluded | 19 to 21 |
+
+The ranges are three consecutive runs, not one. Which kernels land in the excluded column moves a little between runs, because several read memory this harness never initialises and are therefore stable until something else has used the card. The missed count does not move.
 
 **It did not start at zero.** The first run of this sweep reported **34 misses**, all of the
 same shape: `IADD -> STG` shortened from 5 cycles to 1, computing a different answer, with
@@ -803,10 +805,10 @@ it is a real cost rather than a free win.
 
 **Over-strict is not the same as wrong.** A schedule can be tighter than anything the vendor
 emits and still return the right answer, because a stale read only changes the result when
-the stale value and the fresh one differ. Running four patterns instead of one moved 22
-verdicts out of over-strict and into agreed broken, which is 22 cases where basalt was right
-and a single pattern had not been enough to show it. The remaining 64 are unproven either
-way, and they are counted separately and named rather than folded into an accuracy figure.
+the stale value and the fresh one differ. Running four patterns instead of one moves verdicts out of
+over-strict and into agreed broken, which are cases where basalt was right and a single
+pattern had not been enough to show it. The rest are unproven either way, and they are
+counted separately rather than folded into an accuracy figure.
 
 ## 17. Going looking for a wrong word, rather than waiting for one
 

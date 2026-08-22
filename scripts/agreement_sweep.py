@@ -41,8 +41,10 @@ import argparse
 import ctypes
 import json
 import os
+import queue
 import subprocess
 import sys
+import threading
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
@@ -64,8 +66,8 @@ ARCH = "sm_120a"
 BUFFER = 256
 REPEATS = 5
 THREADS = 32
-# a broken kernel can hang the card, and an unbounded worker outlives its run
-WORKER_TIMEOUT = 300.0
+# how long a worker may go without reporting before it is treated as hung
+QUIET_TIMEOUT = 20.0
 
 
 @dataclass(frozen=True)
@@ -288,6 +290,46 @@ def _worker(work: Path, start: int) -> int:
     return 0
 
 
+def _run_until_quiet(command: list[str]) -> list[str]:
+    """Run the worker, killing it once it stops reporting rather than at the end.
+
+    A kernel with a stall shortened out from under it does not always fault.
+    `s_nested_loops` loses the register holding its own loop bound and runs
+    forever, and a whole-run timeout charges that to every kernel behind it: the
+    worker reports 161 results in seconds and then sits there.
+
+    So the bound is on silence, not on total time. Each result resets the clock,
+    and a worker that stops producing them is killed with whatever it had said,
+    which costs one timeout per hanging kernel instead of one per run.
+    """
+    collected: list[str] = []
+    lines: queue.Queue[str | None] = queue.Queue()
+    child = subprocess.Popen(
+        command, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True, cwd=str(ROOT)
+    )
+
+    def pump() -> None:
+        assert child.stdout is not None
+        for line in child.stdout:
+            lines.put(line)
+        lines.put(None)
+
+    reader = threading.Thread(target=pump, daemon=True)
+    reader.start()
+    while True:
+        try:
+            line = lines.get(timeout=QUIET_TIMEOUT)
+        except queue.Empty:
+            child.kill()
+            break
+        if line is None:
+            break
+        if "\t" in line:
+            collected.append(line.rstrip("\n"))
+    child.wait(timeout=30)
+    return collected
+
+
 def _drive(work: Path, manifest: list[dict]) -> list[Case]:
     by_index = {entry["i"]: entry for entry in manifest}
     behaviour: dict[int, str] = {}
@@ -303,17 +345,7 @@ def _drive(work: Path, manifest: list[dict]) -> list[Case]:
             "--work",
             str(work),
         ]
-        # A deliberately broken kernel can hang the card rather than fault, and
-        # without a bound the worker outlives the run that started it and goes
-        # on competing with everything measured afterwards.
-        try:
-            output = subprocess.run(
-                command, capture_output=True, text=True, cwd=str(ROOT), timeout=WORKER_TIMEOUT
-            ).stdout
-        except subprocess.TimeoutExpired as expired:
-            raw = expired.stdout or ""
-            output = raw.decode(errors="replace") if isinstance(raw, bytes) else raw
-        lines = [line for line in output.splitlines() if "\t" in line]
+        lines = _run_until_quiet(command)
         for line in lines:
             index, outcome = line.split("\t")[:2]
             behaviour[int(index)] = outcome
