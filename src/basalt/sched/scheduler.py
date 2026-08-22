@@ -164,11 +164,26 @@ def schedule_program(
 
     cfg = build_cfg(program)
 
-    # ---- scoreboards, assigned once: a producer that completes out of order
-    # needs one, and consumers pick it up from the producer it came from
+    # ---- scoreboards
+    # Allocation is per block, which is fine: a scoreboard is a counter, so
+    # reusing an index across blocks makes a wait cover more than it needs to
+    # rather than less. The waits themselves cannot be per block, though. A
+    # value loaded before a loop and consumed inside it is the ordinary shape of
+    # real code, and a block-local analysis starts with an empty map and emits
+    # no wait at all for it, which is silently wrong.
+    #
+    # So allocation runs per block and then the outstanding barriers are
+    # propagated along control-flow edges to a fixed point, exactly as the
+    # verifier propagates reaching definitions, and the waits are emitted from
+    # the settled state.
+    barrier_of: list[int] = [NO_BARRIER] * count
+
     for block in cfg.blocks:
-        outstanding: dict[int, int] = {}  # scoreboard -> producer index
-        last_def: dict[RegRef, _Producer] = {}
+        # barrier -> the registers it is currently protecting. A barrier is free
+        # again once something has consumed every register it was guarding,
+        # because the wait that consumer will carry is what releases it. Without
+        # this the six scoreboards are exhausted by the seventh load in a block.
+        protects: dict[int, set[RegRef]] = {}
 
         for index in range(block.start, block.end):
             instr = program.instructions[index]
@@ -176,32 +191,72 @@ def schedule_program(
                 continue
             access = operand_access(instr.mnemonic, instr.operands)
 
-            for reg in access.real_uses:
-                producer = last_def.get(reg)
-                if producer is None or producer.barrier == NO_BARRIER:
-                    continue
-                waits[index] |= 1 << producer.barrier
-
-            # a wait frees every scoreboard it names
-            for sb in list(outstanding):
-                if (waits[index] >> sb) & 1:
-                    del outstanding[sb]
+            for sb in list(protects):
+                if protects[sb] & access.real_uses:
+                    del protects[sb]
 
             record = model.lookup(instr.opcode)
-            barrier = NO_BARRIER
             if record.kind is LatencyClass.VARIABLE and access.real_defs:
-                free = next((sb for sb in range(SCOREBOARDS) if sb not in outstanding), None)
+                free = next((sb for sb in range(SCOREBOARDS) if sb not in protects), None)
                 if free is None:
                     result.out_of_scoreboards.append(f"#{index} {instr.text}")
-                else:
-                    barrier = free
-                    outstanding[free] = index
-                    write_barriers[index] = free
-                    result.scoreboards_used += 1
+                    continue
+                protects[free] = set(access.real_defs)
+                barrier_of[index] = free
+                write_barriers[index] = free
+                result.scoreboards_used += 1
 
-            produced = _Producer(index, instr.opcode, record.kind, barrier)
+    # register -> barriers that may still be outstanding for it on entry
+    entry_state: list[dict[RegRef, frozenset[int]]] = [{} for _ in cfg.blocks]
+
+    def transfer(block_index: int, state: dict[RegRef, frozenset[int]], emit: bool):
+        """Walk a block, optionally recording the waits it needs."""
+        live = dict(state)
+        block = cfg.blocks[block_index]
+        for index in range(block.start, block.end):
+            instr = program.instructions[index]
+            if instr.word is None:
+                continue
+            access = operand_access(instr.mnemonic, instr.operands)
+
+            needed = 0
+            for reg in access.real_uses:
+                for sb in live.get(reg, ()):
+                    needed |= 1 << sb
+            if emit:
+                waits[index] |= needed
+
+            if needed:
+                # waiting clears those scoreboards for everything downstream
+                cleared = {sb for sb in range(SCOREBOARDS) if (needed >> sb) & 1}
+                live = {r: frozenset(bs - cleared) for r, bs in live.items()}
+
+            barrier = barrier_of[index]
             for reg in access.real_defs:
-                last_def[reg] = produced
+                live[reg] = frozenset({barrier}) if barrier != NO_BARRIER else frozenset()
+        return live
+
+    worklist = [0]
+    guard = 0
+    while worklist and guard < MAX_PASSES * max(1, len(cfg.blocks)):
+        guard += 1
+        current = worklist.pop()
+        out = transfer(current, entry_state[current], emit=False)
+        for succ in cfg.blocks[current].successors:
+            merged = dict(entry_state[succ])
+            changed = False
+            for reg, barriers in out.items():
+                union = merged.get(reg, frozenset()) | barriers
+                if union != merged.get(reg):
+                    merged[reg] = union
+                    changed = True
+            if changed:
+                entry_state[succ] = merged
+                if succ not in worklist:
+                    worklist.append(succ)
+
+    for block in cfg.blocks:
+        transfer(block.index, entry_state[block.index], emit=True)
 
     # ---- stalls, to a fixed point
     for block in cfg.blocks:

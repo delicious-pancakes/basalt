@@ -121,11 +121,13 @@ L: mad.lo.s32 %r3,%r3,%r2,%r1; sub.s32 %r1,%r1,1;
   setp.gt.s32 %p1,%r1,0; @%p1 bra L;
   st.global.u32 [%out],%r3;""",
         known_gap=(
-            "loop-carried dependence: the scheduler assigns per block and covers "
-            "a back edge with the safe stall encoding on the block's last "
-            "instruction, which is not enough here. scheduling around a cycle in "
-            "the control-flow graph needs the fixed point the verifier already "
-            "runs, and the scheduler does not do it yet."
+            "loop-carried dependence, stalls specifically. the scoreboard half is "
+            "correct now: waits propagate along control-flow edges to a fixed "
+            "point, so a value loaded before the loop and consumed inside it is "
+            "waited on. what remains is the stall half, which is still assigned "
+            "per block and covers a back edge with the safe encoding on the "
+            "block's last instruction. that is not sufficient for an accumulator "
+            "carried around the cycle."
         ),
     ),
     Case(
