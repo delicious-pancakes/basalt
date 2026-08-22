@@ -303,6 +303,14 @@ def _check_instruction(
                     ),
                 )
 
+    # a scoreboard signalled here also covers anything the same unit was still
+    # owing, since a unit returns results in the order it was given work
+    if write_barrier != NO_BARRIER:
+        state.adopt(
+            write_barrier,
+            lambda other: program.instructions[other].opcode == instr.opcode,
+        )
+
     for reg in access.real_defs:
         state.define(reg, index, write_barrier, conditional=access.guard is not None)
 

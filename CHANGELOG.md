@@ -12,7 +12,7 @@ any release. The clean-room position in [`NOTICE`](NOTICE) will not.
 ### Added
 - `scripts/roundtrip_corpus.py`: reschedules every kernel the corpus generates
   from scratch and runs both versions on the GPU with identical input, comparing
-  output bytes. 275 of the 303 comparable kernels come out byte-identical to the
+  output bytes. 287 of the 303 comparable kernels come out byte-identical to the
   vendor schedule, from 246 when the control was first run. Every model
   correction in this release came out of it. Recorded as finding 10 in
   [`docs/FINDINGS.md`](docs/FINDINGS.md), with the failures named.

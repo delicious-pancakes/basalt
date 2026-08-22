@@ -76,9 +76,9 @@
     },
     "POPC": {
       "cycles": 18,
-      "kind": "fixed",
+      "kind": "variable",
       "measured_cycles": 18.038,
-      "note": "population count",
+      "note": "population count; scoreboarded in every dependent instance in the corpus",
       "r_squared": 0.999999
     },
     "SHF": {

@@ -278,8 +278,22 @@ def operand_access(mnemonic: str, operands: str) -> Access:
         else:
             break
 
+    # A single leading predicate followed by a register means both are written:
+    # `SHFL.IDX PT, R9, R7, R0, 0x1f` and `ATOMG.E.ADD PT, R7, desc[...], R7`
+    # return a value as well as a predicate. Two or more leading predicates are
+    # the whole destination list and everything after them is a source, which is
+    # the `ISETP.GE.AND P0, PT, R2, R3, PT` shape.
+    #
+    # Reading only the predicate loses the register entirely, so nothing
+    # scoreboards the returned value of an atomic or a shuffle and nothing waits
+    # for it. That is silent in the checker and produced wrong answers from
+    # basalt's own scheduler for every atomic in the corpus.
+    def_slots = max(1, leading_preds)
+    if leading_preds == 1 and len(parts) > 1 and _REG_WITH_TAIL.match(parts[1].strip()):
+        def_slots = 2
+
     for idx, part in enumerate(parts):
-        is_def_slot = defines_first and idx < max(1, leading_preds + (0 if leading_preds else 1))
+        is_def_slot = defines_first and idx < def_slots
         # a bracketed operand is an address: every register inside it is read,
         # even when it sits in the destination slot
         addressed = "[" in part

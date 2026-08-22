@@ -176,6 +176,7 @@ _SPECS: tuple[ChainSpec, ...] = (
         # which does not matter: the dependency is what is being timed.
         body="    popc.b32 {d}, {d};",
         seed="    ld.global.u32 %r1, [%in];",
+        kind=LatencyClass.VARIABLE,
         note="population count",
     ),
     ChainSpec(

@@ -211,11 +211,6 @@
       "observations": 4,
       "trusted": true
     },
-    "IADD->SHFL": {
-      "min_stall": 18,
-      "observations": 1,
-      "trusted": false
-    },
     "IADD->STG": {
       "min_stall": 5,
       "observations": 21,
@@ -248,7 +243,7 @@
     },
     "IMAD->IMAD": {
       "min_stall": 4,
-      "observations": 15,
+      "observations": 14,
       "trusted": true
     },
     "IMAD->ISETP": {
@@ -269,11 +264,6 @@
     "IMAD->SHF": {
       "min_stall": 5,
       "observations": 65,
-      "trusted": true
-    },
-    "IMAD->SHFL": {
-      "min_stall": 16,
-      "observations": 4,
       "trusted": true
     },
     "IMAD->STG": {
@@ -466,16 +456,6 @@
       "observations": 4,
       "trusted": true
     },
-    "PRMT->SHF": {
-      "min_stall": 39,
-      "observations": 1,
-      "trusted": false
-    },
-    "PRMT->SHFL": {
-      "min_stall": 28,
-      "observations": 1,
-      "trusted": false
-    },
     "PRMT->STG": {
       "min_stall": 5,
       "observations": 1,
@@ -506,14 +486,9 @@
       "observations": 9,
       "trusted": true
     },
-    "SEL->SHF": {
-      "min_stall": 28,
-      "observations": 1,
-      "trusted": false
-    },
     "SEL->SHFL": {
       "min_stall": 5,
-      "observations": 5,
+      "observations": 4,
       "trusted": true
     },
     "SEL->STG": {
@@ -545,6 +520,11 @@
       "min_stall": 5,
       "observations": 13,
       "trusted": true
+    },
+    "SHFL->IMAD": {
+      "min_stall": 6,
+      "observations": 1,
+      "trusted": false
     },
     "ULEA->LDSM": {
       "min_stall": 9,
@@ -734,7 +714,7 @@
     },
     "IADD": {
       "min_stall": 4,
-      "observations": 64,
+      "observations": 63,
       "samples": [
         "IADD R4, R6, 0xffffffe -> F2I.FTZ.U32.TRUNC.NTZ R5, R4",
         "IADD R4, R6, 0xffffffe -> F2I.FTZ.U32.TRUNC.NTZ R5, R4",
@@ -761,7 +741,7 @@
     },
     "IMAD": {
       "min_stall": 3,
-      "observations": 136,
+      "observations": 131,
       "samples": [
         "IMAD.WIDE.U32.X R8, R5, R7, R12, P0 -> IADD R11, P0, -R4, R8"
       ],
@@ -836,7 +816,7 @@
     },
     "PRMT": {
       "min_stall": 5,
-      "observations": 9,
+      "observations": 7,
       "samples": [
         "PRMT R7, R4, 0x7710, RZ -> IADD R7, R0, R7",
         "PRMT R7, R4, 0x7710, RZ -> IADD R7, R0, R7",
@@ -856,7 +836,7 @@
     },
     "SEL": {
       "min_stall": 5,
-      "observations": 72,
+      "observations": 70,
       "samples": [
         "SEL R5, R6, R13, P1 -> STG.E.64 desc[UR4][R2.64], R4",
         "SEL R7, RZ, 0x1, P0 -> STG.E desc[UR4][R4.64], R7",
@@ -881,6 +861,14 @@
         "SHF.R.S32.HI R27, RZ, 0xc, R22 -> LOP3.LUT R5, R2, 0xff0000, R27, 0xf8, !PT"
       ],
       "trusted": true
+    },
+    "SHFL": {
+      "min_stall": 6,
+      "observations": 1,
+      "samples": [
+        "SHFL.IDX PT, R8, R6, R11, 0x1f -> IMAD.WIDE.U32 R8, R2, R13, R8"
+      ],
+      "trusted": false
     },
     "ULEA": {
       "min_stall": 9,
@@ -950,6 +938,96 @@
     }
   },
   "by_scoreboarded": {
+    "ATOMG.E.ADD.64.STRONG.GPU=>SHFL": {
+      "min_stall": 8,
+      "observations": 2,
+      "samples": [
+        "@P0 ATOMG.E.ADD.64.STRONG.GPU PT, R6, desc[UR4][R4.64], R6 -> SHFL.IDX PT, R8, R6, R11, 0x1f"
+      ],
+      "trusted": false
+    },
+    "ATOMG.E.ADD.F32.FTZ.RN.STRONG.GPU=>STG": {
+      "min_stall": 4,
+      "observations": 1,
+      "samples": [
+        "ATOMG.E.ADD.F32.FTZ.RN.STRONG.GPU PT, R7, desc[UR4][R4.64], R3 -> STG.E desc[UR4][R4.64], R7"
+      ],
+      "trusted": false
+    },
+    "ATOMG.E.ADD.F64.RN.STRONG.GPU=>STG": {
+      "min_stall": 4,
+      "observations": 1,
+      "samples": [
+        "ATOMG.E.ADD.F64.RN.STRONG.GPU PT, R6, desc[UR4][R4.64], R2 -> STG.E.64 desc[UR4][R4.64], R6"
+      ],
+      "trusted": false
+    },
+    "ATOMG.E.ADD.S32.STRONG.GPU=>SHFL": {
+      "min_stall": 8,
+      "observations": 1,
+      "samples": [
+        "@P0 ATOMG.E.ADD.S32.STRONG.GPU PT, R7, desc[UR4][R4.64], R7 -> SHFL.IDX PT, R9, R7, R0, 0x1f"
+      ],
+      "trusted": false
+    },
+    "ATOMG.E.ADD.STRONG.GPU=>SHFL": {
+      "min_stall": 8,
+      "observations": 1,
+      "samples": [
+        "@P0 ATOMG.E.ADD.STRONG.GPU PT, R7, desc[UR4][R4.64], R7 -> SHFL.IDX PT, R9, R7, R0, 0x1f"
+      ],
+      "trusted": false
+    },
+    "ATOMG.E.MAX.64.STRONG.GPU=>STG": {
+      "min_stall": 4,
+      "observations": 2,
+      "samples": [
+        "ATOMG.E.MAX.64.STRONG.GPU PT, R6, desc[UR4][R4.64], R2 -> STG.E.64 desc[UR4][R4.64], R6",
+        "ATOMG.E.MAX.64.STRONG.GPU PT, R6, desc[UR4][R4.64], R2 -> STG.E.64 desc[UR4][R4.64], R6"
+      ],
+      "trusted": false
+    },
+    "ATOMG.E.MAX.S32.STRONG.GPU=>STG": {
+      "min_stall": 4,
+      "observations": 1,
+      "samples": [
+        "ATOMG.E.MAX.S32.STRONG.GPU PT, R7, desc[UR4][R4.64], R3 -> STG.E desc[UR4][R4.64], R7"
+      ],
+      "trusted": false
+    },
+    "ATOMG.E.MAX.STRONG.GPU=>STG": {
+      "min_stall": 4,
+      "observations": 1,
+      "samples": [
+        "ATOMG.E.MAX.STRONG.GPU PT, R7, desc[UR4][R4.64], R3 -> STG.E desc[UR4][R4.64], R7"
+      ],
+      "trusted": false
+    },
+    "ATOMG.E.MIN.64.STRONG.GPU=>STG": {
+      "min_stall": 4,
+      "observations": 2,
+      "samples": [
+        "ATOMG.E.MIN.64.STRONG.GPU PT, R6, desc[UR4][R4.64], R2 -> STG.E.64 desc[UR4][R4.64], R6",
+        "ATOMG.E.MIN.64.STRONG.GPU PT, R6, desc[UR4][R4.64], R2 -> STG.E.64 desc[UR4][R4.64], R6"
+      ],
+      "trusted": false
+    },
+    "ATOMG.E.MIN.S32.STRONG.GPU=>STG": {
+      "min_stall": 4,
+      "observations": 1,
+      "samples": [
+        "ATOMG.E.MIN.S32.STRONG.GPU PT, R7, desc[UR4][R4.64], R3 -> STG.E desc[UR4][R4.64], R7"
+      ],
+      "trusted": false
+    },
+    "ATOMG.E.MIN.STRONG.GPU=>STG": {
+      "min_stall": 4,
+      "observations": 1,
+      "samples": [
+        "ATOMG.E.MIN.STRONG.GPU PT, R7, desc[UR4][R4.64], R3 -> STG.E desc[UR4][R4.64], R7"
+      ],
+      "trusted": false
+    },
     "BREV=>STG": {
       "min_stall": 2,
       "observations": 2,
@@ -2448,6 +2526,24 @@
         "S2UR UR5, SR_CgaCtaId -> ULEA UR4, UR5, UR4, 0x18",
         "S2UR UR5, SR_CgaCtaId -> ULEA UR4, UR5, UR4, 0x18",
         "S2UR UR5, SR_CgaCtaId -> ULEA UR4, UR5, UR4, 0x18"
+      ],
+      "trusted": true
+    },
+    "SHFL.IDX=>IMAD": {
+      "min_stall": 2,
+      "observations": 3,
+      "samples": [
+        "SHFL.IDX PT, R9, R7, R0, 0x1f -> IMAD R3, R2, R3, R9",
+        "SHFL.IDX PT, R9, R7, R0, 0x1f -> IMAD R3, R2, R3, R9"
+      ],
+      "trusted": true
+    },
+    "SHFL.IDX=>SHF": {
+      "min_stall": 11,
+      "observations": 4,
+      "samples": [
+        "SHFL.IDX PT, R3, R20, RZ, 0x1c03 -> SHF.R.U32.HI R3, RZ, R2, R3",
+        "SHFL.IDX PT, R19, R20, 0x2, 0x1c03 -> SHF.R.U32.HI R19, RZ, R2, R19"
       ],
       "trusted": true
     }

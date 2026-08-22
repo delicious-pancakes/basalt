@@ -343,9 +343,9 @@ rescheduled kernel has to produce the same bytes.
 | :--- | ---: |
 | Kernels rescheduled and run | 317 |
 | Comparable (vendor runs here, and deterministically) | 303 |
-| **Byte-identical to the vendor schedule** | **275** |
-| Wrong, deterministically | 7 |
-| Non-deterministic, so a dependency is uncovered | 21 |
+| **Byte-identical to the vendor schedule** | **287** |
+| Wrong, deterministically | 6 |
+| Non-deterministic, so a dependency is uncovered | 10 |
 
 The first run of this scored 246. Everything between then and now was found by it:
 
@@ -359,6 +359,12 @@ The first run of this scored 246. Everything between then and now was found by i
   every other `I2F` needs 2, and collapsing them takes the minimum,
 - a predicated write not killing the previous definition, because `@!P0 FMUL R7, R7, c`
   leaves R7 holding whatever produced it whenever the guard is false,
+- an instruction that writes a predicate and a register reading as though it wrote only the
+  predicate, so nothing scoreboarded the returned value of `SHFL.IDX PT, R9, ...` or of any
+  atomic, and nothing waited for it,
+- a variable-latency unit returning results in the order it was given work, so a wait on
+  something issued later covers everything that unit still owes: `ptxas` scoreboards the
+  second of two consecutive shuffles and waits only on that,
 - and the scheduler refusing to allocate a seventh outstanding load instead of sharing a
   scoreboard, which a counter permits and which rejected 45 kernels outright.
 
@@ -373,12 +379,13 @@ does not:
 
 | Family | Kernels |
 | :--- | :--- |
-| Global atomics | `atom_global_add` and `min`/`max` across u32, s32, u64, f32, f64 |
 | Transcendental approximations | `sqrt`, `rsqrt`, `lg2`, `ex2` on f32 |
-| Bit reversal | `brev_b32`, `brev_b64` |
 | Integer divide and remainder | `div_s32`, `div_u32`, `rem_u32` |
+| Bit reversal | `brev_b32`, `brev_b64` |
 | 16-bit subtract | `sub_s16`, `sub_u16` |
-| Tensor and matrix movement | two `s4` MMA shapes, one sparse MMA, `ldsm_x1_trans`, `movmatrix` |
+| 64-bit atomic add | `atom_global_add_u64` |
+| Tensor and matrix movement | two `s4` MMA shapes, `movmatrix` |
+| Loops | `special_loop` |
 
 A further 12 kernels the harness itself cannot launch, shared and local memory forms that
 need launch configuration it does not provide, and 2 whose vendor output is not

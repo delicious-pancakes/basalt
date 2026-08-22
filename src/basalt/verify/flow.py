@@ -135,6 +135,25 @@ class FlowState:
         else:
             self.defs[reg] = {index: fresh}
 
+    def adopt(self, barrier: int, is_same_unit) -> None:
+        """Let a new scoreboard cover earlier unscoreboarded results from its unit.
+
+        A variable-latency unit returns results in the order it was given work,
+        so a wait on something issued later covers everything the same unit
+        still owes. `ptxas` schedules two consecutive `SHFL.IDX` and puts a
+        scoreboard on the second only, then waits on that one before reading
+        either result.
+
+        Without this the checker reports the first shuffle as a result nothing
+        can wait for, which is a false positive against the vendor's own output
+        and therefore the kind of finding that makes every other finding
+        worthless.
+        """
+        for by_index in self.defs.values():
+            for i, rd in by_index.items():
+                if rd.barrier == 7 and is_same_unit(rd.index):
+                    by_index[i] = replace(rd, barrier=barrier)
+
     def advance(self, stall: int, *, yielded: bool = False) -> None:
         """Charge one instruction's stall to every outstanding definition."""
         if stall == 0 and not yielded:
