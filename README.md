@@ -29,6 +29,42 @@ That is a strange kind of bug. It does not crash. It does not appear in a debugg
 
 Tools that generate machine code for this architecture *assign* those control bits from a latency model. basalt is the thing that checks the answer.
 
+## What is actually new here
+
+Machine-code assemblers for NVIDIA GPUs have existed for a decade, and there is prior work
+on Blackwell specifically: people have reverse engineered the encoding, and there are
+published cycle-level characterisations of `sm_120`. So "an assembler for this
+architecture" is not a claim worth making, and this repository does not make it.
+
+Every one of those tools **assigns** the scheduling control bits from a latency table
+written by hand, and then stops. None of them checks the result. There is no tool that
+takes a cubin and tells you whether its control bits are safe, and nothing published that
+verifies a control-bit assignment against the hardware rather than against an assumption.
+
+That is the gap basalt fills, and all three parts are held to the same standard: agree with
+the vendor exactly, or say why not.
+
+| | What it does | How it is checked | Result |
+| :--- | :--- | :--- | ---: |
+| **Assembler** | SASS text to the 128-bit word | Reassemble every instruction `ptxas` emitted and compare bytes | 7,597 of 8,560 exact, **0 wrong** |
+| **Checker** | Reads a schedule, reports hazards | The vendor's own output must verify clean, and a deliberately shortened stall must be caught | 329 kernels clean, faults caught |
+| **Scheduler** | Assigns the control bits from scratch | Discard every control bit, compute new ones, run both on the GPU, compare output bytes | **314 of 314** byte-identical |
+
+The middle column is the point. A checker and a scheduler that share a latency model agree
+with each other while both being wrong, so neither is evidence for the other; only the
+silicon has no stake in the argument. Running the scheduler over seven hand-written kernels
+passed seven of seven for a long time. Running it over three hundred found forty-one wrong
+ones, and every correction in [findings](docs/FINDINGS.md) came out of watching that number
+move.
+
+The same discipline decides what the assembler is allowed to do. It reached 89% of the
+corpus only after four rounds of being confidently incorrect: writing a register number
+into an immediate form, keeping a harvested branch target, putting the integer 15 into a
+field that holds a half-precision float, and writing an operand into bits that turned out
+to be a reuse flag. Each of those produced a word that assembles, disassembles back to the
+right text, and computes something else. All four are now refused with a reason, and the
+count of instructions that assemble to the wrong bytes is a test pinned at zero.
+
 ## How it works
 
 Everything rests on two oracles, both of which are stock NVIDIA binaries driven as external processes. No NVIDIA source, headers, or libraries are used or redistributed.

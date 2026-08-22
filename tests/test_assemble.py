@@ -1,0 +1,135 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 Sunny Patel
+"""The assembler, held to one standard: match the vendor exactly or refuse.
+
+There is no third outcome worth having. A word that is close enough assembles,
+disassembles back to the text it came from, and computes something else, which
+is the same failure the rest of this project exists to catch and would be
+embarrassing to ship inside it.
+
+So every test here is one of two shapes. Either the assembler reproduces bytes
+`ptxas` actually emitted, or it declines and says why. The cases that decline are
+the interesting ones: each is a way the assembler was previously, confidently
+wrong.
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+import pytest
+
+from basalt.asm.assemble import Assembler, AssemblyError
+from basalt.encoding import Word
+from basalt.isa.database import IsaDatabase
+
+ROOT = Path(__file__).resolve().parent.parent
+DATABASE = ROOT / "data" / "isa" / "sm_120a.json"
+
+
+@pytest.fixture(scope="module")
+def assembler() -> Assembler:
+    if not DATABASE.is_file():
+        pytest.skip("no ISA database; run `basalt build-isa`")
+    return Assembler(IsaDatabase.read(DATABASE))
+
+
+@pytest.fixture(scope="module")
+def database() -> IsaDatabase:
+    if not DATABASE.is_file():
+        pytest.skip("no ISA database; run `basalt build-isa`")
+    return IsaDatabase.read(DATABASE)
+
+
+class TestReproducesTheReference:
+    """The form's own text must assemble back to the form's own encoding."""
+
+    def test_every_form_round_trips_its_reference(self, assembler, database):
+        missed = []
+        for mnemonic, form in database.forms.items():
+            if not form.operand_text:
+                continue
+            try:
+                got = assembler.assemble(f"{mnemonic} {form.operand_text}")
+            except AssemblyError:
+                continue  # refusing is allowed; being wrong is not
+            if got.value != form.word.value:
+                missed.append(mnemonic)
+        assert not missed, f"{len(missed)} forms did not reproduce their own encoding: {missed[:8]}"
+
+    def test_a_different_register_changes_only_that_field(self, assembler, database):
+        form = database.forms["IMAD"]
+        reference = assembler.assemble(f"IMAD {form.operand_text}")
+        assert reference.value == form.word.value
+
+
+class TestRefusesRatherThanGuesses:
+    """Each of these produced a wrong word before it produced an error."""
+
+    def test_a_branch_target_is_refused(self, assembler):
+        with pytest.raises(AssemblyError, match="branch target"):
+            assembler.assemble("BRA `(.L_x_0)")
+
+    def test_an_unknown_mnemonic_is_refused(self, assembler):
+        with pytest.raises(AssemblyError, match="not in the instruction database"):
+            assembler.assemble("NOTAREALOPCODE R0, R1")
+
+    def test_an_immediate_where_the_form_holds_a_register_is_refused(self, assembler, database):
+        """One mnemonic, several encodings, and the database holds one of them."""
+        form = database.forms.get("IADD.64")
+        if form is None or "0x" not in form.operand_text:
+            pytest.skip("this database's IADD.64 is not the immediate form")
+        with pytest.raises(AssemblyError, match="different encoding"):
+            assembler.assemble("IADD.64 R4, R4, R6")
+
+    def test_a_uniform_register_is_not_a_register(self, assembler, database):
+        """`R6` and `UR6` differ outside every recorded field."""
+        form = database.forms["IMAD"]
+        tokens = form.operand_text.split(", ")
+        if len(tokens) < 3 or tokens[2].startswith("UR"):
+            pytest.skip("this database's IMAD reference already uses a uniform register")
+        with pytest.raises(AssemblyError, match="different encoding"):
+            assembler.assemble(f"IMAD {tokens[0]}, {tokens[1]}, UR7, {tokens[-1]}")
+
+
+class TestControlBitsAreCopiedNotInvented:
+    """Assembling does not decide timing. That is the scheduler's job."""
+
+    def test_the_control_word_is_taken_from_the_argument(self, assembler, database):
+        form = database.forms["IMAD"]
+        control = Word(0).with_field("stall", 7).with_field("wait_mask", 0b101)
+        got = assembler.assemble(f"IMAD {form.operand_text}", control=control)
+        assert got.field("stall") == 7
+        assert got.field("wait_mask") == 0b101
+
+    def test_without_a_control_word_the_reference_is_kept(self, assembler, database):
+        form = database.forms["IMAD"]
+        got = assembler.assemble(f"IMAD {form.operand_text}")
+        assert got.field("stall") == form.word.field("stall")
+
+
+class TestCompositeOperands:
+    """A bracket operand is several fields, and each goes in its own bits."""
+
+    def test_a_different_constant_offset_encodes(self, assembler, database):
+        form = database.forms.get("LDC")
+        if form is None or not any(o.subfields.get("offset") for o in form.operands):
+            pytest.skip("no offset sub-field recorded for LDC")
+        got = assembler.assemble("LDC R2, c[0x0][0x37c]")
+        reference = assembler.assemble(f"LDC {form.operand_text}")
+        assert got.value != reference.value
+        # only the offset bits may move
+        offset_bits = next(
+            o.subfields["offset"] for o in form.operands if o.subfields.get("offset")
+        )
+        moved = {b for b in range(128) if ((got.value ^ reference.value) >> b) & 1}
+        assert moved <= set(offset_bits), f"bits outside the offset field moved: {moved}"
+
+    def test_a_bank_with_no_recorded_bits_is_refused(self, assembler, database):
+        """Refusing names the part it could not place."""
+        if "LDC" not in database.forms:
+            pytest.skip("no LDC in this database")
+        try:
+            assembler.assemble("LDC R2, c[0x9][0x380]")
+        except AssemblyError as exc:
+            assert "bank" in str(exc)

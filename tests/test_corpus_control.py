@@ -186,3 +186,76 @@ class TestSchedulerOverTheWholeCorpus:
         if scheduled:
             lines = "\n".join(f"  {name}: {why} ({detail})" for name, why, detail in scheduled)
             pytest.fail(f"{len(scheduled)} kernels basalt could not schedule cleanly:\n{lines}")
+
+
+class TestAssemblerAgainstTheVendorsBytes:
+    """Assembling a disassembled instruction must give back the same 128 bits.
+
+    The strongest statement an assembler can make about itself, and the only one
+    worth making: not that the text looks right afterwards, but that the bytes
+    are the ones the vendor compiler emitted.
+
+    Two numbers come out of this and only one of them is allowed to move. The
+    share that reproduces exactly is coverage, and it goes up as the database
+    learns more forms. The count that comes out *different* is a defect, and it
+    is pinned at zero, because an assembler that emits a word which disassembles
+    to the right text and computes something else is precisely the failure the
+    rest of this repository exists to catch.
+    """
+
+    @staticmethod
+    @pytest.fixture(scope="class")
+    def assembled(toolchain):
+        from basalt.asm.assemble import Assembler, AssemblyError
+        from basalt.harvest.corpus_shapes import generate_shapes
+        from basalt.isa.database import IsaDatabase
+
+        database = ROOT / "data" / "isa" / "sm_120a.json"
+        if not database.is_file():
+            pytest.skip("no ISA database; run `basalt build-isa`")
+        assembler = Assembler(IsaDatabase.read(database))
+
+        def one(snippet):
+            with TemporaryDirectory(prefix="basalt-asm-") as tmp:
+                src = Path(tmp) / "k.ptx"
+                cubin = Path(tmp) / "k.cubin"
+                src.write_text(snippet.ptx)
+                built = toolchain.run(
+                    [str(toolchain.ptxas), f"-arch={ARCH}", "-O3", "-o", str(cubin), str(src)],
+                    check=False,
+                    timeout=60.0,
+                )
+                if built.returncode != 0:
+                    return []
+                out = []
+                for instruction in disassemble_program(toolchain, cubin).instructions:
+                    if instruction.word is None:
+                        continue
+                    text = f"{instruction.mnemonic} {instruction.operands}".strip()
+                    try:
+                        got = assembler.assemble(text, control=instruction.word)
+                    except AssemblyError:
+                        out.append(("refused", text))
+                        continue
+                    out.append(("exact" if got.value == instruction.word.value else "wrong", text))
+                return out
+
+        snippets = generate() + generate_tensor() + generate_shapes()
+        with ThreadPoolExecutor(max_workers=os.cpu_count() or 4) as pool:
+            return [row for rows in pool.map(one, snippets) for row in rows]
+
+    def test_nothing_assembles_to_the_wrong_bytes(self, assembled):
+        wrong = [text for verdict, text in assembled if verdict == "wrong"]
+        assert not wrong, (
+            f"{len(wrong)} instructions assembled to bytes the vendor did not emit, which is "
+            f"worse than refusing them: {wrong[:5]}"
+        )
+
+    def test_coverage_does_not_regress(self, assembled):
+        exact = sum(1 for verdict, _ in assembled if verdict == "exact")
+        total = len(assembled)
+        assert total > 5000, f"only {total} instructions seen; the corpus did not build"
+        # 88.8% when this was written. the floor is deliberately below that, so
+        # it catches a regression without failing on a database that legitimately
+        # learned to refuse something it had been guessing at.
+        assert exact / total >= 0.85, f"only {exact}/{total} ({exact / total:.1%}) reproduced"
