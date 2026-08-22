@@ -339,6 +339,26 @@ def schedule_program(
             if not short:
                 break
 
+    # ---- a scoreboard does not excuse the producer's own stall
+    # Waiting on a scoreboard covers the bulk of a variable-latency result but
+    # not all of it. `DADD` is always scoreboarded and `ptxas` never leaves it
+    # less than 2 cycles; dropping it to 1 while keeping the wait changes the
+    # answer on hardware. So the minimum is mined alongside everything else and
+    # applied here, after the pair-wise fixed point, because raising a stall can
+    # only widen a gap and never reopen one.
+    if observed is not None:
+        for index in range(count):
+            instr = program.instructions[index]
+            if instr.word is None or write_barriers[index] == NO_BARRIER:
+                continue
+            if index in pinned:
+                # already the safe encoding, which is worth more than any minimum
+                continue
+            evidence = observed.scoreboarded_minimum(instr.opcode)
+            if evidence is not None and stalls[index] < evidence.minimum:
+                result.stalls_added += evidence.minimum - stalls[index]
+                stalls[index] = evidence.minimum
+
     # ---- anything crossing a block boundary
     # The analysis above is per block, so a value defined in one block and
     # consumed in another gets no coverage from it. Rather than guess which

@@ -39,10 +39,11 @@ vendor compiler's own output, which is what makes it useful rather than self-ref
 | 12 | Assembler | SASS text to cubin, so basalt can emit its own test cases | planned |
 
 The scheduler discards every control bit `ptxas` produced and computes its own, then hands the
-result back to the verifier and then to the GPU. Six of seven test kernels come out computing
-exactly what the vendor schedule computes. The one that does not is recorded as a strict
-expected failure with its reason, not removed: an fp64 case where the verifier and the
-scheduler share a blind spot because they share a latency model.
+result back to the verifier and then to the GPU. All seven test kernels come out computing
+exactly what the vendor schedule computes, fp64 and loops included. Where a kernel does not,
+it is recorded as a strict expected failure with its reason rather than removed, so it
+reports the day it is fixed; both of the failures carried so far were closed that way, and
+each turned out to be a wrong entry in the latency model rather than a missing pass.
 
 Stages 1 to 6 need no GPU and run in CI. Stage 7 needs an sm_120 card, and only the
 measurement step does; the numbers it produces are a checked-in file everyone else reads.

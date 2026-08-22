@@ -17,6 +17,11 @@ any release. The clean-room position in [`NOTICE`](NOTICE) will not.
   across the corpus; recorded as finding 9 in [`docs/FINDINGS.md`](docs/FINDINGS.md).
   The checker, the scheduler and the stall miner each keep guard and data
   evidence in separate keyspaces, including the per-producer fallback.
+- Per-opcode minimum stall for a producer that also signals a scoreboard, mined
+  from the compiler the same way the pair-wise requirements are. A wait covers
+  the long part of a variable-latency result and not the whole of it: `ptxas`
+  never schedules a `DADD` below 2 cycles however the consumer waits, and one
+  cycle less computes a different answer.
 - Scoreboard waits propagated along control-flow edges to a fixed point, so a
   value produced in one block and consumed in another is waited on rather than
   relying on the block-local pass that could not see it.
@@ -50,11 +55,23 @@ any release. The clean-room position in [`NOTICE`](NOTICE) will not.
   verified against its own checker and then against the hardware.
 
 
+### Changed
+- fp64 is modelled as completing out of order rather than on a fixed schedule.
+  All 41 fp64 instructions in the corpus carry a write scoreboard and none goes
+  without. The 64 cycle figure stays as the cost of a dependent chain, which is
+  a different question from what correctness requires.
+
 ### Fixed
-- The `loop` kernel now round-trips through hardware, taking the scheduler to
-  six of seven. It had been recorded as a loop-carried scheduling gap; bisecting
-  the schedule one instruction at a time against the GPU showed a single guard
-  predicate in straight-line code, and nothing loop-carried about it.
+- The `loop` and `double` kernels now round-trip through hardware, taking the
+  scheduler to seven of seven. Both had been carried as expected failures
+  blaming missing passes, a loop-carried dependence and an unmodelled
+  stall-plus-scoreboard combination. Neither diagnosis was right. Bisecting each
+  schedule one instruction at a time against the GPU put the first on a single
+  guard predicate in straight-line code and the second on a wrong latency class.
+- Finding 7 in [`docs/FINDINGS.md`](docs/FINDINGS.md) concluded that stalls
+  rather than scoreboards carry an fp64 dependency. The experiment behind it also
+  cut the stall on an unrelated address setup, which breaks the kernel by itself.
+  The entry now records both the correction and why it went unnoticed.
 
 ### Found
 - A stall count of 0 is a safe long-wait encoding rather than zero cycles, which

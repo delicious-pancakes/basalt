@@ -188,6 +188,13 @@ def _check_instruction(
             # matter how long the instruction takes, so it is checked before the
             # latency class is consulted at all
             if rd.yielded or (rd.barrier != NO_BARRIER and rd.satisfied):
+                # A wait covers the bulk of a variable-latency result, but the
+                # producer still owes whatever stall the compiler never goes
+                # below for that opcode. `DADD` is a real case: always
+                # scoreboarded, never given less than 2, and wrong at 1.
+                _check_scoreboarded_minimum(
+                    report, seen, program, model, observed, rd, index, instr, recording
+                )
                 continue
 
             if producer_record.kind is LatencyClass.FIXED:
@@ -381,6 +388,64 @@ def verify_program(
 def split_blocks(instructions: list[Instruction]) -> list:
     """Basic blocks for a bare instruction list, without running the analysis."""
     return build_cfg(Program(instructions=list(instructions), labels={})).blocks
+
+
+def _check_scoreboarded_minimum(
+    report,
+    seen,
+    program,
+    model,
+    observed,
+    rd,
+    index: int,
+    instr,
+    recording: bool,
+) -> None:
+    """A producer that signalled a scoreboard still owes its own minimum stall.
+
+    The wait covers the long, variable part of the result. It does not cover
+    everything: `ptxas` scoreboards every `DADD` in the corpus and still never
+    schedules one with less than 2 cycles of stall, and shortening it to 1 while
+    leaving the wait in place changes what the GPU computes. Treating a wait as
+    a complete answer is what let basalt emit an fp64 kernel that its own
+    checker accepted and the hardware disagreed with.
+
+    Only reported where the compiler was seen often enough to be believed, and
+    never for the safe stall encoding, which is worth more than any minimum.
+    """
+    if observed is None or report is None or not recording:
+        return
+    producer = program.instructions[rd.index]
+    if producer.word is None:
+        return
+    raw = producer.word.field("stall")
+    if raw == STALL_YIELD:
+        return
+    evidence = observed.scoreboarded_minimum(producer.opcode)
+    if evidence is None or raw >= evidence.minimum:
+        return
+    _add(
+        report,
+        seen,
+        Hazard(
+            kind=HazardKind.UNDERSTALLED,
+            severity=Severity.ERROR,
+            confidence=Confidence.MEASURED,
+            register=str(rd.register) if hasattr(rd, "register") else "",
+            def_index=rd.index,
+            use_index=index,
+            def_text=f"{producer.mnemonic} {producer.operands}".strip(),
+            use_text=f"{instr.mnemonic} {instr.operands}".strip(),
+            required=evidence.minimum,
+            actual=raw,
+            detail=(
+                f"{producer.opcode} signals a scoreboard and is waited on, but a "
+                f"scoreboard does not cover the whole result: across "
+                f"{evidence.observations} observations the compiler never scheduled "
+                f"{producer.opcode} with less than {evidence.minimum} cycles of its own"
+            ),
+        ),
+    )
 
 
 def _requirement(

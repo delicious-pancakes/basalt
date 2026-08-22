@@ -13,16 +13,16 @@
   "latencies": {
     "DADD": {
       "cycles": 64,
-      "kind": "fixed",
+      "kind": "variable",
       "measured_cycles": 63.999,
-      "note": "fp64 add; ptxas also scoreboards it, but the stalls are what carry it",
+      "note": "fp64 add; completes out of order and is scoreboarded, and the wait is what carries it. 64 cycles is the chain cost, not the correctness requirement",
       "r_squared": 0.999999
     },
     "DFMA": {
       "cycles": 64,
-      "kind": "fixed",
+      "kind": "variable",
       "measured_cycles": 63.992,
-      "note": "fp64 fused multiply-add",
+      "note": "fp64 fused multiply-add; scoreboarded, see DADD",
       "r_squared": 0.999999
     },
     "FADD": {

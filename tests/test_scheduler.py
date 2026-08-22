@@ -131,13 +131,6 @@ L: mad.lo.s32 %r3,%r3,%r2,%r1; sub.s32 %r1,%r1,1;
   fma.rn.f64 %g3,%g1,%g2,%g1; fma.rn.f64 %g4,%g3,%g2,%g3;
   add.f64 %g5,%g4,%g3;
   st.global.f64 [%out],%g5;""",
-        known_gap=(
-            "fp64: basalt's verifier accepts its own schedule and the hardware "
-            "disagrees. both rest on the same latency model, so they share the "
-            "blind spot and only the silicon sees it. ptxas covers the same "
-            "dependency with 64 cycles of stall and a scoreboard together, and "
-            "reproducing that combination is not modelled yet."
-        ),
     ),
     Case(
         "shifts-and-logic",

@@ -198,7 +198,7 @@ listed rather than rounded away.
 python -m basalt.cli validate-isa --show
 ```
 
-## 7. fp64 needs the stalls, and gets a scoreboard as well
+## 7. fp64 is carried by the scoreboard, and still owes a small stall
 
 `ptxas` covers a dependent `DFMA` pair with both mechanisms at once: 64 cycles of
 stall, padded out with maximum-stall NOPs, and a scoreboard signalled on the
@@ -208,13 +208,35 @@ settled directly.
 | What was changed | Result |
 | :--- | :--- |
 | Nothing | correct |
-| Scoreboards and waits kept, stalls reduced to 1 | **wrong** |
-| Stalls kept, every scoreboard and wait removed | faulted before completing |
+| Scoreboards and waits kept, stalls across the fp64 stretch reduced to 1 | correct |
+| Stalls kept, the `DADD` write barrier and the store's wait removed | **wrong** |
+| Everything kept, the `DADD`'s own stall alone cut from 2 to 1 | **wrong** |
 
-So the cycles are load-bearing and the scoreboard is belt and braces. That is the
-opposite of what fault injection alone suggests, which reports the pair as
-scoreboarded and declines to return a stall requirement, and it is why that
-command reports rather than concludes.
+So the scoreboard is what carries the dependency. The 64 cycles are the cost of a
+dependent chain, which is a real number and a different question from what
+correctness requires.
+
+The last row is the part worth keeping. A wait covers the long, variable part of
+the result and not the whole of it: the producer still owes a small stall of its
+own, and `ptxas` knows exactly how much. Across the corpus it never schedules a
+`DADD` or a `DSETP` below 2 cycles, or a `DFMA` or `DMUL` below 1, however the
+consumer waits. basalt mines that minimum per opcode alongside everything else
+and applies it wherever a scoreboard is signalled.
+
+Every one of the 41 fp64 instructions in the corpus carries a write scoreboard
+and none goes without, so fp64 is modelled as completing out of order rather than
+on a fixed schedule.
+
+> [!NOTE]
+> **This entry previously concluded the opposite**, that the cycles were
+> load-bearing and the scoreboard was belt and braces. The experiment behind it
+> reduced every stall in the kernel, including the one on the `LDC.64` that sets
+> up the store address, which breaks the kernel on its own and has nothing to do
+> with fp64. Confining the change to the fp64 stretch reverses the result. The
+> wrong conclusion survived because it agreed with the model already in the code:
+> fp64 was classified as fixed latency, so nothing disagreed with it until a
+> rescheduled fp64 kernel was run on the GPU and returned 15.84 where the vendor
+> returned 20.72.
 
 **A related bug this uncovered.** `DFMA R4, R4, R6, R4` carries no width suffix
 anywhere, but fp64 operands occupy register pairs: it writes R4 and R5 and reads
@@ -355,6 +377,12 @@ Kept because a method is only as trustworthy as its error log.
   fp64 dependency was invisible.
 - A guard predicate was charged the same as a predicate read as data. It needs thirteen
   cycles against five, and the difference silently corrupts (finding 9).
+- A scoreboard wait was treated as covering a dependency completely. It does not: the
+  producer still owes a per-opcode minimum stall, 2 cycles for `DADD`, and one cycle less
+  is silently wrong.
+- fp64 was classified as fixed latency because an early experiment appeared to show the
+  stalls carrying the dependency. The experiment also cut the stall on an unrelated address
+  setup (finding 7).
 - The `loop` kernel's failure to round-trip was recorded as a loop-carried scheduling gap
   for longer than it should have been. Bisecting the schedule one instruction at a time
   against hardware showed a single guard predicate, in a straight line of code, with

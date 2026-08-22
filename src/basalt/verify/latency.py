@@ -132,16 +132,26 @@ _ASSUMED: dict[str, tuple[int, LatencyClass, str]] = {
     "F2F": (6, LatencyClass.FIXED, "conversion pipeline"),
     "I2I": (6, LatencyClass.FIXED, "conversion pipeline"),
     "FRND": (6, LatencyClass.FIXED, ""),
-    # Double precision is fixed latency at 64 cycles, and ptxas additionally
-    # signals a scoreboard on it. The scoreboard is not what carries the
-    # dependency: keeping every scoreboard and wait in place while reducing the
-    # stalls to 1 computes the wrong answer, so the cycles are load-bearing and
-    # the scoreboard is belt and braces. Measured 64 by timing, and corroborated
-    # by ptxas padding the gap with maximum-stall NOPs to exactly 64.
-    "DADD": (64, LatencyClass.FIXED, "fp64 add, measured"),
-    "DMUL": (64, LatencyClass.FIXED, "fp64 multiply, assumed equal to DADD"),
-    "DFMA": (64, LatencyClass.FIXED, "fp64 fused multiply-add, measured"),
-    "DSETP": (64, LatencyClass.FIXED, "fp64 compare, assumed equal to DADD"),
+    # Double precision completes out of order and must be scoreboarded. `ptxas`
+    # puts a write scoreboard on all 41 fp64 instructions in the corpus and none
+    # without, and the scoreboard is what carries the dependency: with every
+    # wait left in place, cutting the fp64 stalls to 1 still computes the right
+    # answer.
+    #
+    # An earlier note here said the opposite, that the cycles were load-bearing
+    # and the scoreboard was belt and braces. That experiment cut the stall on
+    # the `LDC.64` that sets up the store address as well, which breaks the
+    # kernel on its own and has nothing to do with fp64. Confining the cut to
+    # the fp64 stretch reverses the conclusion.
+    #
+    # The 64 cycles are still the right latency figure and are still what a
+    # dependent chain costs. They are not what correctness needs, given a wait.
+    # What correctness needs on top of the wait is the per-opcode minimum in
+    # `by_scoreboarded`, which is 2 for DADD and DSETP and 1 for DFMA and DMUL.
+    "DADD": (64, LatencyClass.VARIABLE, "fp64 add, measured, scoreboard signalled"),
+    "DMUL": (64, LatencyClass.VARIABLE, "fp64 multiply, assumed equal to DADD"),
+    "DFMA": (64, LatencyClass.VARIABLE, "fp64 fused multiply-add, measured"),
+    "DSETP": (64, LatencyClass.VARIABLE, "fp64 compare, assumed equal to DADD"),
     # the special-function unit signals completion rather than running to a
     # fixed schedule
     "MUFU": (0, LatencyClass.VARIABLE, "special function unit, scoreboard signalled"),

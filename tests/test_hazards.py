@@ -58,6 +58,7 @@ def model(cycles: int = 4, confidence: Confidence = Confidence.MEASURED) -> Late
             "S2R": LatencyRecord(0, LatencyClass.VARIABLE, confidence),
             "ISETP": LatencyRecord(cycles, LatencyClass.FIXED, confidence),
             "SEL": LatencyRecord(cycles, LatencyClass.FIXED, confidence),
+            "DADD": LatencyRecord(64, LatencyClass.VARIABLE, confidence),
             "STG": LatencyRecord(0, LatencyClass.CONTROL, confidence),
             "EXIT": LatencyRecord(0, LatencyClass.CONTROL, confidence),
             "BRA": LatencyRecord(0, LatencyClass.CONTROL, confidence),
@@ -375,3 +376,46 @@ class TestGuardEvidenceIsKeptApart:
 
     def test_an_unseen_data_read_falls_back_to_data_evidence_only(self):
         assert self._mined().requirement("ISETP", "NEVERSEEN").minimum == 5
+
+
+class TestScoreboardIsNotTheWholeAnswer:
+    """A wait covers the bulk of a variable-latency result, not all of it.
+
+    `ptxas` puts a write scoreboard on every fp64 instruction in the corpus and
+    still never schedules a `DADD` with less than 2 cycles of its own. Cutting
+    that to 1 while leaving the wait in place changes what the GPU computes.
+    Treating a wait as a complete answer is what let basalt emit an fp64 kernel
+    that its own checker accepted and the hardware disagreed with, so the rule
+    is pinned here in both directions.
+    """
+
+    def _observed(self, minimum: int = 2):
+        from basalt.verify.observed import MIN_OBSERVATIONS, ObservedStalls
+
+        obs = ObservedStalls(cuda_version="test", arch="sm_120a")
+        for _ in range(MIN_OBSERVATIONS + 1):
+            obs.observe_scoreboarded("DADD", minimum, "DADD R6, R4, R6")
+        return obs
+
+    def _program(self, producer_stall: int):
+        return [
+            instr("DADD R6, R4, R2", stall=producer_stall, write_barrier=0, index=0),
+            instr("STG.E.64 desc[UR4][R8.64], R6", stall=1, wait=0b1, index=1),
+            instr("EXIT", index=2),
+        ]
+
+    def test_a_waited_scoreboard_below_the_minimum_is_still_a_finding(self):
+        report = verify_program(self._program(1), model(), observed=self._observed())
+        assert not report.ok
+        assert any(h.required == 2 and h.actual == 1 for h in report.hazards)
+
+    def test_meeting_the_minimum_is_accepted(self):
+        assert verify_program(self._program(2), model(), observed=self._observed()).ok
+
+    def test_the_safe_encoding_beats_any_minimum(self):
+        """A stall of 0 is the long-wait encoding, worth more than 2 cycles."""
+        assert verify_program(self._program(0), model(), observed=self._observed()).ok
+
+    def test_nothing_is_claimed_without_evidence(self):
+        """No observations for the opcode means no finding, not a guessed one."""
+        assert verify_program(self._program(1), model(), observed=None).ok

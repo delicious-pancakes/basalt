@@ -949,6 +949,223 @@
       "trusted": true
     }
   },
+  "by_scoreboarded": {
+    "ATOMG": {
+      "min_stall": 1,
+      "observations": 11,
+      "samples": [
+        "ATOMG.E.ADD.STRONG.GPU @P0 PT, R7, desc[UR4][R4.64], R7",
+        "ATOMG.E.ADD.S32.STRONG.GPU @P0 PT, R7, desc[UR4][R4.64], R7",
+        "ATOMG.E.ADD.64.STRONG.GPU @P0 PT, R6, desc[UR4][R4.64], R6"
+      ],
+      "trusted": true
+    },
+    "BREV": {
+      "min_stall": 2,
+      "observations": 2,
+      "samples": [
+        "BREV R7, R2",
+        "BREV R4, R3"
+      ],
+      "trusted": false
+    },
+    "DADD": {
+      "min_stall": 2,
+      "observations": 4,
+      "samples": [
+        "DADD R4, R4, R6",
+        "DADD R4, R4, -R6",
+        "DADD R6, -RZ, |R2|"
+      ],
+      "trusted": true
+    },
+    "DFMA": {
+      "min_stall": 1,
+      "observations": 19,
+      "samples": [
+        "DFMA R6, R6, R8, R6",
+        "DFMA R4, R6, R2, R6"
+      ],
+      "trusted": true
+    },
+    "DMUL": {
+      "min_stall": 1,
+      "observations": 4,
+      "samples": [
+        "DMUL R2, R2, 8.11296384146066816958e+31",
+        "DMUL R4, R4, 8.11296384146066816958e+31"
+      ],
+      "trusted": true
+    },
+    "DSETP": {
+      "min_stall": 2,
+      "observations": 14,
+      "samples": [
+        "DSETP.MIN.AND P0, P1, R4, R6, PT",
+        "DSETP.MAX.AND P0, P1, R4, R6, PT",
+        "DSETP.GTU.AND P0, PT, |R2|, +INF , PT"
+      ],
+      "trusted": true
+    },
+    "F2F": {
+      "min_stall": 2,
+      "observations": 1,
+      "samples": [
+        "F2F.F32.F64 R7, R2"
+      ],
+      "trusted": false
+    },
+    "F2I": {
+      "min_stall": 2,
+      "observations": 16,
+      "samples": [
+        "F2I.FTZ.U32.TRUNC.NTZ R5, R4",
+        "F2I.FTZ.U32.TRUNC.NTZ R5, R4",
+        "F2I.FTZ.U32.TRUNC.NTZ R5, R4"
+      ],
+      "trusted": true
+    },
+    "FLO": {
+      "min_stall": 1,
+      "observations": 4,
+      "samples": [
+        "FLO.U32 R0, UR6",
+        "FLO.U32 R0, UR6",
+        "FLO.U32 R11, UR6"
+      ],
+      "trusted": true
+    },
+    "I2F": {
+      "min_stall": 1,
+      "observations": 13,
+      "samples": [
+        "I2F.RP R6, R9",
+        "I2F.RP R6, R8",
+        "I2F.U32.RP R6, R7"
+      ],
+      "trusted": true
+    },
+    "LDC": {
+      "min_stall": 1,
+      "observations": 613,
+      "samples": [
+        "LDC.64 R4, c[0x0][0x388]",
+        "LDC.64 R4, c[0x0][0x388]",
+        "LDC.64 R4, c[0x0][0x388]"
+      ],
+      "trusted": true
+    },
+    "LDCU": {
+      "min_stall": 1,
+      "observations": 329,
+      "samples": [
+        "LDCU.64 UR4, c[0x0][0x358]"
+      ],
+      "trusted": true
+    },
+    "LDG": {
+      "min_stall": 1,
+      "observations": 849,
+      "samples": [
+        "LDG.E.S16 R0, desc[UR4][R2.64]",
+        "LDG.E.U16 R0, desc[UR4][R2.64]",
+        "LDG.E R6, desc[UR4][R2.64+0x8]"
+      ],
+      "trusted": true
+    },
+    "LDL": {
+      "min_stall": 1,
+      "observations": 3,
+      "samples": [
+        "LDL R5, [UR4]",
+        "LDL.64 R2, [UR4]",
+        "LDL.U16 R5, [UR4]"
+      ],
+      "trusted": true
+    },
+    "LDS": {
+      "min_stall": 1,
+      "observations": 3,
+      "samples": [
+        "LDS R5, [UR4]",
+        "LDS.64 R2, [UR4]",
+        "LDS.U16 R5, [UR4]"
+      ],
+      "trusted": true
+    },
+    "LDSM": {
+      "min_stall": 2,
+      "observations": 6,
+      "samples": [
+        "LDSM.16.M88 R5, [UR4]",
+        "LDSM.16.MT88 R5, [UR4]",
+        "LDSM.16.M88.2 R4, [UR4]"
+      ],
+      "trusted": true
+    },
+    "MATCH": {
+      "min_stall": 2,
+      "observations": 1,
+      "samples": [
+        "MATCH.ANY R7, R2"
+      ],
+      "trusted": false
+    },
+    "MOVM": {
+      "min_stall": 4,
+      "observations": 1,
+      "samples": [
+        "MOVM.16.MT88 R7, R2"
+      ],
+      "trusted": false
+    },
+    "MUFU": {
+      "min_stall": 1,
+      "observations": 16,
+      "samples": [
+        "MUFU.RCP64H R5, R3"
+      ],
+      "trusted": true
+    },
+    "POPC": {
+      "min_stall": 1,
+      "observations": 4,
+      "samples": [
+        "POPC R3, R6",
+        "POPC R3, R6",
+        "POPC R13, R0"
+      ],
+      "trusted": true
+    },
+    "S2R": {
+      "min_stall": 1,
+      "observations": 17,
+      "samples": [
+        "S2R R5, SR_LANEID",
+        "S2R R5, SR_LANEID",
+        "S2R R0, SR_LANEID"
+      ],
+      "trusted": true
+    },
+    "S2UR": {
+      "min_stall": 1,
+      "observations": 6,
+      "samples": [
+        "S2UR UR5, SR_CgaCtaId",
+        "S2UR UR5, SR_CgaCtaId",
+        "S2UR UR5, SR_CgaCtaId"
+      ],
+      "trusted": true
+    },
+    "SHFL": {
+      "min_stall": 1,
+      "observations": 7,
+      "samples": [
+        "SHFL.IDX PT, R21, R20, 0x3, 0x1c03"
+      ],
+      "trusted": true
+    }
+  },
   "cuda_version": "V13.3.73",
   "kernels": 317,
   "min_observations": 3,

@@ -83,6 +83,11 @@ class ObservedStalls:
     arch: str
     by_pair: dict[tuple[str, str], StallEvidence] = field(default_factory=dict)
     by_producer: dict[str, StallEvidence] = field(default_factory=dict)
+    # Minimum stall the compiler leaves on a producer that also carries a write
+    # scoreboard. Not redundant with the above: a scoreboard does not make the
+    # producer's own stall irrelevant. `DADD` is scoreboarded and still never
+    # given less than 2, and shortening it to 1 changes the answer on hardware.
+    by_scoreboarded: dict[str, StallEvidence] = field(default_factory=dict)
     kernels: int = 0
 
     def observe(self, producer: str, consumer: str, stall: int, sample: str) -> None:
@@ -104,6 +109,24 @@ class ObservedStalls:
         if collapsed not in self.by_producer:
             self.by_producer[collapsed] = StallEvidence(producer, "*", minimum=stall)
         self.by_producer[collapsed].observe(stall, sample)
+
+    def observe_scoreboarded(self, producer: str, stall: int, sample: str) -> None:
+        """Record the stall on a producer that also signals a scoreboard.
+
+        A stall of zero is skipped rather than recorded as a minimum of zero: it
+        is the safe long-wait encoding, so it is evidence of caution rather than
+        of a small requirement.
+        """
+        if stall == 0:
+            return
+        if producer not in self.by_scoreboarded:
+            self.by_scoreboarded[producer] = StallEvidence(producer, "!scoreboarded", minimum=stall)
+        self.by_scoreboarded[producer].observe(stall, sample)
+
+    def scoreboarded_minimum(self, producer: str) -> StallEvidence | None:
+        """The stall a scoreboarded producer still needs, if enough was seen."""
+        evidence = self.by_scoreboarded.get(producer)
+        return evidence if evidence and evidence.trusted else None
 
     @staticmethod
     def _collapse_key(producer: str, consumer: str) -> str:
@@ -164,6 +187,15 @@ class ObservedStalls:
                         }
                         for (p, c), e in sorted(self.by_pair.items())
                     },
+                    "by_scoreboarded": {
+                        name: {
+                            "min_stall": e.minimum,
+                            "observations": e.observations,
+                            "trusted": e.trusted,
+                            "samples": e.samples,
+                        }
+                        for name, e in sorted(self.by_scoreboarded.items())
+                    },
                 },
                 indent=2,
                 sort_keys=True,
@@ -185,6 +217,11 @@ class ObservedStalls:
             ev = StallEvidence(producer, consumer, minimum=entry["min_stall"])
             ev.observations = entry["observations"]
             out.by_pair[(producer, consumer)] = ev
+        for name, entry in raw.get("by_scoreboarded", {}).items():
+            ev = StallEvidence(name, "!scoreboarded", minimum=entry["min_stall"])
+            ev.observations = entry["observations"]
+            ev.samples = entry.get("samples", [])
+            out.by_scoreboarded[name] = ev
         return out
 
 
@@ -209,6 +246,11 @@ def mine_program(program: Program, into: ObservedStalls) -> None:
             if instr.word is None:
                 continue
             access = operand_access(instr.mnemonic, instr.operands)
+
+            if instr.word.field("write_barrier") != 7:
+                into.observe_scoreboarded(
+                    instr.opcode, instr.word.field("stall"), f"{instr.mnemonic} {instr.operands}"
+                )
 
             for reg in access.real_uses:
                 if (previous := last_def.get(reg)) is None:

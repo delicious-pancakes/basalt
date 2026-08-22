@@ -130,19 +130,27 @@ _SPECS: tuple[ChainSpec, ...] = (
         seed="    ld.global.f32 %f1, [%in];",
         note="single precision multiply",
     ),
+    # fp64 completes out of order and is always scoreboarded, so the class is
+    # stated here rather than left at the fixed default. The chain still times
+    # cleanly and 64 cycles is a real number; it is the cost of a dependent
+    # chain, not the requirement a wait leaves behind. Writing `fixed` here is
+    # what let a corrected class be silently overwritten by the next
+    # measurement run.
     ChainSpec(
         opcode="DADD",
         ptx_type="f64",
         body="    add.f64 {d}, {d}, %ga;",
         seed="    ld.global.f64 %g1, [%in];",
-        note="fp64 add; ptxas also scoreboards it, but the stalls are what carry it",
+        kind=LatencyClass.VARIABLE,
+        note="fp64 add; scoreboarded, and the wait is what carries the dependency",
     ),
     ChainSpec(
         opcode="DFMA",
         ptx_type="f64",
         body="    fma.rn.f64 {d}, {d}, %ga, %gb;",
         seed="    ld.global.f64 %g1, [%in];",
-        note="fp64 fused multiply-add",
+        kind=LatencyClass.VARIABLE,
+        note="fp64 fused multiply-add; scoreboarded, see DADD",
     ),
     ChainSpec(
         opcode="LOP3",
