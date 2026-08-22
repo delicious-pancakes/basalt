@@ -17,7 +17,9 @@ permissions:
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  # superseded pull-request runs are wasted minutes, but a cancelled run on main
+  # leaves the branch with no recorded status, so those are left to finish
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   CUDA_VERSION: "13.3.1"
