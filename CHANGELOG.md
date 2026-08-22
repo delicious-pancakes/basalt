@@ -72,6 +72,17 @@ any release. The clean-room position in [`NOTICE`](NOTICE) will not.
   a different question from what correctness requires.
 
 ### Fixed
+- An instruction that writes a predicate and a register is read as writing both.
+  `SHFL.IDX PT, R9, ...` and `ATOMG ... PT, R7, ...` return a value as well as a
+  predicate, and reading only the predicate meant nothing scoreboarded that value
+  and nothing waited for it. Fixed every atomic in the corpus.
+- A scoreboard signalled by one instruction now covers earlier results the same
+  unit still owes, since a unit returns results in the order it was given work.
+  `ptxas` scoreboards the second of two consecutive `SHFL.IDX` and waits only on
+  that one, which the checker had been reporting as a hazard in vendor output.
+- A predicated write no longer kills the previous definition of its register.
+  `@!P0 FMUL R7, R7, c` leaves R7 holding whatever produced it wherever the guard
+  is false, so both reach any later reader and both have to be covered.
 - The `loop` and `double` kernels now round-trip through hardware, taking the
   scheduler to seven of seven. Both had been carried as expected failures
   blaming missing passes, a loop-carried dependence and an unmodelled
