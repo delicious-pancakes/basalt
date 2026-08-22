@@ -360,13 +360,14 @@ from run to run, because a few kernels' reproducibility depends on what last use
 the match count moves with it and the failure count stays at zero.
 
 It holds at three optimisation levels, which is three different vendor schedules to
-replace rather than one:
+replace rather than one. All three legs below come from a single run on a clean tree at one
+commit, which the sweep prints above its own results:
 
-| `ptxas` level | Comparable | Matching |
-| :--- | ---: | ---: |
-| `-O1` | 315 | 315 |
-| `-O2` | 311 | 311 |
-| `-O3` | 314 | 314 |
+| `ptxas` level | Comparable | Matching | Mismatched |
+| :--- | ---: | ---: | ---: |
+| `-O1` | 315 | 315 | 0 |
+| `-O2` | 313 | 313 | 0 |
+| `-O3` | 314 | 314 | 0 |
 
 `-O0` is not offered. It emits a zeroed control word, so there is no schedule there to
 replace and nothing the comparison would prove.
