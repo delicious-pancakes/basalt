@@ -46,7 +46,7 @@ from .latency import (
     LatencyModel,
     LatencyRecord,
 )
-from .observed import ObservedStalls, anti_dependency_cycles
+from .observed import MIN_OBSERVATIONS, ObservedStalls, anti_dependency_cycles
 from .operands import RegRef, operand_access
 
 __all__ = [
@@ -139,6 +139,28 @@ class VerificationReport:
         )
 
 
+def _exclusive(producer: str, consumer: str) -> bool:
+    """True when two instructions are guarded by opposite halves of one predicate.
+
+    `@P0 LDG` never feeds `@!P0 PRMT`: within a thread exactly one of them runs,
+    so the register the load would have written is not the one the permute reads.
+    """
+    first, second = _guard(producer), _guard(consumer)
+    return (
+        first is not None and second is not None and first[0] == second[0] and first[1] != second[1]
+    )
+
+
+def _guard(text: str) -> tuple[str, bool] | None:
+    """The guarding predicate and whether it is inverted, from instruction text."""
+    token = text.split(maxsplit=1)[0] if text else ""
+    if not token.startswith("@"):
+        return None
+    token = token[1:]
+    inverted = token.startswith("!")
+    return (token.lstrip("!"), inverted)
+
+
 def _add(report: VerificationReport | None, seen: set[tuple] | None, hazard: Hazard) -> None:
     # callers only reach here on the recording pass; taking the optional rather
     # than asserting keeps the convergence pass free of a branch it never takes
@@ -193,6 +215,8 @@ def _check_instruction(
     for reg in sorted(access.real_uses, key=str):
         for rd in state.reaching(reg):
             producer = program.instructions[rd.index]
+            if _exclusive(producer.text, instr.text):
+                continue
             producer_record = model.lookup(producer.opcode)
             if report is not None:
                 report.checked_pairs += 1
@@ -243,13 +267,17 @@ def _check_instruction(
                 )
 
             elif producer_record.kind is LatencyClass.VARIABLE and recording:
+                # the vendor covers some of these with stalls alone, and where it
+                # has been seen to, the absence of a barrier is not proof of one
+                spacing = observed.covered_by_spacing(producer.opcode) if observed else 0
+                structural = Severity.ERROR if spacing < MIN_OBSERVATIONS else Severity.WARNING
                 if rd.barrier == NO_BARRIER:
                     _add(
                         report,
                         seen,
                         Hazard(
                             kind=HazardKind.NO_BARRIER_SET,
-                            severity=Severity.ERROR,
+                            severity=structural,
                             confidence=producer_record.confidence,
                             register=str(reg),
                             def_index=rd.index,
@@ -268,7 +296,7 @@ def _check_instruction(
                         seen,
                         Hazard(
                             kind=HazardKind.BARRIER_NOT_AWAITED,
-                            severity=Severity.ERROR,
+                            severity=structural,
                             confidence=producer_record.confidence,
                             register=str(reg),
                             def_index=rd.index,

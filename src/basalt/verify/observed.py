@@ -311,6 +311,23 @@ class ObservedStalls:
         current.emit = max(current.emit, ev.emit)
         current.observations += ev.observations
 
+    def covered_by_spacing(self, opcode: str) -> int:
+        """How often the vendor covered this opcode's result without a scoreboard.
+
+        Mining separates the two: a producer that signalled a barrier goes to
+        `by_scoreboarded` and one that did not goes to `by_pair`, so the second
+        count is the number of times stalls alone were the whole mechanism.
+        Across shipped code it is zero for `LDG`, `LD`, `LDL`, `LDC` and `S2R`
+        over millions of pairs, and 734,837 for `LDS`, which is the difference
+        between a missing barrier being a hazard and being a choice.
+        """
+        bare = opcode.split(".")[0]
+        return sum(
+            ev.observations
+            for (producer, _), ev in self.by_pair.items()
+            if producer.split(".")[0] == bare
+        )
+
     def summary(self) -> str:
         trusted = sum(1 for e in self.by_producer.values() if e.trusted)
         anti = sum(1 for e in self.by_anti.values() if e.trusted)
