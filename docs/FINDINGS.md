@@ -534,15 +534,16 @@ schedules are correct on every comparable corpus kernel, and here is what they c
 | | Issue cycles |
 | :--- | ---: |
 | `ptxas`, all three levels | 56,441 |
-| basalt | 59,735 |
+| basalt | 59,125 |
 | | **1.05x** |
 
-Slower on 168 of the 1,323 kernel and optimisation-level pairs and cheaper on the rest, with
+Slower on 111 of the 1,323 kernel and optimisation-level pairs and cheaper on 842, with
 every comparable kernel still byte-identical on the GPU at all three.
 
 Cheaper than the vendor is believable rather than suspicious, for a specific reason: basalt
-schedules every dependency at the tightest gap `ptxas` was ever observed to leave for that
-exact pairing, and `ptxas` does not always schedule at its own minimum. It is balancing
+schedules every dependency at the tightest gap `ptxas` was observed to leave for that exact
+pairing, never below the producer's own latency, and `ptxas` does not always schedule at its
+own minimum. It is balancing
 register pressure and memory alongside issue latency; this is optimising one number.
 
 It was not believed on sight. The first time the ratio went under 1.0 the hardware round

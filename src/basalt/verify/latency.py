@@ -195,6 +195,41 @@ _ASSUMED: dict[str, tuple[int, LatencyClass, str]] = {
     "UISETP": (4, LatencyClass.FIXED, ""),
     "USEL": (4, LatencyClass.FIXED, ""),
     "UPRMT": (4, LatencyClass.FIXED, ""),
+    # everything below was classified from shipped code rather than the corpus:
+    # the vendor covers a result with spacing or with a scoreboard, mining records
+    # which, and an opcode never scoreboarded cannot complete out of order
+    "SGXT": (4, LatencyClass.FIXED, "sign extend, 18,953 spacing and no scoreboard"),
+    "P2R": (4, LatencyClass.FIXED, "predicate to register, 17,238 spacing and no scoreboard"),
+    "VOTE": (4, LatencyClass.FIXED, "warp vote to register, 4,015 spacing and no scoreboard"),
+    "ELECT": (4, LatencyClass.FIXED, "elect one lane, 106 spacing and no scoreboard"),
+    "BREAK": (4, LatencyClass.FIXED, "break out of a convergence barrier register"),
+    "BMSK": (4, LatencyClass.FIXED, "bitfield mask"),
+    "FSET": (4, LatencyClass.FIXED, "float compare to register, unlike FSETP"),
+    "HSET2": (4, LatencyClass.FIXED, "packed half compare to register"),
+    # the uniform datapath mirrors the vector one here as it does elsewhere
+    "UFADD": (4, LatencyClass.FIXED, "uniform float add"),
+    "UFMUL": (4, LatencyClass.FIXED, "uniform float multiply"),
+    "UFFMA": (4, LatencyClass.FIXED, "uniform float fused multiply-add"),
+    "UFSEL": (4, LatencyClass.FIXED, "uniform float select"),
+    "UFSETP": (4, LatencyClass.FIXED, "uniform float compare"),
+    "UVIMNMX": (4, LatencyClass.FIXED, "uniform packed integer min/max"),
+    "UPLOP3": (4, LatencyClass.FIXED, "uniform predicate lookup"),
+    "UP2UR": (4, LatencyClass.FIXED, "uniform predicate to uniform register"),
+    # conversions on the uniform datapath, never scoreboarded where the vector
+    # ones always are, which is why they are not classed with their names
+    "UI2F": (6, LatencyClass.FIXED, "uniform integer to float, 2,416 spacing and no scoreboard"),
+    "UF2I": (6, LatencyClass.FIXED, "uniform float to integer, 468 spacing and no scoreboard"),
+    "UI2FP": (6, LatencyClass.FIXED, "uniform packed integer to float"),
+    "UFRND": (6, LatencyClass.FIXED, "uniform float round"),
+    # never covered by spacing once, which is the same evidence that keeps LDG here
+    "QSPC": (0, LatencyClass.VARIABLE, "query address space, 4,619 scoreboarded and no spacing"),
+    "B2R": (0, LatencyClass.VARIABLE, "barrier to register, 328 scoreboarded and no spacing"),
+    "SYNCS": (0, LatencyClass.VARIABLE, "shared-memory barrier, 240 scoreboarded and no spacing"),
+    "DMMA": (0, LatencyClass.VARIABLE, "fp64 tensor core, scoreboarded like the rest of fp64"),
+    # half spacing and half scoreboard, so the conservative class, and the
+    # spacing evidence is what the distance check then uses
+    "BMOV": (0, LatencyClass.VARIABLE, "barrier register move, covered both ways"),
+    "CGAERRBAR": (0, LatencyClass.CONTROL, "cluster error barrier, no register result"),
     # control flow and synchronisation produce no register result to protect
     "BRA": (0, LatencyClass.CONTROL, ""),
     "BRX": (0, LatencyClass.CONTROL, ""),

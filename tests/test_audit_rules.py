@@ -75,13 +75,18 @@ class TestUpperBounds:
         required, _, _ = _requirement("ISETP.NE.U32.AND", "BRA", record, observed, guard=True)
         assert required <= GUARD_CYCLES
 
-    def test_thin_evidence_does_not_ground_an_error(self, observed) -> None:
+    def test_thin_evidence_is_neutralised_by_the_bound_not_by_a_trust_gate(self) -> None:
+        # four observations said `IADD -> MOV` needs 20 and the vendor ships it
+        # at 5. Demoting thin evidence instead let two broken kernels through,
+        # because `VIADD.S32.ISAT -> STG` has three observations and is right
         from basalt.verify.hazards import _requirement
 
+        record = DEFAULT_MODEL.lookup("IADD")
         thin = ObservedStalls(cuda_version="", arch="sm_120")
         thin.by_pair[("IADD", "MOV")] = StallEvidence("IADD", "MOV", minimum=20, observations=4)
-        _, _, grounded = _requirement("IADD", "MOV", DEFAULT_MODEL.lookup("IADD"), thin)
-        assert not grounded
+        required, _, grounded = _requirement("IADD", "MOV", record, thin)
+        assert required == record.cycles
+        assert grounded
 
     def test_the_constants_stay_where_they_were_measured(self) -> None:
         # each is the only figure fault injection produced for its rule, and
@@ -129,6 +134,16 @@ class TestSpacing:
 
     def test_a_shared_load_is_covered_by_spacing_constantly(self, observed) -> None:
         assert observed.covered_by_spacing("LDS") >= MIN_OBSERVATIONS
+
+    def test_every_producer_shipped_code_uses_is_in_the_model(self, observed) -> None:
+        # an opcode the model has never seen is checked against a guess, which
+        # is the one gap left in a checker whose job is foreign machine code
+        producers = {p.split(".")[0] for p, _ in observed.by_pair}
+        producers |= {p.split(".")[0] for p, _ in observed.by_scoreboarded}
+        unknown = {
+            op for op in producers if DEFAULT_MODEL.lookup(op).note.startswith("opcode not in")
+        }
+        assert not unknown, sorted(unknown)
 
 
 class TestExclusiveGuards:

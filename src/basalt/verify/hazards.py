@@ -233,9 +233,9 @@ def _check_instruction(
 
             # a variable-latency result the vendor is known to cover with
             # spacing is checked against that distance, not merely noted
-            spacing = observed.covered_by_spacing(producer.opcode) if observed else 0
-            by_distance = (
-                producer_record.kind is LatencyClass.VARIABLE and spacing >= MIN_OBSERVATIONS
+            by_distance = producer_record.kind is LatencyClass.VARIABLE and (
+                observed is not None
+                and observed.covered_by_spacing(producer.opcode) >= MIN_OBSERVATIONS
             )
 
             if producer_record.kind is LatencyClass.FIXED or by_distance:
@@ -245,6 +245,7 @@ def _check_instruction(
                     producer_record,
                     observed,
                     guard=reg == access.guard,
+                    bounded=not by_distance,
                 )
                 if rd.elapsed >= required or not recording:
                     continue
@@ -589,6 +590,7 @@ def _requirement(
     observed: ObservedStalls | None,
     *,
     guard: bool = False,
+    bounded: bool = True,
 ) -> tuple[int, str, bool]:
     """How many cycles this pairing needs, where that came from, and how firmly.
 
@@ -605,6 +607,9 @@ def _requirement(
     reads its operands later tolerates a shorter gap. Falling back to the
     producer figure keeps a pairing the compiler never emitted checkable, just
     more strictly.
+
+    `bounded` says the producer's latency is a real number rather than the zero
+    a variable-latency entry carries, so it can serve as the ceiling.
 
     When the value is the consumer's guard the pairing is a different one. A
     guard has to be resolved before the instruction issues at all, so it needs
@@ -628,8 +633,9 @@ def _requirement(
             # was seen to leave, so a mined figure above it is spacing too. That
             # bound is what makes thin evidence harmless: four observations
             # claiming 20 become the producer's 4, which the vendor already beats
+            ceiling = record.cycles if bounded else evidence.minimum
             return (
-                min(evidence.minimum, record.cycles),
+                min(evidence.minimum, ceiling),
                 f"{evidence.producer} -> {evidence.consumer} is scheduled no tighter than "
                 f"{evidence.minimum} cycles across {evidence.observations} observations",
                 True,

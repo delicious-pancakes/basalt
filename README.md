@@ -56,6 +56,18 @@ output, so a disagreement is basalt's bug until proven otherwise. Its assembler 
 reproduce the compiler's exact 128 bits. Its scheduler has to throw away every control bit
 the compiler chose, compute new ones, and have the GPU compute the same answer.
 
+**What is new here, stated so it can be checked.** Assemblers for this architecture exist and
+one of them schedules control bits automatically. The interlock behaviour is published. Both
+are true and neither is the claim. The claim is one sentence:
+
+> Nothing else can be handed a cubin it did not produce and told to say whether its
+> scheduling control bits are safe.
+
+Everything else in this repository exists to make that sentence testable. The assembler is
+there so basalt can build a program with one stall deliberately shortened. The scheduler is
+there so the model can be forced to commit to an answer rather than grade someone else's. The
+audit is where the sentence stops being an absence and becomes a measurement.
+
 One standard, three tools: **agree with the vendor exactly, or say why not.**
 
 | | What it does | How it is checked | Result |
@@ -66,8 +78,8 @@ One standard, three tools: **agree with the vendor exactly, or say why not.**
 | **Scheduler** | Assigns every control bit from scratch | Discard the vendor's, compute new ones, run both on the GPU against eight inputs, compare output bytes | **439 of 439 comparable kernels** byte-identical, at all three optimisation levels |
 
 And the part a scheduler is usually quiet about: what the correctness costs. basalt's
-schedules spend **1.05x** the vendor's issue cycles, slower on 168 of the 1,323 kernel and
-optimisation-level pairs and cheaper on the rest, with every comparable kernel still
+schedules spend **1.05x** the vendor's issue cycles, slower on 111 of the 1,323 kernel and
+optimisation-level pairs and cheaper on 842, with every comparable kernel still
 byte-identical on the GPU.
 
 The fourth row is the one that changed the other three. A checker calibrated on a corpus
