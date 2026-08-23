@@ -11,6 +11,7 @@ is what makes a harvest reproducible months later.
     python scripts/fetch_toolchain.py                 # default pinned version
     python scripts/fetch_toolchain.py --version 13.0.3
     python scripts/fetch_toolchain.py --list
+    python scripts/fetch_toolchain.py --libs          # the shipped libraries stage 10 audits
 """
 
 from __future__ import annotations
@@ -34,6 +35,18 @@ DEFAULT_VERSION = "13.3.1"
 # no nvrtc or cudart: a fresh clone without either passes doctor and the whole
 # toolchain-marked suite
 COMPONENTS = ("cuda_nvcc", "cuda_nvdisasm", "cuda_cuobjdump")
+
+# ~1.2 GB of archives for the largest supply of sm_120 code nobody here wrote,
+# so stage 10's audit set is opt-in rather than part of the default fetch
+AUDIT_LIBS = (
+    "libcublas",
+    "libcufft",
+    "libcurand",
+    "libcusolver",
+    "libcusparse",
+    "libnpp",
+    "libnvjpeg",
+)
 
 ROOT = Path(__file__).resolve().parent.parent
 DEST = ROOT / "third_party" / "cuda"
@@ -62,7 +75,7 @@ def fetch(url: str, dest: Path) -> Path:
     return dest
 
 
-def _wanted(name: str) -> str | None:
+def _wanted(name: str, dirs: tuple[str, ...] = ("bin",)) -> str | None:
     """The flat filename to write for an archive member, or None to skip it.
 
     Only executables and the libraries beside them are taken, and they are
@@ -73,14 +86,22 @@ def _wanted(name: str) -> str | None:
     character path limit and the extraction fails outright. Found by cloning
     into a deep path and following the README, which is the only way this kind
     of thing gets found.
+
+    Any component may be the marker rather than the immediate parent: the
+    compiler sits at `bin/ptxas.exe` but a Windows math library sits at
+    `bin/x64/cublas64_13.dll`, and matching only the parent silently extracted
+    nothing at all from seven archives.
     """
     parts = name.replace("\\", "/").split("/")
-    if len(parts) < 2 or parts[-2] != "bin" or not parts[-1]:
+    if len(parts) < 2 or not parts[-1] or not set(parts[:-1]) & set(dirs):
+        return None
+    # an import or static library carries no device code, only a link-time stub
+    if parts[-1].endswith((".lib", ".a")):
         return None
     return parts[-1]
 
 
-def extract(archive: Path, bindir: Path) -> int:
+def extract(archive: Path, bindir: Path, dirs: tuple[str, ...] = ("bin",)) -> int:
     """Unpack the executables from a redistributable into one flat directory.
 
     NVIDIA ships Windows components as `.zip` and Linux ones as `.tar.xz`, so
@@ -95,7 +116,7 @@ def extract(archive: Path, bindir: Path) -> int:
     if archive.suffix == ".zip":
         with zipfile.ZipFile(archive) as zf:
             for member in zf.namelist():
-                flat = _wanted(member)
+                flat = _wanted(member, dirs)
                 if flat is None:
                     continue
                 with zf.open(member) as src, (bindir / flat).open("wb") as out:
@@ -105,7 +126,7 @@ def extract(archive: Path, bindir: Path) -> int:
 
     with tarfile.open(archive) as tf:
         for member in tf.getmembers():
-            flat = _wanted(member.name)
+            flat = _wanted(member.name, dirs)
             if flat is None or not member.isfile():
                 continue
             src = tf.extractfile(member)
@@ -127,6 +148,50 @@ def manifest(version: str) -> dict:
         return json.load(resp)
 
 
+def _pull(entry: dict, cache: Path, dest: Path, dirs: tuple[str, ...]) -> int:
+    """Fetch one component, check its digest, and unpack it flat into `dest`."""
+    archive = fetch(
+        f"{REDIST_BASE}/{entry['relative_path']}", cache / Path(entry["relative_path"]).name
+    )
+    digest = hashlib.sha256(archive.read_bytes()).hexdigest()
+    if (expected := entry.get("sha256")) and digest != expected:
+        raise SystemExit(
+            f"checksum mismatch for {archive.name}\n  expected {expected}\n  got      {digest}"
+        )
+    return extract(archive, dest, dirs)
+
+
+def fetch_libs(man: dict, key: str, root: Path, cache: Path, version: str) -> int:
+    """Fetch the shipped libraries whose sm_120 kernels stage 10 audits.
+
+    Written flat into one directory with a manifest recording the exact
+    component version beside each file, because "we found a hazard in cuBLAS"
+    is worth nothing without saying which build of it.
+    """
+    libdir = root / "libs"
+    libdir.mkdir(parents=True, exist_ok=True)
+    versions: dict[str, str] = {}
+
+    print(f"CUDA {man.get('release_label', version)} libraries for {key} -> {libdir}")
+    for comp in AUDIT_LIBS:
+        entry = man.get(comp, {}).get(key)
+        if entry is None:
+            print(f"  skip    {comp} (not published for {key})")
+            continue
+        count = _pull(entry, cache, libdir, ("bin", "lib"))
+        versions[comp] = man[comp].get("version", "")
+        print(f"  unpack  {count} files from {comp} {versions[comp]}", flush=True)
+
+    (libdir / "versions.json").write_text(
+        json.dumps({"cuda": man.get("release_label", version), "components": versions}, indent=2),
+        encoding="utf-8",
+    )
+    files = sorted(p.name for p in libdir.iterdir() if p.is_file())
+    print(f"\ninstalled {len(files)} files into {libdir}")
+    print(f"\nnext:\n  python scripts/audit_shipped.py --libs {libdir}")
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
@@ -138,6 +203,11 @@ def main() -> int:
         "--dest", type=Path, default=None, help="install root (default third_party/cuda)"
     )
     ap.add_argument("--list", action="store_true", help="list components in the manifest and exit")
+    ap.add_argument(
+        "--libs",
+        action="store_true",
+        help="fetch the shipped math libraries stage 10 audits, not the compiler",
+    )
     args = ap.parse_args()
 
     key = platform_key()
@@ -153,9 +223,13 @@ def main() -> int:
         return 0
 
     root = (args.dest or DEST) / args.version
+    cache = (args.dest or DEST) / "_archives"
+
+    if args.libs:
+        return fetch_libs(man, key, root, cache, args.version)
+
     bindir = root / "bin"
     bindir.mkdir(parents=True, exist_ok=True)
-    cache = (args.dest or DEST) / "_archives"
 
     print(f"CUDA {man.get('release_label', args.version)} for {key} -> {root}")
     for comp in COMPONENTS:
@@ -163,17 +237,7 @@ def main() -> int:
         if entry is None:
             print(f"  skip    {comp} (not published for {key})")
             continue
-        archive = fetch(
-            f"{REDIST_BASE}/{entry['relative_path']}", cache / Path(entry["relative_path"]).name
-        )
-
-        digest = hashlib.sha256(archive.read_bytes()).hexdigest()
-        if (expected := entry.get("sha256")) and digest != expected:
-            raise SystemExit(
-                f"checksum mismatch for {archive.name}\n  expected {expected}\n  got      {digest}"
-            )
-
-        count = extract(archive, bindir)
+        count = _pull(entry, cache, bindir, ("bin",))
         print(f"  unpack  {count} files from {comp}")
 
     tools = sorted(p.name for p in bindir.iterdir() if p.is_file())

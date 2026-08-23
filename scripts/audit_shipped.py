@@ -153,17 +153,17 @@ def _extract(libs: Path, dest: Path) -> list[Path]:
     for lib in sorted([*libs.rglob("*.dll"), *libs.rglob("*.so*")]):
         out = dest / lib.stem
         out.mkdir(parents=True, exist_ok=True)
+        # filtered: cuBLASLt carries every architecture back to Volta, and
+        # unpacking those to delete them costs tens of GB
         subprocess.run(
-            [str(cuobjdump), "-xelf", "all", str(lib.resolve())],
+            [str(cuobjdump), "-xelf", "sm_120", str(lib.resolve())],
             cwd=out,
             capture_output=True,
             check=False,
         )
-        for cubin in out.glob("*.cubin"):
-            if "sm_120" in cubin.name:
-                found.append(cubin)
-            else:
-                cubin.unlink()
+        cubins = sorted(out.glob("*sm_120*.cubin"))
+        print(f"  {lib.name}: {len(cubins)} sm_120 cubins", flush=True)
+        found.extend(cubins)
     return found
 
 
