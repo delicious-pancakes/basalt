@@ -49,8 +49,8 @@ Its scheduling is the reference, so an error on any of them is basalt's fault.
 
 | | |
 | :--- | ---: |
-| Kernels compiled | 330 |
-| Dependencies checked | 6,165 |
+| Kernels compiled | 370 |
+| Dependencies checked | 6,105 |
 | Errors | **0** |
 | Kernels with warnings | 1 |
 
@@ -224,7 +224,7 @@ own, and `ptxas` knows exactly how much. Across the corpus it never schedules a
 consumer waits. basalt mines that minimum per opcode alongside everything else
 and applies it wherever a scoreboard is signalled.
 
-Every one of the 41 fp64 instructions in the corpus carries a write scoreboard
+Every one of the 50 fp64 instructions in the corpus carries a write scoreboard
 and none goes without, so fp64 is modelled as completing out of order rather than
 on a fixed schedule.
 
@@ -294,7 +294,7 @@ The staircase is the useful part. A single wrong answer could be anything; a val
 climbs monotonically toward the right one as the gap widens, and then stops changing, is a
 timing requirement being met.
 
-**Across the corpus.** Every dependent pair in the 330 kernel corpus, split by how the
+**Across the corpus.** Every dependent pair in the 370 kernel corpus, split by how the
 consumer reads the value, scoreboard-covered pairs excluded because there the stall says
 nothing:
 
@@ -350,7 +350,7 @@ with traffic on both sides, predicated writes, and long unbranched dependent cha
 
 | | |
 | :--- | ---: |
-| Kernels rescheduled and run | 330 |
+| Kernels rescheduled and run | 383 |
 | Comparable (the vendor runs here, deterministically, and reproducibly) | 314 |
 | **Byte-identical to the vendor schedule** | **314** |
 | Wrong | 0 |
@@ -525,7 +525,7 @@ label under this rule and none decodes wrongly.
 The rule is a measurement, and a measurement written down as a constant is exactly what goes
 quietly wrong when a compiler version changes, so it is re-derived from the corpus by a test
 rather than trusted. With it, assembling every corpus kernel as a whole program reproduces
-8,572 of 8,584 instructions bit-identically, and none to anything else.
+9,846 of 9,856 instructions bit-identically, and none to anything else.
 
 ## 12. What the correctness costs
 
@@ -536,9 +536,9 @@ schedules are correct on every comparable corpus kernel, and here is what they c
 | :--- | ---: |
 | `ptxas -O3` | 13,571 |
 | basalt | 12,168 |
-| | **0.90x** |
+| | **0.88x** |
 
-Slower on 34 of the 330 kernels and cheaper on the rest, with every comparable kernel still
+Slower on 34 of the 383 kernels and cheaper on the rest, with every comparable kernel still
 byte-identical on the GPU at all three optimisation levels.
 
 Cheaper than the vendor is believable rather than suspicious, for a specific reason: basalt
@@ -567,7 +567,7 @@ a consumer that is short and spends cycles in the window before it, and a cycle 
 one pair also separates every other pair spanning that point. So a later pair can be
 satisfied by stall placed for an earlier one, leaving the earlier placement larger than
 anything requires. Walking that back, one cycle at a time, judged by the same requirement
-function that placed them, took 1.29x to 0.90x. `LDC` alone was half the excess before it,
+function that placed them, took 1.29x to 0.88x. `LDC` alone was half the excess before it,
 almost all overshoot rather than requirement.
 
 **Not leaning on a wait a predicated instruction carries.** `ptxas` does lean on them and
@@ -782,13 +782,17 @@ computes a wrong answer, which is the entire failure this repository exists to p
 
 | | |
 | :--- | ---: |
-| Kernels, one dependency shortened in each | 156 |
-| Agreed broken | 70 |
-| Over-strict | 68 |
+| Kernels, one dependency shortened in each | 206 |
+| Agreed broken | 71 |
+| Over-strict | 78 |
 | **Missed** | **0** |
-| Unstable, excluded | 18 |
+| Unstable, excluded | 57 |
 
-Which kernels land in the excluded column moves a little between runs, because several read memory this harness never initialises and are therefore stable until something else has used the card. The missed count does not move.
+Which kernels land in the excluded column moves between runs, because several read memory
+this harness never initialises and are therefore stable only until something else has used
+the card. The share is larger than it was: the corpus now covers immediate-source and fp64
+arithmetic, which read more uninitialised input than the register forms did. The missed
+count does not move.
 
 **Kernels with a loop are left out of this sweep, and not for tidiness.** This is the one
 tool that breaks a kernel on purpose, and a loop keeps its trip count in a register:
@@ -815,10 +819,10 @@ it is a real cost rather than a free win.
 
 **Over-strict is not the same as wrong.** A schedule can be tighter than anything the vendor
 emits and still return the right answer, because a stale read only changes the result when
-the stale value and the fresh one differ. Running four patterns instead of one moves verdicts out of
-over-strict and into agreed broken, which are cases where basalt was right and a single
-pattern had not been enough to show it. The rest are unproven either way, and they are
-counted separately rather than folded into an accuracy figure.
+the stale value and the fresh one differ. Running four patterns instead of one moves
+verdicts out of over-strict and into agreed broken, which are cases where basalt was right
+and a single pattern had not been enough to show it. The rest are unproven either way, and
+they are counted separately rather than folded into an accuracy figure.
 
 ## 17. Going looking for a wrong word, rather than waiting for one
 
@@ -858,14 +862,74 @@ After the fixes, at 120 mutations per form across five seeds:
 
 | | |
 | :--- | ---: |
-| Mutations | 193,800 |
+| Mutations | 207,000 |
 | Assembled and round-tripped | all of them |
 | Same word, printed differently | counted separately |
 | **Wrong** | **0** |
 
 The seed is fixed so a failure reproduces exactly, and three seeds run in CI on every push.
 
-## 18. What is deliberately not claimed
+## 18. The sign of a float immediate is part of the number
+
+`FSEL R5, R0, -2.875, P0` and `FSEL R5, R0, 2.875, P0` differ by one bit, and basalt wrote
+the wrong one:
+
+```
+vendor  000fe20000000000c038000000057808
+basalt  000fe200000000004038000000057808
+                        ^ bit 63
+```
+
+The cause is in the sub-field classifier from finding 14. That splits a modifier out of an
+operand field by watching what a bit does to the printed text, and a bit whose flip adds a
+leading `-` is the negate. For `-R0` that is exactly right: the sign of a register lives in
+a bit of its own, nowhere near the register number. For `-2.875` it is exactly wrong. The
+sign of a float is IEEE bit 31, inside the value, and calling it a modifier left the value
+31 bits wide. The assembler then wrote 31 bits of a 32-bit float and dropped the sign.
+
+The rule is one line: a leading `-` on a *literal* belongs to the literal. It already held
+for integers, where `-0x1` is two's complement in its own field, and the guard simply never
+covered floats because no corpus kernel had produced a negative float immediate.
+
+**What surfaced it is the point.** No reasoning found this. The corpus was widened to cover
+immediate-source arithmetic, which had never been harvested at all, and the count of words
+that assemble to something other than the vendor's bytes went from 0 to 2. That number is
+pinned at zero precisely so that a change like this cannot land quietly.
+
+## 19. A register wearing a modifier is not a literal
+
+One mnemonic covers several encodings, and the database holds one entry per operand *shape*
+so it can tell them apart. The shape is what the operands are, ignoring their values:
+`FADD Rd, Ra, Rb` and `FADD Rd, Ra, imm` differ in bits outside every operand field, so a
+form harvested as one describes the other only by accident.
+
+`|R0|` was read as a literal. It is not; it is a register carrying an absolute-value bit,
+the same way `-R0` carries a negate. So these two collapsed into one bucket:
+
+| Text | Read as | Actually |
+| :--- | :--- | :--- |
+| `FADD R4, -RZ, \|R0\|` | reg, reg, immediate | reg, reg, **reg** with a modifier |
+| `FADD R7, R2, -24` | reg, reg, immediate | reg, reg, immediate |
+
+Probing is one nvdisasm run per shape, so a bucket gets one representative. Whichever of the
+two arrived first won it, and the other had **no encoding in the database at all** and had
+to be refused. The same collision hid `c[0x3][R5]` behind `c[0x0][0x380]`: a register index
+and a literal index behind identical brackets.
+
+Fixing it is a matter of stripping a modifier before asking what an operand is, in both the
+harvester and the assembler, which had disagreed with each other about `|R0|` as well. On
+the same corpus:
+
+| | Exact | Refused | Wrong |
+| :--- | ---: | ---: | ---: |
+| Before | 9,837 | 17 | **2** |
+| After | **9,846** | 10 | **0** |
+
+The ten that remain are bits the prober could not attribute to anything, spread across five
+`RET.REL.NODEC`, three `LDC` base fields, one `FADD` and one `IADD3`. Those refuse rather
+than guess, which is the designed answer.
+
+## 20. What is deliberately not claimed
 
 Stated so the boundary of the evidence is visible.
 
@@ -903,7 +967,7 @@ Stated so the boundary of the evidence is visible.
   first conversion. An earlier run reported `I2FP` as requiring 4 cycles; the control
   retracted it, and it is listed as not established rather than quietly kept.
 
-## 19. Corrections made along the way
+## 21. Corrections made along the way
 
 Kept because a method is only as trustworthy as its error log.
 
@@ -943,6 +1007,11 @@ Kept because a method is only as trustworthy as its error log.
   for longer than it should have been. Bisecting the schedule one instruction at a time
   against hardware showed a single guard predicate, in a straight line of code, with
   nothing loop-carried about it.
+- `DSETP -> SEL` was required to be six cycles apart on the strength of three observations.
+  Widening the corpus to cover immediate-source arithmetic produced kernels where the
+  vendor scheduled it at two, and the mined floor came down to match. Re-mining changed
+  nothing about how many dependencies are checked, 6,105 either way; it turned four false
+  errors into none.
 
 Each of these was caught by the positive control: the vendor compiler's own output must
 verify clean, and every one of them made it fail.

@@ -58,12 +58,12 @@ One standard, three tools: **agree with the vendor exactly, or say why not.**
 
 | | What it does | How it is checked | Result |
 | :--- | :--- | :--- | ---: |
-| **Assembler** | SASS text to the 128-bit word | Reassemble every instruction `ptxas` emitted and compare bytes | 8,572 of 8,584 exact, **0 wrong** |
-| **Checker** | Reads a schedule, reports hazards | The vendor's own output must verify clean, and a deliberately shortened stall must be caught | 0 errors on 330 vendor kernels, **0 missed** on 162 broken ones |
-| **Scheduler** | Assigns the control bits from scratch | Discard every control bit, compute new ones, run both on the GPU against four inputs, compare output bytes | **314 of 314** byte-identical, at every optimisation level |
+| **Assembler** | SASS text to the 128-bit word | Reassemble every instruction `ptxas` emitted and compare bytes | 9,846 of 9,856 exact, **0 wrong** |
+| **Checker** | Reads a schedule, reports hazards | The vendor's own output must verify clean, and a deliberately shortened stall must be caught | 0 errors on 370 vendor kernels, **0 missed** on 206 broken ones |
+| **Scheduler** | Assigns the control bits from scratch | Discard every control bit, compute new ones, run both on the GPU against four inputs, compare output bytes | **369 of 369** byte-identical, at every optimisation level |
 
 And the part a scheduler is usually quiet about: what the correctness costs. basalt's
-schedules spend **0.90x** the vendor's issue cycles, slower on 34 of the 330 kernels and
+schedules spend **0.88x** the vendor's issue cycles, slower on 34 of the 383 kernels and
 cheaper on the rest, with every comparable kernel still byte-identical on the GPU.
 
 Cheaper than the vendor is not a claim to be smug about. basalt schedules every dependency
@@ -289,7 +289,7 @@ python -m basalt.cli verify kernel.cubin --latencies data/latency/your-card.json
 And the control that keeps the rest honest, which does need a card:
 
 ```bash
-python scripts/roundtrip_corpus.py    # reschedule all 330 corpus kernels, run both on the GPU
+python scripts/roundtrip_corpus.py    # reschedule all 383 corpus kernels, run both on the GPU
 ```
 
 ```console
@@ -341,20 +341,20 @@ Three of those contradict the assumed model basalt shipped with: `DADD` was assu
 
 **The verdicts match the silicon.** For every encodable stall on a dependent producer, basalt's static answer and what the hardware actually computes agree, including the zero case. That is held as a test, not asserted here. Full evidence, including three independent methods for the required stall and the corrections made along the way, is in [findings](docs/FINDINGS.md).
 
-**And when it says a schedule is unsafe, the silicon agrees.** Take the vendor's own working schedule for 162 kernels, shorten one real dependency in each, and compare basalt's verdict against what the GPU computes: 91 that it called broken were broken, and **nothing it called safe computed a wrong answer**. That number started at 34 missed rather than zero, and [findings](docs/FINDINGS.md) says what the cause was and what fixing it cost in false alarms, because a sweep that only ever reported its final figure would be worth less than one that reported its first.
+**And when it says a schedule is unsafe, the silicon agrees.** Take the vendor's own working schedule for 206 kernels, shorten one real dependency in each, and compare basalt's verdict against what the GPU computes: 71 that it called broken were broken, and **nothing it called safe computed a wrong answer**. That number started at 34 missed rather than zero, and [findings](docs/FINDINGS.md) says what the cause was and what fixing it cost in false alarms, because a sweep that only ever reported its final figure would be worth less than one that reported its first.
 
 ## It can assign the control bits too
 
 The verifier answers whether a schedule is safe. The scheduler answers what a safe schedule would be, from the same measurements: it discards every control bit `ptxas` produced, computes its own, hands the result back to the verifier, and then runs it on the GPU beside the vendor's version of the same kernel.
 
-Run over the whole corpus on the card, at every optimisation level that produces a schedule, every one of the 314 comparable kernels comes out computing byte-identical results to the vendor schedule, from control bits basalt worked out itself. The 16 that are excluded are excluded for reasons that have nothing to do with the schedule, and [findings](docs/FINDINGS.md) says which and why rather than folding them into a percentage.
+Run over the whole corpus on the card, at every optimisation level that produces a schedule, every one of the 369 comparable kernels comes out computing byte-identical results to the vendor schedule, from control bits basalt worked out itself. The 14 that are excluded are excluded for reasons that have nothing to do with the schedule, and [findings](docs/FINDINGS.md) says which and why rather than folding them into a percentage.
 
 That control is the reason any of the rest is trustworthy. The checker and the scheduler read the same latency model, so a wrong entry in it satisfies both at once and they agree with each other while both being wrong. Only the silicon has no stake in the argument. Running the scheduler over seven hand-written kernels passed seven of seven for a long time; running it over three hundred found forty-one wrong ones, and every model correction since came out of watching that number move.
 
 That loop is where the real bugs came from. Stall spent outside the window between a producer and its consumer counts for nothing, and spending it there ends the search with a program that is still short. A stall pinned to the safe encoding was being overwritten by a later pass, replacing a guarantee with a small number. fp64 operands occupy register pairs with nothing in the mnemonic to say so, so half of every fp64 dependency was invisible to both the checker and the scheduler. A predicate used as an instruction's guard needs thirteen cycles where the same predicate read as data needs five, because a guard has to be resolved before the instruction issues at all. And waiting on a scoreboard does not settle a dependency completely: the producer still owes a small stall of its own, two cycles for fp64 add, and one cycle less is silently wrong. None of those were found by reasoning; every one was found by running the output and getting the wrong number.
 
 > [!NOTE]
-> **Alpha, and specific about what that means.** What is done: both oracles, the instruction database with its fields proven writable, the hazard checker over a real control-flow graph, latency measured on one SKU by three independent methods, and a scheduler that round-trips every comparable corpus kernel through the hardware byte-for-byte. What is not: 16 corpus kernels this harness cannot compare at all, named in the findings; many opcodes still carry assumed latencies rather than measured ones; and only one GPU has been measured. Where something is inferred rather than measured, the tooling says so rather than rounding it up to a fact. See the [roadmap](docs/ROADMAP.md) and the [method](docs/METHOD.md).
+> **Alpha, and specific about what that means.** What is done: both oracles, the instruction database with its fields proven writable, the hazard checker over a real control-flow graph, latency measured on one SKU by three independent methods, and a scheduler that round-trips every comparable corpus kernel through the hardware byte-for-byte. What is not: 14 corpus kernels this harness cannot compare at all, named in the findings; many opcodes still carry assumed latencies rather than measured ones; and only one GPU has been measured. Where something is inferred rather than measured, the tooling says so rather than rounding it up to a fact. See the [roadmap](docs/ROADMAP.md) and the [method](docs/METHOD.md).
 
 ## Repository layout
 

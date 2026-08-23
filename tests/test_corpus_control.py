@@ -303,10 +303,10 @@ class TestAssemblerAgainstTheVendorsBytes:
         exact = sum(1 for verdict, _ in assembled if verdict == "exact")
         total = len(assembled)
         assert total > 5000, f"only {total} instructions seen; the corpus did not build"
-        # 88.8% when this was written. the floor is deliberately below that, so
+        # 95.7% when this was written. the floor is deliberately below that, so
         # it catches a regression without failing on a database that legitimately
         # learned to refuse something it had been guessing at.
-        assert exact / total >= 0.85, f"only {exact}/{total} ({exact / total:.1%}) reproduced"
+        assert exact / total >= 0.92, f"only {exact}/{total} ({exact / total:.1%}) reproduced"
 
 
 class TestWholeProgramAssembly:
@@ -354,10 +354,10 @@ class TestWholeProgramAssembly:
         exact, wrong, refused = assembled
         total = exact + wrong + refused
         assert total > 5000, "the corpus did not build"
-        # 99.2% when this was written. The floor sits a point below rather than
+        # 99.9% when this was written. The floor sits a point below rather than
         # four, because a floor far under the real number lets coverage fall a
         # long way without anything going red.
-        assert exact / total >= 0.98, f"only {exact}/{total} ({exact / total:.1%}) reproduced"
+        assert exact / total >= 0.99, f"only {exact}/{total} ({exact / total:.1%}) reproduced"
 
 
 class TestTheBranchFieldIsStillWhereItWasFound:
@@ -439,10 +439,10 @@ class TestWhatTheCorrectnessCosts:
         vendor, basalt = cycles
         assert vendor > 5000, "the corpus did not build"
         ratio = basalt / vendor
-        # 0.90x when this was written, pinned from both sides: slower is a
+        # 0.88x when this was written, pinned from both sides: slower is a
         # regression, and faster is a reason to distrust the costing rather
         # than to celebrate it (finding 12)
-        assert ratio < 1.15, f"basalt's schedules cost {ratio:.2f}x the vendor's, up from 0.90x"
+        assert ratio < 1.15, f"basalt's schedules cost {ratio:.2f}x the vendor's, up from 0.88x"
         assert ratio > 0.75, (
             f"basalt's schedules cost {ratio:.2f}x, which is far cheaper than the vendor's and "
             f"is the shape a costing bug takes. check the hardware round trip before believing it"
