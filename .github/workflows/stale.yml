@@ -1,0 +1,52 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 Sunny Patel
+#
+# Closes threads that have gone quiet, with one deliberate exception.
+#
+# An ISA gap report is the highest-value thing anyone can file here, and it is
+# also the slowest to act on: it may need a card this project does not have, or
+# a toolchain version that is not out yet. Auto-closing one would throw away
+# exactly the report the repository asks for, so `isa` and `needs-repro` are
+# exempt along with the usual security and pinned threads.
+name: stale
+
+on:
+  schedule:
+    - cron: "0 3 * * *" # daily, off the hour the CI cron uses
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  stale:
+    name: Mark and close stale threads
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/stale@4391f3da665fdf50b6810c1a66712fb9ba21aa93 # v11.0.0
+        with:
+          days-before-stale: 60
+          days-before-close: 14
+          stale-issue-label: stale
+          stale-pr-label: stale
+          # an ISA gap can wait on hardware or on a compiler release, and
+          # closing one loses the report this project most wants
+          exempt-issue-labels: "pinned,security,isa,needs-repro,bug,enhancement"
+          exempt-pr-labels: "pinned,security"
+          stale-issue-message: >
+            No activity on this for 60 days, so it is being marked stale and
+            will close in 14 days. If it is still relevant, say so and it stays
+            open. If this is an ISA gap, add the `isa` label and it will not be
+            marked again.
+          stale-pr-message: >
+            No activity on this for 60 days, so it is being marked stale and
+            will close in 14 days. A comment keeps it open.
+          close-issue-message: >
+            Closing after 14 days stale. Reopen if it is still relevant, the
+            history is kept either way.
+          close-pr-message: >
+            Closing after 14 days stale. Reopen when you want to pick it back up.
