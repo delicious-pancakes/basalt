@@ -66,12 +66,16 @@ jobs:
 
       - name: Build the distributions
         run: |
-          python -m pip install --upgrade build
+          # pinned, not --upgrade. this is the one tool that touches the bytes
+          # that ship, so a poisoned release of it would be signed and attested
+          # as faithfully as a good one. bumped by hand at release time,
+          # see RELEASING.md
+          python -m pip install "build==1.5.0"
           python -m build
 
       - name: Check the metadata is well formed
         run: |
-          python -m pip install --upgrade twine
+          python -m pip install "twine==7.0.0"
           python -m twine check dist/*
 
       # a release whose tests were never run is a release nobody should install,
@@ -93,7 +97,7 @@ jobs:
         run: |
           python -m venv --without-pip /tmp/sbom-env
           python -m pip --python /tmp/sbom-env/bin/python install --quiet dist/*.whl
-          python -m pip install --quiet cyclonedx-bom
+          python -m pip install --quiet "cyclonedx-bom==7.3.1"
           python -m cyclonedx_py environment /tmp/sbom-env \
             --output-format JSON --output-file dist/basalt-sbom.cdx.json --validate
 
