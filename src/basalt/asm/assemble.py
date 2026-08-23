@@ -132,20 +132,30 @@ _COMPOSITE_ROLES = frozenset({SubRole.BANK, SubRole.OFFSET, SubRole.BASE, SubRol
 _MODIFIER_SYMBOLS = {"-": SubRole.NEGATE, "~": SubRole.NOT, "!": SubRole.INVERT}
 
 
+def _is_float(text: str) -> bool:
+    """Does this token parse as a float literal, sign and all?"""
+    try:
+        float(text)
+    except ValueError:
+        return False
+    return True
+
+
 def _strip_modifiers(token: str) -> tuple[frozenset[str], str]:
     """A token's modifiers and the operand underneath them."""
     roles: set[str] = set()
     text = token.strip()
     # a sign on a number is part of the number, not a bit somewhere else in the
-    # word: `-0x1` is the immediate -1 written as two's complement in its field
-    if _IMMEDIATE.match(text):
+    # word: `-0x1` is two's complement in its field and `-2.875` is IEEE bit 31
+    if _IMMEDIATE.match(text) or _is_float(text):
         return frozenset(), text
     while text and text[0] in _MODIFIER_SYMBOLS:
         roles.add(_MODIFIER_SYMBOLS[text[0]])
         text = text[1:]
-    if len(text) > 2 and text.startswith("|") and text.endswith("|"):
+    # the bars close before any suffix, so `|R2|.reuse` is `R2.reuse` in bars
+    if text.startswith("|") and (close := text.find("|", 1)) > 1:
         roles.add(SubRole.ABSOLUTE)
-        text = text[1:-1]
+        text = text[1:close] + text[close + 1 :]
     return frozenset(roles), text.strip()
 
 
@@ -181,6 +191,10 @@ def _kind(token: str) -> str:
     recorded field, so they are separate encodings of one mnemonic and the
     database holds one of them.
     """
+    # `|R2|` is a register wearing a modifier bit, not a literal. reading it as
+    # anything else makes the abs form collide with the immediate form, and one
+    # of the two then has no encoding in the database at all
+    token = _strip_modifiers(token)[1]
     if (match := _REGISTER.match(token)) is not None:
         file = {"R": "register", "UR": "uniform", "P": "predicate", "UP": "upredicate"}[
             match.group(1)

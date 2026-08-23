@@ -3660,40 +3660,18 @@
       "source_label": "mov.sreg.b32"
     },
     "DADD": {
-      "encoding": "000fc0000000050400000000ff067229",
+      "encoding": "004e2400000000004038000002047429",
       "inert_bits": [
-        32,
-        33,
-        34,
-        35,
-        36,
-        37,
-        38,
-        39,
-        40,
-        41,
-        42,
-        43,
-        44,
-        45,
-        46,
-        47,
-        48,
-        49,
-        50,
-        51,
-        52,
-        53,
-        54,
-        55,
-        56,
-        57,
-        58,
-        59,
-        60,
-        61,
-        62,
-        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        74,
+        75,
         76,
         77,
         80,
@@ -3724,7 +3702,10 @@
         127
       ],
       "invalid_bits": [
+        0,
         2,
+        4,
+        5,
         6,
         7,
         8,
@@ -3741,13 +3722,10 @@
       "modifiers": [],
       "opcode": "DADD",
       "opcode_bits": [
-        0,
         1,
-        3,
-        4,
-        5
+        3
       ],
-      "operand_text": "R6, -RZ, |R4|",
+      "operand_text": "R4, R2, 24",
       "operands": [
         {
           "bits": [
@@ -3760,8 +3738,8 @@
             22,
             23
           ],
-          "example_after": "R7, -RZ, |R4|",
-          "example_before": "R6, -RZ, |R4|",
+          "example_after": "R5, R2, 24",
+          "example_before": "R4, R2, 24",
           "slot": 0,
           "subfields": {}
         },
@@ -3778,10 +3756,13 @@
             72,
             73
           ],
-          "example_after": "R6, -R254, |R4|",
-          "example_before": "R6, -RZ, |R4|",
+          "example_after": "R4, R3, 24",
+          "example_before": "R4, R2, 24",
           "slot": 1,
           "subfields": {
+            "absolute": [
+              73
+            ],
             "negate": [
               72
             ],
@@ -3793,50 +3774,54 @@
               28,
               29,
               30,
-              31,
-              73
+              31
             ]
           }
         },
         {
           "bits": [
-            64,
-            65,
-            66,
-            67,
-            68,
-            69,
-            70,
-            71,
-            74,
-            75
+            32,
+            33,
+            34,
+            35,
+            36,
+            37,
+            38,
+            39,
+            40,
+            41,
+            42,
+            43,
+            44,
+            45,
+            46,
+            47,
+            48,
+            49,
+            50,
+            51,
+            52,
+            53,
+            54,
+            55,
+            56,
+            57,
+            58,
+            59,
+            60,
+            61,
+            62,
+            63
           ],
-          "example_after": "R6, -RZ, |R5|",
-          "example_before": "R6, -RZ, |R4|",
+          "example_after": "R4, R2, 24.0000152587890625",
+          "example_before": "R4, R2, 24",
           "slot": 2,
-          "subfields": {
-            "absolute": [
-              74
-            ],
-            "negate": [
-              75
-            ],
-            "value": [
-              64,
-              65,
-              66,
-              67,
-              68,
-              69,
-              70,
-              71
-            ]
-          }
+          "subfields": {}
         }
       ],
-      "payload": "000000000000050400000000ff067229",
-      "source_family": "unary",
-      "source_label": "rcp.rn.f64"
+      "payload": "00000000000000004038000002047429",
+      "source_family": "binary-imm",
+      "source_label": "sub.f64"
     },
     "DFMA": {
       "encoding": "004e1e00000000043ff000000608782b",
@@ -3985,44 +3970,7 @@
           "example_after": "R8, R6, 1.0000009536743164062, R4",
           "example_before": "R8, R6, 1, R4",
           "slot": 2,
-          "subfields": {
-            "negate": [
-              63
-            ],
-            "value": [
-              32,
-              33,
-              34,
-              35,
-              36,
-              37,
-              38,
-              39,
-              40,
-              41,
-              42,
-              43,
-              44,
-              45,
-              46,
-              47,
-              48,
-              49,
-              50,
-              51,
-              52,
-              53,
-              54,
-              55,
-              56,
-              57,
-              58,
-              59,
-              60,
-              61,
-              62
-            ]
-          }
+          "subfields": {}
         },
         {
           "bits": [
@@ -4065,7 +4013,7 @@
       "source_label": "s_loop_double.mixed"
     },
     "DMUL": {
-      "encoding": "000e2200000000004690000002027828",
+      "encoding": "004e240000000000c038000002047828",
       "inert_bits": [
         64,
         65,
@@ -4130,7 +4078,7 @@
         4,
         5
       ],
-      "operand_text": "R2, R2, 8.11296384146066816958e+31",
+      "operand_text": "R4, R2, -24",
       "operands": [
         {
           "bits": [
@@ -4143,8 +4091,8 @@
             22,
             23
           ],
-          "example_after": "R3, R2, 8.11296384146066816958e+31",
-          "example_before": "R2, R2, 8.11296384146066816958e+31",
+          "example_after": "R5, R2, -24",
+          "example_before": "R4, R2, -24",
           "slot": 0,
           "subfields": {}
         },
@@ -4161,8 +4109,8 @@
             72,
             73
           ],
-          "example_after": "R2, R3, 8.11296384146066816958e+31",
-          "example_before": "R2, R2, 8.11296384146066816958e+31",
+          "example_after": "R4, R3, -24",
+          "example_before": "R4, R2, -24",
           "slot": 1,
           "subfields": {
             "absolute": [
@@ -4218,52 +4166,15 @@
             62,
             63
           ],
-          "example_after": "R2, R2, 8.11297157858591370321e+31",
-          "example_before": "R2, R2, 8.11296384146066816958e+31",
+          "example_after": "R4, R2, -24.0000152587890625",
+          "example_before": "R4, R2, -24",
           "slot": 2,
-          "subfields": {
-            "negate": [
-              63
-            ],
-            "value": [
-              32,
-              33,
-              34,
-              35,
-              36,
-              37,
-              38,
-              39,
-              40,
-              41,
-              42,
-              43,
-              44,
-              45,
-              46,
-              47,
-              48,
-              49,
-              50,
-              51,
-              52,
-              53,
-              54,
-              55,
-              56,
-              57,
-              58,
-              59,
-              60,
-              61,
-              62
-            ]
-          }
+          "subfields": {}
         }
       ],
-      "payload": "00000000000000004690000002027828",
-      "source_family": "unary",
-      "source_label": "rcp.rn.f64"
+      "payload": "0000000000000000c038000002047828",
+      "source_family": "binary-imm",
+      "source_label": "mul.f64"
     },
     "DSETP.EQ.AND": {
       "encoding": "000fc00003f02000000000020600722a",
@@ -6130,7 +6041,7 @@
       "source_label": "setp.ltu.f64"
     },
     "DSETP.MAX.AND": {
-      "encoding": "000064000390f000000000060400722a",
+      "encoding": "000e64000390f000c03800000200742a",
       "inert_bits": [
         16,
         17,
@@ -6140,28 +6051,6 @@
         21,
         22,
         23,
-        40,
-        41,
-        42,
-        43,
-        44,
-        45,
-        46,
-        47,
-        48,
-        49,
-        50,
-        51,
-        52,
-        53,
-        54,
-        55,
-        56,
-        57,
-        58,
-        59,
-        60,
-        61,
         64,
         65,
         66,
@@ -6188,8 +6077,11 @@
         127
       ],
       "invalid_bits": [
+        1,
         2,
         3,
+        4,
+        5,
         6,
         7,
         8,
@@ -6213,12 +6105,9 @@
       ],
       "opcode": "DSETP",
       "opcode_bits": [
-        0,
-        1,
-        4,
-        5
+        0
       ],
-      "operand_text": "P0, P1, R4, R6, PT",
+      "operand_text": "P0, P1, R2, -24, PT",
       "operands": [
         {
           "bits": [
@@ -6226,8 +6115,8 @@
             82,
             83
           ],
-          "example_after": "P1, P1, R4, R6, PT",
-          "example_before": "P0, P1, R4, R6, PT",
+          "example_after": "P1, P1, R2, -24, PT",
+          "example_before": "P0, P1, R2, -24, PT",
           "slot": 0,
           "subfields": {}
         },
@@ -6237,8 +6126,8 @@
             85,
             86
           ],
-          "example_after": "P0, P0, R4, R6, PT",
-          "example_before": "P0, P1, R4, R6, PT",
+          "example_after": "P0, P0, R2, -24, PT",
+          "example_before": "P0, P1, R2, -24, PT",
           "slot": 1,
           "subfields": {}
         },
@@ -6255,8 +6144,8 @@
             72,
             73
           ],
-          "example_after": "P0, P1, R5, R6, PT",
-          "example_before": "P0, P1, R4, R6, PT",
+          "example_after": "P0, P1, R3, -24, PT",
+          "example_before": "P0, P1, R2, -24, PT",
           "slot": 2,
           "subfields": {
             "absolute": [
@@ -6287,30 +6176,35 @@
             37,
             38,
             39,
+            40,
+            41,
+            42,
+            43,
+            44,
+            45,
+            46,
+            47,
+            48,
+            49,
+            50,
+            51,
+            52,
+            53,
+            54,
+            55,
+            56,
+            57,
+            58,
+            59,
+            60,
+            61,
             62,
             63
           ],
-          "example_after": "P0, P1, R4, R7, PT",
-          "example_before": "P0, P1, R4, R6, PT",
+          "example_after": "P0, P1, R2, -24.0000152587890625, PT",
+          "example_before": "P0, P1, R2, -24, PT",
           "slot": 3,
-          "subfields": {
-            "absolute": [
-              62
-            ],
-            "negate": [
-              63
-            ],
-            "value": [
-              32,
-              33,
-              34,
-              35,
-              36,
-              37,
-              38,
-              39
-            ]
-          }
+          "subfields": {}
         },
         {
           "bits": [
@@ -6319,8 +6213,8 @@
             89,
             90
           ],
-          "example_after": "P0, P1, R4, R6, P6",
-          "example_before": "P0, P1, R4, R6, PT",
+          "example_after": "P0, P1, R2, -24, P6",
+          "example_before": "P0, P1, R2, -24, PT",
           "slot": 4,
           "subfields": {
             "invert": [
@@ -6334,12 +6228,12 @@
           }
         }
       ],
-      "payload": "000000000390f000000000060400722a",
-      "source_family": "binary",
+      "payload": "000000000390f000c03800000200742a",
+      "source_family": "binary-imm",
       "source_label": "max.f64"
     },
     "DSETP.MIN.AND": {
-      "encoding": "0000640003900000000000060400722a",
+      "encoding": "000e640003900000c03800000200742a",
       "inert_bits": [
         16,
         17,
@@ -6349,28 +6243,6 @@
         21,
         22,
         23,
-        40,
-        41,
-        42,
-        43,
-        44,
-        45,
-        46,
-        47,
-        48,
-        49,
-        50,
-        51,
-        52,
-        53,
-        54,
-        55,
-        56,
-        57,
-        58,
-        59,
-        60,
-        61,
         64,
         65,
         66,
@@ -6397,8 +6269,11 @@
         127
       ],
       "invalid_bits": [
+        1,
         2,
         3,
+        4,
+        5,
         6,
         7,
         8,
@@ -6422,12 +6297,9 @@
       ],
       "opcode": "DSETP",
       "opcode_bits": [
-        0,
-        1,
-        4,
-        5
+        0
       ],
-      "operand_text": "P0, P1, R4, R6, PT",
+      "operand_text": "P0, P1, R2, -24, PT",
       "operands": [
         {
           "bits": [
@@ -6435,8 +6307,8 @@
             82,
             83
           ],
-          "example_after": "P1, P1, R4, R6, PT",
-          "example_before": "P0, P1, R4, R6, PT",
+          "example_after": "P1, P1, R2, -24, PT",
+          "example_before": "P0, P1, R2, -24, PT",
           "slot": 0,
           "subfields": {}
         },
@@ -6446,8 +6318,8 @@
             85,
             86
           ],
-          "example_after": "P0, P0, R4, R6, PT",
-          "example_before": "P0, P1, R4, R6, PT",
+          "example_after": "P0, P0, R2, -24, PT",
+          "example_before": "P0, P1, R2, -24, PT",
           "slot": 1,
           "subfields": {}
         },
@@ -6464,8 +6336,8 @@
             72,
             73
           ],
-          "example_after": "P0, P1, R5, R6, PT",
-          "example_before": "P0, P1, R4, R6, PT",
+          "example_after": "P0, P1, R3, -24, PT",
+          "example_before": "P0, P1, R2, -24, PT",
           "slot": 2,
           "subfields": {
             "absolute": [
@@ -6496,30 +6368,35 @@
             37,
             38,
             39,
+            40,
+            41,
+            42,
+            43,
+            44,
+            45,
+            46,
+            47,
+            48,
+            49,
+            50,
+            51,
+            52,
+            53,
+            54,
+            55,
+            56,
+            57,
+            58,
+            59,
+            60,
+            61,
             62,
             63
           ],
-          "example_after": "P0, P1, R4, R7, PT",
-          "example_before": "P0, P1, R4, R6, PT",
+          "example_after": "P0, P1, R2, -24.0000152587890625, PT",
+          "example_before": "P0, P1, R2, -24, PT",
           "slot": 3,
-          "subfields": {
-            "absolute": [
-              62
-            ],
-            "negate": [
-              63
-            ],
-            "value": [
-              32,
-              33,
-              34,
-              35,
-              36,
-              37,
-              38,
-              39
-            ]
-          }
+          "subfields": {}
         },
         {
           "bits": [
@@ -6528,8 +6405,8 @@
             89,
             90
           ],
-          "example_after": "P0, P1, R4, R6, P6",
-          "example_before": "P0, P1, R4, R6, PT",
+          "example_after": "P0, P1, R2, -24, P6",
+          "example_before": "P0, P1, R2, -24, PT",
           "slot": 4,
           "subfields": {
             "invert": [
@@ -6543,8 +6420,8 @@
           }
         }
       ],
-      "payload": "0000000003900000000000060400722a",
-      "source_family": "binary",
+      "payload": "0000000003900000c03800000200742a",
+      "source_family": "binary-imm",
       "source_label": "min.f64"
     },
     "DSETP.NAN.AND": {
@@ -7763,7 +7640,7 @@
       ],
       "payload": "0000000003800000000000000000794d",
       "source_family": "binary",
-      "source_label": "min.s16"
+      "source_label": "max.s16"
     },
     "F2F.F32.F64": {
       "encoding": "004e2400003010000000000200077310",
@@ -8241,7 +8118,7 @@
       ],
       "payload": "000000000021f0000000000400057305",
       "source_family": "binary",
-      "source_label": "div.s32"
+      "source_label": "rem.s32"
     },
     "F2I.NTZ": {
       "encoding": "004e2400002031000000000200077305",
@@ -9990,30 +9867,8 @@
       "source_label": "cvt.rni.u64.f64"
     },
     "FADD": {
-      "encoding": "004fca0000000200800000ff02077221",
+      "encoding": "004fca000000000041c0000002077421",
       "inert_bits": [
-        40,
-        41,
-        42,
-        43,
-        44,
-        45,
-        46,
-        47,
-        48,
-        49,
-        50,
-        51,
-        52,
-        53,
-        54,
-        55,
-        56,
-        57,
-        58,
-        59,
-        60,
-        61,
         64,
         65,
         66,
@@ -10025,6 +9880,7 @@
         74,
         75,
         76,
+        81,
         82,
         83,
         84,
@@ -10051,6 +9907,8 @@
         127
       ],
       "invalid_bits": [
+        0,
+        2,
         5,
         6,
         7,
@@ -10070,14 +9928,11 @@
       "modifiers": [],
       "opcode": "FADD",
       "opcode_bits": [
-        0,
         1,
-        2,
         3,
-        4,
-        81
+        4
       ],
-      "operand_text": "R7, |R2|, -RZ",
+      "operand_text": "R7, R2, 24",
       "operands": [
         {
           "bits": [
@@ -10090,8 +9945,8 @@
             22,
             23
           ],
-          "example_after": "R6, |R2|, -RZ",
-          "example_before": "R7, |R2|, -RZ",
+          "example_after": "R6, R2, 24",
+          "example_before": "R7, R2, 24",
           "slot": 0,
           "subfields": {}
         },
@@ -10108,8 +9963,8 @@
             72,
             73
           ],
-          "example_after": "R7, |R3|, -RZ",
-          "example_before": "R7, |R2|, -RZ",
+          "example_after": "R7, R3, 24",
+          "example_before": "R7, R2, 24",
           "slot": 1,
           "subfields": {
             "absolute": [
@@ -10140,59 +9995,44 @@
             37,
             38,
             39,
+            40,
+            41,
+            42,
+            43,
+            44,
+            45,
+            46,
+            47,
+            48,
+            49,
+            50,
+            51,
+            52,
+            53,
+            54,
+            55,
+            56,
+            57,
+            58,
+            59,
+            60,
+            61,
             62,
             63
           ],
-          "example_after": "R7, |R2|, -R254",
-          "example_before": "R7, |R2|, -RZ",
+          "example_after": "R7, R2, 24.000001907348632812",
+          "example_before": "R7, R2, 24",
           "slot": 2,
-          "subfields": {
-            "negate": [
-              63
-            ],
-            "value": [
-              32,
-              33,
-              34,
-              35,
-              36,
-              37,
-              38,
-              39,
-              62
-            ]
-          }
+          "subfields": {}
         }
       ],
-      "payload": "0000000000000200800000ff02077221",
-      "source_family": "unary",
-      "source_label": "abs.f32"
+      "payload": "000000000000000041c0000002077421",
+      "source_family": "binary-imm",
+      "source_label": "sub.f32"
     },
     "FADD.FTZ": {
-      "encoding": "000fc0000001010040000004ff057221",
+      "encoding": "000fe200000100003f80000000020421",
       "inert_bits": [
-        40,
-        41,
-        42,
-        43,
-        44,
-        45,
-        46,
-        47,
-        48,
-        49,
-        50,
-        51,
-        52,
-        53,
-        54,
-        55,
-        56,
-        57,
-        58,
-        59,
-        60,
-        61,
         64,
         65,
         66,
@@ -10204,6 +10044,7 @@
         74,
         75,
         76,
+        81,
         82,
         83,
         84,
@@ -10230,9 +10071,12 @@
         127
       ],
       "invalid_bits": [
+        0,
+        2,
         5,
         6,
         7,
+        8,
         9,
         10,
         11,
@@ -10250,15 +10094,11 @@
       ],
       "opcode": "FADD",
       "opcode_bits": [
-        0,
         1,
-        2,
         3,
-        4,
-        8,
-        81
+        4
       ],
-      "operand_text": "R5, -RZ, |R4|",
+      "operand_text": "@P0 R2, R0, 1",
       "operands": [
         {
           "bits": [
@@ -10271,8 +10111,8 @@
             22,
             23
           ],
-          "example_after": "R4, -RZ, |R4|",
-          "example_before": "R5, -RZ, |R4|",
+          "example_after": "@P0 R3, R0, 1",
+          "example_before": "@P0 R2, R0, 1",
           "slot": 0,
           "subfields": {}
         },
@@ -10289,10 +10129,13 @@
             72,
             73
           ],
-          "example_after": "R5, -R254, |R4|",
-          "example_before": "R5, -RZ, |R4|",
+          "example_after": "@P0 R2, R1, 1",
+          "example_before": "@P0 R2, R0, 1",
           "slot": 1,
           "subfields": {
+            "absolute": [
+              73
+            ],
             "negate": [
               72
             ],
@@ -10304,8 +10147,7 @@
               28,
               29,
               30,
-              31,
-              73
+              31
             ]
           }
         },
@@ -10319,33 +10161,38 @@
             37,
             38,
             39,
+            40,
+            41,
+            42,
+            43,
+            44,
+            45,
+            46,
+            47,
+            48,
+            49,
+            50,
+            51,
+            52,
+            53,
+            54,
+            55,
+            56,
+            57,
+            58,
+            59,
+            60,
+            61,
             62,
             63
           ],
-          "example_after": "R5, -RZ, |R5|",
-          "example_before": "R5, -RZ, |R4|",
+          "example_after": "@P0 R2, R0, 1.0000001192092895508",
+          "example_before": "@P0 R2, R0, 1",
           "slot": 2,
-          "subfields": {
-            "absolute": [
-              62
-            ],
-            "negate": [
-              63
-            ],
-            "value": [
-              32,
-              33,
-              34,
-              35,
-              36,
-              37,
-              38,
-              39
-            ]
-          }
+          "subfields": {}
         }
       ],
-      "payload": "000000000001010040000004ff057221",
+      "payload": "00000000000100003f80000000020421",
       "source_family": "unary",
       "source_label": "sqrt.rn.f32"
     },
@@ -11045,44 +10892,7 @@
           "example_after": "R5, R7, 1.0000001192092895508, R0",
           "example_before": "R5, R7, 1, R0",
           "slot": 2,
-          "subfields": {
-            "negate": [
-              63
-            ],
-            "value": [
-              32,
-              33,
-              34,
-              35,
-              36,
-              37,
-              38,
-              39,
-              40,
-              41,
-              42,
-              43,
-              44,
-              45,
-              46,
-              47,
-              48,
-              49,
-              50,
-              51,
-              52,
-              53,
-              54,
-              55,
-              56,
-              57,
-              58,
-              59,
-              60,
-              61,
-              62
-            ]
-          }
+          "subfields": {}
         },
         {
           "bits": [
@@ -11277,30 +11087,8 @@
       "source_label": "clz.b32"
     },
     "FMNMX": {
-      "encoding": "000fc000078000000000000206027209",
+      "encoding": "004fca0003800000c1c0000002077809",
       "inert_bits": [
-        40,
-        41,
-        42,
-        43,
-        44,
-        45,
-        46,
-        47,
-        48,
-        49,
-        50,
-        51,
-        52,
-        53,
-        54,
-        55,
-        56,
-        57,
-        58,
-        59,
-        60,
-        61,
         64,
         66,
         67,
@@ -11335,8 +11123,7 @@
         127
       ],
       "invalid_bits": [
-        2,
-        3,
+        5,
         6,
         7,
         9,
@@ -11356,11 +11143,12 @@
       "opcode_bits": [
         0,
         1,
+        2,
+        3,
         4,
-        5,
         8
       ],
-      "operand_text": "R2, R6, R2, !PT",
+      "operand_text": "R7, R2, -24, PT",
       "operands": [
         {
           "bits": [
@@ -11373,8 +11161,8 @@
             22,
             23
           ],
-          "example_after": "R3, R6, R2, !PT",
-          "example_before": "R2, R6, R2, !PT",
+          "example_after": "R6, R2, -24, PT",
+          "example_before": "R7, R2, -24, PT",
           "slot": 0,
           "subfields": {}
         },
@@ -11391,8 +11179,8 @@
             72,
             73
           ],
-          "example_after": "R2, R7, R2, !PT",
-          "example_before": "R2, R6, R2, !PT",
+          "example_after": "R7, R3, -24, PT",
+          "example_before": "R7, R2, -24, PT",
           "slot": 1,
           "subfields": {
             "absolute": [
@@ -11423,30 +11211,35 @@
             37,
             38,
             39,
+            40,
+            41,
+            42,
+            43,
+            44,
+            45,
+            46,
+            47,
+            48,
+            49,
+            50,
+            51,
+            52,
+            53,
+            54,
+            55,
+            56,
+            57,
+            58,
+            59,
+            60,
+            61,
             62,
             63
           ],
-          "example_after": "R2, R6, R3, !PT",
-          "example_before": "R2, R6, R2, !PT",
+          "example_after": "R7, R2, -24.000001907348632812, PT",
+          "example_before": "R7, R2, -24, PT",
           "slot": 2,
-          "subfields": {
-            "absolute": [
-              62
-            ],
-            "negate": [
-              63
-            ],
-            "value": [
-              32,
-              33,
-              34,
-              35,
-              36,
-              37,
-              38,
-              39
-            ]
-          }
+          "subfields": {}
         },
         {
           "bits": [
@@ -11455,8 +11248,8 @@
             89,
             90
           ],
-          "example_after": "R2, R6, R2, !P6",
-          "example_before": "R2, R6, R2, !PT",
+          "example_after": "R7, R2, -24, P6",
+          "example_before": "R7, R2, -24, PT",
           "slot": 3,
           "subfields": {
             "invert": [
@@ -11470,12 +11263,12 @@
           }
         }
       ],
-      "payload": "00000000078000000000000206027209",
-      "source_family": "binary",
-      "source_label": "max.f32"
+      "payload": "0000000003800000c1c0000002077809",
+      "source_family": "binary-imm",
+      "source_label": "min.f32"
     },
     "FMUL": {
-      "encoding": "000fc800004000003f00000000008820",
+      "encoding": "004fca0000400000c1c0000002077820",
       "inert_bits": [
         64,
         65,
@@ -11540,7 +11333,7 @@
         3,
         8
       ],
-      "operand_text": "@!P0 R0, R0, 0.5",
+      "operand_text": "R7, R2, -24",
       "operands": [
         {
           "bits": [
@@ -11553,8 +11346,8 @@
             22,
             23
           ],
-          "example_after": "@!P0 R1, R0, 0.5",
-          "example_before": "@!P0 R0, R0, 0.5",
+          "example_after": "R6, R2, -24",
+          "example_before": "R7, R2, -24",
           "slot": 0,
           "subfields": {}
         },
@@ -11571,8 +11364,8 @@
             72,
             73
           ],
-          "example_after": "@!P0 R0, R1, 0.5",
-          "example_before": "@!P0 R0, R0, 0.5",
+          "example_after": "R7, R3, -24",
+          "example_before": "R7, R2, -24",
           "slot": 1,
           "subfields": {
             "absolute": [
@@ -11628,52 +11421,15 @@
             62,
             63
           ],
-          "example_after": "@!P0 R0, R0, 0.50000005960464477539",
-          "example_before": "@!P0 R0, R0, 0.5",
+          "example_after": "R7, R2, -24.000001907348632812",
+          "example_before": "R7, R2, -24",
           "slot": 2,
-          "subfields": {
-            "negate": [
-              63
-            ],
-            "value": [
-              32,
-              33,
-              34,
-              35,
-              36,
-              37,
-              38,
-              39,
-              40,
-              41,
-              42,
-              43,
-              44,
-              45,
-              46,
-              47,
-              48,
-              49,
-              50,
-              51,
-              52,
-              53,
-              54,
-              55,
-              56,
-              57,
-              58,
-              59,
-              60,
-              61,
-              62
-            ]
-          }
+          "subfields": {}
         }
       ],
-      "payload": "00000000004000003f00000000008820",
-      "source_family": "unary",
-      "source_label": "ex2.approx.f32"
+      "payload": "0000000000400000c1c0000002077820",
+      "source_family": "binary-imm",
+      "source_label": "mul.f32"
     },
     "FMUL.FTZ": {
       "encoding": "000fc600004100003f00000003037820",
@@ -11834,44 +11590,7 @@
           "example_after": "R3, R3, 0.50000005960464477539",
           "example_before": "R3, R3, 0.5",
           "slot": 2,
-          "subfields": {
-            "negate": [
-              63
-            ],
-            "value": [
-              32,
-              33,
-              34,
-              35,
-              36,
-              37,
-              38,
-              39,
-              40,
-              41,
-              42,
-              43,
-              44,
-              45,
-              46,
-              47,
-              48,
-              49,
-              50,
-              51,
-              52,
-              53,
-              54,
-              55,
-              56,
-              57,
-              58,
-              59,
-              60,
-              61,
-              62
-            ]
-          }
+          "subfields": {}
         }
       ],
       "payload": "00000000004100003f00000003037820",
@@ -12037,44 +11756,7 @@
           "example_after": "R0, R2, 0.1591549217700958252",
           "example_before": "R0, R2, 0.15915493667125701904",
           "slot": 2,
-          "subfields": {
-            "negate": [
-              63
-            ],
-            "value": [
-              32,
-              33,
-              34,
-              35,
-              36,
-              37,
-              38,
-              39,
-              40,
-              41,
-              42,
-              43,
-              44,
-              45,
-              46,
-              47,
-              48,
-              49,
-              50,
-              51,
-              52,
-              53,
-              54,
-              55,
-              56,
-              57,
-              58,
-              59,
-              60,
-              61,
-              62
-            ]
-          }
+          "subfields": {}
         }
       ],
       "payload": "000000000040c0003e22f98302007820",
@@ -12417,44 +12099,7 @@
           "example_after": "R7, R0, 0.2500000298023223877, !P0",
           "example_before": "R7, R0, 0.25, !P0",
           "slot": 2,
-          "subfields": {
-            "negate": [
-              63
-            ],
-            "value": [
-              32,
-              33,
-              34,
-              35,
-              36,
-              37,
-              38,
-              39,
-              40,
-              41,
-              42,
-              43,
-              44,
-              45,
-              46,
-              47,
-              48,
-              49,
-              50,
-              51,
-              52,
-              53,
-              54,
-              55,
-              56,
-              57,
-              58,
-              59,
-              60,
-              61,
-              62
-            ]
-          }
+          "subfields": {}
         },
         {
           "bits": [
@@ -13320,7 +12965,7 @@
       "source_label": "setp.ge.f32"
     },
     "FSETP.GEU.AND": {
-      "encoding": "000fe20003f0e200004004020400780b",
+      "encoding": "000fc00003f0e000004004020600780b",
       "inert_bits": [
         16,
         17,
@@ -13386,7 +13031,7 @@
         4,
         5
       ],
-      "operand_text": "P0, PT, |R4|, 5.8789094863358348022e-39, PT",
+      "operand_text": "P0, PT, R6, 5.8789094863358348022e-39, PT",
       "operands": [
         {
           "bits": [
@@ -13394,8 +13039,8 @@
             82,
             83
           ],
-          "example_after": "P1, PT, |R4|, 5.8789094863358348022e-39, PT",
-          "example_before": "P0, PT, |R4|, 5.8789094863358348022e-39, PT",
+          "example_after": "P1, PT, R6, 5.8789094863358348022e-39, PT",
+          "example_before": "P0, PT, R6, 5.8789094863358348022e-39, PT",
           "slot": 0,
           "subfields": {}
         },
@@ -13405,8 +13050,8 @@
             85,
             86
           ],
-          "example_after": "P0, P6, |R4|, 5.8789094863358348022e-39, PT",
-          "example_before": "P0, PT, |R4|, 5.8789094863358348022e-39, PT",
+          "example_after": "P0, P6, R6, 5.8789094863358348022e-39, PT",
+          "example_before": "P0, PT, R6, 5.8789094863358348022e-39, PT",
           "slot": 1,
           "subfields": {}
         },
@@ -13423,8 +13068,8 @@
             72,
             73
           ],
-          "example_after": "P0, PT, |R5|, 5.8789094863358348022e-39, PT",
-          "example_before": "P0, PT, |R4|, 5.8789094863358348022e-39, PT",
+          "example_after": "P0, PT, R7, 5.8789094863358348022e-39, PT",
+          "example_before": "P0, PT, R6, 5.8789094863358348022e-39, PT",
           "slot": 2,
           "subfields": {
             "absolute": [
@@ -13480,47 +13125,10 @@
             62,
             63
           ],
-          "example_after": "P0, PT, |R4|, 5.878910887634299127e-39, PT",
-          "example_before": "P0, PT, |R4|, 5.8789094863358348022e-39, PT",
+          "example_after": "P0, PT, R6, 5.878910887634299127e-39, PT",
+          "example_before": "P0, PT, R6, 5.8789094863358348022e-39, PT",
           "slot": 3,
-          "subfields": {
-            "negate": [
-              63
-            ],
-            "value": [
-              32,
-              33,
-              34,
-              35,
-              36,
-              37,
-              38,
-              39,
-              40,
-              41,
-              42,
-              43,
-              44,
-              45,
-              46,
-              47,
-              48,
-              49,
-              50,
-              51,
-              52,
-              53,
-              54,
-              55,
-              56,
-              57,
-              58,
-              59,
-              60,
-              61,
-              62
-            ]
-          }
+          "subfields": {}
         },
         {
           "bits": [
@@ -13529,8 +13137,8 @@
             89,
             90
           ],
-          "example_after": "P0, PT, |R4|, 5.8789094863358348022e-39, P6",
-          "example_before": "P0, PT, |R4|, 5.8789094863358348022e-39, PT",
+          "example_after": "P0, PT, R6, 5.8789094863358348022e-39, P6",
+          "example_before": "P0, PT, R6, 5.8789094863358348022e-39, PT",
           "slot": 4,
           "subfields": {
             "invert": [
@@ -13544,7 +13152,7 @@
           }
         }
       ],
-      "payload": "0000000003f0e200004004020400780b",
+      "payload": "0000000003f0e000004004020600780b",
       "source_family": "unary",
       "source_label": "rcp.rn.f64"
     },
@@ -13759,7 +13367,7 @@
       "source_label": "sqrt.rn.f32"
     },
     "FSETP.GT.AND": {
-      "encoding": "000fc80003f042007e8000000200780b",
+      "encoding": "000fc00003f040007e8000000000780b",
       "inert_bits": [
         16,
         17,
@@ -13825,7 +13433,7 @@
         4,
         5
       ],
-      "operand_text": "P0, PT, |R2|, 8.50705917302346158658e+37, PT",
+      "operand_text": "P0, PT, R0, 8.50705917302346158658e+37, PT",
       "operands": [
         {
           "bits": [
@@ -13833,8 +13441,8 @@
             82,
             83
           ],
-          "example_after": "P1, PT, |R2|, 8.50705917302346158658e+37, PT",
-          "example_before": "P0, PT, |R2|, 8.50705917302346158658e+37, PT",
+          "example_after": "P1, PT, R0, 8.50705917302346158658e+37, PT",
+          "example_before": "P0, PT, R0, 8.50705917302346158658e+37, PT",
           "slot": 0,
           "subfields": {}
         },
@@ -13844,8 +13452,8 @@
             85,
             86
           ],
-          "example_after": "P0, P6, |R2|, 8.50705917302346158658e+37, PT",
-          "example_before": "P0, PT, |R2|, 8.50705917302346158658e+37, PT",
+          "example_after": "P0, P6, R0, 8.50705917302346158658e+37, PT",
+          "example_before": "P0, PT, R0, 8.50705917302346158658e+37, PT",
           "slot": 1,
           "subfields": {}
         },
@@ -13862,8 +13470,8 @@
             72,
             73
           ],
-          "example_after": "P0, PT, |R3|, 8.50705917302346158658e+37, PT",
-          "example_before": "P0, PT, |R2|, 8.50705917302346158658e+37, PT",
+          "example_after": "P0, PT, R1, 8.50705917302346158658e+37, PT",
+          "example_before": "P0, PT, R0, 8.50705917302346158658e+37, PT",
           "slot": 2,
           "subfields": {
             "absolute": [
@@ -13919,47 +13527,10 @@
             62,
             63
           ],
-          "example_after": "P0, PT, |R2|, 8.50706018714394176917e+37, PT",
-          "example_before": "P0, PT, |R2|, 8.50705917302346158658e+37, PT",
+          "example_after": "P0, PT, R0, 8.50706018714394176917e+37, PT",
+          "example_before": "P0, PT, R0, 8.50705917302346158658e+37, PT",
           "slot": 3,
-          "subfields": {
-            "negate": [
-              63
-            ],
-            "value": [
-              32,
-              33,
-              34,
-              35,
-              36,
-              37,
-              38,
-              39,
-              40,
-              41,
-              42,
-              43,
-              44,
-              45,
-              46,
-              47,
-              48,
-              49,
-              50,
-              51,
-              52,
-              53,
-              54,
-              55,
-              56,
-              57,
-              58,
-              59,
-              60,
-              61,
-              62
-            ]
-          }
+          "subfields": {}
         },
         {
           "bits": [
@@ -13968,8 +13539,8 @@
             89,
             90
           ],
-          "example_after": "P0, PT, |R2|, 8.50705917302346158658e+37, P6",
-          "example_before": "P0, PT, |R2|, 8.50705917302346158658e+37, PT",
+          "example_after": "P0, PT, R0, 8.50705917302346158658e+37, P6",
+          "example_before": "P0, PT, R0, 8.50705917302346158658e+37, PT",
           "slot": 4,
           "subfields": {
             "invert": [
@@ -13983,7 +13554,7 @@
           }
         }
       ],
-      "payload": "0000000003f042007e8000000200780b",
+      "payload": "0000000003f040007e8000000000780b",
       "source_family": "unary",
       "source_label": "rcp.approx.f32"
     },
@@ -14972,44 +14543,7 @@
           "example_after": "P0, PT, R0, 1.1754944909521339405e-38, PT",
           "example_before": "P0, PT, R0, 1.175494350822287508e-38, PT",
           "slot": 3,
-          "subfields": {
-            "negate": [
-              63
-            ],
-            "value": [
-              32,
-              33,
-              34,
-              35,
-              36,
-              37,
-              38,
-              39,
-              40,
-              41,
-              42,
-              43,
-              44,
-              45,
-              46,
-              47,
-              48,
-              49,
-              50,
-              51,
-              52,
-              53,
-              54,
-              55,
-              56,
-              57,
-              58,
-              59,
-              60,
-              61,
-              62
-            ]
-          }
+          "subfields": {}
         },
         {
           "bits": [
@@ -19959,7 +19493,7 @@
       ],
       "payload": "00000000000000000000000000047213",
       "source_family": "binary",
-      "source_label": "div.s32"
+      "source_label": "rem.s32"
     },
     "IADD": {
       "encoding": "000fc000078200000000000c06047235",
@@ -20305,7 +19839,7 @@
       "source_label": "mma.sync.m16n8k8....f16.f16.f32"
     },
     "IADD.X": {
-      "encoding": "000fe200000e050000000009050d7235",
+      "encoding": "000fc000000e0400000000ffff047235",
       "inert_bits": [
         40,
         41,
@@ -20364,7 +19898,6 @@
         127
       ],
       "invalid_bits": [
-        1,
         3,
         5,
         6,
@@ -20386,10 +19919,11 @@
       "opcode": "IADD",
       "opcode_bits": [
         0,
+        1,
         2,
         4
       ],
-      "operand_text": "R13, ~R5, R9, P0",
+      "operand_text": "R4, RZ, RZ, P0",
       "operands": [
         {
           "bits": [
@@ -20402,8 +19936,8 @@
             22,
             23
           ],
-          "example_after": "R12, ~R5, R9, P0",
-          "example_before": "R13, ~R5, R9, P0",
+          "example_after": "R5, RZ, RZ, P0",
+          "example_before": "R4, RZ, RZ, P0",
           "slot": 0,
           "subfields": {}
         },
@@ -20419,8 +19953,8 @@
             31,
             72
           ],
-          "example_after": "R13, ~R4, R9, P0",
-          "example_before": "R13, ~R5, R9, P0",
+          "example_after": "R4, R254, RZ, P0",
+          "example_before": "R4, RZ, RZ, P0",
           "slot": 1,
           "subfields": {
             "not": [
@@ -20450,8 +19984,8 @@
             39,
             63
           ],
-          "example_after": "R13, ~R5, R8, P0",
-          "example_before": "R13, ~R5, R9, P0",
+          "example_after": "R4, RZ, R254, P0",
+          "example_before": "R4, RZ, RZ, P0",
           "slot": 2,
           "subfields": {
             "not": [
@@ -20476,8 +20010,8 @@
             89,
             90
           ],
-          "example_after": "R13, ~R5, R9, P1",
-          "example_before": "R13, ~R5, R9, P0",
+          "example_after": "R4, RZ, RZ, P1",
+          "example_before": "R4, RZ, RZ, P0",
           "slot": 3,
           "subfields": {
             "invert": [
@@ -20491,9 +20025,9 @@
           }
         }
       ],
-      "payload": "00000000000e050000000009050d7235",
+      "payload": "00000000000e0400000000ffff047235",
       "source_family": "binary",
-      "source_label": "mul.hi.s64"
+      "source_label": "mul.hi.u64"
     },
     "IADD3": {
       "encoding": "000fc80007ffe000fffffffe05057810",
@@ -21875,32 +21409,8 @@
       "source_label": "mul.wide.s32"
     },
     "IMAD.WIDE.U32": {
-      "encoding": "000fc8000780000800000007040a7225",
+      "encoding": "000fc00007800004ffffffff08047825",
       "inert_bits": [
-        40,
-        41,
-        42,
-        43,
-        44,
-        45,
-        46,
-        47,
-        48,
-        49,
-        50,
-        51,
-        52,
-        53,
-        54,
-        55,
-        56,
-        57,
-        58,
-        59,
-        60,
-        61,
-        62,
-        63,
         72,
         76,
         77,
@@ -21931,11 +21441,9 @@
         127
       ],
       "invalid_bits": [
-        3,
-        5,
+        2,
         6,
         7,
-        8,
         9,
         10,
         11,
@@ -21954,10 +21462,12 @@
       ],
       "opcode": "IMAD",
       "opcode_bits": [
-        2,
-        4
+        3,
+        4,
+        5,
+        8
       ],
-      "operand_text": "R10, P0, R4, R7, R8",
+      "operand_text": "R4, P0, R8, -0x1, R4",
       "operands": [
         {
           "bits": [
@@ -21970,8 +21480,8 @@
             22,
             23
           ],
-          "example_after": "R11, P0, R4, R7, R8",
-          "example_before": "R10, P0, R4, R7, R8",
+          "example_after": "R5, P0, R8, -0x1, R4",
+          "example_before": "R4, P0, R8, -0x1, R4",
           "slot": 0,
           "subfields": {}
         },
@@ -21981,8 +21491,8 @@
             82,
             83
           ],
-          "example_after": "R10, P1, R4, R7, R8",
-          "example_before": "R10, P0, R4, R7, R8",
+          "example_after": "R4, P1, R8, -0x1, R4",
+          "example_before": "R4, P0, R8, -0x1, R4",
           "slot": 1,
           "subfields": {}
         },
@@ -21997,8 +21507,8 @@
             30,
             31
           ],
-          "example_after": "R10, P0, R5, R7, R8",
-          "example_before": "R10, P0, R4, R7, R8",
+          "example_after": "R4, P0, R9, -0x1, R4",
+          "example_before": "R4, P0, R8, -0x1, R4",
           "slot": 2,
           "subfields": {}
         },
@@ -22011,10 +21521,34 @@
             36,
             37,
             38,
-            39
+            39,
+            40,
+            41,
+            42,
+            43,
+            44,
+            45,
+            46,
+            47,
+            48,
+            49,
+            50,
+            51,
+            52,
+            53,
+            54,
+            55,
+            56,
+            57,
+            58,
+            59,
+            60,
+            61,
+            62,
+            63
           ],
-          "example_after": "R10, P0, R4, R6, R8",
-          "example_before": "R10, P0, R4, R7, R8",
+          "example_after": "R4, P0, R8, -0x2, R4",
+          "example_before": "R4, P0, R8, -0x1, R4",
           "slot": 3,
           "subfields": {}
         },
@@ -22030,8 +21564,8 @@
             71,
             75
           ],
-          "example_after": "R10, P0, R4, R7, R9",
-          "example_before": "R10, P0, R4, R7, R8",
+          "example_after": "R4, P0, R8, -0x1, R5",
+          "example_before": "R4, P0, R8, -0x1, R4",
           "slot": 4,
           "subfields": {
             "negate": [
@@ -22050,37 +21584,13 @@
           }
         }
       ],
-      "payload": "000000000780000800000007040a7225",
-      "source_family": "binary",
-      "source_label": "mul.hi.s64"
+      "payload": "0000000007800004ffffffff08047825",
+      "source_family": "binary-imm",
+      "source_label": "mul.lo.s64"
     },
     "IMAD.WIDE.U32.X": {
-      "encoding": "000fc600000e040c0000000705087225",
+      "encoding": "000fc000008e0404ffffffff09047825",
       "inert_bits": [
-        40,
-        41,
-        42,
-        43,
-        44,
-        45,
-        46,
-        47,
-        48,
-        49,
-        50,
-        51,
-        52,
-        53,
-        54,
-        55,
-        56,
-        57,
-        58,
-        59,
-        60,
-        61,
-        62,
-        63,
         72,
         76,
         77,
@@ -22107,11 +21617,9 @@
         127
       ],
       "invalid_bits": [
-        3,
-        5,
+        2,
         6,
         7,
-        8,
         9,
         10,
         11,
@@ -22131,10 +21639,12 @@
       ],
       "opcode": "IMAD",
       "opcode_bits": [
-        2,
-        4
+        3,
+        4,
+        5,
+        8
       ],
-      "operand_text": "R8, R5, R7, R12, P0",
+      "operand_text": "R4, R9, -0x1, R4, P1",
       "operands": [
         {
           "bits": [
@@ -22147,8 +21657,8 @@
             22,
             23
           ],
-          "example_after": "R9, R5, R7, R12, P0",
-          "example_before": "R8, R5, R7, R12, P0",
+          "example_after": "R5, R9, -0x1, R4, P1",
+          "example_before": "R4, R9, -0x1, R4, P1",
           "slot": 0,
           "subfields": {}
         },
@@ -22163,8 +21673,8 @@
             30,
             31
           ],
-          "example_after": "R8, R4, R7, R12, P0",
-          "example_before": "R8, R5, R7, R12, P0",
+          "example_after": "R4, R8, -0x1, R4, P1",
+          "example_before": "R4, R9, -0x1, R4, P1",
           "slot": 1,
           "subfields": {}
         },
@@ -22177,10 +21687,34 @@
             36,
             37,
             38,
-            39
+            39,
+            40,
+            41,
+            42,
+            43,
+            44,
+            45,
+            46,
+            47,
+            48,
+            49,
+            50,
+            51,
+            52,
+            53,
+            54,
+            55,
+            56,
+            57,
+            58,
+            59,
+            60,
+            61,
+            62,
+            63
           ],
-          "example_after": "R8, R5, R6, R12, P0",
-          "example_before": "R8, R5, R7, R12, P0",
+          "example_after": "R4, R9, -0x2, R4, P1",
+          "example_before": "R4, R9, -0x1, R4, P1",
           "slot": 2,
           "subfields": {}
         },
@@ -22196,8 +21730,8 @@
             71,
             75
           ],
-          "example_after": "R8, R5, R7, R13, P0",
-          "example_before": "R8, R5, R7, R12, P0",
+          "example_after": "R4, R9, -0x1, R5, P1",
+          "example_before": "R4, R9, -0x1, R4, P1",
           "slot": 3,
           "subfields": {
             "not": [
@@ -22222,8 +21756,8 @@
             89,
             90
           ],
-          "example_after": "R8, R5, R7, R12, P1",
-          "example_before": "R8, R5, R7, R12, P0",
+          "example_after": "R4, R9, -0x1, R4, P0",
+          "example_before": "R4, R9, -0x1, R4, P1",
           "slot": 4,
           "subfields": {
             "invert": [
@@ -22237,9 +21771,9 @@
           }
         }
       ],
-      "payload": "00000000000e040c0000000705087225",
-      "source_family": "binary",
-      "source_label": "mul.hi.s64"
+      "payload": "00000000008e0404ffffffff09047825",
+      "source_family": "binary-imm",
+      "source_label": "mul.lo.s64"
     },
     "IMMA.16816.S8.S8": {
       "encoding": "000fc000004054ff000000050c047237",
@@ -23174,32 +22708,8 @@
       "source_label": "mma.sp.sync.m16n8k64.s8"
     },
     "IMNMX.S64": {
-      "encoding": "000fc00007ffe6000000000206027217",
+      "encoding": "004fcc0003ffe600ffffffe802047817",
       "inert_bits": [
-        40,
-        41,
-        42,
-        43,
-        44,
-        45,
-        46,
-        47,
-        48,
-        49,
-        50,
-        51,
-        52,
-        53,
-        54,
-        55,
-        56,
-        57,
-        58,
-        59,
-        60,
-        61,
-        62,
-        63,
         64,
         65,
         66,
@@ -23229,6 +22739,8 @@
       ],
       "invalid_bits": [
         1,
+        3,
+        5,
         6,
         7,
         8,
@@ -23249,11 +22761,9 @@
       "opcode_bits": [
         0,
         2,
-        3,
-        4,
-        5
+        4
       ],
-      "operand_text": "PT, PT, R2, R6, R2, !PT, !PT",
+      "operand_text": "PT, PT, R4, R2, -0x18, PT, !PT",
       "operands": [
         {
           "bits": [
@@ -23261,8 +22771,8 @@
             82,
             83
           ],
-          "example_after": "P6, PT, R2, R6, R2, !PT, !PT",
-          "example_before": "PT, PT, R2, R6, R2, !PT, !PT",
+          "example_after": "P6, PT, R4, R2, -0x18, PT, !PT",
+          "example_before": "PT, PT, R4, R2, -0x18, PT, !PT",
           "slot": 0,
           "subfields": {}
         },
@@ -23272,8 +22782,8 @@
             85,
             86
           ],
-          "example_after": "PT, P6, R2, R6, R2, !PT, !PT",
-          "example_before": "PT, PT, R2, R6, R2, !PT, !PT",
+          "example_after": "PT, P6, R4, R2, -0x18, PT, !PT",
+          "example_before": "PT, PT, R4, R2, -0x18, PT, !PT",
           "slot": 1,
           "subfields": {}
         },
@@ -23288,8 +22798,8 @@
             22,
             23
           ],
-          "example_after": "PT, PT, R3, R6, R2, !PT, !PT",
-          "example_before": "PT, PT, R2, R6, R2, !PT, !PT",
+          "example_after": "PT, PT, R5, R2, -0x18, PT, !PT",
+          "example_before": "PT, PT, R4, R2, -0x18, PT, !PT",
           "slot": 2,
           "subfields": {}
         },
@@ -23304,8 +22814,8 @@
             30,
             31
           ],
-          "example_after": "PT, PT, R2, R7, R2, !PT, !PT",
-          "example_before": "PT, PT, R2, R6, R2, !PT, !PT",
+          "example_after": "PT, PT, R4, R3, -0x18, PT, !PT",
+          "example_before": "PT, PT, R4, R2, -0x18, PT, !PT",
           "slot": 3,
           "subfields": {}
         },
@@ -23318,10 +22828,34 @@
             36,
             37,
             38,
-            39
+            39,
+            40,
+            41,
+            42,
+            43,
+            44,
+            45,
+            46,
+            47,
+            48,
+            49,
+            50,
+            51,
+            52,
+            53,
+            54,
+            55,
+            56,
+            57,
+            58,
+            59,
+            60,
+            61,
+            62,
+            63
           ],
-          "example_after": "PT, PT, R2, R6, R3, !PT, !PT",
-          "example_before": "PT, PT, R2, R6, R2, !PT, !PT",
+          "example_after": "PT, PT, R4, R2, -0x17, PT, !PT",
+          "example_before": "PT, PT, R4, R2, -0x18, PT, !PT",
           "slot": 4,
           "subfields": {}
         },
@@ -23332,8 +22866,8 @@
             89,
             90
           ],
-          "example_after": "PT, PT, R2, R6, R2, !P6, !PT",
-          "example_before": "PT, PT, R2, R6, R2, !PT, !PT",
+          "example_after": "PT, PT, R4, R2, -0x18, P6, !PT",
+          "example_before": "PT, PT, R4, R2, -0x18, PT, !PT",
           "slot": 5,
           "subfields": {
             "invert": [
@@ -23353,8 +22887,8 @@
             79,
             80
           ],
-          "example_after": "PT, PT, R2, R6, R2, !PT, !P6",
-          "example_before": "PT, PT, R2, R6, R2, !PT, !PT",
+          "example_after": "PT, PT, R4, R2, -0x18, PT, !P6",
+          "example_before": "PT, PT, R4, R2, -0x18, PT, !PT",
           "slot": 6,
           "subfields": {
             "invert": [
@@ -23368,37 +22902,13 @@
           }
         }
       ],
-      "payload": "0000000007ffe6000000000206027217",
-      "source_family": "binary",
-      "source_label": "max.s64"
+      "payload": "0000000003ffe600ffffffe802047817",
+      "source_family": "binary-imm",
+      "source_label": "min.s64"
     },
     "IMNMX.U64": {
-      "encoding": "000fc00007ffe4000000000206027217",
+      "encoding": "004fcc0003ffe4000000001802047817",
       "inert_bits": [
-        40,
-        41,
-        42,
-        43,
-        44,
-        45,
-        46,
-        47,
-        48,
-        49,
-        50,
-        51,
-        52,
-        53,
-        54,
-        55,
-        56,
-        57,
-        58,
-        59,
-        60,
-        61,
-        62,
-        63,
         64,
         65,
         66,
@@ -23428,6 +22938,8 @@
       ],
       "invalid_bits": [
         1,
+        3,
+        5,
         6,
         7,
         8,
@@ -23448,11 +22960,9 @@
       "opcode_bits": [
         0,
         2,
-        3,
-        4,
-        5
+        4
       ],
-      "operand_text": "PT, PT, R2, R6, R2, !PT, !PT",
+      "operand_text": "PT, PT, R4, R2, 0x18, PT, !PT",
       "operands": [
         {
           "bits": [
@@ -23460,8 +22970,8 @@
             82,
             83
           ],
-          "example_after": "P6, PT, R2, R6, R2, !PT, !PT",
-          "example_before": "PT, PT, R2, R6, R2, !PT, !PT",
+          "example_after": "P6, PT, R4, R2, 0x18, PT, !PT",
+          "example_before": "PT, PT, R4, R2, 0x18, PT, !PT",
           "slot": 0,
           "subfields": {}
         },
@@ -23471,8 +22981,8 @@
             85,
             86
           ],
-          "example_after": "PT, P6, R2, R6, R2, !PT, !PT",
-          "example_before": "PT, PT, R2, R6, R2, !PT, !PT",
+          "example_after": "PT, P6, R4, R2, 0x18, PT, !PT",
+          "example_before": "PT, PT, R4, R2, 0x18, PT, !PT",
           "slot": 1,
           "subfields": {}
         },
@@ -23487,8 +22997,8 @@
             22,
             23
           ],
-          "example_after": "PT, PT, R3, R6, R2, !PT, !PT",
-          "example_before": "PT, PT, R2, R6, R2, !PT, !PT",
+          "example_after": "PT, PT, R5, R2, 0x18, PT, !PT",
+          "example_before": "PT, PT, R4, R2, 0x18, PT, !PT",
           "slot": 2,
           "subfields": {}
         },
@@ -23503,8 +23013,8 @@
             30,
             31
           ],
-          "example_after": "PT, PT, R2, R7, R2, !PT, !PT",
-          "example_before": "PT, PT, R2, R6, R2, !PT, !PT",
+          "example_after": "PT, PT, R4, R3, 0x18, PT, !PT",
+          "example_before": "PT, PT, R4, R2, 0x18, PT, !PT",
           "slot": 3,
           "subfields": {}
         },
@@ -23517,10 +23027,34 @@
             36,
             37,
             38,
-            39
+            39,
+            40,
+            41,
+            42,
+            43,
+            44,
+            45,
+            46,
+            47,
+            48,
+            49,
+            50,
+            51,
+            52,
+            53,
+            54,
+            55,
+            56,
+            57,
+            58,
+            59,
+            60,
+            61,
+            62,
+            63
           ],
-          "example_after": "PT, PT, R2, R6, R3, !PT, !PT",
-          "example_before": "PT, PT, R2, R6, R2, !PT, !PT",
+          "example_after": "PT, PT, R4, R2, 0x19, PT, !PT",
+          "example_before": "PT, PT, R4, R2, 0x18, PT, !PT",
           "slot": 4,
           "subfields": {}
         },
@@ -23531,8 +23065,8 @@
             89,
             90
           ],
-          "example_after": "PT, PT, R2, R6, R2, !P6, !PT",
-          "example_before": "PT, PT, R2, R6, R2, !PT, !PT",
+          "example_after": "PT, PT, R4, R2, 0x18, P6, !PT",
+          "example_before": "PT, PT, R4, R2, 0x18, PT, !PT",
           "slot": 5,
           "subfields": {
             "invert": [
@@ -23552,8 +23086,8 @@
             79,
             80
           ],
-          "example_after": "PT, PT, R2, R6, R2, !PT, !P6",
-          "example_before": "PT, PT, R2, R6, R2, !PT, !PT",
+          "example_after": "PT, PT, R4, R2, 0x18, PT, !P6",
+          "example_before": "PT, PT, R4, R2, 0x18, PT, !PT",
           "slot": 6,
           "subfields": {
             "invert": [
@@ -23567,9 +23101,9 @@
           }
         }
       ],
-      "payload": "0000000007ffe4000000000206027217",
-      "source_family": "binary",
-      "source_label": "max.u64"
+      "payload": "0000000003ffe4000000001802047817",
+      "source_family": "binary-imm",
+      "source_label": "min.u64"
     },
     "ISETP.EQ.AND": {
       "encoding": "000fc00003f02270000000020600720c",
@@ -27754,7 +27288,7 @@
       ],
       "payload": "000000000800080000007000ff0477ac",
       "source_family": "memory",
-      "source_label": "ld.local.b32"
+      "source_label": "ld.local.b64"
     },
     "LDCU.64": {
       "encoding": "000e220008000a0000006b00ff0477ac",
@@ -29205,7 +28739,7 @@
       ],
       "payload": "000000000c1e17000000020402047981",
       "source_family": "binary",
-      "source_label": "min.s16"
+      "source_label": "max.s16"
     },
     "LDG.E.STRONG.GPU": {
       "encoding": "001eac000c1ef9000000000402037981",
@@ -29936,7 +29470,7 @@
       ],
       "payload": "000000000c1e15000000020402047981",
       "source_family": "binary",
-      "source_label": "max.u16"
+      "source_label": "min.u16"
     },
     "LDL": {
       "encoding": "000fc000001008000000000000007983",
@@ -32404,7 +31938,7 @@
       ],
       "payload": "0000000000000f000000000000057802",
       "source_family": "unary",
-      "source_label": "sqrt.rn.f32"
+      "source_label": "rcp.rn.f64"
     },
     "MOV.64": {
       "encoding": "000fc000003ff0000000000000087402",
@@ -34070,7 +33604,7 @@
       "operands": [],
       "payload": "00000000000000000000000000007918",
       "source_family": "binary",
-      "source_label": "min.s16"
+      "source_label": "max.s16"
     },
     "OMMA.SF.16864.F32.E2M1.E2M1.E8": {
       "encoding": "000fc00000083e0c7020120a0404747f",
@@ -34725,7 +34259,7 @@
       ],
       "payload": "000000000070e170000000000080781c",
       "source_family": "binary",
-      "source_label": "div.s32"
+      "source_label": "rem.s32"
     },
     "POPC": {
       "encoding": "000e22000000000000000000000d7309",
@@ -46775,7 +46309,7 @@
       ],
       "payload": "000000000800000000000006000772bf",
       "source_family": "atomic",
-      "source_label": "atom.add.global.s32"
+      "source_label": "atom.add.global.u32"
     },
     "VIADD.S32.ISAT": {
       "encoding": "000fc000000104000000000206027236",
@@ -46956,32 +46490,8 @@
       "source_label": "add.sat.s32"
     },
     "VIMNMX.S16x2": {
-      "encoding": "000fc00007fe03000000000206027248",
+      "encoding": "004fca0003fe0300ffe8ffe802007848",
       "inert_bits": [
-        40,
-        41,
-        42,
-        43,
-        44,
-        45,
-        46,
-        47,
-        48,
-        49,
-        50,
-        51,
-        52,
-        53,
-        54,
-        55,
-        56,
-        57,
-        58,
-        59,
-        60,
-        61,
-        62,
-        63,
         64,
         65,
         66,
@@ -47020,7 +46530,6 @@
       "invalid_bits": [
         0,
         1,
-        2,
         4,
         5,
         7,
@@ -47042,10 +46551,11 @@
       ],
       "opcode": "VIMNMX",
       "opcode_bits": [
+        2,
         3,
         6
       ],
-      "operand_text": "R2, R6, R2, !PT",
+      "operand_text": "R0, R2, -0x170018, PT",
       "operands": [
         {
           "bits": [
@@ -47058,8 +46568,8 @@
             22,
             23
           ],
-          "example_after": "R3, R6, R2, !PT",
-          "example_before": "R2, R6, R2, !PT",
+          "example_after": "R1, R2, -0x170018, PT",
+          "example_before": "R0, R2, -0x170018, PT",
           "slot": 0,
           "subfields": {}
         },
@@ -47074,8 +46584,8 @@
             30,
             31
           ],
-          "example_after": "R2, R7, R2, !PT",
-          "example_before": "R2, R6, R2, !PT",
+          "example_after": "R0, R3, -0x170018, PT",
+          "example_before": "R0, R2, -0x170018, PT",
           "slot": 1,
           "subfields": {}
         },
@@ -47088,10 +46598,34 @@
             36,
             37,
             38,
-            39
+            39,
+            40,
+            41,
+            42,
+            43,
+            44,
+            45,
+            46,
+            47,
+            48,
+            49,
+            50,
+            51,
+            52,
+            53,
+            54,
+            55,
+            56,
+            57,
+            58,
+            59,
+            60,
+            61,
+            62,
+            63
           ],
-          "example_after": "R2, R6, R3, !PT",
-          "example_before": "R2, R6, R2, !PT",
+          "example_after": "R0, R2, -0x170017, PT",
+          "example_before": "R0, R2, -0x170018, PT",
           "slot": 2,
           "subfields": {}
         },
@@ -47102,8 +46636,8 @@
             89,
             90
           ],
-          "example_after": "R2, R6, R2, !P6",
-          "example_before": "R2, R6, R2, !PT",
+          "example_after": "R0, R2, -0x170018, P6",
+          "example_before": "R0, R2, -0x170018, PT",
           "slot": 3,
           "subfields": {
             "invert": [
@@ -47117,37 +46651,13 @@
           }
         }
       ],
-      "payload": "0000000007fe03000000000206027248",
-      "source_family": "binary",
-      "source_label": "max.s16"
+      "payload": "0000000003fe0300ffe8ffe802007848",
+      "source_family": "binary-imm",
+      "source_label": "min.s16"
     },
     "VIMNMX.S32": {
-      "encoding": "000fc00007fe01000000000206027248",
+      "encoding": "004fca0003fe0100ffffffe802077848",
       "inert_bits": [
-        40,
-        41,
-        42,
-        43,
-        44,
-        45,
-        46,
-        47,
-        48,
-        49,
-        50,
-        51,
-        52,
-        53,
-        54,
-        55,
-        56,
-        57,
-        58,
-        59,
-        60,
-        61,
-        62,
-        63,
         64,
         65,
         66,
@@ -47186,7 +46696,6 @@
       "invalid_bits": [
         0,
         1,
-        2,
         4,
         5,
         7,
@@ -47208,10 +46717,11 @@
       ],
       "opcode": "VIMNMX",
       "opcode_bits": [
+        2,
         3,
         6
       ],
-      "operand_text": "R2, R6, R2, !PT",
+      "operand_text": "R7, R2, -0x18, PT",
       "operands": [
         {
           "bits": [
@@ -47224,8 +46734,8 @@
             22,
             23
           ],
-          "example_after": "R3, R6, R2, !PT",
-          "example_before": "R2, R6, R2, !PT",
+          "example_after": "R6, R2, -0x18, PT",
+          "example_before": "R7, R2, -0x18, PT",
           "slot": 0,
           "subfields": {}
         },
@@ -47240,8 +46750,8 @@
             30,
             31
           ],
-          "example_after": "R2, R7, R2, !PT",
-          "example_before": "R2, R6, R2, !PT",
+          "example_after": "R7, R3, -0x18, PT",
+          "example_before": "R7, R2, -0x18, PT",
           "slot": 1,
           "subfields": {}
         },
@@ -47254,10 +46764,34 @@
             36,
             37,
             38,
-            39
+            39,
+            40,
+            41,
+            42,
+            43,
+            44,
+            45,
+            46,
+            47,
+            48,
+            49,
+            50,
+            51,
+            52,
+            53,
+            54,
+            55,
+            56,
+            57,
+            58,
+            59,
+            60,
+            61,
+            62,
+            63
           ],
-          "example_after": "R2, R6, R3, !PT",
-          "example_before": "R2, R6, R2, !PT",
+          "example_after": "R7, R2, -0x17, PT",
+          "example_before": "R7, R2, -0x18, PT",
           "slot": 2,
           "subfields": {}
         },
@@ -47268,8 +46802,8 @@
             89,
             90
           ],
-          "example_after": "R2, R6, R2, !P6",
-          "example_before": "R2, R6, R2, !PT",
+          "example_after": "R7, R2, -0x18, P6",
+          "example_before": "R7, R2, -0x18, PT",
           "slot": 3,
           "subfields": {
             "invert": [
@@ -47283,37 +46817,13 @@
           }
         }
       ],
-      "payload": "0000000007fe01000000000206027248",
-      "source_family": "binary",
-      "source_label": "max.s32"
+      "payload": "0000000003fe0100ffffffe802077848",
+      "source_family": "binary-imm",
+      "source_label": "min.s32"
     },
     "VIMNMX.U16x2": {
-      "encoding": "000fc00007fe02000000000206027248",
+      "encoding": "004fca0003fe02000018001802007848",
       "inert_bits": [
-        40,
-        41,
-        42,
-        43,
-        44,
-        45,
-        46,
-        47,
-        48,
-        49,
-        50,
-        51,
-        52,
-        53,
-        54,
-        55,
-        56,
-        57,
-        58,
-        59,
-        60,
-        61,
-        62,
-        63,
         64,
         65,
         66,
@@ -47352,7 +46862,6 @@
       "invalid_bits": [
         0,
         1,
-        2,
         4,
         5,
         7,
@@ -47374,10 +46883,11 @@
       ],
       "opcode": "VIMNMX",
       "opcode_bits": [
+        2,
         3,
         6
       ],
-      "operand_text": "R2, R6, R2, !PT",
+      "operand_text": "R0, R2, 0x180018, PT",
       "operands": [
         {
           "bits": [
@@ -47390,8 +46900,8 @@
             22,
             23
           ],
-          "example_after": "R3, R6, R2, !PT",
-          "example_before": "R2, R6, R2, !PT",
+          "example_after": "R1, R2, 0x180018, PT",
+          "example_before": "R0, R2, 0x180018, PT",
           "slot": 0,
           "subfields": {}
         },
@@ -47406,8 +46916,8 @@
             30,
             31
           ],
-          "example_after": "R2, R7, R2, !PT",
-          "example_before": "R2, R6, R2, !PT",
+          "example_after": "R0, R3, 0x180018, PT",
+          "example_before": "R0, R2, 0x180018, PT",
           "slot": 1,
           "subfields": {}
         },
@@ -47420,10 +46930,34 @@
             36,
             37,
             38,
-            39
+            39,
+            40,
+            41,
+            42,
+            43,
+            44,
+            45,
+            46,
+            47,
+            48,
+            49,
+            50,
+            51,
+            52,
+            53,
+            54,
+            55,
+            56,
+            57,
+            58,
+            59,
+            60,
+            61,
+            62,
+            63
           ],
-          "example_after": "R2, R6, R3, !PT",
-          "example_before": "R2, R6, R2, !PT",
+          "example_after": "R0, R2, 0x180019, PT",
+          "example_before": "R0, R2, 0x180018, PT",
           "slot": 2,
           "subfields": {}
         },
@@ -47434,8 +46968,8 @@
             89,
             90
           ],
-          "example_after": "R2, R6, R2, !P6",
-          "example_before": "R2, R6, R2, !PT",
+          "example_after": "R0, R2, 0x180018, P6",
+          "example_before": "R0, R2, 0x180018, PT",
           "slot": 3,
           "subfields": {
             "invert": [
@@ -47449,37 +46983,13 @@
           }
         }
       ],
-      "payload": "0000000007fe02000000000206027248",
-      "source_family": "binary",
-      "source_label": "max.u16"
+      "payload": "0000000003fe02000018001802007848",
+      "source_family": "binary-imm",
+      "source_label": "min.u16"
     },
     "VIMNMX.U32": {
-      "encoding": "000fc00007fe00000000000206027248",
+      "encoding": "004fca0003fe00000000001802077848",
       "inert_bits": [
-        40,
-        41,
-        42,
-        43,
-        44,
-        45,
-        46,
-        47,
-        48,
-        49,
-        50,
-        51,
-        52,
-        53,
-        54,
-        55,
-        56,
-        57,
-        58,
-        59,
-        60,
-        61,
-        62,
-        63,
         64,
         65,
         66,
@@ -47518,7 +47028,6 @@
       "invalid_bits": [
         0,
         1,
-        2,
         4,
         5,
         7,
@@ -47540,10 +47049,11 @@
       ],
       "opcode": "VIMNMX",
       "opcode_bits": [
+        2,
         3,
         6
       ],
-      "operand_text": "R2, R6, R2, !PT",
+      "operand_text": "R7, R2, 0x18, PT",
       "operands": [
         {
           "bits": [
@@ -47556,8 +47066,8 @@
             22,
             23
           ],
-          "example_after": "R3, R6, R2, !PT",
-          "example_before": "R2, R6, R2, !PT",
+          "example_after": "R6, R2, 0x18, PT",
+          "example_before": "R7, R2, 0x18, PT",
           "slot": 0,
           "subfields": {}
         },
@@ -47572,8 +47082,8 @@
             30,
             31
           ],
-          "example_after": "R2, R7, R2, !PT",
-          "example_before": "R2, R6, R2, !PT",
+          "example_after": "R7, R3, 0x18, PT",
+          "example_before": "R7, R2, 0x18, PT",
           "slot": 1,
           "subfields": {}
         },
@@ -47586,10 +47096,34 @@
             36,
             37,
             38,
-            39
+            39,
+            40,
+            41,
+            42,
+            43,
+            44,
+            45,
+            46,
+            47,
+            48,
+            49,
+            50,
+            51,
+            52,
+            53,
+            54,
+            55,
+            56,
+            57,
+            58,
+            59,
+            60,
+            61,
+            62,
+            63
           ],
-          "example_after": "R2, R6, R3, !PT",
-          "example_before": "R2, R6, R2, !PT",
+          "example_after": "R7, R2, 0x19, PT",
+          "example_before": "R7, R2, 0x18, PT",
           "slot": 2,
           "subfields": {}
         },
@@ -47600,8 +47134,8 @@
             89,
             90
           ],
-          "example_after": "R2, R6, R2, !P6",
-          "example_before": "R2, R6, R2, !PT",
+          "example_after": "R7, R2, 0x18, P6",
+          "example_before": "R7, R2, 0x18, PT",
           "slot": 3,
           "subfields": {
             "invert": [
@@ -47615,9 +47149,9 @@
           }
         }
       ],
-      "payload": "0000000007fe00000000000206027248",
-      "source_family": "binary",
-      "source_label": "max.u32"
+      "payload": "0000000003fe00000000001802077848",
+      "source_family": "binary-imm",
+      "source_label": "min.u32"
     },
     "VOTE.ANY": {
       "encoding": "000fc000000e01000000000000007806",
@@ -47933,7 +47467,7 @@
       ],
       "payload": "00000000038e01000000000000067886",
       "source_family": "atomic",
-      "source_label": "atom.add.global.s32"
+      "source_label": "atom.add.global.u32"
     },
     "WARPSYNC.ALL": {
       "encoding": "000fc000038000000000000000007948",
@@ -48190,12 +47724,12 @@
       "source_label": "shfl.sync.b32"
     }
   },
-  "generated_utc": "2026-08-23T00:22:38+00:00",
+  "generated_utc": "2026-08-23T02:04:17+00:00",
   "schema_version": 2,
   "variants": {
     "DADD": [
       {
-        "encoding": "000fc0000000090400000000ff087229",
+        "encoding": "000fc0000000050400000000ff067229",
         "inert_bits": [
           32,
           33,
@@ -48282,7 +47816,7 @@
           4,
           5
         ],
-        "operand_text": "R8, -RZ, -R4",
+        "operand_text": "R6, -RZ, |R4|",
         "operands": [
           {
             "bits": [
@@ -48295,8 +47829,8 @@
               22,
               23
             ],
-            "example_after": "R9, -RZ, -R4",
-            "example_before": "R8, -RZ, -R4",
+            "example_after": "R7, -RZ, |R4|",
+            "example_before": "R6, -RZ, |R4|",
             "slot": 0,
             "subfields": {}
           },
@@ -48313,8 +47847,8 @@
               72,
               73
             ],
-            "example_after": "R8, -R254, -R4",
-            "example_before": "R8, -RZ, -R4",
+            "example_after": "R6, -R254, |R4|",
+            "example_before": "R6, -RZ, |R4|",
             "slot": 1,
             "subfields": {
               "negate": [
@@ -48346,10 +47880,13 @@
               74,
               75
             ],
-            "example_after": "R8, -RZ, -R5",
-            "example_before": "R8, -RZ, -R4",
+            "example_after": "R6, -RZ, |R5|",
+            "example_before": "R6, -RZ, |R4|",
             "slot": 2,
             "subfields": {
+              "absolute": [
+                74
+              ],
               "negate": [
                 75
               ],
@@ -48361,13 +47898,12 @@
                 68,
                 69,
                 70,
-                71,
-                74
+                71
               ]
             }
           }
         ],
-        "payload": "000000000000090400000000ff087229",
+        "payload": "000000000000050400000000ff067229",
         "source_family": "unary",
         "source_label": "rcp.rn.f64"
       }
@@ -48553,44 +48089,7 @@
             "example_after": "R6, -R2, R4, 1.0000009536743164062",
             "example_before": "R6, -R2, R4, 1",
             "slot": 3,
-            "subfields": {
-              "negate": [
-                63
-              ],
-              "value": [
-                32,
-                33,
-                34,
-                35,
-                36,
-                37,
-                38,
-                39,
-                40,
-                41,
-                42,
-                43,
-                44,
-                45,
-                46,
-                47,
-                48,
-                49,
-                50,
-                51,
-                52,
-                53,
-                54,
-                55,
-                56,
-                57,
-                58,
-                59,
-                60,
-                61,
-                62
-              ]
-            }
+            "subfields": {}
           }
         ],
         "payload": "00000000000001043ff000000206742b",
@@ -48989,198 +48488,6 @@
     ],
     "DSETP.GTU.AND": [
       {
-        "encoding": "000fc00003f0c0007ff000000600742a",
-        "inert_bits": [
-          16,
-          17,
-          18,
-          19,
-          20,
-          21,
-          22,
-          23,
-          64,
-          65,
-          66,
-          67,
-          68,
-          69,
-          70,
-          71,
-          80,
-          92,
-          93,
-          94,
-          95,
-          96,
-          97,
-          98,
-          99,
-          100,
-          101,
-          102,
-          103,
-          104,
-          126,
-          127
-        ],
-        "invalid_bits": [
-          1,
-          2,
-          3,
-          4,
-          5,
-          6,
-          7,
-          8,
-          9,
-          10,
-          11,
-          91
-        ],
-        "mnemonic": "DSETP.GTU.AND",
-        "modifier_bits": [
-          74,
-          75,
-          76,
-          77,
-          78,
-          79
-        ],
-        "modifiers": [
-          "GTU",
-          "AND"
-        ],
-        "opcode": "DSETP",
-        "opcode_bits": [
-          0
-        ],
-        "operand_text": "P0, PT, R6, +INF , PT",
-        "operands": [
-          {
-            "bits": [
-              81,
-              82,
-              83
-            ],
-            "example_after": "P1, PT, R6, +INF , PT",
-            "example_before": "P0, PT, R6, +INF , PT",
-            "slot": 0,
-            "subfields": {}
-          },
-          {
-            "bits": [
-              84,
-              85,
-              86
-            ],
-            "example_after": "P0, P6, R6, +INF , PT",
-            "example_before": "P0, PT, R6, +INF , PT",
-            "slot": 1,
-            "subfields": {}
-          },
-          {
-            "bits": [
-              24,
-              25,
-              26,
-              27,
-              28,
-              29,
-              30,
-              31,
-              72,
-              73
-            ],
-            "example_after": "P0, PT, R7, +INF , PT",
-            "example_before": "P0, PT, R6, +INF , PT",
-            "slot": 2,
-            "subfields": {
-              "absolute": [
-                73
-              ],
-              "negate": [
-                72
-              ],
-              "value": [
-                24,
-                25,
-                26,
-                27,
-                28,
-                29,
-                30,
-                31
-              ]
-            }
-          },
-          {
-            "bits": [
-              32,
-              33,
-              34,
-              35,
-              36,
-              37,
-              38,
-              39,
-              40,
-              41,
-              42,
-              43,
-              44,
-              45,
-              46,
-              47,
-              48,
-              49,
-              50,
-              51,
-              52,
-              53,
-              54,
-              55,
-              56,
-              57,
-              58,
-              59,
-              60,
-              61,
-              62,
-              63
-            ],
-            "example_after": "P0, PT, R6, +SNAN , PT",
-            "example_before": "P0, PT, R6, +INF , PT",
-            "slot": 3,
-            "subfields": {}
-          },
-          {
-            "bits": [
-              87,
-              88,
-              89,
-              90
-            ],
-            "example_after": "P0, PT, R6, +INF , P6",
-            "example_before": "P0, PT, R6, +INF , PT",
-            "slot": 4,
-            "subfields": {
-              "invert": [
-                90
-              ],
-              "value": [
-                87,
-                88,
-                89
-              ]
-            }
-          }
-        ],
-        "payload": "0000000003f0c0007ff000000600742a",
-        "source_family": "unary",
-        "source_label": "rcp.rn.f64"
-      },
-      {
         "encoding": "0040640003f0c000000000060400722a",
         "inert_bits": [
           16,
@@ -49390,6 +48697,428 @@
         "source_label": "setp.le.f64"
       }
     ],
+    "DSETP.MAX.AND": [
+      {
+        "encoding": "000064000390f000000000060400722a",
+        "inert_bits": [
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          40,
+          41,
+          42,
+          43,
+          44,
+          45,
+          46,
+          47,
+          48,
+          49,
+          50,
+          51,
+          52,
+          53,
+          54,
+          55,
+          56,
+          57,
+          58,
+          59,
+          60,
+          61,
+          64,
+          65,
+          66,
+          67,
+          68,
+          69,
+          70,
+          71,
+          80,
+          92,
+          93,
+          94,
+          95,
+          96,
+          97,
+          98,
+          99,
+          100,
+          101,
+          102,
+          103,
+          104,
+          126,
+          127
+        ],
+        "invalid_bits": [
+          2,
+          3,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          91
+        ],
+        "mnemonic": "DSETP.MAX.AND",
+        "modifier_bits": [
+          74,
+          75,
+          76,
+          77,
+          78,
+          79
+        ],
+        "modifiers": [
+          "MAX",
+          "AND"
+        ],
+        "opcode": "DSETP",
+        "opcode_bits": [
+          0,
+          1,
+          4,
+          5
+        ],
+        "operand_text": "P0, P1, R4, R6, PT",
+        "operands": [
+          {
+            "bits": [
+              81,
+              82,
+              83
+            ],
+            "example_after": "P1, P1, R4, R6, PT",
+            "example_before": "P0, P1, R4, R6, PT",
+            "slot": 0,
+            "subfields": {}
+          },
+          {
+            "bits": [
+              84,
+              85,
+              86
+            ],
+            "example_after": "P0, P0, R4, R6, PT",
+            "example_before": "P0, P1, R4, R6, PT",
+            "slot": 1,
+            "subfields": {}
+          },
+          {
+            "bits": [
+              24,
+              25,
+              26,
+              27,
+              28,
+              29,
+              30,
+              31,
+              72,
+              73
+            ],
+            "example_after": "P0, P1, R5, R6, PT",
+            "example_before": "P0, P1, R4, R6, PT",
+            "slot": 2,
+            "subfields": {
+              "absolute": [
+                73
+              ],
+              "negate": [
+                72
+              ],
+              "value": [
+                24,
+                25,
+                26,
+                27,
+                28,
+                29,
+                30,
+                31
+              ]
+            }
+          },
+          {
+            "bits": [
+              32,
+              33,
+              34,
+              35,
+              36,
+              37,
+              38,
+              39,
+              62,
+              63
+            ],
+            "example_after": "P0, P1, R4, R7, PT",
+            "example_before": "P0, P1, R4, R6, PT",
+            "slot": 3,
+            "subfields": {
+              "absolute": [
+                62
+              ],
+              "negate": [
+                63
+              ],
+              "value": [
+                32,
+                33,
+                34,
+                35,
+                36,
+                37,
+                38,
+                39
+              ]
+            }
+          },
+          {
+            "bits": [
+              87,
+              88,
+              89,
+              90
+            ],
+            "example_after": "P0, P1, R4, R6, P6",
+            "example_before": "P0, P1, R4, R6, PT",
+            "slot": 4,
+            "subfields": {
+              "invert": [
+                90
+              ],
+              "value": [
+                87,
+                88,
+                89
+              ]
+            }
+          }
+        ],
+        "payload": "000000000390f000000000060400722a",
+        "source_family": "binary",
+        "source_label": "max.f64"
+      }
+    ],
+    "DSETP.MIN.AND": [
+      {
+        "encoding": "0000640003900000000000060400722a",
+        "inert_bits": [
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          40,
+          41,
+          42,
+          43,
+          44,
+          45,
+          46,
+          47,
+          48,
+          49,
+          50,
+          51,
+          52,
+          53,
+          54,
+          55,
+          56,
+          57,
+          58,
+          59,
+          60,
+          61,
+          64,
+          65,
+          66,
+          67,
+          68,
+          69,
+          70,
+          71,
+          80,
+          92,
+          93,
+          94,
+          95,
+          96,
+          97,
+          98,
+          99,
+          100,
+          101,
+          102,
+          103,
+          104,
+          126,
+          127
+        ],
+        "invalid_bits": [
+          2,
+          3,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          91
+        ],
+        "mnemonic": "DSETP.MIN.AND",
+        "modifier_bits": [
+          74,
+          75,
+          76,
+          77,
+          78,
+          79
+        ],
+        "modifiers": [
+          "MIN",
+          "AND"
+        ],
+        "opcode": "DSETP",
+        "opcode_bits": [
+          0,
+          1,
+          4,
+          5
+        ],
+        "operand_text": "P0, P1, R4, R6, PT",
+        "operands": [
+          {
+            "bits": [
+              81,
+              82,
+              83
+            ],
+            "example_after": "P1, P1, R4, R6, PT",
+            "example_before": "P0, P1, R4, R6, PT",
+            "slot": 0,
+            "subfields": {}
+          },
+          {
+            "bits": [
+              84,
+              85,
+              86
+            ],
+            "example_after": "P0, P0, R4, R6, PT",
+            "example_before": "P0, P1, R4, R6, PT",
+            "slot": 1,
+            "subfields": {}
+          },
+          {
+            "bits": [
+              24,
+              25,
+              26,
+              27,
+              28,
+              29,
+              30,
+              31,
+              72,
+              73
+            ],
+            "example_after": "P0, P1, R5, R6, PT",
+            "example_before": "P0, P1, R4, R6, PT",
+            "slot": 2,
+            "subfields": {
+              "absolute": [
+                73
+              ],
+              "negate": [
+                72
+              ],
+              "value": [
+                24,
+                25,
+                26,
+                27,
+                28,
+                29,
+                30,
+                31
+              ]
+            }
+          },
+          {
+            "bits": [
+              32,
+              33,
+              34,
+              35,
+              36,
+              37,
+              38,
+              39,
+              62,
+              63
+            ],
+            "example_after": "P0, P1, R4, R7, PT",
+            "example_before": "P0, P1, R4, R6, PT",
+            "slot": 3,
+            "subfields": {
+              "absolute": [
+                62
+              ],
+              "negate": [
+                63
+              ],
+              "value": [
+                32,
+                33,
+                34,
+                35,
+                36,
+                37,
+                38,
+                39
+              ]
+            }
+          },
+          {
+            "bits": [
+              87,
+              88,
+              89,
+              90
+            ],
+            "example_after": "P0, P1, R4, R6, P6",
+            "example_before": "P0, P1, R4, R6, PT",
+            "slot": 4,
+            "subfields": {
+              "invert": [
+                90
+              ],
+              "value": [
+                87,
+                88,
+                89
+              ]
+            }
+          }
+        ],
+        "payload": "0000000003900000000000060400722a",
+        "source_family": "binary",
+        "source_label": "min.f64"
+      }
+    ],
     "FADD": [
       {
         "encoding": "000fc0000000010040000000ff047221",
@@ -49568,189 +49297,12 @@
         ],
         "payload": "000000000000010040000000ff047221",
         "source_family": "unary",
-        "source_label": "rsqrt.approx.f32"
-      },
-      {
-        "encoding": "000fc0000000010080000002ff007221",
-        "inert_bits": [
-          40,
-          41,
-          42,
-          43,
-          44,
-          45,
-          46,
-          47,
-          48,
-          49,
-          50,
-          51,
-          52,
-          53,
-          54,
-          55,
-          56,
-          57,
-          58,
-          59,
-          60,
-          61,
-          64,
-          65,
-          66,
-          67,
-          68,
-          69,
-          70,
-          71,
-          74,
-          75,
-          76,
-          82,
-          83,
-          84,
-          85,
-          86,
-          87,
-          88,
-          89,
-          90,
-          92,
-          93,
-          94,
-          95,
-          96,
-          97,
-          98,
-          99,
-          100,
-          101,
-          102,
-          103,
-          104,
-          126,
-          127
-        ],
-        "invalid_bits": [
-          5,
-          6,
-          7,
-          9,
-          10,
-          11,
-          91
-        ],
-        "mnemonic": "FADD",
-        "modifier_bits": [
-          77,
-          78,
-          79,
-          80
-        ],
-        "modifiers": [],
-        "opcode": "FADD",
-        "opcode_bits": [
-          0,
-          1,
-          2,
-          3,
-          4,
-          8,
-          81
-        ],
-        "operand_text": "R0, -RZ, -R2",
-        "operands": [
-          {
-            "bits": [
-              16,
-              17,
-              18,
-              19,
-              20,
-              21,
-              22,
-              23
-            ],
-            "example_after": "R1, -RZ, -R2",
-            "example_before": "R0, -RZ, -R2",
-            "slot": 0,
-            "subfields": {}
-          },
-          {
-            "bits": [
-              24,
-              25,
-              26,
-              27,
-              28,
-              29,
-              30,
-              31,
-              72,
-              73
-            ],
-            "example_after": "R0, -R254, -R2",
-            "example_before": "R0, -RZ, -R2",
-            "slot": 1,
-            "subfields": {
-              "negate": [
-                72
-              ],
-              "value": [
-                24,
-                25,
-                26,
-                27,
-                28,
-                29,
-                30,
-                31,
-                73
-              ]
-            }
-          },
-          {
-            "bits": [
-              32,
-              33,
-              34,
-              35,
-              36,
-              37,
-              38,
-              39,
-              62,
-              63
-            ],
-            "example_after": "R0, -RZ, -R3",
-            "example_before": "R0, -RZ, -R2",
-            "slot": 2,
-            "subfields": {
-              "negate": [
-                63
-              ],
-              "value": [
-                32,
-                33,
-                34,
-                35,
-                36,
-                37,
-                38,
-                39,
-                62
-              ]
-            }
-          }
-        ],
-        "payload": "000000000000010080000002ff007221",
-        "source_family": "unary",
-        "source_label": "neg.f32"
+        "source_label": "sqrt.approx.f32"
       }
     ],
     "FADD.FTZ": [
       {
-        "encoding": "000fc0000001010080000008ff097221",
+        "encoding": "000fc0000001010040000004ff057221",
         "inert_bits": [
           40,
           41,
@@ -49839,7 +49391,7 @@
           8,
           81
         ],
-        "operand_text": "R9, -RZ, -R8",
+        "operand_text": "R5, -RZ, |R4|",
         "operands": [
           {
             "bits": [
@@ -49852,8 +49404,8 @@
               22,
               23
             ],
-            "example_after": "R8, -RZ, -R8",
-            "example_before": "R9, -RZ, -R8",
+            "example_after": "R4, -RZ, |R4|",
+            "example_before": "R5, -RZ, |R4|",
             "slot": 0,
             "subfields": {}
           },
@@ -49870,8 +49422,8 @@
               72,
               73
             ],
-            "example_after": "R9, -R254, -R8",
-            "example_before": "R9, -RZ, -R8",
+            "example_after": "R5, -R254, |R4|",
+            "example_before": "R5, -RZ, |R4|",
             "slot": 1,
             "subfields": {
               "negate": [
@@ -49903,10 +49455,13 @@
               62,
               63
             ],
-            "example_after": "R9, -RZ, -R9",
-            "example_before": "R9, -RZ, -R8",
+            "example_after": "R5, -RZ, |R5|",
+            "example_before": "R5, -RZ, |R4|",
             "slot": 2,
             "subfields": {
+              "absolute": [
+                62
+              ],
               "negate": [
                 63
               ],
@@ -49918,13 +49473,12 @@
                 36,
                 37,
                 38,
-                39,
-                62
+                39
               ]
             }
           }
         ],
-        "payload": "000000000001010080000008ff097221",
+        "payload": "000000000001010040000004ff057221",
         "source_family": "unary",
         "source_label": "sqrt.rn.f32"
       }
@@ -50284,7 +49838,7 @@
         ],
         "payload": "00000000080e00000000000600007d00",
         "source_family": "atomic",
-        "source_label": "atom.add.global.s32"
+        "source_label": "atom.add.global.u32"
       }
     ],
     "FMNMX": [
@@ -50857,224 +50411,6 @@
     ],
     "FSEL": [
       {
-        "encoding": "000fc000000000003f80000003037808",
-        "inert_bits": [
-          64,
-          65,
-          66,
-          67,
-          68,
-          69,
-          70,
-          71,
-          74,
-          75,
-          76,
-          77,
-          78,
-          79,
-          81,
-          82,
-          83,
-          84,
-          85,
-          86,
-          92,
-          93,
-          94,
-          95,
-          96,
-          97,
-          98,
-          99,
-          100,
-          101,
-          102,
-          103,
-          104,
-          126,
-          127
-        ],
-        "invalid_bits": [
-          3,
-          4,
-          7,
-          9,
-          10,
-          11,
-          91
-        ],
-        "mnemonic": "FSEL",
-        "modifier_bits": [
-          80
-        ],
-        "modifiers": [],
-        "opcode": "FSEL",
-        "opcode_bits": [
-          0,
-          1,
-          2,
-          5,
-          6,
-          8
-        ],
-        "operand_text": "R3, R3, 1, P0",
-        "operands": [
-          {
-            "bits": [
-              16,
-              17,
-              18,
-              19,
-              20,
-              21,
-              22,
-              23
-            ],
-            "example_after": "R2, R3, 1, P0",
-            "example_before": "R3, R3, 1, P0",
-            "slot": 0,
-            "subfields": {}
-          },
-          {
-            "bits": [
-              24,
-              25,
-              26,
-              27,
-              28,
-              29,
-              30,
-              31,
-              72,
-              73
-            ],
-            "example_after": "R3, R2, 1, P0",
-            "example_before": "R3, R3, 1, P0",
-            "slot": 1,
-            "subfields": {
-              "absolute": [
-                73
-              ],
-              "negate": [
-                72
-              ],
-              "value": [
-                24,
-                25,
-                26,
-                27,
-                28,
-                29,
-                30,
-                31
-              ]
-            }
-          },
-          {
-            "bits": [
-              32,
-              33,
-              34,
-              35,
-              36,
-              37,
-              38,
-              39,
-              40,
-              41,
-              42,
-              43,
-              44,
-              45,
-              46,
-              47,
-              48,
-              49,
-              50,
-              51,
-              52,
-              53,
-              54,
-              55,
-              56,
-              57,
-              58,
-              59,
-              60,
-              61,
-              62,
-              63
-            ],
-            "example_after": "R3, R3, 1.0000001192092895508, P0",
-            "example_before": "R3, R3, 1, P0",
-            "slot": 2,
-            "subfields": {
-              "negate": [
-                63
-              ],
-              "value": [
-                32,
-                33,
-                34,
-                35,
-                36,
-                37,
-                38,
-                39,
-                40,
-                41,
-                42,
-                43,
-                44,
-                45,
-                46,
-                47,
-                48,
-                49,
-                50,
-                51,
-                52,
-                53,
-                54,
-                55,
-                56,
-                57,
-                58,
-                59,
-                60,
-                61,
-                62
-              ]
-            }
-          },
-          {
-            "bits": [
-              87,
-              88,
-              89,
-              90
-            ],
-            "example_after": "R3, R3, 1, P1",
-            "example_before": "R3, R3, 1, P0",
-            "slot": 3,
-            "subfields": {
-              "invert": [
-                90
-              ],
-              "value": [
-                87,
-                88,
-                89
-              ]
-            }
-          }
-        ],
-        "payload": "00000000000000003f80000003037808",
-        "source_family": "unary",
-        "source_label": "rcp.approx.f32"
-      },
-      {
         "encoding": "000fc000000000000000000206037208",
         "inert_bits": [
           40,
@@ -51270,241 +50606,12 @@
         ],
         "payload": "00000000000000000000000206037208",
         "source_family": "binary",
-        "source_label": "max.f64"
+        "source_label": "min.f64"
       }
     ],
     "FSETP.GEU.AND": [
       {
-        "encoding": "000fc00003f0e000004004020600780b",
-        "inert_bits": [
-          16,
-          17,
-          18,
-          19,
-          20,
-          21,
-          22,
-          23,
-          64,
-          65,
-          66,
-          67,
-          68,
-          69,
-          70,
-          71,
-          92,
-          93,
-          94,
-          95,
-          96,
-          97,
-          98,
-          99,
-          100,
-          101,
-          102,
-          103,
-          104,
-          126,
-          127
-        ],
-        "invalid_bits": [
-          2,
-          6,
-          7,
-          8,
-          9,
-          10,
-          11,
-          91
-        ],
-        "mnemonic": "FSETP.GEU.AND",
-        "modifier_bits": [
-          74,
-          75,
-          76,
-          77,
-          78,
-          79,
-          80
-        ],
-        "modifiers": [
-          "GEU",
-          "AND"
-        ],
-        "opcode": "FSETP",
-        "opcode_bits": [
-          0,
-          1,
-          3,
-          4,
-          5
-        ],
-        "operand_text": "P0, PT, R6, 5.8789094863358348022e-39, PT",
-        "operands": [
-          {
-            "bits": [
-              81,
-              82,
-              83
-            ],
-            "example_after": "P1, PT, R6, 5.8789094863358348022e-39, PT",
-            "example_before": "P0, PT, R6, 5.8789094863358348022e-39, PT",
-            "slot": 0,
-            "subfields": {}
-          },
-          {
-            "bits": [
-              84,
-              85,
-              86
-            ],
-            "example_after": "P0, P6, R6, 5.8789094863358348022e-39, PT",
-            "example_before": "P0, PT, R6, 5.8789094863358348022e-39, PT",
-            "slot": 1,
-            "subfields": {}
-          },
-          {
-            "bits": [
-              24,
-              25,
-              26,
-              27,
-              28,
-              29,
-              30,
-              31,
-              72,
-              73
-            ],
-            "example_after": "P0, PT, R7, 5.8789094863358348022e-39, PT",
-            "example_before": "P0, PT, R6, 5.8789094863358348022e-39, PT",
-            "slot": 2,
-            "subfields": {
-              "absolute": [
-                73
-              ],
-              "negate": [
-                72
-              ],
-              "value": [
-                24,
-                25,
-                26,
-                27,
-                28,
-                29,
-                30,
-                31
-              ]
-            }
-          },
-          {
-            "bits": [
-              32,
-              33,
-              34,
-              35,
-              36,
-              37,
-              38,
-              39,
-              40,
-              41,
-              42,
-              43,
-              44,
-              45,
-              46,
-              47,
-              48,
-              49,
-              50,
-              51,
-              52,
-              53,
-              54,
-              55,
-              56,
-              57,
-              58,
-              59,
-              60,
-              61,
-              62,
-              63
-            ],
-            "example_after": "P0, PT, R6, 5.878910887634299127e-39, PT",
-            "example_before": "P0, PT, R6, 5.8789094863358348022e-39, PT",
-            "slot": 3,
-            "subfields": {
-              "negate": [
-                63
-              ],
-              "value": [
-                32,
-                33,
-                34,
-                35,
-                36,
-                37,
-                38,
-                39,
-                40,
-                41,
-                42,
-                43,
-                44,
-                45,
-                46,
-                47,
-                48,
-                49,
-                50,
-                51,
-                52,
-                53,
-                54,
-                55,
-                56,
-                57,
-                58,
-                59,
-                60,
-                61,
-                62
-              ]
-            }
-          },
-          {
-            "bits": [
-              87,
-              88,
-              89,
-              90
-            ],
-            "example_after": "P0, PT, R6, 5.8789094863358348022e-39, P6",
-            "example_before": "P0, PT, R6, 5.8789094863358348022e-39, PT",
-            "slot": 4,
-            "subfields": {
-              "invert": [
-                90
-              ],
-              "value": [
-                87,
-                88,
-                89
-              ]
-            }
-          }
-        ],
-        "payload": "0000000003f0e000004004020600780b",
-        "source_family": "unary",
-        "source_label": "rcp.rn.f64"
-      },
-      {
-        "encoding": "004fc40003f0e000000000050000720b",
+        "encoding": "000fc00003f0e000000000020000720b",
         "inert_bits": [
           16,
           17,
@@ -51592,7 +50699,7 @@
           4,
           5
         ],
-        "operand_text": "P0, PT, R0, R5, PT",
+        "operand_text": "P0, PT, R0, R2, PT",
         "operands": [
           {
             "bits": [
@@ -51600,8 +50707,8 @@
               82,
               83
             ],
-            "example_after": "P1, PT, R0, R5, PT",
-            "example_before": "P0, PT, R0, R5, PT",
+            "example_after": "P1, PT, R0, R2, PT",
+            "example_before": "P0, PT, R0, R2, PT",
             "slot": 0,
             "subfields": {}
           },
@@ -51611,8 +50718,8 @@
               85,
               86
             ],
-            "example_after": "P0, P6, R0, R5, PT",
-            "example_before": "P0, PT, R0, R5, PT",
+            "example_after": "P0, P6, R0, R2, PT",
+            "example_before": "P0, PT, R0, R2, PT",
             "slot": 1,
             "subfields": {}
           },
@@ -51629,8 +50736,8 @@
               72,
               73
             ],
-            "example_after": "P0, PT, R1, R5, PT",
-            "example_before": "P0, PT, R0, R5, PT",
+            "example_after": "P0, PT, R1, R2, PT",
+            "example_before": "P0, PT, R0, R2, PT",
             "slot": 2,
             "subfields": {
               "absolute": [
@@ -51664,8 +50771,8 @@
               62,
               63
             ],
-            "example_after": "P0, PT, R0, R4, PT",
-            "example_before": "P0, PT, R0, R5, PT",
+            "example_after": "P0, PT, R0, R3, PT",
+            "example_before": "P0, PT, R0, R2, PT",
             "slot": 3,
             "subfields": {
               "absolute": [
@@ -51693,8 +50800,8 @@
               89,
               90
             ],
-            "example_after": "P0, PT, R0, R5, P6",
-            "example_before": "P0, PT, R0, R5, PT",
+            "example_after": "P0, PT, R0, R2, P6",
+            "example_before": "P0, PT, R0, R2, PT",
             "slot": 4,
             "subfields": {
               "invert": [
@@ -51708,241 +50815,12 @@
             }
           }
         ],
-        "payload": "0000000003f0e000000000050000720b",
-        "source_family": "compare",
-        "source_label": "setp.lt.f32"
+        "payload": "0000000003f0e000000000020000720b",
+        "source_family": "special",
+        "source_label": "setp.abs.b32"
       }
     ],
     "FSETP.GT.AND": [
-      {
-        "encoding": "000fc00003f040007e8000000000780b",
-        "inert_bits": [
-          16,
-          17,
-          18,
-          19,
-          20,
-          21,
-          22,
-          23,
-          64,
-          65,
-          66,
-          67,
-          68,
-          69,
-          70,
-          71,
-          92,
-          93,
-          94,
-          95,
-          96,
-          97,
-          98,
-          99,
-          100,
-          101,
-          102,
-          103,
-          104,
-          126,
-          127
-        ],
-        "invalid_bits": [
-          2,
-          6,
-          7,
-          8,
-          9,
-          10,
-          11,
-          91
-        ],
-        "mnemonic": "FSETP.GT.AND",
-        "modifier_bits": [
-          74,
-          75,
-          76,
-          77,
-          78,
-          79,
-          80
-        ],
-        "modifiers": [
-          "GT",
-          "AND"
-        ],
-        "opcode": "FSETP",
-        "opcode_bits": [
-          0,
-          1,
-          3,
-          4,
-          5
-        ],
-        "operand_text": "P0, PT, R0, 8.50705917302346158658e+37, PT",
-        "operands": [
-          {
-            "bits": [
-              81,
-              82,
-              83
-            ],
-            "example_after": "P1, PT, R0, 8.50705917302346158658e+37, PT",
-            "example_before": "P0, PT, R0, 8.50705917302346158658e+37, PT",
-            "slot": 0,
-            "subfields": {}
-          },
-          {
-            "bits": [
-              84,
-              85,
-              86
-            ],
-            "example_after": "P0, P6, R0, 8.50705917302346158658e+37, PT",
-            "example_before": "P0, PT, R0, 8.50705917302346158658e+37, PT",
-            "slot": 1,
-            "subfields": {}
-          },
-          {
-            "bits": [
-              24,
-              25,
-              26,
-              27,
-              28,
-              29,
-              30,
-              31,
-              72,
-              73
-            ],
-            "example_after": "P0, PT, R1, 8.50705917302346158658e+37, PT",
-            "example_before": "P0, PT, R0, 8.50705917302346158658e+37, PT",
-            "slot": 2,
-            "subfields": {
-              "absolute": [
-                73
-              ],
-              "negate": [
-                72
-              ],
-              "value": [
-                24,
-                25,
-                26,
-                27,
-                28,
-                29,
-                30,
-                31
-              ]
-            }
-          },
-          {
-            "bits": [
-              32,
-              33,
-              34,
-              35,
-              36,
-              37,
-              38,
-              39,
-              40,
-              41,
-              42,
-              43,
-              44,
-              45,
-              46,
-              47,
-              48,
-              49,
-              50,
-              51,
-              52,
-              53,
-              54,
-              55,
-              56,
-              57,
-              58,
-              59,
-              60,
-              61,
-              62,
-              63
-            ],
-            "example_after": "P0, PT, R0, 8.50706018714394176917e+37, PT",
-            "example_before": "P0, PT, R0, 8.50705917302346158658e+37, PT",
-            "slot": 3,
-            "subfields": {
-              "negate": [
-                63
-              ],
-              "value": [
-                32,
-                33,
-                34,
-                35,
-                36,
-                37,
-                38,
-                39,
-                40,
-                41,
-                42,
-                43,
-                44,
-                45,
-                46,
-                47,
-                48,
-                49,
-                50,
-                51,
-                52,
-                53,
-                54,
-                55,
-                56,
-                57,
-                58,
-                59,
-                60,
-                61,
-                62
-              ]
-            }
-          },
-          {
-            "bits": [
-              87,
-              88,
-              89,
-              90
-            ],
-            "example_after": "P0, PT, R0, 8.50705917302346158658e+37, P6",
-            "example_before": "P0, PT, R0, 8.50705917302346158658e+37, PT",
-            "slot": 4,
-            "subfields": {
-              "invert": [
-                90
-              ],
-              "value": [
-                87,
-                88,
-                89
-              ]
-            }
-          }
-        ],
-        "payload": "0000000003f040007e8000000000780b",
-        "source_family": "unary",
-        "source_label": "rcp.approx.f32"
-      },
       {
         "encoding": "000fc00003f04000000000020600720b",
         "inert_bits": [
@@ -52869,391 +51747,7 @@
         ],
         "payload": "00000000078e0200000000ff02047235",
         "source_family": "mma.dense",
-        "source_label": "mma.sync.m16n8k16....f16.f16.f32"
-      }
-    ],
-    "IADD.X": [
-      {
-        "encoding": "000fc000000e0400800000040a0b7235",
-        "inert_bits": [
-          40,
-          41,
-          42,
-          43,
-          44,
-          45,
-          46,
-          47,
-          48,
-          49,
-          50,
-          51,
-          52,
-          53,
-          54,
-          55,
-          56,
-          57,
-          58,
-          59,
-          60,
-          61,
-          62,
-          64,
-          65,
-          66,
-          67,
-          68,
-          69,
-          70,
-          71,
-          75,
-          76,
-          77,
-          78,
-          79,
-          80,
-          84,
-          85,
-          86,
-          92,
-          93,
-          94,
-          95,
-          96,
-          97,
-          98,
-          99,
-          100,
-          101,
-          102,
-          103,
-          104,
-          126,
-          127
-        ],
-        "invalid_bits": [
-          3,
-          5,
-          6,
-          7,
-          8,
-          9,
-          10,
-          11,
-          91
-        ],
-        "mnemonic": "IADD.X",
-        "modifier_bits": [
-          73,
-          74
-        ],
-        "modifiers": [
-          "X"
-        ],
-        "opcode": "IADD",
-        "opcode_bits": [
-          0,
-          1,
-          2,
-          4
-        ],
-        "operand_text": "R11, R10, ~R4, P0",
-        "operands": [
-          {
-            "bits": [
-              16,
-              17,
-              18,
-              19,
-              20,
-              21,
-              22,
-              23
-            ],
-            "example_after": "R10, R10, ~R4, P0",
-            "example_before": "R11, R10, ~R4, P0",
-            "slot": 0,
-            "subfields": {}
-          },
-          {
-            "bits": [
-              24,
-              25,
-              26,
-              27,
-              28,
-              29,
-              30,
-              31,
-              72
-            ],
-            "example_after": "R11, R11, ~R4, P0",
-            "example_before": "R11, R10, ~R4, P0",
-            "slot": 1,
-            "subfields": {
-              "not": [
-                72
-              ],
-              "value": [
-                24,
-                25,
-                26,
-                27,
-                28,
-                29,
-                30,
-                31
-              ]
-            }
-          },
-          {
-            "bits": [
-              32,
-              33,
-              34,
-              35,
-              36,
-              37,
-              38,
-              39,
-              63
-            ],
-            "example_after": "R11, R10, ~R5, P0",
-            "example_before": "R11, R10, ~R4, P0",
-            "slot": 2,
-            "subfields": {
-              "not": [
-                63
-              ],
-              "value": [
-                32,
-                33,
-                34,
-                35,
-                36,
-                37,
-                38,
-                39
-              ]
-            }
-          },
-          {
-            "bits": [
-              87,
-              88,
-              89,
-              90
-            ],
-            "example_after": "R11, R10, ~R4, P1",
-            "example_before": "R11, R10, ~R4, P0",
-            "slot": 3,
-            "subfields": {
-              "invert": [
-                90
-              ],
-              "value": [
-                87,
-                88,
-                89
-              ]
-            }
-          }
-        ],
-        "payload": "00000000000e0400800000040a0b7235",
-        "source_family": "binary",
-        "source_label": "mul.hi.s64"
-      },
-      {
-        "encoding": "000fc000000e0400000000ffff047235",
-        "inert_bits": [
-          40,
-          41,
-          42,
-          43,
-          44,
-          45,
-          46,
-          47,
-          48,
-          49,
-          50,
-          51,
-          52,
-          53,
-          54,
-          55,
-          56,
-          57,
-          58,
-          59,
-          60,
-          61,
-          62,
-          64,
-          65,
-          66,
-          67,
-          68,
-          69,
-          70,
-          71,
-          75,
-          76,
-          77,
-          78,
-          79,
-          80,
-          84,
-          85,
-          86,
-          92,
-          93,
-          94,
-          95,
-          96,
-          97,
-          98,
-          99,
-          100,
-          101,
-          102,
-          103,
-          104,
-          126,
-          127
-        ],
-        "invalid_bits": [
-          3,
-          5,
-          6,
-          7,
-          8,
-          9,
-          10,
-          11,
-          91
-        ],
-        "mnemonic": "IADD.X",
-        "modifier_bits": [
-          73,
-          74
-        ],
-        "modifiers": [
-          "X"
-        ],
-        "opcode": "IADD",
-        "opcode_bits": [
-          0,
-          1,
-          2,
-          4
-        ],
-        "operand_text": "R4, RZ, RZ, P0",
-        "operands": [
-          {
-            "bits": [
-              16,
-              17,
-              18,
-              19,
-              20,
-              21,
-              22,
-              23
-            ],
-            "example_after": "R5, RZ, RZ, P0",
-            "example_before": "R4, RZ, RZ, P0",
-            "slot": 0,
-            "subfields": {}
-          },
-          {
-            "bits": [
-              24,
-              25,
-              26,
-              27,
-              28,
-              29,
-              30,
-              31,
-              72
-            ],
-            "example_after": "R4, R254, RZ, P0",
-            "example_before": "R4, RZ, RZ, P0",
-            "slot": 1,
-            "subfields": {
-              "not": [
-                72
-              ],
-              "value": [
-                24,
-                25,
-                26,
-                27,
-                28,
-                29,
-                30,
-                31
-              ]
-            }
-          },
-          {
-            "bits": [
-              32,
-              33,
-              34,
-              35,
-              36,
-              37,
-              38,
-              39,
-              63
-            ],
-            "example_after": "R4, RZ, R254, P0",
-            "example_before": "R4, RZ, RZ, P0",
-            "slot": 2,
-            "subfields": {
-              "not": [
-                63
-              ],
-              "value": [
-                32,
-                33,
-                34,
-                35,
-                36,
-                37,
-                38,
-                39
-              ]
-            }
-          },
-          {
-            "bits": [
-              87,
-              88,
-              89,
-              90
-            ],
-            "example_after": "R4, RZ, RZ, P1",
-            "example_before": "R4, RZ, RZ, P0",
-            "slot": 3,
-            "subfields": {
-              "invert": [
-                90
-              ],
-              "value": [
-                87,
-                88,
-                89
-              ]
-            }
-          }
-        ],
-        "payload": "00000000000e0400000000ffff047235",
-        "source_family": "binary",
-        "source_label": "mul.hi.u64"
+        "source_label": "mma.sync.m16n8k8....f16.f16.f32"
       }
     ],
     "IADD3": [
@@ -53807,7 +52301,7 @@
         ],
         "payload": "000000000f8e02ff0000000702077c24",
         "source_family": "atomic",
-        "source_label": "atom.add.global.s32"
+        "source_label": "atom.add.global.u32"
       }
     ],
     "IMAD.U32": [
@@ -53984,6 +52478,355 @@
       }
     ],
     "IMAD.WIDE.U32": [
+      {
+        "encoding": "000fc8000780000800000007040a7225",
+        "inert_bits": [
+          40,
+          41,
+          42,
+          43,
+          44,
+          45,
+          46,
+          47,
+          48,
+          49,
+          50,
+          51,
+          52,
+          53,
+          54,
+          55,
+          56,
+          57,
+          58,
+          59,
+          60,
+          61,
+          62,
+          63,
+          72,
+          76,
+          77,
+          78,
+          79,
+          80,
+          84,
+          85,
+          86,
+          87,
+          88,
+          89,
+          90,
+          92,
+          93,
+          94,
+          95,
+          96,
+          97,
+          98,
+          99,
+          100,
+          101,
+          102,
+          103,
+          104,
+          126,
+          127
+        ],
+        "invalid_bits": [
+          3,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          91
+        ],
+        "mnemonic": "IMAD.WIDE.U32",
+        "modifier_bits": [
+          0,
+          1,
+          73,
+          74
+        ],
+        "modifiers": [
+          "WIDE",
+          "U32"
+        ],
+        "opcode": "IMAD",
+        "opcode_bits": [
+          2,
+          4
+        ],
+        "operand_text": "R10, P0, R4, R7, R8",
+        "operands": [
+          {
+            "bits": [
+              16,
+              17,
+              18,
+              19,
+              20,
+              21,
+              22,
+              23
+            ],
+            "example_after": "R11, P0, R4, R7, R8",
+            "example_before": "R10, P0, R4, R7, R8",
+            "slot": 0,
+            "subfields": {}
+          },
+          {
+            "bits": [
+              81,
+              82,
+              83
+            ],
+            "example_after": "R10, P1, R4, R7, R8",
+            "example_before": "R10, P0, R4, R7, R8",
+            "slot": 1,
+            "subfields": {}
+          },
+          {
+            "bits": [
+              24,
+              25,
+              26,
+              27,
+              28,
+              29,
+              30,
+              31
+            ],
+            "example_after": "R10, P0, R5, R7, R8",
+            "example_before": "R10, P0, R4, R7, R8",
+            "slot": 2,
+            "subfields": {}
+          },
+          {
+            "bits": [
+              32,
+              33,
+              34,
+              35,
+              36,
+              37,
+              38,
+              39
+            ],
+            "example_after": "R10, P0, R4, R6, R8",
+            "example_before": "R10, P0, R4, R7, R8",
+            "slot": 3,
+            "subfields": {}
+          },
+          {
+            "bits": [
+              64,
+              65,
+              66,
+              67,
+              68,
+              69,
+              70,
+              71,
+              75
+            ],
+            "example_after": "R10, P0, R4, R7, R9",
+            "example_before": "R10, P0, R4, R7, R8",
+            "slot": 4,
+            "subfields": {
+              "negate": [
+                75
+              ],
+              "value": [
+                64,
+                65,
+                66,
+                67,
+                68,
+                69,
+                70,
+                71
+              ]
+            }
+          }
+        ],
+        "payload": "000000000780000800000007040a7225",
+        "source_family": "binary",
+        "source_label": "mul.hi.s64"
+      },
+      {
+        "encoding": "000fc000078e00ff0000001809047825",
+        "inert_bits": [
+          72,
+          76,
+          77,
+          78,
+          79,
+          80,
+          84,
+          85,
+          86,
+          87,
+          88,
+          89,
+          90,
+          92,
+          93,
+          94,
+          95,
+          96,
+          97,
+          98,
+          99,
+          100,
+          101,
+          102,
+          103,
+          104,
+          126,
+          127
+        ],
+        "invalid_bits": [
+          2,
+          6,
+          7,
+          9,
+          10,
+          11,
+          91
+        ],
+        "mnemonic": "IMAD.WIDE.U32",
+        "modifier_bits": [
+          0,
+          1,
+          73,
+          74
+        ],
+        "modifiers": [
+          "WIDE",
+          "U32"
+        ],
+        "opcode": "IMAD",
+        "opcode_bits": [
+          3,
+          4,
+          5,
+          8
+        ],
+        "operand_text": "R4, R9, 0x18, RZ",
+        "operands": [
+          {
+            "bits": [
+              16,
+              17,
+              18,
+              19,
+              20,
+              21,
+              22,
+              23
+            ],
+            "example_after": "R5, R9, 0x18, RZ",
+            "example_before": "R4, R9, 0x18, RZ",
+            "slot": 0,
+            "subfields": {}
+          },
+          {
+            "bits": [
+              24,
+              25,
+              26,
+              27,
+              28,
+              29,
+              30,
+              31
+            ],
+            "example_after": "R4, R8, 0x18, RZ",
+            "example_before": "R4, R9, 0x18, RZ",
+            "slot": 1,
+            "subfields": {}
+          },
+          {
+            "bits": [
+              32,
+              33,
+              34,
+              35,
+              36,
+              37,
+              38,
+              39,
+              40,
+              41,
+              42,
+              43,
+              44,
+              45,
+              46,
+              47,
+              48,
+              49,
+              50,
+              51,
+              52,
+              53,
+              54,
+              55,
+              56,
+              57,
+              58,
+              59,
+              60,
+              61,
+              62,
+              63
+            ],
+            "example_after": "R4, R9, 0x19, RZ",
+            "example_before": "R4, R9, 0x18, RZ",
+            "slot": 2,
+            "subfields": {}
+          },
+          {
+            "bits": [
+              64,
+              65,
+              66,
+              67,
+              68,
+              69,
+              70,
+              71,
+              75
+            ],
+            "example_after": "R4, R9, 0x18, R254",
+            "example_before": "R4, R9, 0x18, RZ",
+            "slot": 3,
+            "subfields": {
+              "negate": [
+                75
+              ],
+              "value": [
+                64,
+                65,
+                66,
+                67,
+                68,
+                69,
+                70,
+                71
+              ]
+            }
+          }
+        ],
+        "payload": "00000000078e00ff0000001809047825",
+        "source_family": "binary-imm",
+        "source_label": "mul.lo.u64"
+      },
       {
         "encoding": "000fc000078e00ff00000005040a7225",
         "inert_bits": [
@@ -54320,6 +53163,195 @@
         "payload": "000000000f8e00ff0000000702067c25",
         "source_family": "atomic",
         "source_label": "atom.add.global.u64"
+      }
+    ],
+    "IMAD.WIDE.U32.X": [
+      {
+        "encoding": "000fc600000e040c0000000705087225",
+        "inert_bits": [
+          40,
+          41,
+          42,
+          43,
+          44,
+          45,
+          46,
+          47,
+          48,
+          49,
+          50,
+          51,
+          52,
+          53,
+          54,
+          55,
+          56,
+          57,
+          58,
+          59,
+          60,
+          61,
+          62,
+          63,
+          72,
+          76,
+          77,
+          78,
+          79,
+          80,
+          84,
+          85,
+          86,
+          92,
+          93,
+          94,
+          95,
+          96,
+          97,
+          98,
+          99,
+          100,
+          101,
+          102,
+          103,
+          104,
+          126,
+          127
+        ],
+        "invalid_bits": [
+          3,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          91
+        ],
+        "mnemonic": "IMAD.WIDE.U32.X",
+        "modifier_bits": [
+          0,
+          1,
+          73,
+          74
+        ],
+        "modifiers": [
+          "WIDE",
+          "U32",
+          "X"
+        ],
+        "opcode": "IMAD",
+        "opcode_bits": [
+          2,
+          4
+        ],
+        "operand_text": "R8, R5, R7, R12, P0",
+        "operands": [
+          {
+            "bits": [
+              16,
+              17,
+              18,
+              19,
+              20,
+              21,
+              22,
+              23
+            ],
+            "example_after": "R9, R5, R7, R12, P0",
+            "example_before": "R8, R5, R7, R12, P0",
+            "slot": 0,
+            "subfields": {}
+          },
+          {
+            "bits": [
+              24,
+              25,
+              26,
+              27,
+              28,
+              29,
+              30,
+              31
+            ],
+            "example_after": "R8, R4, R7, R12, P0",
+            "example_before": "R8, R5, R7, R12, P0",
+            "slot": 1,
+            "subfields": {}
+          },
+          {
+            "bits": [
+              32,
+              33,
+              34,
+              35,
+              36,
+              37,
+              38,
+              39
+            ],
+            "example_after": "R8, R5, R6, R12, P0",
+            "example_before": "R8, R5, R7, R12, P0",
+            "slot": 2,
+            "subfields": {}
+          },
+          {
+            "bits": [
+              64,
+              65,
+              66,
+              67,
+              68,
+              69,
+              70,
+              71,
+              75
+            ],
+            "example_after": "R8, R5, R7, R13, P0",
+            "example_before": "R8, R5, R7, R12, P0",
+            "slot": 3,
+            "subfields": {
+              "not": [
+                75
+              ],
+              "value": [
+                64,
+                65,
+                66,
+                67,
+                68,
+                69,
+                70,
+                71
+              ]
+            }
+          },
+          {
+            "bits": [
+              87,
+              88,
+              89,
+              90
+            ],
+            "example_after": "R8, R5, R7, R12, P1",
+            "example_before": "R8, R5, R7, R12, P0",
+            "slot": 4,
+            "subfields": {
+              "invert": [
+                90
+              ],
+              "value": [
+                87,
+                88,
+                89
+              ]
+            }
+          }
+        ],
+        "payload": "00000000000e040c0000000705087225",
+        "source_family": "binary",
+        "source_label": "mul.hi.s64"
       }
     ],
     "IMNMX.S64": [
@@ -55787,6 +54819,304 @@
         "payload": "0000000003f01070000000020000720c",
         "source_family": "shape",
         "source_label": "s_predicated_writes.mixed"
+      }
+    ],
+    "LDC": [
+      {
+        "encoding": "000fc0000000080000c0000000007b82",
+        "inert_bits": [
+          32,
+          33,
+          34,
+          35,
+          36,
+          37,
+          59,
+          60,
+          61,
+          62,
+          63,
+          64,
+          65,
+          66,
+          67,
+          68,
+          69,
+          70,
+          71,
+          72,
+          76,
+          77,
+          80,
+          81,
+          82,
+          83,
+          84,
+          85,
+          86,
+          87,
+          88,
+          89,
+          90,
+          92,
+          93,
+          94,
+          95,
+          96,
+          97,
+          98,
+          99,
+          100,
+          101,
+          102,
+          103,
+          104,
+          126,
+          127
+        ],
+        "invalid_bits": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          91
+        ],
+        "mnemonic": "LDC",
+        "modifier_bits": [
+          73,
+          74,
+          75,
+          78,
+          79
+        ],
+        "modifiers": [],
+        "opcode": "LDC",
+        "opcode_bits": [],
+        "operand_text": "R0, c[0x3][R0]",
+        "operands": [
+          {
+            "bits": [
+              16,
+              17,
+              18,
+              19,
+              20,
+              21,
+              22,
+              23
+            ],
+            "example_after": "R1, c[0x3][R0]",
+            "example_before": "R0, c[0x3][R0]",
+            "slot": 0,
+            "subfields": {}
+          },
+          {
+            "bits": [
+              24,
+              25,
+              26,
+              27,
+              28,
+              29,
+              30,
+              31,
+              38,
+              39,
+              40,
+              41,
+              42,
+              43,
+              44,
+              45,
+              46,
+              47,
+              48,
+              49,
+              50,
+              51,
+              52,
+              53,
+              54,
+              55,
+              56,
+              57,
+              58
+            ],
+            "example_after": "R0, c[0x3][R1]",
+            "example_before": "R0, c[0x3][R0]",
+            "slot": 1,
+            "subfields": {
+              "bank": [
+                54,
+                55,
+                56,
+                57,
+                58
+              ]
+            }
+          }
+        ],
+        "payload": "000000000000080000c0000000007b82",
+        "source_family": "memory",
+        "source_label": "ld.const.b32"
+      }
+    ],
+    "LDC.64": [
+      {
+        "encoding": "000fc00000000a0000c0000000027b82",
+        "inert_bits": [
+          32,
+          33,
+          34,
+          35,
+          36,
+          37,
+          59,
+          60,
+          61,
+          62,
+          63,
+          64,
+          65,
+          66,
+          67,
+          68,
+          69,
+          70,
+          71,
+          72,
+          76,
+          77,
+          80,
+          81,
+          82,
+          83,
+          84,
+          85,
+          86,
+          87,
+          88,
+          89,
+          90,
+          92,
+          93,
+          94,
+          95,
+          96,
+          97,
+          98,
+          99,
+          100,
+          101,
+          102,
+          103,
+          104,
+          126,
+          127
+        ],
+        "invalid_bits": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          91
+        ],
+        "mnemonic": "LDC.64",
+        "modifier_bits": [
+          73,
+          74,
+          75,
+          78,
+          79
+        ],
+        "modifiers": [
+          "64"
+        ],
+        "opcode": "LDC",
+        "opcode_bits": [],
+        "operand_text": "R2, c[0x3][R0]",
+        "operands": [
+          {
+            "bits": [
+              16,
+              17,
+              18,
+              19,
+              20,
+              21,
+              22,
+              23
+            ],
+            "example_after": "R3, c[0x3][R0]",
+            "example_before": "R2, c[0x3][R0]",
+            "slot": 0,
+            "subfields": {}
+          },
+          {
+            "bits": [
+              24,
+              25,
+              26,
+              27,
+              28,
+              29,
+              30,
+              31,
+              38,
+              39,
+              40,
+              41,
+              42,
+              43,
+              44,
+              45,
+              46,
+              47,
+              48,
+              49,
+              50,
+              51,
+              52,
+              53,
+              54,
+              55,
+              56,
+              57,
+              58
+            ],
+            "example_after": "R2, c[0x3][R1]",
+            "example_before": "R2, c[0x3][R0]",
+            "slot": 1,
+            "subfields": {
+              "bank": [
+                54,
+                55,
+                56,
+                57,
+                58
+              ]
+            }
+          }
+        ],
+        "payload": "0000000000000a0000c0000000027b82",
+        "source_family": "memory",
+        "source_label": "ld.const.b64"
       }
     ],
     "LDL": [
@@ -57507,7 +56837,7 @@
     ],
     "LOP3.LUT": [
       {
-        "encoding": "000fc000078ec0ff0000000103087812",
+        "encoding": "000fc000078e3cff9abcdef000027812",
         "inert_bits": [
           84,
           85,
@@ -57553,7 +56883,7 @@
           4,
           5
         ],
-        "operand_text": "R8, R3, 0x1, RZ, 0xc0, !PT",
+        "operand_text": "R2, R0, 0x9abcdef0, RZ, 0x3c, !PT",
         "operands": [
           {
             "bits": [
@@ -57566,8 +56896,8 @@
               22,
               23
             ],
-            "example_after": "R9, R3, 0x1, RZ, 0xc0, !PT",
-            "example_before": "R8, R3, 0x1, RZ, 0xc0, !PT",
+            "example_after": "R3, R0, 0x9abcdef0, RZ, 0x3c, !PT",
+            "example_before": "R2, R0, 0x9abcdef0, RZ, 0x3c, !PT",
             "slot": 0,
             "subfields": {}
           },
@@ -57582,8 +56912,8 @@
               30,
               31
             ],
-            "example_after": "R8, R2, 0x1, RZ, 0xc0, !PT",
-            "example_before": "R8, R3, 0x1, RZ, 0xc0, !PT",
+            "example_after": "R2, R1, 0x9abcdef0, RZ, 0x3c, !PT",
+            "example_before": "R2, R0, 0x9abcdef0, RZ, 0x3c, !PT",
             "slot": 1,
             "subfields": {}
           },
@@ -57622,8 +56952,8 @@
               62,
               63
             ],
-            "example_after": "R8, R3, 0x0, RZ, 0xc0, !PT",
-            "example_before": "R8, R3, 0x1, RZ, 0xc0, !PT",
+            "example_after": "R2, R0, 0x9abcdef1, RZ, 0x3c, !PT",
+            "example_before": "R2, R0, 0x9abcdef0, RZ, 0x3c, !PT",
             "slot": 2,
             "subfields": {}
           },
@@ -57638,8 +56968,8 @@
               70,
               71
             ],
-            "example_after": "R8, R3, 0x1, R254, 0xc0, !PT",
-            "example_before": "R8, R3, 0x1, RZ, 0xc0, !PT",
+            "example_after": "R2, R0, 0x9abcdef0, R254, 0x3c, !PT",
+            "example_before": "R2, R0, 0x9abcdef0, RZ, 0x3c, !PT",
             "slot": 3,
             "subfields": {}
           },
@@ -57654,8 +56984,8 @@
               78,
               79
             ],
-            "example_after": "R8, R3, 0x1, RZ, 0xc1, !PT",
-            "example_before": "R8, R3, 0x1, RZ, 0xc0, !PT",
+            "example_after": "R2, R0, 0x9abcdef0, RZ, 0x3d, !PT",
+            "example_before": "R2, R0, 0x9abcdef0, RZ, 0x3c, !PT",
             "slot": 4,
             "subfields": {}
           },
@@ -57666,8 +56996,8 @@
               89,
               90
             ],
-            "example_after": "R8, R3, 0x1, RZ, 0xc0, !P6",
-            "example_before": "R8, R3, 0x1, RZ, 0xc0, !PT",
+            "example_after": "R2, R0, 0x9abcdef0, RZ, 0x3c, !P6",
+            "example_before": "R2, R0, 0x9abcdef0, RZ, 0x3c, !PT",
             "slot": 5,
             "subfields": {
               "invert": [
@@ -57681,9 +57011,9 @@
             }
           }
         ],
-        "payload": "00000000078ec0ff0000000103087812",
-        "source_family": "shape",
-        "source_label": "s_loop_with_branch.mixed"
+        "payload": "00000000078e3cff9abcdef000027812",
+        "source_family": "binary-imm",
+        "source_label": "xor.b64"
       },
       {
         "encoding": "000fc000078e33ff00000000ff027212",
@@ -58178,7 +57508,7 @@
         ],
         "payload": "0000000000000f000000000000027202",
         "source_family": "binary",
-        "source_label": "max.f64"
+        "source_label": "min.f64"
       }
     ],
     "MOV.64": [
@@ -58599,7 +57929,7 @@
         ],
         "payload": "00000000000000000000000000057919",
         "source_family": "atomic",
-        "source_label": "atom.add.global.s32"
+        "source_label": "atom.add.global.u32"
       },
       {
         "encoding": "000e2400000039000000000000007919",
@@ -59030,169 +58360,6 @@
       }
     ],
     "SEL": [
-      {
-        "encoding": "000fca000000000000000001ff077807",
-        "inert_bits": [
-          64,
-          65,
-          66,
-          67,
-          68,
-          69,
-          70,
-          71,
-          72,
-          73,
-          74,
-          75,
-          76,
-          77,
-          78,
-          79,
-          80,
-          81,
-          82,
-          83,
-          84,
-          85,
-          86,
-          92,
-          93,
-          94,
-          95,
-          96,
-          97,
-          98,
-          99,
-          100,
-          101,
-          102,
-          103,
-          104,
-          126,
-          127
-        ],
-        "invalid_bits": [
-          3,
-          6,
-          7,
-          8,
-          9,
-          10,
-          11,
-          91
-        ],
-        "mnemonic": "SEL",
-        "modifier_bits": [],
-        "modifiers": [],
-        "opcode": "SEL",
-        "opcode_bits": [
-          0,
-          1,
-          2,
-          4,
-          5
-        ],
-        "operand_text": "R7, RZ, 0x1, P0",
-        "operands": [
-          {
-            "bits": [
-              16,
-              17,
-              18,
-              19,
-              20,
-              21,
-              22,
-              23
-            ],
-            "example_after": "R6, RZ, 0x1, P0",
-            "example_before": "R7, RZ, 0x1, P0",
-            "slot": 0,
-            "subfields": {}
-          },
-          {
-            "bits": [
-              24,
-              25,
-              26,
-              27,
-              28,
-              29,
-              30,
-              31
-            ],
-            "example_after": "R7, R254, 0x1, P0",
-            "example_before": "R7, RZ, 0x1, P0",
-            "slot": 1,
-            "subfields": {}
-          },
-          {
-            "bits": [
-              32,
-              33,
-              34,
-              35,
-              36,
-              37,
-              38,
-              39,
-              40,
-              41,
-              42,
-              43,
-              44,
-              45,
-              46,
-              47,
-              48,
-              49,
-              50,
-              51,
-              52,
-              53,
-              54,
-              55,
-              56,
-              57,
-              58,
-              59,
-              60,
-              61,
-              62,
-              63
-            ],
-            "example_after": "R7, RZ, 0x0, P0",
-            "example_before": "R7, RZ, 0x1, P0",
-            "slot": 2,
-            "subfields": {}
-          },
-          {
-            "bits": [
-              87,
-              88,
-              89,
-              90
-            ],
-            "example_after": "R7, RZ, 0x1, P1",
-            "example_before": "R7, RZ, 0x1, P0",
-            "slot": 3,
-            "subfields": {
-              "invert": [
-                90
-              ],
-              "value": [
-                87,
-                88,
-                89
-              ]
-            }
-          }
-        ],
-        "payload": "000000000000000000000001ff077807",
-        "source_family": "compare",
-        "source_label": "setp.eq.s32"
-      },
       {
         "encoding": "000fc000000000000000000005047207",
         "inert_bits": [

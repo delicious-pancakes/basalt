@@ -135,9 +135,8 @@ def build(work: Path, only: set[str] | None, opt: int) -> list[dict]:
     model = LatencyModel.assumed().overlay(latencies) if latencies.is_file() else DEFAULT_MODEL
     observed = ObservedStalls.read(observed_path) if observed_path.is_file() else None
 
-    # the shape kernels are included here and not in the harvest: they exist to
-    # give the scheduler loops, barriers and branches to get wrong, which the
-    # generated corpus deliberately does not have
+    # the shape kernels carry the loops, barriers and branches the generated
+    # corpus deliberately does not, which is most of what a scheduler gets wrong
     snippets = generate_scalar() + generate_tensor() + generate_shapes()
     if only:
         snippets = [s for s in snippets if s.name in only]

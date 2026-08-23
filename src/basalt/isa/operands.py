@@ -62,6 +62,10 @@ class SubRole:
 # the prober groups the two together and this splits them (finding 14)
 _MODIFIERS = {"-": SubRole.NEGATE, "~": SubRole.NOT, "!": SubRole.INVERT}
 _MODIFIER_ROLES = frozenset({*_MODIFIERS.values(), SubRole.ABSOLUTE, SubRole.SUFFIX})
+# a sign on a literal belongs to the literal. `-R0` negates a register with a
+# bit of its own, but the `-` on `-2.875` is IEEE bit 31, and splitting it off
+# as a modifier leaves the assembler writing 31 bits of a 32-bit float
+_NUMERIC = re.compile(r"^(0[xX][0-9a-fA-F]|\d|\.\d|INF|QNAN|NAN)", re.IGNORECASE)
 
 
 def _parts(text: str) -> tuple[str, ...] | None:
@@ -115,7 +119,8 @@ def _modifier_change(before: str, after: str) -> str | None:
     a, b = differing[0]
     for symbol, role in _MODIFIERS.items():
         if a == f"{symbol}{b}" or b == f"{symbol}{a}":
-            return role
+            base = b if a == f"{symbol}{b}" else a
+            return None if _NUMERIC.match(base) else role
     if a == f"|{b}|" or b == f"|{a}|":
         return SubRole.ABSOLUTE
     # a selector attached to an operand is not part of its number (finding 14).

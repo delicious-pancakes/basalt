@@ -7,12 +7,13 @@ The vendor compiler's scheduling is the reference, so a single error on any of
 them means basalt is wrong, and every finding it produces about anyone else's
 code is worth nothing until that is fixed.
 
-Checking one hand-written kernel is a smoke test. Checking three hundred, across
-every instruction family the corpus reaches, is what actually holds the model
+Checking one hand-written kernel is a smoke test. Checking the whole corpus,
+across every instruction family it reaches, is what actually holds the model
 honest: each of the four errors this project has made so far was found here or
 by the smaller version of it, never by reasoning.
 
-Marked `toolchain`, needs no GPU, and takes a couple of minutes.
+Marked `toolchain` and needs no GPU. Every class here shares one compile of the
+corpus, so the cost is the analysis rather than another pass over `ptxas`.
 """
 
 from __future__ import annotations
@@ -28,7 +29,6 @@ import pytest
 from basalt.disasm import disassemble_program
 from basalt.encoding import NO_BARRIER
 from basalt.harvest.corpus import generate
-from basalt.harvest.corpus_shapes import generate_shapes
 from basalt.harvest.corpus_tensor import generate_tensor
 from basalt.verify.hazards import Severity, verify_program
 from basalt.verify.latency import DEFAULT_MODEL, LatencyModel
@@ -55,27 +55,14 @@ def observed() -> ObservedStalls | None:
 
 
 @pytest.fixture(scope="module")
-def reports(toolchain, model, observed):
-    """Compile and verify the whole corpus once, then share the results."""
-    snippets = generate() + generate_tensor()
-
-    def one(snippet):
-        with TemporaryDirectory(prefix="basalt-control-") as tmp:
-            src, cubin = Path(tmp) / "k.ptx", Path(tmp) / "k.cubin"
-            src.write_text(snippet.ptx)
-            built = toolchain.run(
-                [str(toolchain.ptxas), f"-arch={ARCH}", "-O3", "-o", str(cubin), str(src)],
-                check=False,
-                timeout=120.0,
-            )
-            if built.returncode != 0:
-                return None
-            program = disassemble_program(toolchain, cubin)
-        return snippet.name, verify_program(program, model, observed=observed)
-
-    workers = min(32, (os.cpu_count() or 4) * 2)
-    with ThreadPoolExecutor(max_workers=workers) as pool:
-        return [r for r in pool.map(one, snippets) if r is not None]
+def reports(corpus_builds, model, observed):
+    """Verify every kernel the vendor built, sharing the session's compile."""
+    wanted = {snippet.name for snippet in generate() + generate_tensor()}
+    return [
+        (name, verify_program(program, model, observed=observed))
+        for name, (_, program) in corpus_builds.at(3).items()
+        if name in wanted
+    ]
 
 
 class TestPositiveControl:
@@ -139,69 +126,48 @@ class TestSchedulerOverTheWholeCorpus:
 
     @staticmethod
     @pytest.fixture(scope="class")
-    def scheduled(toolchain, model, observed):
+    def scheduled(toolchain, corpus_builds, model, observed):
         from basalt.asm.cubin import Cubin
         from basalt.sched.scheduler import schedule_program
 
         def one(task):
-            # every level that schedules: -O1 keeps a loop counter in the
-            # uniform datapath that -O3 unrolls away, and two bugs lived there
-            snippet, opt = task
+            name, opt, cubin_path, program = task
+            result = schedule_program(program, model, observed=observed)
+            if result.out_of_scoreboards:
+                return (f"{name} -O{opt}", "out of scoreboards", result.out_of_scoreboards[0])
+            cubin = Cubin.load(cubin_path)
+            for slot, word in enumerate(result.words):
+                if program.instructions[slot].word is not None:
+                    cubin.write_word(slot, word)
             with TemporaryDirectory(prefix="basalt-sched-") as tmp:
-                src = Path(tmp) / "k.ptx"
-                cubin_path = Path(tmp) / "k.cubin"
-                src.write_text(snippet.ptx)
-                built = toolchain.run(
-                    [
-                        str(toolchain.ptxas),
-                        f"-arch={ARCH}",
-                        f"-O{opt}",
-                        "-o",
-                        str(cubin_path),
-                        str(src),
-                    ],
-                    check=False,
-                    timeout=60.0,
-                )
-                if built.returncode != 0:
-                    return None
-                program = disassemble_program(toolchain, cubin_path)
-                result = schedule_program(program, model, observed=observed)
-                if result.out_of_scoreboards:
-                    return (
-                        f"{snippet.name} -O{opt}",
-                        "out of scoreboards",
-                        result.out_of_scoreboards[0],
-                    )
-                cubin = Cubin.load(cubin_path)
-                for slot, word in enumerate(result.words):
-                    if program.instructions[slot].word is not None:
-                        cubin.write_word(slot, word)
                 out = Path(tmp) / "r.cubin"
                 cubin.save(out)
                 # content first: basalt emitted a control word `nvdisasm`
                 # refused for a while, and this check read back an empty program
                 # and passed. a check that passes on nothing is worse than none.
                 written = disassemble_program(toolchain, out)
-                if len(written.instructions) != len(program.instructions):
-                    return (
-                        f"{snippet.name} -O{opt}",
-                        "did not disassemble after rescheduling",
-                        f"{len(written.instructions)} of {len(program.instructions)} instructions",
-                    )
-                report = verify_program(written, model, observed=observed)
-                if not report.ok:
-                    return (
-                        f"{snippet.name} -O{opt}",
-                        "rejected its own schedule",
-                        report.hazards[0].describe(),
-                    )
-                return None
+            if len(written.instructions) != len(program.instructions):
+                return (
+                    f"{name} -O{opt}",
+                    "did not disassemble after rescheduling",
+                    f"{len(written.instructions)} of {len(program.instructions)} instructions",
+                )
+            report = verify_program(written, model, observed=observed)
+            if not report.ok:
+                return (
+                    f"{name} -O{opt}",
+                    "rejected its own schedule",
+                    report.hazards[0].describe(),
+                )
+            return None
 
-        from basalt.harvest.corpus_shapes import generate_shapes
-
-        snippets = generate() + generate_tensor() + generate_shapes()
-        tasks = [(s, opt) for s in snippets for opt in (1, 2, 3)]
+        # every level that schedules: -O1 keeps a loop counter in the uniform
+        # datapath that -O3 unrolls away, and two bugs lived there
+        tasks = [
+            (name, opt, cubin_path, program)
+            for opt in (1, 2, 3)
+            for name, (cubin_path, program) in corpus_builds.at(opt).items()
+        ]
         with ThreadPoolExecutor(max_workers=os.cpu_count() or 4) as pool:
             return [r for r in pool.map(one, tasks) if r]
 
@@ -238,58 +204,41 @@ class TestReadBarrierWindowsAreNotTightened:
 
     @staticmethod
     @pytest.fixture(scope="class")
-    def tightened(toolchain, model, observed):
+    def tightened(corpus_builds, model, observed):
         from basalt.sched.scheduler import schedule_program
 
         def one(task):
-            snippet, opt = task
-            with TemporaryDirectory(prefix="basalt-rb-") as tmp:
-                src, cubin_path = Path(tmp) / "k.ptx", Path(tmp) / "k.cubin"
-                src.write_text(snippet.ptx)
-                built = toolchain.run(
-                    [
-                        str(toolchain.ptxas),
-                        f"-arch={ARCH}",
-                        f"-O{opt}",
-                        "-o",
-                        str(cubin_path),
-                        str(src),
-                    ],
-                    check=False,
-                    timeout=60.0,
-                )
-                if built.returncode != 0:
-                    return []
-                program = disassemble_program(toolchain, cubin_path)
-                result = schedule_program(program, model, observed=observed)
-                transfers = TestReadBarrierWindowsAreNotTightened.TRANSFERS
-                targets = set(getattr(program, "labels", {}).values())
+            name, opt, program = task
+            result = schedule_program(program, model, observed=observed)
+            transfers = TestReadBarrierWindowsAreNotTightened.TRANSFERS
+            targets = set(getattr(program, "labels", {}).values())
 
-                found = []
-                previous = -1
-                for index, instruction in enumerate(program.instructions):
-                    if instruction.word is None:
-                        continue
-                    if instruction.word.field("read_barrier") == NO_BARRIER:
-                        continue
-                    start = index
-                    while start > previous + 1 and start not in targets:
-                        earlier = program.instructions[start - 1]
-                        if earlier.word is None or earlier.opcode in transfers:
-                            break
-                        start -= 1
-                    window = range(start, index + 1)
-                    vendor = sum(program.instructions[i].word.field("stall") for i in window)
-                    ours = sum(result.words[i].field("stall") for i in window)
-                    if ours < vendor:
-                        found.append(
-                            f"{snippet.name} -O{opt} slot {index}: {ours} < {vendor} cycles"
-                        )
-                    previous = index
-                return found
+            found = []
+            previous = -1
+            for index, instruction in enumerate(program.instructions):
+                if instruction.word is None:
+                    continue
+                if instruction.word.field("read_barrier") == NO_BARRIER:
+                    continue
+                start = index
+                while start > previous + 1 and start not in targets:
+                    earlier = program.instructions[start - 1]
+                    if earlier.word is None or earlier.opcode in transfers:
+                        break
+                    start -= 1
+                window = range(start, index + 1)
+                vendor = sum(program.instructions[i].word.field("stall") for i in window)
+                ours = sum(result.words[i].field("stall") for i in window)
+                if ours < vendor:
+                    found.append(f"{name} -O{opt} slot {index}: {ours} < {vendor} cycles")
+                previous = index
+            return found
 
-        snippets = generate() + generate_tensor() + generate_shapes()
-        tasks = [(s, opt) for s in snippets for opt in (1, 2, 3)]
+        tasks = [
+            (name, opt, program)
+            for opt in (1, 2, 3)
+            for name, (_, program) in corpus_builds.at(opt).items()
+        ]
         with ThreadPoolExecutor(max_workers=os.cpu_count() or 4) as pool:
             return [line for lines in pool.map(one, tasks) for line in lines]
 
@@ -316,9 +265,8 @@ class TestAssemblerAgainstTheVendorsBytes:
 
     @staticmethod
     @pytest.fixture(scope="class")
-    def assembled(toolchain):
+    def assembled(corpus_builds):
         from basalt.asm.assemble import Assembler, AssemblyError
-        from basalt.harvest.corpus_shapes import generate_shapes
         from basalt.isa.database import IsaDatabase
 
         database = ROOT / "data" / "isa" / "sm_120a.json"
@@ -326,34 +274,23 @@ class TestAssemblerAgainstTheVendorsBytes:
             pytest.skip("no ISA database; run `basalt build-isa`")
         assembler = Assembler(IsaDatabase.read(database))
 
-        def one(snippet):
-            with TemporaryDirectory(prefix="basalt-asm-") as tmp:
-                src = Path(tmp) / "k.ptx"
-                cubin = Path(tmp) / "k.cubin"
-                src.write_text(snippet.ptx)
-                built = toolchain.run(
-                    [str(toolchain.ptxas), f"-arch={ARCH}", "-O3", "-o", str(cubin), str(src)],
-                    check=False,
-                    timeout=60.0,
-                )
-                if built.returncode != 0:
-                    return []
-                out = []
-                for instruction in disassemble_program(toolchain, cubin).instructions:
-                    if instruction.word is None:
-                        continue
-                    text = f"{instruction.mnemonic} {instruction.operands}".strip()
-                    try:
-                        got = assembler.assemble(text, control=instruction.word)
-                    except AssemblyError:
-                        out.append(("refused", text))
-                        continue
-                    out.append(("exact" if got.value == instruction.word.value else "wrong", text))
-                return out
+        def one(program):
+            out = []
+            for instruction in program.instructions:
+                if instruction.word is None:
+                    continue
+                text = f"{instruction.mnemonic} {instruction.operands}".strip()
+                try:
+                    got = assembler.assemble(text, control=instruction.word)
+                except AssemblyError:
+                    out.append(("refused", text))
+                    continue
+                out.append(("exact" if got.value == instruction.word.value else "wrong", text))
+            return out
 
-        snippets = generate() + generate_tensor() + generate_shapes()
+        programs = [program for _, program in corpus_builds.at(3).values()]
         with ThreadPoolExecutor(max_workers=os.cpu_count() or 4) as pool:
-            return [row for rows in pool.map(one, snippets) for row in rows]
+            return [row for rows in pool.map(one, programs) for row in rows]
 
     def test_nothing_assembles_to_the_wrong_bytes(self, assembled):
         wrong = [text for verdict, text in assembled if verdict == "wrong"]
@@ -383,9 +320,8 @@ class TestWholeProgramAssembly:
 
     @staticmethod
     @pytest.fixture(scope="class")
-    def assembled(toolchain):
+    def assembled(corpus_builds):
         from basalt.asm.assemble import assemble_program
-        from basalt.harvest.corpus_shapes import generate_shapes
         from basalt.isa.database import IsaDatabase
 
         database = ROOT / "data" / "isa" / "sm_120a.json"
@@ -393,33 +329,21 @@ class TestWholeProgramAssembly:
             pytest.skip("no ISA database; run `basalt build-isa`")
         db = IsaDatabase.read(database)
 
-        def one(snippet):
-            with TemporaryDirectory(prefix="basalt-prog-") as tmp:
-                src = Path(tmp) / "k.ptx"
-                cubin = Path(tmp) / "k.cubin"
-                src.write_text(snippet.ptx)
-                built = toolchain.run(
-                    [str(toolchain.ptxas), f"-arch={ARCH}", "-O3", "-o", str(cubin), str(src)],
-                    check=False,
-                    timeout=60.0,
-                )
-                if built.returncode != 0:
-                    return (0, 0, 0)
-                program = disassemble_program(toolchain, cubin)
-                result = assemble_program(program, db)
-                exact = wrong = 0
-                for instruction, got in zip(program.instructions, result.words, strict=True):
-                    if instruction.word is None or got is None:
-                        continue
-                    if got.value == instruction.word.value:
-                        exact += 1
-                    else:
-                        wrong += 1
-                return (exact, wrong, len(result.refused))
+        def one(program):
+            result = assemble_program(program, db)
+            exact = wrong = 0
+            for instruction, got in zip(program.instructions, result.words, strict=True):
+                if instruction.word is None or got is None:
+                    continue
+                if got.value == instruction.word.value:
+                    exact += 1
+                else:
+                    wrong += 1
+            return (exact, wrong, len(result.refused))
 
-        snippets = generate() + generate_tensor() + generate_shapes()
+        programs = [program for _, program in corpus_builds.at(3).values()]
         with ThreadPoolExecutor(max_workers=os.cpu_count() or 4) as pool:
-            rows = list(pool.map(one, snippets))
+            rows = list(pool.map(one, programs))
         return tuple(sum(column) for column in zip(*rows, strict=True))
 
     def test_nothing_assembles_to_the_wrong_bytes(self, assembled):
@@ -445,45 +369,33 @@ class TestTheBranchFieldIsStillWhereItWasFound:
     the kind of thing that goes quietly wrong when a compiler version changes.
     """
 
-    def test_every_branch_in_the_corpus_decodes_to_its_label(self, toolchain):
+    def test_every_branch_in_the_corpus_decodes_to_its_label(self, corpus_builds):
         import re
 
         from basalt.asm.assemble import branch_target
-        from basalt.harvest.corpus_shapes import generate_shapes
 
         label = re.compile(r"`\(([^)]+)\)")
 
-        def one(snippet):
-            with TemporaryDirectory(prefix="basalt-branch-") as tmp:
-                src = Path(tmp) / "k.ptx"
-                cubin = Path(tmp) / "k.cubin"
-                src.write_text(snippet.ptx)
-                built = toolchain.run(
-                    [str(toolchain.ptxas), f"-arch={ARCH}", "-O3", "-o", str(cubin), str(src)],
-                    check=False,
-                    timeout=60.0,
-                )
-                if built.returncode != 0:
-                    return (0, 0)
-                program = disassemble_program(toolchain, cubin)
-                ok = bad = 0
-                for instruction in program.instructions:
-                    if instruction.word is None:
-                        continue
-                    match = label.search(instruction.operands)
-                    if match is None:
-                        continue
-                    destination = program.labels.get(match.group(1))
-                    if destination is None:
-                        continue
-                    if branch_target(instruction.word, instruction.offset) == destination * 16:
-                        ok += 1
-                    else:
-                        bad += 1
-                return (ok, bad)
+        def one(program):
+            ok = bad = 0
+            for instruction in program.instructions:
+                if instruction.word is None:
+                    continue
+                match = label.search(instruction.operands)
+                if match is None:
+                    continue
+                destination = program.labels.get(match.group(1))
+                if destination is None:
+                    continue
+                if branch_target(instruction.word, instruction.offset) == destination * 16:
+                    ok += 1
+                else:
+                    bad += 1
+            return (ok, bad)
 
+        programs = [program for _, program in corpus_builds.at(3).values()]
         with ThreadPoolExecutor(max_workers=os.cpu_count() or 4) as pool:
-            rows = list(pool.map(one, generate() + generate_shapes()))
+            rows = list(pool.map(one, programs))
         ok = sum(row[0] for row in rows)
         bad = sum(row[1] for row in rows)
         assert ok > 100, f"only {ok} branches found; the corpus did not build"
@@ -506,34 +418,21 @@ class TestWhatTheCorrectnessCosts:
 
     @staticmethod
     @pytest.fixture(scope="class")
-    def cycles(toolchain, model, observed):
-        from basalt.harvest.corpus_shapes import generate_shapes
+    def cycles(corpus_builds, model, observed):
         from basalt.sched.scheduler import issue_cycles, schedule_program
 
-        def one(snippet):
-            with TemporaryDirectory(prefix="basalt-cost-") as tmp:
-                src = Path(tmp) / "k.ptx"
-                cubin = Path(tmp) / "k.cubin"
-                src.write_text(snippet.ptx)
-                built = toolchain.run(
-                    [str(toolchain.ptxas), f"-arch={ARCH}", "-O3", "-o", str(cubin), str(src)],
-                    check=False,
-                    timeout=60.0,
-                )
-                if built.returncode != 0:
-                    return (0, 0)
-                program = disassemble_program(toolchain, cubin)
-                result = schedule_program(program, model, observed=observed)
-                if result.out_of_scoreboards:
-                    return (0, 0)
-                return (
-                    issue_cycles([i.word for i in program.instructions], program.instructions),
-                    issue_cycles(result.words, program.instructions),
-                )
+        def one(program):
+            result = schedule_program(program, model, observed=observed)
+            if result.out_of_scoreboards:
+                return (0, 0)
+            return (
+                issue_cycles([i.word for i in program.instructions], program.instructions),
+                issue_cycles(result.words, program.instructions),
+            )
 
-        snippets = generate() + generate_tensor() + generate_shapes()
+        programs = [program for _, program in corpus_builds.at(3).values()]
         with ThreadPoolExecutor(max_workers=os.cpu_count() or 4) as pool:
-            rows = list(pool.map(one, snippets))
+            rows = list(pool.map(one, programs))
         return sum(r[0] for r in rows), sum(r[1] for r in rows)
 
     def test_the_cost_is_known_and_bounded(self, cycles):

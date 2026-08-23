@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" width="1280" height="640" role="img"
-     aria-label="basalt: the check NVIDIA never shipped for its own GPUs, and the world's first assembler, checker and scheduler for Blackwell that matches ptxas byte for byte, for the RTX 50 series. sm_120 has no hardware interlock, so one wrong stall count makes the GPU read a stale register and return a wrong answer silently.">
-  <title>basalt: the check NVIDIA never shipped for its own GPUs, and the world's first assembler, checker and scheduler for Blackwell that matches ptxas byte for byte</title>
+     aria-label="basalt: world's first assembler, checker and scheduler for NVIDIA Blackwell (sm_120), matching their own compiler byte for byte, the check they never shipped, for the RTX 50 series. sm_120 has no hardware interlock, so one wrong stall count makes the GPU read a stale register and return a wrong answer silently.">
+  <title>basalt: world's first assembler, checker and scheduler for NVIDIA Blackwell (sm_120), matching their own compiler byte for byte, the check they never shipped</title>
 
   <defs>
     <!-- basalt cools into interlocking hexagonal columns of near-uniform width,

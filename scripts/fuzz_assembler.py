@@ -76,34 +76,45 @@ def _split(operands: str) -> list[str]:
     return parts
 
 
+def _peel(part: str) -> tuple[str, str, bool]:
+    """A register's leading signs, its own text, and whether bars wrapped it.
+
+    `|R2|` is a register carrying a modifier, so leaving the bars on hides every
+    absolute-valued form from the fuzzer entirely.
+    """
+    sign = part[: len(part) - len(part.lstrip("-~"))]
+    rest = part[len(sign) :]
+    bars = len(rest) > 2 and rest.startswith("|") and rest.endswith("|")
+    return sign, rest[1:-1] if bars else rest, bars
+
+
 def _mutate(operands: str, rng: random.Random) -> str | None:
     """One plausible edit to one operand, or None if nothing here is editable."""
     parts = _split(operands)
     editable = [
         i
         for i, part in enumerate(parts)
-        if _REGISTER.match(part) or _IMMEDIATE.match(part) or _REGISTER.match(part.lstrip("-~"))
+        if _IMMEDIATE.match(part) or _REGISTER.match(_peel(part)[1])
     ]
     if not editable:
         return None
 
     index = rng.choice(editable)
     part = parts[index]
+    sign, core, bars = _peel(part)
 
-    if (match := _REGISTER.match(part.lstrip("-~"))) is not None:
+    if (match := _REGISTER.match(core)) is not None:
         prefix = match.group(1)
-        sign = part[: len(part) - len(part.lstrip("-~"))]
         limit = 7 if prefix in ("P", "UP") else 254
         choice = rng.choice(["number", "sink", "modifier"])
         if choice == "sink":
             replacement = f"{prefix}{'T' if prefix in ('P', 'UP') else 'Z'}"
         elif choice == "modifier" and prefix == "R":
-            replacement = ("-" if not sign else "") + f"{prefix}{rng.randint(0, limit)}"
-            parts[index] = replacement
-            return ", ".join(parts)
+            replacement = f"{prefix}{rng.randint(0, limit)}"
+            sign = "" if sign else "-"
         else:
             replacement = f"{prefix}{rng.randint(0, limit)}"
-        parts[index] = sign + replacement
+        parts[index] = sign + (f"|{replacement}|" if bars else replacement)
         return ", ".join(parts)
 
     # an immediate: sweep the interesting corners of its width as well as noise

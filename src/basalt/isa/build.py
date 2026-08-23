@@ -38,6 +38,30 @@ _KIND = re.compile(r"^-?(UR|R|UP|P)(\d+|Z|T)\b")
 _RNUM = re.compile(r"\bR(\d+)\b")
 
 
+def _constant_shape(text: str) -> str:
+    """How a constant-bank reference names its bank and its offset.
+
+    `c[0x0][0x380]` indexes with a literal and `c[0x3][R5]` with a register, and
+    `cx[UR4][..]` names the bank with one. Behind identical brackets those are
+    different encodings, so collapsing them to one shape harvests whichever
+    appeared first and leaves the others nothing to be written through.
+    """
+    kind = "constant" if text.startswith("c[") else "constant:x"
+    _, _, rest = text.partition("][")
+    inner = rest.rstrip("]").lstrip("-")
+    return f"{kind}:{'reg' if _KIND.match(inner) else 'imm'}"
+
+
+def _bare(text: str) -> str:
+    """An operand without the modifiers wrapped around it.
+
+    `|R0|` is a register carrying an absolute-value bit, not a literal. Reading
+    it as one put it in the same bucket as `-24`, so `FADD Rd, Ra, imm` and
+    `FADD Rd, Ra, |Rb|` shared a representative and only one was ever probed.
+    """
+    return text.lstrip("-~!").strip("|")
+
+
 def _degeneracy(obs: Observation) -> int:
     """Lower is a better probe subject.
 
@@ -86,7 +110,7 @@ def operand_shape(operands: str) -> tuple[str, ...]:
         if text.startswith("desc["):
             kinds.append("descriptor")
         elif text.startswith(("c[", "cx[")):
-            kinds.append("constant")
+            kinds.append(_constant_shape(text))
         elif text.startswith("`"):
             kinds.append("label")
         elif text.startswith("["):
@@ -102,7 +126,7 @@ def operand_shape(operands: str) -> tuple[str, ...]:
             # leaves the assembler nothing to write the other names with, so each
             # is its own shape and matches its own encoding exactly.
             kinds.append(text)
-        elif (match := _KIND.match(text)) is not None:
+        elif (match := _KIND.match(_bare(text))) is not None:
             kinds.append({"R": "reg", "UR": "ureg", "P": "pred", "UP": "upred"}[match.group(1)])
         else:
             kinds.append("immediate")

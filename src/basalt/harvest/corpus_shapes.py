@@ -15,9 +15,9 @@ Each keeps the same `(pin, pout)` signature as the corpus so the round trip need
 no special case, and each is written to be genuinely runnable rather than merely
 compilable, which the shared-memory forms in the main corpus are not.
 
-They are not added to the harvest. The ISA database is generated data with a
-drift check over it, and widening the harvest to improve a different measurement
-would be a confusing reason for it to change.
+They are harvested as well as scheduled. Written for the round trip, they turn
+out to be the only kernels that reach a predicated form or a branch displacement,
+and a database that has never seen one has to refuse it.
 """
 
 from __future__ import annotations

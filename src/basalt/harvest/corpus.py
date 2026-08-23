@@ -122,6 +122,45 @@ def _binary(op: str, ptx_type: str, mods: tuple[str, ...] = ()) -> Snippet:
     return Snippet(name, _kernel(name, body, ""), "binary", op, ptx_type, mods)
 
 
+# a float literal has to be given as its bits, and the unsigned types are kept
+# positive so the value means the same thing it does in the signed ones
+_IMMEDIATE = {
+    "s16": "-24",
+    "u16": "24",
+    "s32": "-24",
+    "u32": "24",
+    "s64": "-24",
+    "u64": "24",
+    "f16": "0hCE00",
+    "f32": "0fC1C00000",
+    "f64": "0dC038000000000000",
+    "b16": "0x1234",
+    "b32": "0x12345678",
+    "b64": "0x123456789abcdef0",
+}
+
+
+def _binary_imm(op: str, ptx_type: str, mods: tuple[str, ...] = ()) -> Snippet:
+    """dst = op(a, immediate), which is a different encoding from op(a, b).
+
+    Everything else here is register to register, so the immediate form of every
+    mnemonic went unharvested and the assembler had nothing to write `FADD R0,
+    R1, -24` with. The operand shape already tells the two apart; this is what
+    makes the second one exist.
+    """
+    a, d = _reg(ptx_type, 1), _reg(ptx_type, 3)
+    suffix = "".join("." + m for m in mods)
+    body = "\n".join(
+        [
+            _load(ptx_type, a, 0),
+            f"    {op}{suffix}.{ptx_type} {d}, {a}, {_IMMEDIATE[ptx_type]};",
+            _store(ptx_type, d),
+        ]
+    )
+    name = f"k_{op}{''.join('_' + m for m in mods)}_imm_{ptx_type}"
+    return Snippet(name, _kernel(name, body, ""), "binary-imm", op, ptx_type, mods)
+
+
 def _widening(op: str, ptx_type: str) -> Snippet:
     """mul.wide and mad.wide produce a result twice the operand width.
 
@@ -281,6 +320,18 @@ def generate() -> list[Snippet]:
         _binary("add", "f32", ("rp",)),
     ]
     out += [_binary("add", "f32", ("ftz",)), _binary("mul", "f32", ("sat",))]
+
+    # the same arithmetic with a literal source. everything above is register to
+    # register, which left the immediate encoding of each of these unharvested
+    for t in _INT:
+        out += [_binary_imm(op, t) for op in ("add", "sub", "min", "max")]
+        out.append(_binary_imm("mul", t, ("lo",)))
+    for t in _FLOAT:
+        out += [_binary_imm(op, t) for op in ("add", "sub", "mul", "min", "max")]
+    out.append(_binary_imm("add", "f32", ("ftz",)))
+    out += [_binary_imm(op, "f16") for op in ("add", "sub", "mul")]
+    for t in _BITS:
+        out += [_binary_imm(op, t) for op in ("and", "or", "xor")]
     out += [
         _unary(op, "f32", ("approx",))
         for op in ("rcp", "sqrt", "rsqrt", "sin", "cos", "lg2", "ex2")
@@ -455,6 +506,38 @@ def generate() -> list[Snippet]:
             "    @%p1 bra LOOP;\n"
             "    st.global.b32 [%out], %r2;",
             "bra.loop",
+        ),
+        _special(
+            "abs_compare",
+            # the absolute value folds into the compare's operand, and `|R2|`
+            # is a different encoding from `R2` that no other kernel reaches
+            "    ld.global.f32 %f1, [%in];\n"
+            "    ld.global.f32 %f2, [%in+4];\n"
+            "    abs.f32 %f3, %f1;\n"
+            "    setp.geu.f32 %p1, %f3, %f2;\n"
+            "    selp.b32 %r7, 1, 0, %p1;\n"
+            "    st.global.b32 [%out], %r7;",
+            "setp.abs",
+        ),
+        _special(
+            "abs_compare_second",
+            "    ld.global.f32 %f1, [%in];\n"
+            "    ld.global.f32 %f2, [%in+4];\n"
+            "    abs.f32 %f3, %f2;\n"
+            "    setp.geu.f32 %p1, %f1, %f3;\n"
+            "    selp.b32 %r7, 1, 0, %p1;\n"
+            "    st.global.b32 [%out], %r7;",
+            "setp.abs2",
+        ),
+        _special(
+            "neg_fma",
+            # a negated source is likewise its own encoding of the same mnemonic
+            "    ld.global.f32 %f1, [%in];\n"
+            "    ld.global.f32 %f2, [%in+4];\n"
+            "    neg.f32 %f3, %f1;\n"
+            "    fma.rn.f32 %f4, %f3, %f2, %f2;\n"
+            "    st.global.f32 [%out], %f4;",
+            "fma.neg",
         ),
     ]
 

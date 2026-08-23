@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="./docs/assets/social-preview.svg" alt="basalt: the check NVIDIA never shipped for its own GPUs, and the world's first assembler, checker and scheduler for Blackwell that matches ptxas byte for byte. sm_120 has no hardware interlock, so one wrong stall count makes the GPU read a stale register and return a wrong answer silently." width="880" />
+<img src="./docs/assets/social-preview.svg" alt="basalt: world's first assembler, checker and scheduler for NVIDIA Blackwell (sm_120), matching their own compiler byte for byte, the check they never shipped. sm_120 has no hardware interlock, so one wrong stall count makes the GPU read a stale register and return a wrong answer silently." width="880" />
 
 <br/>
 

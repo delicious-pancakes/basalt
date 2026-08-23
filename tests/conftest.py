@@ -11,11 +11,14 @@ parts that need nothing installed to check.
 
 from __future__ import annotations
 
+import os
 import textwrap
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import pytest
 
+from basalt.disasm import Program, disassemble_program
 from basalt.toolchain import Toolchain, ToolchainError, find_toolchain
 
 ARCH = "sm_120a"
@@ -76,3 +79,66 @@ def sample_cubin(toolchain: Toolchain, sample_ptx: str, tmp_path_factory) -> Pat
     if res.returncode != 0:
         pytest.skip(f"ptxas could not build the sample: {res.stderr.strip()}")
     return cubin
+
+
+class CorpusBuilds:
+    """The corpus compiled and disassembled once per optimisation level.
+
+    Six fixtures wanted the same kernels at the same levels and each paid for
+    its own `ptxas` and `nvdisasm` run, which was most of the suite's runtime.
+    Sharing the result is safe because `Program` is frozen and nothing in the
+    suite mutates one; what the fixtures actually differ in is the analysis they
+    run afterwards, which is cheap.
+
+    Levels are built on first use, so asking for one class does not pay for the
+    other two.
+    """
+
+    def __init__(self, toolchain: Toolchain, root: Path) -> None:
+        self._toolchain = toolchain
+        self._root = root
+        self._cache: dict[int, dict[str, tuple[Path, Program]]] = {}
+
+    def at(self, opt: int) -> dict[str, tuple[Path, Program]]:
+        """Every kernel that built at `-O{opt}`, by name, with its cubin path."""
+        if opt not in self._cache:
+            self._cache[opt] = self._build(opt)
+        return self._cache[opt]
+
+    def _build(self, opt: int) -> dict[str, tuple[Path, Program]]:
+        from basalt.harvest.corpus import generate
+        from basalt.harvest.corpus_shapes import generate_shapes
+        from basalt.harvest.corpus_tensor import generate_tensor
+
+        out_dir = self._root / f"O{opt}"
+        out_dir.mkdir(parents=True, exist_ok=True)
+
+        def one(snippet):
+            src = out_dir / f"{snippet.name}.ptx"
+            cubin = out_dir / f"{snippet.name}.cubin"
+            src.write_text(snippet.ptx)
+            built = self._toolchain.run(
+                [
+                    str(self._toolchain.ptxas),
+                    f"-arch={ARCH}",
+                    f"-O{opt}",
+                    "-o",
+                    str(cubin),
+                    str(src),
+                ],
+                check=False,
+                timeout=120.0,
+            )
+            # a kernel ptxas rejects is a recorded negative, not a failure
+            if built.returncode != 0:
+                return None
+            return snippet.name, (cubin, disassemble_program(self._toolchain, cubin))
+
+        snippets = generate() + generate_tensor() + generate_shapes()
+        with ThreadPoolExecutor(max_workers=min(32, (os.cpu_count() or 4) * 2)) as pool:
+            return dict(row for row in pool.map(one, snippets) if row is not None)
+
+
+@pytest.fixture(scope="session")
+def corpus_builds(toolchain: Toolchain, tmp_path_factory) -> CorpusBuilds:
+    return CorpusBuilds(toolchain, tmp_path_factory.mktemp("basalt-corpus"))

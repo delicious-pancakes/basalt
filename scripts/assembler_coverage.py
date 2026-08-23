@@ -108,8 +108,9 @@ def main() -> int:
             else:
                 counted["wrong"] += 1
                 mismatched += 1
-        # the field name is the useful part; the operand text is not
-        why = Counter(reason.split(":")[0][:70] for _, _, reason in result.refused)
+        # grouped on the whole reason: truncating first merged refusals that
+        # happened to share a prefix and reported them as one cause
+        why = Counter(reason.split(":")[0] for _, _, reason in result.refused)
         return counted, why, (snippet.name, mismatched) if mismatched else None
 
     with ThreadPoolExecutor(max_workers=os.cpu_count() or 4) as pool:
