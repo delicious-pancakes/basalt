@@ -1643,6 +1643,29 @@ could not follow, and 0 of 5,237,448 instructions failing to decode. A checker t
 skipped a tenth of the code could report the same zero, so the audit prints how much of each
 library it actually reached.
 
+### Every control, on one commit, from a clean slate
+
+```bash
+python scripts/verify_all.py
+```
+
+| Control | Answer |
+| :--- | :--- |
+| lint, format, types on two platforms | clean |
+| both oracles | `ptxas` V13.3.73 |
+| ISA rebuild has not drifted | 345 forms committed, 345 rebuilt, compared by encoding |
+| measured fields still behave | 845 of 866 register slots controllable |
+| assembler at `-O0`, `-O1`, `-O2`, `-O3` | 22,714/22,752, 12,189/12,208, 12,395/12,400, 12,395/12,400 |
+| assembler under mutation | every word that assembled decoded back to the text asked for |
+| one schedule per family target | the schedule is a property of the architecture, not the part |
+| round trip on the card at `-O1`, `-O2`, `-O3` | **439 of 439** comparable kernels match the vendor, each level |
+| the checker against the silicon | 233 kernels, one dependency shortened in each, **0 missed** |
+| shipped libraries audit | **0 errors** |
+| the suite | passed |
+
+**19 controls, 16.0 minutes, all passing.** That is the state the numbers above describe, and
+the command that reproduces the set is the same one that produced it.
+
 **What that is and is not.** It is not a clean bill of health for NVIDIA's code and is not
 meant to be. The finding is that a checker built and calibrated entirely on one body of code
 reported twenty-six hazards per kernel the first time it saw another, that widening the second
