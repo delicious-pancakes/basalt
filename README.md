@@ -36,39 +36,31 @@ them back and tells you they are safe, and neither does anyone else.
 
 Assemblers for NVIDIA GPUs have existed for a decade, the Blackwell encoding has been
 reverse engineered before, there are published cycle-level characterisations of `sm_120`,
-and there are tools that emit its scheduling control bits and run their own kernels on a
-card to see that the answers come out right. Being first to write one is not the claim.
-
-What nobody has done is hold any of it to a standard you can check. That means two things
-here, and both are new:
-
-**Nothing else reads machine code it did not produce.** Your compiler emitted that cubin, or
-a library shipped it, or somebody hand-wrote it, and until now there was no way to ask
-whether its control bits actually cover its data dependencies. On an architecture with no
-hardware interlock that is the difference between "it ran" and "it is correct", and the
-difference is invisible: a stall one cycle short reads a stale register and returns a wrong
-number at full speed, with no fault and no warning, every single time. So basalt is pointed
-at 2,473 sm_120 kernels NVIDIA ships in cuBLAS, cuSOLVER, cuSPARSE, NPP and the rest, and
-the first thing that proved is how wrong basalt was.
-
-**Nothing else is measured against the vendor's own bytes.** basalt's reference is `ptxas`
-output, so a disagreement is basalt's bug until proven otherwise. Its assembler has to
-reproduce the compiler's exact 128 bits. Its scheduler has to throw away every control bit
-the compiler chose, compute new ones, and have the GPU compute the same answer.
-
-**What is new here, stated so it can be checked.** Assemblers for this architecture exist and
-one of them schedules control bits automatically. The interlock behaviour is published. Both
-are true and neither is the claim. The claim is one sentence:
+and one public assembler for this architecture already assigns the scheduling control bits
+itself and runs its own kernels on a card to see that the answers come out right. All true,
+and none of it is the claim:
 
 > Nothing else can be handed a cubin it did not produce and told to say whether its
 > scheduling control bits are safe.
 
-Everything else in this repository exists to make that sentence testable. The assembler is
-there so basalt can build a program with one stall deliberately shortened. The scheduler is
-there so the model can be forced to commit to an answer rather than grade someone else's. The
-audit is where the sentence stops being an absence and becomes a measurement.
+Your compiler emitted that cubin, or a library shipped it, or somebody hand-wrote it, and
+until now there was no way to ask. On an architecture with no hardware interlock that is the
+difference between "it ran" and "it is correct", and the difference is invisible: a stall one
+cycle short reads a stale register and returns a wrong number at full speed, with no fault
+and no warning, every single time.
 
-One standard, three tools: **agree with the vendor exactly, or say why not.**
+Everything else here exists to make that sentence testable. The assembler is what builds a
+program with one stall deliberately shortened. The scheduler is what forces the model to
+commit to an answer rather than grade someone else's. And the audit is where the sentence
+stops being an absence and becomes a measurement: basalt pointed at 2,473 sm_120 kernels
+NVIDIA ships in cuBLAS, cuSOLVER, cuSPARSE, NPP and the rest.
+
+**Second, nothing else is measured against the vendor's own bytes.** basalt's reference is
+`ptxas` output, so a disagreement is basalt's bug until proven otherwise. Its assembler has
+to reproduce the compiler's exact 128 bits. Its scheduler has to throw away every control bit
+the compiler chose, compute new ones, and have the GPU compute the same answer.
+
+One standard for all of it: **agree with the vendor exactly, or say why not.**
 
 | | What it does | How it is checked | Result |
 | :--- | :--- | :--- | ---: |
@@ -82,17 +74,16 @@ schedules spend **1.05x** the vendor's issue cycles, slower on 111 of the 1,323 
 optimisation-level pairs and cheaper on 842, with every comparable kernel still
 byte-identical on the GPU.
 
-The fourth row is the one that changed the other three. A checker calibrated on a corpus
+The third row is the one that changed the other three. A checker calibrated on a corpus
 cannot fail on that corpus: the tightest gap the compiler was seen to leave *is* the floor,
 by construction, for exactly the code it was measured on. The first time this one saw code
 from somewhere else it reported twenty-six hazards per kernel in a JPEG decoder that has
 never returned a wrong pixel, and all 6,593 were basalt's: an instruction the corpus never
 emits, a requirement mined from four observations, a shared-memory load whose barrier the
 vendor legitimately omits 734,837 times, and a definition under `@P0` that never reaches a
-use under `@!P0`. Re-mining the requirement from 24,311 shipped
-kernels put a guard predicate at 13 cycles across 229,567 observations, which is the number
-fault injection had measured on the card by breaking a program on purpose. See
-[finding 32](docs/FINDINGS.md).
+use under `@!P0`. Re-mining the requirement from 24,311 shipped kernels then put a guard
+predicate at 13 cycles across 229,567 observations, which is the number fault injection had
+measured on this card by breaking a program on purpose. See [finding 32](docs/FINDINGS.md).
 
 Cheaper than the vendor is not a claim to be smug about. basalt schedules every dependency
 at the tightest gap `ptxas` was ever seen to leave for that exact pairing, and `ptxas` is

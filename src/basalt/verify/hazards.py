@@ -539,6 +539,11 @@ def _check_scoreboarded_minimum(
     own stall, because they are not the same: `FLO.U32` is scheduled 1 cycle
     from a consumer three instructions later and 2 from the one straight after
     it. Never reported against the safe stall encoding, which covers anything.
+
+    Bounded by the measured residue, because the wait is what makes the pair
+    safe and the gap beside it is spacing the compiler had work to fill:
+    `LDG.E.64 => FFMA` mines at 461 cycles, and reporting anything short of that
+    was 945 of the first 1,149 warnings the audit raised against shipped code.
     """
     if observed is None or report is None or not recording:
         return
@@ -574,10 +579,10 @@ def _check_scoreboarded_minimum(
             actual=rd.elapsed,
             detail=(
                 f"{producer.mnemonic} signals a scoreboard and is waited on, but a "
-                f"scoreboard does not cover the whole result: across "
-                f"{evidence.observations} observations the compiler never scheduled "
-                f"{evidence.producer} closer than {evidence.minimum} cycles to "
-                f"{evidence.consumer}"
+                f"scoreboard does not cover the whole result: the residue is measured at "
+                f"{SCOREBOARD_RESIDUE_CYCLES} cycles, and the compiler was never seen to "
+                f"schedule {evidence.producer} closer than {evidence.minimum} to "
+                f"{evidence.consumer} across {evidence.observations} observations"
             ),
         ),
     )
