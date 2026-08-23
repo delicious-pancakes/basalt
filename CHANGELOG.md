@@ -13,8 +13,8 @@ any release. The clean-room position in [`NOTICE`](NOTICE) will not.
 - Read barriers are derived rather than copied from the schedule being replaced,
   which is what a scheduler needs to place control bits on a program nobody has
   compiled. All 334 in the corpus were characterised first: 328 sit on a
-  variable-latency instruction and the rest on a store, 340 of 341 sit on one
-  whose source register is overwritten later, and the barrier goes on the last
+  variable-latency instruction and the rest on a store, all 299 sit on one whose
+  source register is overwritten somewhere, and the barrier goes on the last
   such reader before the overwrite because it covers every earlier one. Removing
   them makes `s_tile_matmul` return the wrong answer on the card, which is the
   evidence they are load-bearing. Finding 25.
@@ -23,6 +23,11 @@ any release. The clean-room position in [`NOTICE`](NOTICE) will not.
   names its scoreboard in the operand text rather than in the control word, so
   renumbering the `LDGDEPBAR` that signals it unpaired them with nothing in the
   encoding to show it. Finding 27.
+- `scripts/corpus_figures.py`: recompute every corpus-derived figure the
+  documentation quotes, from a fresh compile, in one command. Several had already
+  drifted as the corpus grew, and one had been measured from a scratch directory
+  holding cubins from two different corpus versions, which produced numbers that
+  were plausible and wrong. A figure nobody can regenerate is an assertion.
 - `scripts/probe_kernel.py`: reschedule one kernel and print which control field
   moved, in seconds rather than the minutes the corpus runner takes, with a
   standing check for control-word shapes `ptxas` never emits.
@@ -51,7 +56,7 @@ any release. The clean-room position in [`NOTICE`](NOTICE) will not.
   component. That is the machine-readable form of "no runtime dependencies".
 - The branch target encoding, solved from real kernels rather than probed: a
   field split across bits 16..23 and 34..81, holding the distance to the
-  destination from the following instruction, scaled by four. All 517 branches
+  destination from the following instruction, scaled by four. All 1,548 branches
   in the corpus decode to their label and none decodes wrongly, and a test
   re-derives it from the corpus so it cannot rot when a compiler version
   changes.
@@ -123,8 +128,8 @@ any release. The clean-room position in [`NOTICE`](NOTICE) will not.
   frequently there for another reason. The checker tests the same rule through
   the same function, which closed a gap where the scheduler charged for a hazard
   the checker never looked for. Issue cost 1.06x to 1.05x.
-- The yield bit follows a rule fitted to 38,064 instructions of vendor output,
-  93.7% agreement against the 72.9% the previous guess managed. Inverting 680 of
+- The yield bit follows a rule fitted to 37,008 instructions of vendor output,
+  93.7% agreement against the 73.2% the previous guess managed. Inverting 680 of
   them in the vendor's own schedules changed no result on the card, so the field
   is a hint rather than a correctness input, which is now measured rather than
   repeated. Finding 26.
@@ -140,7 +145,7 @@ any release. The clean-room position in [`NOTICE`](NOTICE) will not.
 
 ### Fixed
 - Removed a repair loop that reallocated scoreboards away from any instruction
-  waiting on the number it signals. `ptxas` emits that shape 254 times in 38,064
+  waiting on the number it signals. `ptxas` emits that shape 251 times in 37,008
   instructions, so the rule was invented to avoid a hazard that is not one, and
   it was not free: forbidding a number pushes the allocator onto a fresh
   scoreboard, and `s_tile_matmul` was taking 57 where it needs 20. Removing it
@@ -170,7 +175,7 @@ any release. The clean-room position in [`NOTICE`](NOTICE) will not.
   now pinned on the pytest path as well.
 - The yield bit is written from the stall rather than inherited. The two are not
   independent: across the corpus `ptxas` emits a zero stall with the bit clear
-  18,292 times and set never, and a stall of one with it set 6,477 times and
+  17,999 times and set never, and a stall of one with it set 6,192 times and
   clear twice. Leaving it as found produced pairs the vendor emits rarely or not
   at all, which `nvdisasm` refuses and the GPU runs anyway.
 - Two checks that reschedule a kernel and hand it back to the verifier now
@@ -229,9 +234,9 @@ any release. The clean-room position in [`NOTICE`](NOTICE) will not.
 
 ### Found
 - A read barrier is set exactly where an operand read outlives its register, and
-  covers every earlier late reader before the overwrite. 340 of the 341 in
-  38,064 instructions of vendor output fit that rule, and all 474 overwrites left
-  bare are accounted for by three mechanisms with nothing left over. Finding 25.
+  covers every earlier late reader before the overwrite. All 299 in 37,008
+  instructions of vendor output fit that rule, and all 318 in-block overwrites
+  left bare are accounted for by three mechanisms that add up exactly. Finding 25.
 - The yield bit does not gate correctness on sm_120. 680 inversions across fp64,
   transcendental, tensor, loop, barrier and shared-atomic kernels, and the card
   computed the vendor's answer every time. Finding 26.
@@ -266,6 +271,6 @@ any release. The clean-room position in [`NOTICE`](NOTICE) will not.
   refuses and the GPU runs anyway.
 - Where a branch keeps its destination: a field split across bits 16..23 and
   34..81, holding the distance from the following instruction scaled by four.
-  All 517 branches in the corpus decode to their label.
+  All 1,548 branches in the corpus decode to their label.
 - `EXIT`, `RET`, `CALL` and `BAR` never take the zero-stall encoding, in 0 of
   329, 0 of 5, 0 of 5 and 0 of 3 instances, while `BRA` takes it 329 times.

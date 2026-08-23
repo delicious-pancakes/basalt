@@ -70,8 +70,8 @@ _OPAQUE_TRANSFERS = frozenset({"CALL", "RET", "BRX", "JMX", "RTT", "BPT"})
 _NEVER_ZERO_STALL: dict[str, int] = {"EXIT": 5, "RET": 5, "CALL": 5, "BAR": 6}
 
 # Stalls ptxas pairs with the yield hint, as a half-open range. Fitted rather
-# than reasoned: it agrees with the vendor on 93.7% of 38,064 instructions where
-# "yield when the stall is 1" agreed on 72.9%. The bit is a hint and not a
+# than reasoned: it agrees with the vendor on 93.7% of 37,008 instructions where
+# "yield when the stall is 1" agreed on 73.2%. The bit is a hint and not a
 # correctness input, which is measured rather than assumed (finding 26).
 YIELD_STALL_RANGE = (1, 12)
 
@@ -290,7 +290,7 @@ def _late_reader(opcode: str, model: LatencyModel) -> bool:
     Variable latency is the signal. Something that answers on a fixed schedule
     has taken its operands by a fixed point too, and the anti-dependency stall
     covers that; something the hardware makes you wait for has not. Every one of
-    the 341 read barriers in the corpus is on an instruction in one of these two
+    the 299 read barriers in the corpus is on an instruction in one of these two
     sets, and nothing outside them ever carries one.
     """
     return model.lookup(opcode).kind is LatencyClass.VARIABLE or opcode in _LATE_READING_CONTROL
@@ -302,11 +302,11 @@ def _read_barrier_windows(cfg, program, model, waits) -> list[tuple[int, int]]:
     A read barrier is in order: everything issued before the setter has finished
     reading by the time it clears. So one barrier on the *last* late reader
     before an overwrite covers every earlier reader too, which is why the vendor
-    emits 341 of them across 38,064 instructions rather than one per load.
+    emits 299 of them across 37,008 instructions rather than one per load.
 
     Nothing is needed where the overwriter already waits on the reader's write
     barrier, since that wait cannot clear before the read has happened. That one
-    exemption accounts for 348 of the 474 overwrites the vendor leaves bare.
+    exemption accounts for 246 of the 318 overwrites the vendor leaves bare.
 
     A forwards fixed point over the graph rather than a walk through each block,
     because the case that matters most is loop-carried: a tiled matmul stores to
@@ -663,7 +663,7 @@ def schedule_program(
     # An instruction may wait on the number it is about to signal: the wait is
     # evaluated before issue and the barrier raised at or after it, so this is
     # reusing a number that has just drained rather than waiting on itself.
-    # `ptxas` does it 254 times in 38,064 instructions (finding 24).
+    # `ptxas` does it 251 times in 37,008 instructions (finding 24).
     allocate()
     converge()
 
