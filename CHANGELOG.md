@@ -51,7 +51,7 @@ any release. The clean-room position in [`NOTICE`](NOTICE) will not.
   component. That is the machine-readable form of "no runtime dependencies".
 - The branch target encoding, solved from real kernels rather than probed: a
   field split across bits 16..23 and 34..81, holding the distance to the
-  destination from the following instruction, scaled by four. All 354 branches
+  destination from the following instruction, scaled by four. All 517 branches
   in the corpus decode to their label and none decodes wrongly, and a test
   re-derives it from the corpus so it cannot rot when a compiler version
   changes.
@@ -117,7 +117,7 @@ any release. The clean-room position in [`NOTICE`](NOTICE) will not.
 ### Changed
 - The anti-dependency requirement is mined per pairing rather than charged as a
   constant. Three cycles is what fault injection measured for `ULEA` into
-  `UMOV`; the vendor leaves one or two for hundreds of other pairings, 381 times
+  `UMOV`; the vendor leaves one or two for hundreds of other pairings, 386 times
   across the corpus, so a constant was both over-charging and unprovable.
   Evidence only ever lowers the charge, because the smallest gap `ptxas` left is
   frequently there for another reason. The checker tests the same rule through
@@ -266,6 +266,6 @@ any release. The clean-room position in [`NOTICE`](NOTICE) will not.
   refuses and the GPU runs anyway.
 - Where a branch keeps its destination: a field split across bits 16..23 and
   34..81, holding the distance from the following instruction scaled by four.
-  All 354 branches in the corpus decode to their label.
+  All 517 branches in the corpus decode to their label.
 - `EXIT`, `RET`, `CALL` and `BAR` never take the zero-stall encoding, in 0 of
   329, 0 of 5, 0 of 5 and 0 of 3 instances, while `BRA` takes it 329 times.

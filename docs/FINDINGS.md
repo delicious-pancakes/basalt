@@ -518,7 +518,7 @@ Every distance is four times the signed byte at bits 16:23, and the sign continu
 > **target = address + 16 + 4 × signed(bits[16:23] ++ bits[34:81])**
 
 The split is why a contiguous search finds nothing, and the scale of four is why a search
-for the raw distance finds nothing either. All 354 branches in the corpus decode to their
+for the raw distance finds nothing either. All 517 branches in the corpus decode to their
 label under this rule and none decodes wrongly.
 
 The rule is a measurement, and a measurement written down as a constant is exactly what goes
@@ -1105,8 +1105,8 @@ this pairing*, and it is a requirement basalt had no concept of.
 **It is a pairing, not a constant, and reading it as a constant was the first mistake made
 with it.** basalt charged three cycles for every anti-dependency, which passed everything,
 because being too generous is the safe direction. Checking that against the vendor says
-otherwise: across the corpus `ptxas` leaves one or two cycles here 381 times, on hundreds of
-distinct pairings, and it is not wrong 381 times.
+otherwise: across the corpus `ptxas` leaves one or two cycles here 386 times, on hundreds of
+distinct pairings, and it is not wrong 386 times.
 
 So the gap is mined per pairing, exactly as the read-after-write requirement is, and the
 numbers spread the way every other latency in this project does:
@@ -1131,7 +1131,7 @@ is the number fault injection measured for it. That is not a coincidence worth l
 it is what the fallback is for.
 
 The checker reports this hazard only where the evidence is trusted. A constant there would
-call `ptxas` broken 381 times, and a control that fires on the reference is not a control.
+call `ptxas` broken 386 times, and a control that fires on the reference is not a control.
 The scheduler stays stricter than the checker on purpose: it charges three where it has no
 evidence, and the checker says nothing, because being conservative about what to emit and
 being conservative about what to allege are different jobs.
