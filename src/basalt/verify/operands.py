@@ -33,6 +33,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 from enum import StrEnum
+from functools import lru_cache
 
 __all__ = ["WIDTH_SUFFIXES", "Access", "RegKind", "RegRef", "operand_access"]
 
@@ -79,13 +80,21 @@ class Access:
     # ordinary source and costs more to wait for
     guard: RegRef | None = None
 
-    @property
-    def real_defs(self) -> set[RegRef]:
-        return {r for r in self.defs if not r.is_sink}
+    # built once: an Access is cached and read many times per fixed-point pass
+    _real_defs: frozenset[RegRef] | None = field(default=None, repr=False, compare=False)
+    _real_uses: frozenset[RegRef] | None = field(default=None, repr=False, compare=False)
 
     @property
-    def real_uses(self) -> set[RegRef]:
-        return {r for r in self.uses if not r.is_sink}
+    def real_defs(self) -> frozenset[RegRef]:
+        if self._real_defs is None:
+            self._real_defs = frozenset(r for r in self.defs if not r.is_sink)
+        return self._real_defs
+
+    @property
+    def real_uses(self) -> frozenset[RegRef]:
+        if self._real_uses is None:
+            self._real_uses = frozenset(r for r in self.uses if not r.is_sink)
+        return self._real_uses
 
 
 # listed rather than inferred from the operand shape, which is wrong often
@@ -257,10 +266,16 @@ def _split_operands(text: str) -> list[str]:
     return out
 
 
+# the dataflow fixed point asks the same instruction on every pass, and a
+# library kernel is walked dozens of times before it settles
+@lru_cache(maxsize=1 << 16)
 def operand_access(mnemonic: str, operands: str) -> Access:
     """Determine the registers one instruction defines and uses.
 
     `mnemonic` carries the modifiers, e.g. `LDG.E.64`, because width lives there.
+
+    Cached, so the result must stay read-only to its callers; every field on
+    `Access` is a set built here and never mutated afterwards.
     """
     access = Access()
     opcode = mnemonic.split(".")[0].upper()

@@ -104,7 +104,17 @@ STEPS: tuple[Step, ...] = (
     ),
     Step(
         "shipped libraries audit",
-        [PY, "scripts/audit_shipped.py", "--cubins", "third_party/cuda/13.3.1/cubins"],
+        [
+            PY,
+            "scripts/audit_shipped.py",
+            "--cubins",
+            "third_party/cuda/13.3.1/cubins",
+            # the libraries the requirement was mined from, held out of the audit
+            "--exclude",
+            "cublas64_13,cublasLt64_13,cusolver64_12,cusparse64_12,nppial64_13,"
+            "nppicc64_13,nppidei64_13,nppif64_13,nppig64_13,nppim64_13,"
+            "nppist64_13,nppitc64_13,npps64_13",
+        ],
         ("errors:",),
         slow=True,
         needs_path="third_party/cuda/13.3.1/cubins",

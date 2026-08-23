@@ -158,8 +158,11 @@ class FlowState:
         """Charge one instruction's stall to every outstanding definition."""
         if stall == 0 and not yielded:
             return
-        for reg, by_index in self.defs.items():
-            self.defs[reg] = {i: rd.advanced(stall, yielded=yielded) for i, rd in by_index.items()}
+        for by_index in self.defs.values():
+            for i, rd in by_index.items():
+                moved = rd.advanced(stall, yielded=yielded)
+                if moved is not rd:
+                    by_index[i] = moved
 
     def begin_read(self, barrier: int, index: int, registers: frozenset[RegRef]) -> None:
         if barrier == 7 or not registers:

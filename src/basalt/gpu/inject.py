@@ -115,7 +115,7 @@ def _find_dependent_pair(program, opcode: str) -> tuple[int, int] | None:
     the gap with NOPs at maximum stall, and those NOPs are part of what covers
     the dependency, so the span between the two is what has to be controlled.
     """
-    produced_by: dict[int, set] = {}
+    produced_by: dict[int, frozenset] = {}
     for i, ins in enumerate(program.instructions):
         if ins.word is None:
             continue

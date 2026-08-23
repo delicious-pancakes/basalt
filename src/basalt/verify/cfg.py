@@ -26,7 +26,7 @@ saturated at a bound well above the longest latency, so the lattice is finite.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, field
 
 from ..disasm import Instruction, Program, branch_target
 
@@ -70,10 +70,19 @@ class ReachingDef:
         )
 
     def advanced(self, stall: int, *, yielded: bool = False) -> ReachingDef:
-        return replace(
-            self,
-            elapsed=min(STALL_SATURATION, self.elapsed + stall),
-            yielded=self.yielded or yielded,
+        elapsed = min(STALL_SATURATION, self.elapsed + stall)
+        # frozen, so returning self where nothing moved is safe, and it is the
+        # common case once a definition saturates: `dataclasses.replace` here
+        # was two thirds of the time spent verifying a shipped library
+        if elapsed == self.elapsed and (self.yielded or not yielded):
+            return self
+        return ReachingDef(
+            self.index,
+            elapsed,
+            self.satisfied,
+            self.barrier,
+            self.yielded or yielded,
+            self.crossed,
         )
 
 

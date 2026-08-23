@@ -20,6 +20,7 @@ knowing.
     python scripts/audit_shipped.py --libs <dir of dlls or .so files>
     python scripts/audit_shipped.py --cubins <dir of extracted cubins>
     python scripts/audit_shipped.py --cubins <dir> --report audit.json
+    python scripts/audit_shipped.py --cubins <dir> --exclude cublas64_13,cublasLt64_13
 
 Needs no GPU. The libraries are not vendored and never enter the repository;
 `python scripts/fetch_toolchain.py --libs` fetches them from the same pinned
@@ -191,12 +192,21 @@ def main() -> int:
     parser.add_argument("--libs", type=Path, help="directory of host libraries to extract from")
     parser.add_argument("--cubins", type=Path, help="directory of already extracted cubins")
     parser.add_argument("--report", type=Path, help="write the full result as JSON")
+    parser.add_argument(
+        "--exclude",
+        default="",
+        help="comma separated library directories to skip, normally the mined ones",
+    )
     parser.add_argument("--limit", type=int, default=0, help="stop after this many cubins")
     parser.add_argument("--workers", type=int, default=0, help="processes, default one per core")
     args = parser.parse_args()
 
     if args.cubins:
         targets = sorted(args.cubins.rglob("*.cubin"))
+        # auditing the code the requirement was mined from cannot fail, which is
+        # the flaw stage 10 found rather than a way of passing it
+        held = {name for name in args.exclude.split(",") if name}
+        targets = [p for p in targets if p.parent.name not in held]
     elif args.libs:
         targets = _extract(args.libs, args.libs.parent / "cubins")
     else:
@@ -205,6 +215,9 @@ def main() -> int:
         raise SystemExit("no sm_120 cubins found")
     if args.limit:
         targets = targets[: args.limit]
+    # largest first, one at a time: a 5 MB cubin takes minutes and a 50 KB one
+    # milliseconds, so a fixed chunk leaves fifteen cores idle behind a straggler
+    targets.sort(key=lambda p: p.stat().st_size, reverse=True)
 
     print(f"{_repo.provenance()}\n")
     print(f"auditing {len(targets)} cubins from {len({t.parent.name for t in targets})} libraries")
@@ -213,9 +226,9 @@ def main() -> int:
     started = time.perf_counter()
     workers = args.workers or None
     with ProcessPoolExecutor(max_workers=workers, initializer=_setup) as pool:
-        for done, tally in enumerate(pool.map(_audit, targets, chunksize=4), start=1):
+        for done, tally in enumerate(pool.map(_audit, targets, chunksize=1), start=1):
             total.merge(tally)
-            if done % 100 == 0:
+            if done % 25 == 0:
                 print(
                     f"  {done}/{len(targets)} cubins, {total.kernels} kernels, "
                     f"{total.errors} errors",

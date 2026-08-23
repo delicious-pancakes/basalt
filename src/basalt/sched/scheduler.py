@@ -278,11 +278,11 @@ def _short_pair(block, program, stalls, pinned, model, observed) -> bool:
     return False
 
 
-def _defs(program, index: int) -> set[RegRef]:
+def _defs(program, index: int) -> frozenset[RegRef]:
     """Registers one instruction writes, or nothing when it did not decode."""
     instr = program.instructions[index]
     if instr.word is None:
-        return set()
+        return frozenset()
     return operand_access(instr.mnemonic, instr.operands).real_defs
 
 
