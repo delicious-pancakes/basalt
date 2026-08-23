@@ -126,8 +126,15 @@ every kernel against a second, third and fourth pattern immediately found a carr
 predicate the operand model had been reading as a source since the beginning. It had
 survived every control up to that point, including the round trip itself.
 
-The same discipline decides what the assembler is allowed to do. It reached 99.9% of the
-corpus only after eight separate rounds of being confidently incorrect:
+The same discipline decides what the assembler is allowed to do, and it is worth separating
+the two numbers it has. **Coverage is 99.9% of the corpus and 87.5% of shipped library code.
+Correctness is 100%, and that is the number pinned by a test.** The gap between them is
+instructions basalt *refuses*, each naming the field it could not place, because a tool that
+guessed would reach full coverage by emitting words that disassemble to the right text and
+compute something else. It has never emitted one, across 59,760 corpus instructions and
+5,237,448 shipped ones.
+
+It got there only after eight separate rounds of being confidently incorrect:
 
 - writing a register number into the encoding of an immediate form,
 - treating a uniform register as interchangeable with a regular one,
