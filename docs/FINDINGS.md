@@ -1513,12 +1513,12 @@ could have found any of them, because every one is invisible on the corpus.
 | :-- | :--- | :--- |
 | 1 | `F2IP` read `F2I`'s entry and was called variable latency | `F2IP` appears nowhere in 37,008 instructions of corpus output |
 | 2 | `R2UR` was called variable latency | all 3,098 corpus instances carry the safe stall encoding, which exempts them |
-| 3 | an exact mined pairing was grounded however thin | four observations said `IADD -> MOV` needs 20 and the vendor ships it at 5 |
-| 4 | a mined figure could exceed the producer's own latency | after `L` cycles the result is written, so no requirement can be larger |
+| 3 | a mined figure could exceed the producer's own latency | four observations said `IADD -> MOV` needs 20 and the vendor ships it at 5 |
+| 4 | a guard's could exceed the 13 cycles measured for one | 9 observations said 18, and the corpus never wrote a tighter one to disagree |
 | 5 | the scoreboard residue was whatever was mined | `LDG.E.64 => FFMA` mined at 461 cycles from 3 observations |
 | 6 | a missing scoreboard was always an error | the vendor covers `LDS` with spacing alone 734,837 times |
-| 7 | `@P0` was treated as reaching `@!P0` | a generated corpus almost never writes complementary guards |
-| 8 | a missing barrier was noted rather than measured | `DSETP -> FSEL` is 66 cycles apart 4,322 times, and nothing was checking the 66 |
+| 7 | where it does, nothing checked the distance instead | `DSETP -> FSEL` sits 66 cycles apart 4,322 times and nothing was reading the 66 |
+| 8 | `@P0` was treated as reaching `@!P0` | a generated corpus almost never writes complementary guards |
 
 **The corpus-mined requirement table cannot fail on the corpus it came from.** That is the
 structural point, and it is why 1,323 kernels of positive control kept passing while the
@@ -1612,13 +1612,15 @@ indirect branch leaving an edge the dataflow could not follow, and 0 of 63,968 i
 failing to decode. A checker that quietly skipped a tenth of the code could report the same
 zero, so the audit prints how much of each library it actually reached.
 
-Two of the eight corrections were caught on the way back rather than on the way out, and both
-by the negative control. Demoting thin evidence to a warning let two deliberately broken
-kernels through, because `VIADD.S32.ISAT -> STG` has three observations and is right about
-them; the bound on the producer's own latency was already neutralising thin evidence, so the
-trust gate was redundant and harmful. And 945 of the first 1,149 warnings were the gap beside
-a waited-on scoreboard, which carries no requirement at all, since the wait is the mechanism.
-A tool that cannot ground a claim should not make it.
+One of the eight was over-corrected on the way, and the negative control is what said so.
+Thin evidence had been demoted to a warning as well as bounded, and that let two deliberately
+broken kernels through: `VIADD.S32.ISAT -> STG` has three observations and is right about
+them. The bound in correction 3 was already doing the work, so the trust gate beside it was
+redundant and harmful, and removing it put the missed column back to zero.
+
+The other thing the audit changed is what basalt declines to say. 945 of the first 1,149
+warnings were the gap beside a waited-on scoreboard, which carries no requirement at all
+because the wait is the mechanism. A tool that cannot ground a claim should not make it.
 
 **What that is and is not.** It is not a clean bill of health for NVIDIA's code and is not
 meant to be. The finding is that a checker built and calibrated entirely on one body of code

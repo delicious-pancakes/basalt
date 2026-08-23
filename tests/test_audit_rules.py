@@ -18,7 +18,7 @@ from pathlib import Path
 
 import pytest
 
-from basalt.verify.hazards import _exclusive
+from basalt.verify.hazards import _exclusive, _requirement
 from basalt.verify.latency import (
     ANTI_DEPENDENCY_CYCLES,
     DEFAULT_MODEL,
@@ -62,15 +62,11 @@ class TestUpperBounds:
     """A mined figure is an upper bound, so it may lower and never raise."""
 
     def test_a_requirement_never_exceeds_the_producers_own_latency(self, observed) -> None:
-        from basalt.verify.hazards import _requirement
-
         record = DEFAULT_MODEL.lookup("IADD")
         required, _, _ = _requirement("IADD", "MOV", record, observed)
         assert required <= record.cycles
 
     def test_a_guard_never_costs_more_than_the_measured_figure(self, observed) -> None:
-        from basalt.verify.hazards import _requirement
-
         record = DEFAULT_MODEL.lookup("ISETP")
         required, _, _ = _requirement("ISETP.NE.U32.AND", "BRA", record, observed, guard=True)
         assert required <= GUARD_CYCLES
@@ -79,8 +75,6 @@ class TestUpperBounds:
         # four observations said `IADD -> MOV` needs 20 and the vendor ships it
         # at 5. Demoting thin evidence instead let two broken kernels through,
         # because `VIADD.S32.ISAT -> STG` has three observations and is right
-        from basalt.verify.hazards import _requirement
-
         record = DEFAULT_MODEL.lookup("IADD")
         thin = ObservedStalls(cuda_version="", arch="sm_120")
         thin.by_pair[("IADD", "MOV")] = StallEvidence("IADD", "MOV", minimum=20, observations=4)
