@@ -10,7 +10,7 @@ trade only works if drift is loud. This is what makes it loud.
 Encodings are not promised to be stable across ptxas releases, so a difference
 is not automatically a bug. It is automatically something a human should look at.
 
-    python scripts/compare_isa.py data/isa/sm_120a.json /tmp/rebuilt.json
+    python scripts/compare_isa.py src/basalt/data/isa/sm_120a.json /tmp/rebuilt.json
     python scripts/compare_isa.py --model a.json b.json
 
 `--model` compares what basalt *derived* rather than the exemplar it derived it

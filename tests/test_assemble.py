@@ -23,9 +23,10 @@ import pytest
 from basalt.asm.assemble import Assembler, AssemblyError
 from basalt.encoding import Word
 from basalt.isa.database import IsaDatabase
+from basalt.paths import ISA_DATABASE
 
 ROOT = Path(__file__).resolve().parent.parent
-DATABASE = ROOT / "data" / "isa" / "sm_120a.json"
+DATABASE = ISA_DATABASE
 
 
 @pytest.fixture(scope="module")

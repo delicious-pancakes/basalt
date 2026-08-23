@@ -32,6 +32,7 @@ import pytest
 from basalt.disasm import disassemble_program
 from basalt.encoding import NO_BARRIER, STALL_YIELD
 from basalt.harvest.runner import _MALFORMED
+from basalt.paths import ISA_DATABASE, LATENCIES, OBSERVED_STALLS
 from basalt.verify.hazards import Severity, verify_program
 from basalt.verify.latency import DEFAULT_MODEL, LatencyModel
 from basalt.verify.observed import ObservedStalls
@@ -40,8 +41,8 @@ pytestmark = [pytest.mark.toolchain, pytest.mark.slow]
 
 ARCH = "sm_120a"
 ROOT = Path(__file__).resolve().parent.parent
-LATENCIES = ROOT / "data" / "latency" / "rtx-5070-ti.json"
-OBSERVED = ROOT / "data" / "latency" / "observed-stalls-sm120a.json"
+LATENCIES = LATENCIES
+OBSERVED = OBSERVED_STALLS
 
 
 # all three levels locally and nightly; CI narrows to -O3, which schedules
@@ -317,7 +318,7 @@ class TestAssemblerAgainstTheVendorsBytes:
         from basalt.asm.assemble import Assembler, AssemblyError
         from basalt.isa.database import IsaDatabase
 
-        database = ROOT / "data" / "isa" / "sm_120a.json"
+        database = ISA_DATABASE
         if not database.is_file():
             pytest.skip("no ISA database; run `basalt build-isa`")
         assembler = Assembler(IsaDatabase.read(database))
@@ -371,7 +372,7 @@ class TestWholeProgramAssembly:
         from basalt.asm.assemble import assemble_program
         from basalt.isa.database import IsaDatabase
 
-        database = ROOT / "data" / "isa" / "sm_120a.json"
+        database = ISA_DATABASE
         if not database.is_file():
             pytest.skip("no ISA database; run `basalt build-isa`")
         db = IsaDatabase.read(database)

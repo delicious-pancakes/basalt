@@ -9,6 +9,7 @@ import sys
 import textwrap
 
 from . import __version__
+from .paths import ISA_DATABASE, LATENCIES, OBSERVED_STALLS
 
 
 def _doctor(args: argparse.Namespace) -> int:
@@ -87,12 +88,12 @@ def _doctor(args: argparse.Namespace) -> int:
     return 0
 
 
-DEFAULT_DB = "data/isa/sm_120a.json"
-DEFAULT_OBSERVED = "data/latency/observed-stalls-sm120a.json"
+DEFAULT_DB = str(ISA_DATABASE)
+DEFAULT_OBSERVED = str(OBSERVED_STALLS)
 # so a command run from a checkout gets the measurements rather than the
 # assumptions without being told
-DEFAULT_LATENCIES = "data/latency/rtx-5070-ti.json"
-DEFAULT_ISA = "data/isa/sm_120a.json"
+DEFAULT_LATENCIES = str(LATENCIES)
+DEFAULT_ISA = str(ISA_DATABASE)
 
 
 def _build_isa(args: argparse.Namespace) -> int:
@@ -597,10 +598,16 @@ def _verify(args: argparse.Namespace) -> int:
     if remaining > 0:
         print(f"  ... and {remaining} more (raise --limit to see them)")
 
-    if report.model_confidence is Confidence.ASSUMED and report.hazards:
+    # per finding, not per model: the overlay measures eleven opcodes and assumes
+    # the rest, so the model as a whole always reads "assumed" and saying so
+    # contradicted the line above naming the card it was measured on
+    leads = sum(
+        1 for r in reports.values() for h in r.hazards if h.confidence is Confidence.ASSUMED
+    )
+    if leads:
         print(
-            "\nnote: the latency model is assumed rather than measured, so these are leads\n"
-            "      rather than confirmed hazards. measure the model first."
+            f"\nnote: {leads} of these rest on an assumed latency rather than a measured\n"
+            "      one, so they are leads rather than confirmed hazards."
         )
 
     return 0 if report.ok or not args.strict else 2
@@ -637,7 +644,7 @@ def _measure(args: argparse.Namespace) -> int:
         board=args.board,
     )
 
-    out = Path(args.out) if args.out else Path("data/latency") / _slug(run.sku)
+    out = Path(args.out) if args.out else LATENCIES.parent / _slug(run.sku)
     run.write(out)
     usable = sum(1 for m in run.measurements if m.ok)
     print(f"\n{usable}/{len(run.measurements)} measured, wrote {out}")

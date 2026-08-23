@@ -22,6 +22,7 @@ from pathlib import Path
 import pytest
 
 from basalt.encoding import NO_BARRIER
+from basalt.paths import LATENCIES, OBSERVED_STALLS
 from basalt.sched.scheduler import (
     SCOREBOARD_OPERAND,
     YIELD_STALL_RANGE,
@@ -35,8 +36,8 @@ from basalt.verify.operands import operand_access
 pytestmark = [pytest.mark.toolchain, pytest.mark.slow]
 
 ROOT = Path(__file__).resolve().parent.parent
-LATENCIES = ROOT / "data" / "latency" / "rtx-5070-ti.json"
-OBSERVED = ROOT / "data" / "latency" / "observed-stalls-sm120a.json"
+LATENCIES = LATENCIES
+OBSERVED = OBSERVED_STALLS
 
 # stores have no register result and so no latency class, but their data
 # register is still in flight after they issue

@@ -58,7 +58,9 @@ basalt = "basalt.cli:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-basalt = ["py.typed"]
+# the measured tables ship with the package: without them the checker falls back
+# to assumed numbers and reports findings it cannot ground
+basalt = ["py.typed", "data/isa/*.json", "data/latency/*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -22,7 +22,7 @@ third_party/cuda/
 scratch/
 
 # harvest output is large and regenerable; only the distilled ISA database
-# under data/isa/ is tracked
+# under src/basalt/data/isa/ is tracked
 data/harvest/
 data/probe/
 

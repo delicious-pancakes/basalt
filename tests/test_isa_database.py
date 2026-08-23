@@ -13,14 +13,14 @@ These run without a toolchain: they read the committed JSON and nothing else.
 from __future__ import annotations
 
 import json
-from pathlib import Path
 
 import pytest
 
 from basalt.encoding import CONTROL_FIELDS, Word
 from basalt.isa.database import IsaDatabase
+from basalt.paths import ISA_DATABASE
 
-DB_PATH = Path(__file__).resolve().parent.parent / "data" / "isa" / "sm_120a.json"
+DB_PATH = ISA_DATABASE
 
 
 @pytest.fixture(scope="module")

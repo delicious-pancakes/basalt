@@ -32,14 +32,15 @@ figure the repository can no longer reproduce is removed rather than kept.
 
 ## 2. Bump the version
 
-The version lives in exactly one place, and `CITATION.cff` carries it for
-citation. Grep rather than trusting this list:
+The version lives in `pyproject.toml`, in `src/basalt/__init__.py` for
+`--version`, and in `CITATION.cff` for citation. `tests/test_packaging.py` fails
+if the first two disagree, so the grep is a cross-check rather than the guard:
 
 ```bash
-grep -rn "0\.1\.0" --include="*.toml" --include="*.cff" --include="*.md" .
+grep -rn "X\.Y\.Z" --include="*.toml" --include="*.cff" --include="*.md" --include="*.py" .
 ```
 
-`data/isa/sm_120a.json` carries its own `schema_version`, which tracks the
+`src/basalt/data/isa/sm_120a.json` carries its own `schema_version`, which tracks the
 database format and is not the package version. Do not move it to match.
 
 ## 3. Changelog and commit

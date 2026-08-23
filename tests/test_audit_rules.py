@@ -18,6 +18,7 @@ from pathlib import Path
 
 import pytest
 
+from basalt.paths import OBSERVED_STALLS
 from basalt.verify.hazards import _exclusive, _requirement, verify_program
 from basalt.verify.latency import (
     ANTI_DEPENDENCY_CYCLES,
@@ -30,7 +31,7 @@ from basalt.verify.latency import (
 from basalt.verify.observed import MIN_OBSERVATIONS, ObservedStalls, StallEvidence
 
 ROOT = Path(__file__).resolve().parent.parent
-OBSERVED = ROOT / "data" / "latency" / "observed-stalls-sm120a.json"
+OBSERVED = OBSERVED_STALLS
 
 
 @pytest.fixture(scope="module")

@@ -41,6 +41,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 import _repo
+from basalt.paths import LATENCIES, OBSERVED_STALLS
 
 _repo.use_repo_source()
 
@@ -48,8 +49,8 @@ ROOT = _repo.ROOT
 
 # above this a cubin is split across workers by kernel, one shard per multiple
 SHARD_BYTES = 2_000_000
-DEFAULT_LATENCIES = ROOT / "data" / "latency" / "rtx-5070-ti.json"
-DEFAULT_OBSERVED = ROOT / "data" / "latency" / "observed-stalls-sm120a.json"
+DEFAULT_LATENCIES = LATENCIES
+DEFAULT_OBSERVED = OBSERVED_STALLS
 
 
 @dataclass

@@ -193,7 +193,7 @@ jobs:
         # a consumer needs no harvest. that trade only works if drift is loud.
         run: |
           python -m basalt.cli build-isa -o /tmp/rebuilt.json
-          python scripts/compare_isa.py data/isa/sm_120a.json /tmp/rebuilt.json
+          python scripts/compare_isa.py src/basalt/data/isa/sm_120a.json /tmp/rebuilt.json
 
       - name: Check the measured fields still behave
         run: python -m basalt.cli validate-isa --show

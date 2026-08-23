@@ -30,6 +30,7 @@ import pytest
 from basalt.asm.cubin import Cubin
 from basalt.disasm import disassemble_program
 from basalt.gpu.driver import Device, cuda_available
+from basalt.paths import LATENCIES, OBSERVED_STALLS
 from basalt.sched.scheduler import schedule_program
 from basalt.verify.hazards import verify_program
 from basalt.verify.latency import DEFAULT_MODEL, LatencyModel
@@ -39,8 +40,8 @@ pytestmark = pytest.mark.gpu
 
 ARCH = "sm_120a"
 ROOT = Path(__file__).resolve().parent.parent
-LATENCIES = ROOT / "data" / "latency" / "rtx-5070-ti.json"
-OBSERVED = ROOT / "data" / "latency" / "observed-stalls-sm120a.json"
+LATENCIES = LATENCIES
+OBSERVED = OBSERVED_STALLS
 
 TEMPLATE = """.version 9.0
 .target sm_120a

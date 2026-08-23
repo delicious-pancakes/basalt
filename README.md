@@ -235,8 +235,8 @@ SMs and its own clock behaviour; the encoding will be identical and the latencie
 re-measured rather than assumed:
 
 ```bash
-python -m basalt.cli measure -o data/latency/your-card.json
-python -m basalt.cli verify kernel.cubin --latencies data/latency/your-card.json
+python -m basalt.cli measure -o src/basalt/data/latency/your-card.json
+python -m basalt.cli verify kernel.cubin --latencies src/basalt/data/latency/your-card.json
 ```
 
 That is not modesty. A latency model shared between a checker and a scheduler is exactly
@@ -315,7 +315,7 @@ both oracles healthy. no GPU required for anything above.
 Rebuild the instruction database from scratch, or query the committed one:
 
 ```bash
-python -m basalt.cli build-isa          # harvest, probe, write data/isa/sm_120a.json
+python -m basalt.cli build-isa          # harvest, probe, write src/basalt/data/isa/sm_120a.json
 python -m basalt.cli isa --stats
 python -m basalt.cli isa IMAD.WIDE.U32  # one form, with its measured field layout
 python -m basalt.cli isa --opcode QMMA  # every form of one opcode
@@ -345,8 +345,8 @@ non-zero on a hazard, which is what a build step wants. If you have an sm_120 ca
 the model measured on your own silicon rather than on the one in this repository:
 
 ```bash
-python -m basalt.cli measure -o data/latency/your-card.json   # needs a GPU, once
-python -m basalt.cli verify kernel.cubin --latencies data/latency/your-card.json
+python -m basalt.cli measure -o src/basalt/data/latency/your-card.json   # needs a GPU, once
+python -m basalt.cli verify kernel.cubin --latencies src/basalt/data/latency/your-card.json
 ```
 
 <details>
@@ -380,7 +380,7 @@ python scripts/audit_shipped.py --libs third_party/cuda/13.3.1/libs
 ```
 
 ```console
-$ python -m basalt.cli verify kernel.cubin --latencies data/latency/rtx-5070-ti.json
+$ python -m basalt.cli verify kernel.cubin --latencies src/basalt/data/latency/rtx-5070-ti.json
 kernel.cubin
   32 instructions in 3 blocks, 23 dependencies checked: clean
   latency model: measured on NVIDIA GeForce RTX 5070 Ti
@@ -462,8 +462,9 @@ src/basalt/
   sched/           Assigning the control bits, and costing the result
   verify/          Register def-use analysis, hazard model, latency checking
   gpu/             Driver-API bindings and the latency measurement harness
-data/isa/          Generated database, tracked so consumers need no harvest
-data/latency/      Measured latency and mined stalls, one file per GPU
+src/basalt/data/   The measured tables, inside the package so an installed copy
+                   has them: the ISA database, the latency model and the mined
+                   stall requirement
 docs/              Findings, method, roadmap, artwork sources
 scripts/           Toolchain fetch, asset rendering, drift check, and the two
                    hardware controls: the corpus round trip and the agreement sweep

@@ -28,6 +28,7 @@ import sys
 from pathlib import Path
 
 import _repo
+from basalt.paths import LATENCIES, OBSERVED_STALLS
 
 _repo.use_repo_source()
 
@@ -64,8 +65,8 @@ def _reschedule(tc, snippet, opt: int, work: Path):
     from basalt.verify.latency import DEFAULT_MODEL, LatencyModel
     from basalt.verify.observed import ObservedStalls
 
-    latencies = ROOT / "data" / "latency" / "rtx-5070-ti.json"
-    observed_path = ROOT / "data" / "latency" / "observed-stalls-sm120a.json"
+    latencies = LATENCIES
+    observed_path = OBSERVED_STALLS
     model = LatencyModel.assumed().overlay(latencies) if latencies.is_file() else DEFAULT_MODEL
     observed = ObservedStalls.read(observed_path) if observed_path.is_file() else None
 

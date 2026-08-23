@@ -43,6 +43,7 @@ from collections import Counter
 from pathlib import Path
 
 import _repo
+from basalt.paths import isa_database
 
 _repo.use_repo_source()
 
@@ -174,7 +175,7 @@ def main() -> int:
     from basalt.isa.database import IsaDatabase
     from basalt.toolchain import find_toolchain
 
-    database_path = args.db or ROOT / "data" / "isa" / f"{ARCH}.json"
+    database_path = args.db or isa_database(ARCH)
     if not database_path.is_file():
         print(f"error: {database_path} does not exist; run `basalt build-isa`", file=sys.stderr)
         return 2

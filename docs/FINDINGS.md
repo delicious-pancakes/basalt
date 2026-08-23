@@ -66,7 +66,7 @@ learn anything about what a dependency requires, and that a checker reading 0 as
 cycles will report correct programs as broken.
 
 ```bash
-python -m basalt.cli verify path/to/O0.cubin --latencies data/latency/rtx-5070-ti.json
+python -m basalt.cli verify path/to/O0.cubin --latencies src/basalt/data/latency/rtx-5070-ti.json
 ```
 
 ## 2. The checker agrees with the vendor compiler across the whole corpus
@@ -144,7 +144,7 @@ same question.
 | `DFMA` | 64 | 64 | scoreboarded | see below |
 
 ```bash
-python -m basalt.cli measure -o data/latency/your-card.json   # chain timing
+python -m basalt.cli measure -o src/basalt/data/latency/your-card.json   # chain timing
 python -m basalt.cli probe-stalls                             # fault injection
 ```
 

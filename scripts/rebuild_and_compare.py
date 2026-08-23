@@ -19,6 +19,7 @@ import sys
 from pathlib import Path
 
 import _repo
+from basalt.paths import ISA_DATABASE
 
 _repo.use_repo_source()
 
@@ -38,7 +39,7 @@ def main() -> int:
         return build.returncode
     print(next((ln for ln in build.stdout.splitlines() if ln.startswith("database:")), ""))
     return subprocess.run(
-        [sys.executable, "scripts/compare_isa.py", "data/isa/sm_120a.json", str(scratch)],
+        [sys.executable, "scripts/compare_isa.py", str(ISA_DATABASE), str(scratch)],
         cwd=str(ROOT),
     ).returncode
 

@@ -104,7 +104,7 @@ slope, or a result more than 0.2 cycles from an integer is rejected rather than 
 with a caveat nobody reads.
 
 ```bash
-python -m basalt.cli measure -o data/latency/your-card.json
+python -m basalt.cli measure -o src/basalt/data/latency/your-card.json
 ```
 
 ### Results on an RTX 5070 Ti
@@ -159,7 +159,7 @@ disagree produce schedules that fail their own verifier, which has happened here
 worth designing against rather than testing for.
 
 ```bash
-python -m basalt.cli verify path/to/kernel.cubin --latencies data/latency/rtx-5070-ti.json
+python -m basalt.cli verify path/to/kernel.cubin --latencies src/basalt/data/latency/rtx-5070-ti.json
 ```
 
 ## 6. The controls

@@ -42,12 +42,13 @@ import sys
 from pathlib import Path
 
 import _repo
+from basalt.paths import ISA_DATABASE
 
 _repo.use_repo_source()
 
 ROOT = _repo.ROOT
 DEFAULT_OTHER = "13.0.3"
-COMMITTED = ROOT / "data" / "isa" / "sm_120a.json"
+COMMITTED = ISA_DATABASE
 
 
 def _model(form: dict) -> tuple:

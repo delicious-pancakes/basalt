@@ -37,11 +37,12 @@ from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
 import _repo
+from basalt.paths import OBSERVED_STALLS
 
 _repo.use_repo_source()
 
 ROOT = _repo.ROOT
-DEFAULT_BASE = ROOT / "data" / "latency" / "observed-stalls-sm120a.json"
+DEFAULT_BASE = OBSERVED_STALLS
 
 _STATE: dict = {}
 
