@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="./docs/assets/social-preview.svg" alt="basalt: the world's first assembler, checker and scheduler for NVIDIA Blackwell GPU machine code that agrees with NVIDIA's own compiler, byte for byte. sm_120 has no hardware interlock, so one wrong stall count makes the GPU read a stale register and return a wrong answer silently." width="880" />
+<img src="./docs/assets/social-preview.svg" alt="basalt: the check NVIDIA never shipped for its own GPUs, and the world's first assembler, checker and scheduler for Blackwell that matches ptxas byte for byte. sm_120 has no hardware interlock, so one wrong stall count makes the GPU read a stale register and return a wrong answer silently." width="880" />
 
 <br/>
 
@@ -29,9 +29,10 @@ That is a strange kind of bug. It does not crash. It does not appear in a debugg
 
 Tools that generate machine code for this architecture *assign* those control bits from a latency model. basalt is the thing that checks the answer.
 
-## World's first that agrees with the vendor, byte for byte
+## The check NVIDIA never shipped
 
-Three tools for `sm_120`, and one standard between them.
+NVIDIA gives you a compiler that writes those 21 bits. It gives you nothing that reads
+them back and tells you they are safe, and neither does anyone else.
 
 Assemblers for NVIDIA GPUs have existed for a decade, the Blackwell encoding has been
 reverse engineered before, there are published cycle-level characterisations of `sm_120`,
