@@ -598,4 +598,4 @@ repackaged wheels all keep both files.
 
 ## Author
 
-**Sunny Patel** &middot; [sunnypatel.net](https://www.sunnypatel.net) &middot; [ORCID 0009-0005-3863-7642](https://orcid.org/0009-0005-3863-7642) &middot; [github.com/sunnypatell](https://github.com/sunnypatell)
+**Sunny Patel** &middot; [sunnypatel.net](https://www.sunnypatel.net) &middot; [github.com/sunnypatell](https://github.com/sunnypatell)

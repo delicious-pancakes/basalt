@@ -49,8 +49,35 @@ ships, held out of every table it reads, the checker reports 0 errors over
   The vendor covers `LDG`, `LDC`, `LDL`, `S2R` and `LD` with spacing alone zero
   times across millions of dependent pairs, and `LDS` 734,837 times, so the
   first group keeps the error and the second gets a warning.
+- [`docs/API.md`](docs/API.md): the importable half of the package, since
+  `basalt.cli` is a thin wrapper over it and nothing said so. Every code block
+  on the page is executed by `tests/test_docs.py`, and the module map is checked
+  symbol by symbol, so a rename cannot leave the documentation telling people to
+  call something that no longer exists.
+- Seven figures drawn from the measured results, in `docs/assets/`: the stall
+  cliff, the audit going 6,593 to 940 to 0 over held-out shipped code,
+  scoreboard against spacing, assembler coverage against correctness, assumed
+  against measured latency, the 128-bit word with its 21 control bits broken
+  out, and the rule deciding what evidence may allege an error.
+- `.github/workflows/publish-pypi.yml` publishes to PyPI through trusted
+  publishing, with no API token in the repository. It builds nothing: it
+  downloads the bytes attached to the tag, refuses anything whose Sigstore
+  provenance does not name the trusted builder, and checks the wheel's version
+  against the tag before uploading.
+- `MANIFEST.in` puts `CITATION.cff` and `NOTICE` in the sdist, so attribution
+  travels with a redistributed source archive rather than only with the wheel.
+- `scripts/corpus_figures.py` reports opcode coverage in both directions: how
+  much of the database the corpus reaches, and what the compiler emitted that
+  the database has no form for.
 
 ### Fixed
+- The README is the PyPI project description, and PyPI resolves nothing against
+  the repository, so its thirty relative links and six relative images rendered
+  as broken on the package page. All absolute now, pinned by a test.
+- The instruction-database table said 274 forms and 77 opcodes against a
+  database that has held 345 and 90 since it was rebuilt wider, and finding 10
+  said 74 of 77 opcodes where the measurement is 85 of 90. Both are computed by
+  `scripts/corpus_figures.py` now rather than counted by hand once.
 - `F2IP` read `F2I`'s entry through the longest-prefix rule and was treated as
   completing out of order. It is the third instruction to fall into a trap two
   comments in the same file already warned about, and the only one the corpus
@@ -329,6 +356,11 @@ ships, held out of every table it reads, the checker reports 0 errors over
   The entry now records both the correction and why it went unnoticed.
 
 ### Found
+- `ptxas` emits `UIMAD`, `UISETP` and `USHF` from basalt's own corpus at `-O1`
+  and above, and the differential probe has never isolated a form for any of
+  them, so the database holds none. Coverage rather than correctness: the
+  assembler refuses them by name instead of guessing an encoding, and the
+  latency model carries all three. Finding 30.
 - A read barrier is set exactly where an operand read outlives its register, and
   covers every earlier late reader before the overwrite. All 299 in 37,008
   instructions of vendor output fit that rule, and all 318 in-block overwrites
