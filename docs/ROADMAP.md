@@ -1,11 +1,13 @@
-# Roadmap
+<img src="assets/header-roadmap.svg" alt="basalt Roadmap" width="100%" />
+
 
 What basalt is building toward, what is done, and what is deliberately out of scope. Updated as
 stages land. Anything claimed here as done has a command that demonstrates it.
 
 ## The position
 
-basalt is the world's first **checker** for this architecture, and not a code generator.
+basalt is a **checker** first and a code generator second, and the first of either for this
+architecture that is measured against the vendor's own output.
 
 Tools that emit sm_120 machine code *assign* the scheduling control word from a latency model,
 and the ones that check themselves do it by running their own kernels and seeing that the
@@ -54,7 +56,7 @@ treated the surrounding gaps as free to compress.
 
 The assembler encodes SASS text back into the instruction word, and its standard is the
 vendor's own bytes: assembling every corpus kernel as a whole program, with its labels
-resolved, reproduces 8,554 of 8,584 instructions bit-identically and none to anything else.
+resolved, reproduces 8,563 of 8,584 instructions bit-identically and none to anything else.
 That second number is a test pinned at zero.
 
 Whole programs rather than lone instructions because a branch cannot be assembled alone.

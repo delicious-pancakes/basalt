@@ -89,6 +89,13 @@ def operand_shape(operands: str) -> tuple[str, ...]:
             kinds.append("constant")
         elif text.startswith("`"):
             kinds.append("label")
+        elif text.startswith("["):
+            # `[R3]` and `[UR4]` are different register files behind the same
+            # brackets, so collapsing them harvests one and leaves the other
+            # with no encoding to be written through
+            inner = text[1:].split("]")[0].lstrip("-")
+            found = _KIND.match(inner)
+            kinds.append("addr:" + (found.group(1) if found else "?"))
         elif text.startswith("SR_"):
             # A special register is a name in an eight-bit field, and the name is
             # the value. Collapsing them all into one shape harvests one form and

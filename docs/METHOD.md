@@ -1,4 +1,5 @@
-# Method
+<img src="assets/header-method.svg" alt="basalt Method" width="100%" />
+
 
 How basalt arrives at each thing it claims, and what would falsify it. Every number
 in this document regenerates from a clean checkout with the commands shown.
@@ -61,7 +62,8 @@ python -m basalt.cli isa IMAD.WIDE.U32
 
 ## 3. The scheduling control word
 
-Each instruction carries 23 bits the hardware does not check.
+Each instruction carries 21 bits the hardware does not check, and the table below adds
+up to exactly that.
 
 | Field | Bits | Meaning |
 | :--- | :--- | :--- |

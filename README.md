@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="./docs/assets/social-preview.svg" alt="basalt: the world's first hazard checker for NVIDIA Blackwell GPU machine code. sm_120 has no hardware interlock, so one wrong stall count makes the GPU read a stale register and return a wrong answer silently." width="880" />
+<img src="./docs/assets/social-preview.svg" alt="basalt: the world's first verified assembler, checker and scheduler for NVIDIA Blackwell GPU machine code. sm_120 has no hardware interlock, so one wrong stall count makes the GPU read a stale register and return a wrong answer silently." width="880" />
 
 <br/>
 
@@ -13,7 +13,7 @@
 
 <br/><br/>
 
-<strong><a href="#the-problem">The problem</a> &nbsp;&middot;&nbsp; <a href="#how-it-works">How it works</a> &nbsp;&middot;&nbsp; <a href="#quickstart">Quickstart</a> &nbsp;&middot;&nbsp; <a href="#measured-not-assumed">Measured, not assumed</a> &nbsp;&middot;&nbsp; <a href="docs/FINDINGS.md">Findings</a> &nbsp;&middot;&nbsp; <a href="docs/METHOD.md">Method</a> &nbsp;&middot;&nbsp; <a href="docs/ROADMAP.md">Roadmap</a> &nbsp;&middot;&nbsp; <a href="#clean-room-position">Clean-room</a></strong>
+<strong><a href="#the-problem">The problem</a> &nbsp;&middot;&nbsp; <a href="#which-gpus">Which GPUs</a> &nbsp;&middot;&nbsp; <a href="#how-it-works">How it works</a> &nbsp;&middot;&nbsp; <a href="#quickstart">Quickstart</a> &nbsp;&middot;&nbsp; <a href="#measured-not-assumed">Measured, not assumed</a> &nbsp;&middot;&nbsp; <a href="docs/FINDINGS.md">Findings</a> &nbsp;&middot;&nbsp; <a href="docs/METHOD.md">Method</a> &nbsp;&middot;&nbsp; <a href="docs/ROADMAP.md">Roadmap</a> &nbsp;&middot;&nbsp; <a href="#clean-room-position">Clean-room</a></strong>
 
 </div>
 
@@ -21,7 +21,7 @@
 
 ## The problem
 
-An NVIDIA GPU instruction is 128 bits, and about 23 of them are not the instruction at all. They are a scheduling control word: how many cycles to stall before issuing the next instruction, which scoreboards to signal, which to wait on, and which operands may be served from the reuse cache.
+An NVIDIA GPU instruction is 128 bits, and 21 of them are not the instruction at all. They are a scheduling control word, `stall` through `reuse`: how many cycles to stall before issuing the next instruction, which scoreboards to signal, which to wait on, and which operands may be served from the reuse cache.
 
 **The hardware does not check any of it.** On sm_120 there is no interlock on fixed-latency instructions. The silicon trusts whatever produced the control word. If a stall count is shorter than the latency of a value the next instruction consumes, nothing faults, nothing stalls, and no warning is emitted. The instruction reads a register that has not been written yet and computes on stale data, at full speed, every single time.
 
@@ -29,32 +29,35 @@ That is a strange kind of bug. It does not crash. It does not appear in a debugg
 
 Tools that generate machine code for this architecture *assign* those control bits from a latency model. basalt is the thing that checks the answer.
 
-## The world's first hazard checker for this architecture
+## World's first verified assembler, checker and scheduler
 
-Nothing else reads `sm_120` machine code and tells you whether it is safe to run.
+Three tools for `sm_120`, and the word that matters is **verified**.
 
-That is not a gap for want of tools. Machine-code assemblers for NVIDIA GPUs have existed
-for a decade, the Blackwell encoding has been reverse engineered before, there are published
-cycle-level characterisations of `sm_120`, and there are tools that generate its scheduling
-control bits and run their own kernels on a card to see that the answers come out right.
-Every one of them answers the same question: *did the thing I just produced work?*
+Assemblers for NVIDIA GPUs have existed for a decade, the Blackwell encoding has been
+reverse engineered before, there are published cycle-level characterisations of `sm_120`,
+and there are tools that emit its scheduling control bits and run their own kernels on a
+card to see that the answers come out right. Being first to write one is not the claim.
 
-Nobody has answered the question everyone actually has, which is whether the cubin in front
-of you is safe. Your compiler produced it, or a library shipped it, or someone hand-wrote it,
-and on an architecture with no hardware interlock the difference between "it ran" and "it is
-correct" is invisible: a stall count one cycle short reads a stale register and returns a
-wrong number at full speed, with no fault and no warning, every single time.
+What nobody has done is hold any of it to a standard you can check. That means two things
+here, and both are new:
 
-basalt answers it. The reference it is held to is the vendor compiler's own output, so a
-disagreement is basalt's bug until proven otherwise, and the schedules it writes itself have
-to reproduce what the vendor's schedules compute, byte for byte, on the card.
+**Nothing else reads machine code it did not produce.** Your compiler emitted that cubin, or
+a library shipped it, or somebody hand-wrote it, and until now there was no way to ask
+whether its control bits actually cover its data dependencies. On an architecture with no
+hardware interlock that is the difference between "it ran" and "it is correct", and the
+difference is invisible: a stall one cycle short reads a stale register and returns a wrong
+number at full speed, with no fault and no warning, every single time.
 
-So basalt is three tools, each held to the same standard, and the standard is the point:
-**agree with the vendor exactly, or say why not.**
+**Nothing else is measured against the vendor's own bytes.** basalt's reference is `ptxas`
+output, so a disagreement is basalt's bug until proven otherwise. Its assembler has to
+reproduce the compiler's exact 128 bits. Its scheduler has to throw away every control bit
+the compiler chose, compute new ones, and have the GPU compute the same answer.
+
+One standard, three tools: **agree with the vendor exactly, or say why not.**
 
 | | What it does | How it is checked | Result |
 | :--- | :--- | :--- | ---: |
-| **Assembler** | SASS text to the 128-bit word | Reassemble every instruction `ptxas` emitted and compare bytes | 8,554 of 8,584 exact, **0 wrong** |
+| **Assembler** | SASS text to the 128-bit word | Reassemble every instruction `ptxas` emitted and compare bytes | 8,563 of 8,584 exact, **0 wrong** |
 | **Checker** | Reads a schedule, reports hazards | The vendor's own output must verify clean, and a deliberately shortened stall must be caught | 0 errors on 330 vendor kernels, **0 missed** on 162 broken ones |
 | **Scheduler** | Assigns the control bits from scratch | Discard every control bit, compute new ones, run both on the GPU against four inputs, compare output bytes | **314 of 314** byte-identical, at every optimisation level |
 
@@ -99,6 +102,86 @@ repository exists to catch, which is why all six are now refused with a reason n
 the field really holds, and why the count of instructions that assemble to the wrong bytes
 is a test pinned at zero rather than a number in a table.
 
+## Which GPUs
+
+<div align="center">
+
+<img alt="NVIDIA Blackwell" src="https://img.shields.io/badge/NVIDIA-Blackwell-76B900?style=for-the-badge&logo=nvidia&logoColor=white&labelColor=0d1117">
+<img alt="GeForce RTX 50 series" src="https://img.shields.io/badge/GeForce-RTX%2050%20series-76B900?style=for-the-badge&logo=nvidia&logoColor=white&labelColor=0d1117">
+<img alt="Compute capability 12.0" src="https://img.shields.io/badge/compute%20capability-12.0%20%C2%B7%20sm__120-76B900?style=for-the-badge&logo=nvidia&logoColor=white&labelColor=0d1117">
+
+</div>
+
+`sm_120` is not a model number. It is the compute capability shared by the whole consumer
+Blackwell line, so the instruction encoding, the database, the assembler and the checker
+apply to every card in it:
+
+| Card | Compute capability | Covered |
+| :--- | :--- | :---: |
+| GeForce RTX 5090, 5090D | 12.0 (`sm_120`) | yes |
+| GeForce RTX 5080, 5070 Ti, 5070 | 12.0 (`sm_120`) | yes |
+| GeForce RTX 5060 Ti, 5060, 5050 | 12.0 (`sm_120`) | yes |
+| GeForce RTX 50 series laptop parts | 12.0 (`sm_120`) | yes |
+| RTX PRO Blackwell workstation cards | 12.0 (`sm_120`) | yes |
+| Datacentre Blackwell (B100, B200, GB200) | 10.0 (`sm_100`) | no, different encoding |
+
+Every number here comes from **one physical card**, named exactly, because "a 5070 Ti" is
+not enough to reproduce a run:
+
+| | |
+| :--- | :--- |
+| Board | Gigabyte GeForce RTX 5070 Ti **EAGLE OC** |
+| Reported by the driver | `NVIDIA GeForce RTX 5070 Ti` |
+| Compute capability | 12.0 |
+| Streaming multiprocessors | 70 |
+| Boost clock | 2542 MHz |
+| Toolchain | CUDA 13.3.1, `ptxas` V13.3.73 |
+
+<details>
+<summary><b>What needs a GPU, and what does not</b></summary>
+
+<br/>
+
+**Most of basalt needs no GPU at all.** Both oracles, the instruction database, the
+assembler and the hazard checker run against `ptxas` and `nvdisasm` as ordinary
+subprocesses, which is why they run in CI on a machine with no graphics card in it. 187 of
+the 202 tests are in that group.
+
+A GPU is needed for exactly two things, and they are the two that turn a plausible tool
+into a believable one:
+
+| Needs a card | Why |
+| :--- | :--- |
+| `measure`, `probe-stalls` | Timing an instruction, and finding what a dependency really requires by breaking it |
+| `scripts/roundtrip_corpus.py` | Rescheduling every corpus kernel and running both versions to compare output bytes |
+
+The factory overclock does not move the measurements. Every latency here is in **cycles**,
+which is a property of the pipeline rather than of the clock, and the boost figure is
+recorded beside them only so a wall-clock comparison stays possible. What the board does
+affect is reproducibility, which is why `basalt measure --board` records it.
+
+</details>
+
+<details>
+<summary><b>Why one card is a caveat and not a footnote</b></summary>
+
+<br/>
+
+Everything measured here was measured on one card, and basalt records the SKU alongside
+every measurement rather than presenting them as universal. A 5090 has more than twice the
+SMs and its own clock behaviour; the encoding will be identical and the latencies should be
+re-measured rather than assumed:
+
+```bash
+python -m basalt.cli measure -o data/latency/your-card.json
+python -m basalt.cli verify kernel.cubin --latencies data/latency/your-card.json
+```
+
+That is not modesty. A latency model shared between a checker and a scheduler is exactly
+where a wrong number hides, so a second card is the most useful thing anyone can contribute.
+
+</details>
+
 ## How it works
 
 Everything rests on two oracles, both of which are stock NVIDIA binaries driven as external processes. No NVIDIA source, headers, or libraries are used or redistributed.
@@ -142,77 +225,6 @@ Eight-bit register fields and a 32-bit immediate, arrived at by experiment rathe
 
 The layout validates itself on contact. In a trivial kernel, `S2R` sets `write_barrier=0` and the `IMAD` consuming its result carries `wait_mask=0x01`; `LDCU.64` sets `write_barrier=1` and the dependent `STG.E` carries `wait_mask=0x02`. Every producer and consumer pair lines up, and instructions that `nvdisasm` annotates `.reuse` have the matching reuse bit set.
 
-## Which GPUs, and what needs one
-
-<div align="center">
-
-<img alt="NVIDIA Blackwell" src="https://img.shields.io/badge/NVIDIA-Blackwell-76B900?style=for-the-badge&logo=nvidia&logoColor=white&labelColor=0d1117">
-<img alt="GeForce RTX 50 series" src="https://img.shields.io/badge/GeForce-RTX%2050%20series-76B900?style=for-the-badge&logo=nvidia&logoColor=white&labelColor=0d1117">
-<img alt="Compute capability 12.0" src="https://img.shields.io/badge/compute%20capability-12.0%20%C2%B7%20sm__120-76B900?style=for-the-badge&logo=nvidia&logoColor=white&labelColor=0d1117">
-
-</div>
-
-`sm_120` is not a model number. It is the compute capability shared by the whole consumer
-Blackwell line, so the instruction encoding, the database, the assembler and the checker
-apply to every card in it:
-
-| Card | Compute capability | Covered |
-| :--- | :--- | :---: |
-| GeForce RTX 5090, 5090D | 12.0 (`sm_120`) | yes |
-| GeForce RTX 5080, 5070 Ti, 5070 | 12.0 (`sm_120`) | yes |
-| GeForce RTX 5060 Ti, 5060, 5050 | 12.0 (`sm_120`) | yes |
-| GeForce RTX 50 series laptop parts | 12.0 (`sm_120`) | yes |
-| RTX PRO Blackwell workstation cards | 12.0 (`sm_120`) | yes |
-| Datacentre Blackwell (B100, B200, GB200) | 10.0 (`sm_100`) | no, different encoding |
-
-### The card everything was measured on
-
-Every number in this repository comes from one physical card, and it is named exactly
-because "a 5070 Ti" is not enough to reproduce a run:
-
-| | |
-| :--- | :--- |
-| Board | Gigabyte GeForce RTX 5070 Ti **EAGLE OC** |
-| Reported by the driver | `NVIDIA GeForce RTX 5070 Ti` |
-| Compute capability | 12.0 |
-| Streaming multiprocessors | 70 |
-| Boost clock | 2542 MHz |
-| Toolchain | CUDA 13.3.1, `ptxas` V13.3.73 |
-
-The factory overclock does not move the measurements. Every latency here is in **cycles**,
-which is a property of the pipeline rather than of the clock, and the boost figure is
-recorded beside them only so a wall-clock comparison stays possible. What the board does
-affect is reproducibility, which is why `basalt measure --board` records it.
-
-**Most of basalt needs no GPU at all.** Both oracles, the instruction database, the
-assembler and the hazard checker run against `ptxas` and `nvdisasm` as ordinary
-subprocesses, which is why they run in CI on a machine with no graphics card in it. 187 of
-the 202 tests are in that group.
-
-A GPU is needed for exactly two things, and they are the two that turn a plausible tool
-into a believable one:
-
-| Needs a card | Why |
-| :--- | :--- |
-| `measure`, `probe-stalls` | Timing an instruction, and finding what a dependency really requires by breaking it |
-| `scripts/roundtrip_corpus.py` | Rescheduling every corpus kernel and running both versions to compare output bytes |
-
-### About the numbers
-
-Everything measured here was measured on one card, an RTX 5070 Ti, and basalt records the
-SKU alongside every measurement rather than presenting them as universal. A 5090 has more
-than twice the SMs and its own clock behaviour; the encoding will be identical and the
-latencies should be re-measured rather than assumed:
-
-```bash
-python -m basalt.cli measure -o data/latency/your-card.json
-python -m basalt.cli verify kernel.cubin --latencies data/latency/your-card.json
-```
-
-That is not a caveat added for modesty. A latency model shared between a checker and a
-scheduler is exactly where a wrong number hides, so a second card is the most useful thing
-anyone can contribute.
-
 ## Quickstart
 
 No CUDA installation and no GPU. The toolchain script fetches pinned redistributables, roughly 45 MB, no administrator rights, nothing added to your PATH.
@@ -253,7 +265,10 @@ python -m basalt.cli measure -o data/latency/your-card.json   # needs a GPU, onc
 python -m basalt.cli verify kernel.cubin --latencies data/latency/your-card.json
 ```
 
-Everything else, in one place:
+<details>
+<summary><b>Every command, and which need a card</b></summary>
+
+<br/>
 
 | Command | What it does | Needs a GPU |
 | :--- | :--- | :--- |
@@ -267,6 +282,8 @@ Everything else, in one place:
 | `assemble` | Encode SASS text, or a whole cubin, and read it back to prove it | no |
 | `measure` | Time instruction latency on real silicon | **yes** |
 | `probe-stalls` | Find the required stall by breaking programs on purpose | **yes** |
+
+</details>
 
 And the control that keeps the rest honest, which does need a card:
 
@@ -340,6 +357,11 @@ That loop is where the real bugs came from. Stall spent outside the window betwe
 
 ## Repository layout
 
+<details>
+<summary><b>Where everything lives</b></summary>
+
+<br/>
+
 ```
 src/basalt/
   toolchain.py     Locating and driving ptxas / nvdisasm
@@ -359,6 +381,8 @@ scripts/           Toolchain fetch, asset rendering, drift check, and the two
                    hardware controls: the corpus round trip and the agreement sweep
 tests/             Unit tests, plus toolchain- and GPU-marked suites
 ```
+
+</details>
 
 ## Clean-room position
 
