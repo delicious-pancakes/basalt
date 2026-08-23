@@ -35,7 +35,16 @@ classifiers = [
 dependencies = []
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "pytest-cov>=5", "ruff>=0.6", "mypy>=1.11"]
+dev = [
+  "pytest>=8",
+  "pytest-cov>=5",
+  # the lint gate is pinned, not floored. a floating ruff or mypy changes what
+  # CI rejects without anyone making a commit, and a contributor goes red on
+  # code they did not touch. these two track .pre-commit-config.yaml exactly,
+  # so the local hook and the runner cannot disagree; dependabot moves both.
+  "ruff==0.16.3",
+  "mypy==2.3.1",
+]
 
 [project.urls]
 Homepage = "https://github.com/sunnypatell/basalt"

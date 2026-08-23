@@ -35,7 +35,11 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
-      - run: pip install ruff mypy
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      # the same pinned ruff and mypy the dev extra and pre-commit use, so the
+      # gate cannot move under a contributor between their machine and here
+      - run: pip install -e ".[dev]"
       - run: ruff check .
       - run: ruff format --check .
       # a checker whose own types are unchecked is a poor advertisement for one.
@@ -51,8 +55,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest]
         python: ["3.11", "3.12", "3.13"]
+        include:
+          # windows gets one leg rather than three. what actually differs there
+          # is `os.name == "nt"` choosing the .exe suffix in toolchain discovery
+          # and platform_key() in the fetcher, and neither varies by python
+          # version. the driver's WinDLL branch is not covered by this matrix at
+          # all: it sits behind the gpu marker, and `mypy --platform win32` in
+          # the lint job is what checks it.
+          - os: windows-latest
+            python: "3.12"
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20
     steps:
@@ -62,6 +75,8 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: ${{ matrix.python }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
       - run: pip install -e ".[dev]"
       - run: pytest -m "not toolchain and not gpu and not slow"
 
@@ -77,6 +92,8 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
       - run: pip install -e ".[dev]"
 
       - name: Cache the pinned CUDA redistributables
@@ -131,6 +148,8 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
       - run: pip install -e ".[dev]"
 
       - name: Cache the pinned CUDA redistributables
