@@ -138,8 +138,9 @@ def find_toolchain(explicit: str | os.PathLike[str] | None = None) -> Toolchain:
         if (cand / "ptxas").is_file() or (cand / "ptxas.exe").is_file():
             return Toolchain(cand.resolve())
 
+    # both audiences: a checkout has the fetch script, an installed copy does not
     raise ToolchainError(
-        "no CUDA toolchain found. set "
-        f"{_ENV_VAR}=/path/to/cuda/bin, or run scripts/fetch_toolchain.py "
-        "to download a pinned redistributable."
+        f"no CUDA toolchain found. set {_ENV_VAR} to a directory holding ptxas "
+        "and nvdisasm, from any CUDA 13 install, or from the pinned "
+        "redistributable that scripts/fetch_toolchain.py downloads in a checkout."
     )
