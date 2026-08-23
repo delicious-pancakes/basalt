@@ -39,6 +39,7 @@ class MmaForm:
     scale: str = ""  # e.g. ue8m0, implies block_scale
     scale_vec: str = ""  # e.g. scale_vec::4X
     layout: str = "row.col"
+    bitop: str = ""  # `and.popc` or `xor.popc`, which the 1-bit form requires
 
 
 def _regs(prefix: str, count: int, base: int = 1) -> str:
@@ -79,6 +80,10 @@ def _mma_kernel(name: str, form: MmaForm) -> str:
     types = f"{form.ctype}.{form.atype}.{form.btype}.{form.ctype}"
     if form.scale:
         types += f".{form.scale}"
+    # a 1-bit multiply has to say which way it combines; without it ptxas reads
+    # the operand list as the wrong length and the form never built
+    if form.bitop:
+        types += f".{form.bitop}"
 
     dst = _regs(acc_reg, form.nc, base=form.nc + 1)
     operands = f"{dst},{_regs('a', form.na)},{_regs('b', form.nb)},{_regs(acc_reg, form.nc)}"
@@ -159,7 +164,8 @@ def _dense_forms() -> list[MmaForm]:
         MmaForm("m8n8k16", "s8", "s8", "s32", 1, 1, 2),
         MmaForm("m16n8k64", "s4", "s4", "s32", 4, 2, 4),
         MmaForm("m16n8k32", "s4", "s4", "s32", 2, 1, 4),
-        MmaForm("m16n8k256", "b1", "b1", "s32", 4, 2, 4),
+        MmaForm("m16n8k256", "b1", "b1", "s32", 4, 2, 4, bitop="and.popc"),
+        MmaForm("m16n8k256", "b1", "b1", "s32", 4, 2, 4, bitop="xor.popc"),
     ]
     # every ordered pair of the low-precision types, mixed inputs included:
     # ptxas accepts asymmetric operand types here and each pair is a distinct
@@ -207,6 +213,8 @@ def generate_tensor() -> list[Snippet]:
             tag += "_" + form.scale
         if form.scale_vec:
             tag += "_" + form.scale_vec.replace("scale_vec::", "v")
+        if form.bitop:
+            tag += "_" + form.bitop.replace(".", "")
         name = f"k_mma_{tag}"
         family = "mma.block_scaled" if form.scale else "mma.dense"
         out.append(
@@ -222,7 +230,9 @@ def generate_tensor() -> list[Snippet]:
 
     # sparse variants carry a metadata operand and a selector
     for shape, atype, ctype, na, nb, nc in (
-        ("m16n8k32", "f16", "f32", 2, 2, 4),
+        # a sparse A is compressed to half its dense width, so `m16n8k32` takes
+        # the same four registers `m16n8k16` does, and B spans the full k at four
+        ("m16n8k32", "f16", "f32", 4, 4, 4),
         ("m16n8k64", "s8", "s32", 4, 4, 4),
         ("m16n8k64", "e4m3", "f32", 4, 4, 4),
         ("m16n8k128", "e2m1", "f32", 4, 4, 4),
@@ -233,7 +243,9 @@ def generate_tensor() -> list[Snippet]:
         loads += [f"    ld.global.b32 %b{i + 1}, [%in+{64 + 4 * i}];" for i in range(nb)]
         loads += [f"    ld.global.{acc_ld} %{acc}{i + 1}, [%in+{128 + 4 * i}];" for i in range(nc)]
         loads.append("    ld.global.b32 %s1, [%in+192];")
-        kind = ".kind::f8f6f4" if atype in _LOW_PRECISION else ""
+        # the dense low-precision forms take `.kind::f8f6f4`; the sparse ones
+        # reject it, and carrying it over is why they never built
+        kind = ""
         body = "\n".join(
             [
                 *loads,
@@ -291,9 +303,11 @@ def generate_tensor() -> list[Snippet]:
                 )
             )
 
-    # m16n8 ldmatrix over 8-bit elements, and the register-to-register transpose
-    for count in ("x1", "x2", "x4"):
-        n = {"x1": 1, "x2": 2, "x4": 4}[count]
+    # m16n16 ldmatrix over 8-bit elements. A 16x16 tile of bytes is two
+    # registers per lane rather than one, and `.x4` does not exist for this
+    # shape, so the obvious one-register-per-matrix reading never compiled
+    for count in ("x1", "x2"):
+        n = {"x1": 2, "x2": 4}[count]
         body = (
             "    mov.u32 %m1, tile;\n"
             f"    ldmatrix.sync.aligned.m16n16.{count}.trans.shared.b8 {_regs('r', n)}, [%m1];\n"

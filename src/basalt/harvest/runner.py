@@ -74,7 +74,12 @@ class Observation:
 # PTX we wrote is wrong, and naming them is what makes the difference visible
 _MALFORMED = re.compile(
     r"parsing error|syntax error|unexpected instruction types"
-    r"|arguments mismatch|not defined|unknown symbol",
+    r"|arguments mismatch|not defined|unknown symbol"
+    # a PTX type rule, not an architecture limit: bitwise atomics take `.b32`,
+    # `div` and a narrowing `cvt` must name a rounding mode, and a matrix
+    # instruction's vector width follows from its shape
+    r"|requires \.b\d|illegal rounding modifier|rounding modifier.{0,40}required"
+    r"|vector of size \d+ is expected|incorrect no\. of",
     re.IGNORECASE,
 )
 

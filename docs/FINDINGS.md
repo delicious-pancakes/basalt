@@ -49,8 +49,8 @@ Its scheduling is the reference, so an error on any of them is basalt's fault.
 
 | | |
 | :--- | ---: |
-| Kernels compiled | 393 |
-| Dependencies checked | 6,359 |
+| Kernels compiled | 412 |
+| Dependencies checked | 7,168 |
 | Errors | **0** |
 | Kernels with warnings | 1 |
 
@@ -224,7 +224,7 @@ own, and `ptxas` knows exactly how much. Across the corpus it never schedules a
 consumer waits. basalt mines that minimum per opcode alongside everything else
 and applies it wherever a scoreboard is signalled.
 
-Every one of the 50 fp64 instructions in the corpus carries a write scoreboard
+Every one of the 74 fp64 instructions in the corpus carries a write scoreboard
 and none goes without, so fp64 is modelled as completing out of order rather than
 on a fixed schedule.
 
@@ -294,7 +294,7 @@ The staircase is the useful part. A single wrong answer could be anything; a val
 climbs monotonically toward the right one as the gap widens, and then stops changing, is a
 timing requirement being met.
 
-**Across the corpus.** Every dependent pair in the 393 kernel corpus, split by how the
+**Across the corpus.** Every dependent pair in the 412 kernel corpus, split by how the
 consumer reads the value, scoreboard-covered pairs excluded because there the stall says
 nothing:
 
@@ -350,7 +350,7 @@ with traffic on both sides, predicated writes, and long unbranched dependent cha
 
 | | |
 | :--- | ---: |
-| Kernels rescheduled and run | 406 |
+| Kernels rescheduled and run | 425 |
 | Comparable (the vendor runs here, deterministically, and reproducibly) | 314 |
 | **Byte-identical to the vendor schedule** | **314** |
 | Wrong | 0 |
@@ -525,7 +525,7 @@ label under this rule and none decodes wrongly.
 The rule is a measurement, and a measurement written down as a constant is exactly what goes
 quietly wrong when a compiler version changes, so it is re-derived from the corpus by a test
 rather than trusted. With it, assembling every corpus kernel as a whole program reproduces
-10,406 of 10,416 instructions bit-identically, and none to anything else.
+11,463 of 11,472 instructions bit-identically, and none to anything else.
 
 ## 12. What the correctness costs
 
@@ -536,9 +536,9 @@ schedules are correct on every comparable corpus kernel, and here is what they c
 | :--- | ---: |
 | `ptxas -O3` | 13,571 |
 | basalt | 12,168 |
-| | **0.87x** |
+| | **0.89x** |
 
-Slower on 34 of the 406 kernels and cheaper on the rest, with every comparable kernel still
+Slower on 34 of the 425 kernels and cheaper on the rest, with every comparable kernel still
 byte-identical on the GPU at all three optimisation levels.
 
 Cheaper than the vendor is believable rather than suspicious, for a specific reason: basalt
@@ -567,7 +567,7 @@ a consumer that is short and spends cycles in the window before it, and a cycle 
 one pair also separates every other pair spanning that point. So a later pair can be
 satisfied by stall placed for an earlier one, leaving the earlier placement larger than
 anything requires. Walking that back, one cycle at a time, judged by the same requirement
-function that placed them, took 1.29x to 0.87x. `LDC` alone was half the excess before it,
+function that placed them, took 1.29x to 0.89x. `LDC` alone was half the excess before it,
 almost all overshoot rather than requirement.
 
 **Not leaning on a wait a predicated instruction carries.** `ptxas` does lean on them and
@@ -782,11 +782,11 @@ computes a wrong answer, which is the entire failure this repository exists to p
 
 | | |
 | :--- | ---: |
-| Kernels, one dependency shortened in each | 209 |
-| Agreed broken | 74 |
-| Over-strict | 84 |
+| Kernels, one dependency shortened in each | 212 |
+| Agreed broken | 73 |
+| Over-strict | 81 |
 | **Missed** | **0** |
-| Unstable, excluded | 51 |
+| Unstable, excluded | 58 |
 
 Which kernels land in the excluded column moves between runs, because several read memory
 this harness never initialises and are therefore stable only until something else has used
@@ -934,13 +934,19 @@ than guess, which is the designed answer.
 `ptxas` rejecting a snippet is an ordinary result here. The corpus is deliberately broad and
 tries forms the architecture may not have, so a rejection is recorded as a negative rather
 than raised, and the harvest prints how many there were and carries on. That is the right
-design, and it hid three separate bugs for as long as they had existed:
+design, and it hid eight separate bugs for as long as they had existed:
 
 | Kernels | What was wrong | What it cost |
 | :--- | :--- | :--- |
 | all 22 half precision | `ld.global.f16`, a load type PTX does not have | `HADD2`, `HMUL2`, `HFMA2`, `HMNMX2` and the f16 conversions, absent from the database, the latency model and the mined stall table alike |
 | `popc.b64`, `clz.b64` | a 64-bit destination for a count that is 32 bits wide | both 64-bit forms |
+| 12 bitwise atomics | `.and`, `.or`, `.xor` and `.exch` given `.s32`/`.u32`/`.u64`, when PTX types them as bit operations and takes only `.b32` or `.b64` | every bitwise `ATOMG` |
+| `div.f32`, `div.f64` | float division has no default rounding mode in PTX and has to name one | both |
+| 3 widening `cvt` | a rounding modifier on an exact conversion, which PTX rejects | f16 to f32, f16 to f64, f32 to f64 |
 | `mma.m16n8k16.f16.f16.f16` | `.f16` accumulate given `.f32` registers, when it packs two halves into a `.b32` | the only f16-accumulating tensor form |
+| 3 `ldmatrix.m16n16.b8` | one register per matrix, when a 16x16 tile of bytes is two, and `.x4` does not exist for the shape | `LDSM.8.MT1616` |
+| 3 sparse `mma.sp` | B sized for the dense shape rather than the full k, and `.kind::f8f6f4` carried over from the dense forms, which the sparse ones reject | `HMMA.SP`, `IMMA.SP` and `QMMA.SP` |
+| 1-bit `mma` | no `.and.popc` or `.xor.popc`, which the 1-bit form requires | see below |
 
 The half-precision case is the one worth dwelling on. The type table had carried `b16` as
 f16's container since it was written, in a column that nothing read; `_load` interpolated the
@@ -954,12 +960,25 @@ mismatch means the PTX is wrong, and anything else is a genuine negative. The ha
 the first kind separately and a test fails if there are any.
 
 That test found `popc`, `clz` and `mma` on its first run, none of which had anything to do
-with the half-precision bug that prompted it.
+with the half-precision bug that prompted it. Reading the rest of the reasons rather than
+counting them found the atomics, the divisions, the conversions and the matrix shapes.
+
+**What the 1-bit form turned out to be.** `mma.b1` compiles for sm_120a and there is no
+1-bit tensor instruction behind it. `ptxas` calls an internal helper that decomposes the
+operation into `LOP3` masks, `MOVM.U4TO8.M832` and a chain of `IMMA.16832.U8.U8`. So the
+capability is present at the PTX level and emulated underneath, which is only visible
+because the kernel now builds.
+
+**Six rejections remain and all of them are real.** Five are the `mxf8f6f4` block-scaled
+family with a `ue4m3` scale, which is refused at every register count and scale vector while
+the same forms with `ue8m0` build; one is sparse `e2m1` at `m16n8k128`, which demands
+`.kind::f8f6f4` and then refuses the type. Those are answers about sm_120a rather than
+defects in the corpus.
 
 | | Mnemonics | Opcodes | Instructions reproduced |
 | :--- | ---: | ---: | ---: |
 | Before | 276 | 77 | 9,846 of 9,856 |
-| After | **295** | **81** | **10,406 of 10,416** |
+| After | **319** | **82** | **11,463 of 11,472** |
 
 ## 21. What is deliberately not claimed
 

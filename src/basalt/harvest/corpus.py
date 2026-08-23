@@ -323,7 +323,9 @@ def generate() -> list[Snippet]:
     out += [_binary("add", "s32", ("sat",))]
 
     for t in _FLOAT:
-        out += [_binary(op, t) for op in ("add", "sub", "mul", "min", "max", "div")]
+        out += [_binary(op, t) for op in ("add", "sub", "mul", "min", "max")]
+        # float division has no default rounding mode in PTX; it has to be named
+        out.append(_binary("div", t, ("rn",)))
         out += [_ternary("fma", t, ("rn",))]
         out += [_unary(op, t) for op in ("abs", "neg")]
     out += [
@@ -380,7 +382,9 @@ def generate() -> list[Snippet]:
     for dst, src in itertools.permutations(conv_types, 2):
         mods: tuple[str, ...] = ()
         if dst.startswith("f") and src.startswith("f"):
-            mods = ("rn",)
+            # a widening float conversion is exact and PTX rejects a rounding
+            # modifier on one; only a narrowing one has to say how to round
+            mods = ("rn",) if _TYPES[dst][1] < _TYPES[src][1] else ()
         elif dst.startswith(("s", "u")) and src.startswith("f"):
             mods = ("rni",)
         elif dst.startswith("f") and src.startswith(("s", "u")):
@@ -403,8 +407,13 @@ def generate() -> list[Snippet]:
         out.append(_memory("ld", t, "global", ("nc",)))
 
     # atomics and reductions
-    for op in ("add", "min", "max", "and", "or", "xor", "exch"):
+    for op in ("add", "min", "max"):
         for t in ("u32", "s32", "u64"):
+            out.append(_atomic(op, t))
+    # `.and`, `.or`, `.xor` and `.exch` are bit operations and PTX types them as
+    # such: only `.b32` and `.b64` are legal, whatever the value is meant to be
+    for op in ("and", "or", "xor", "exch"):
+        for t in ("b32", "b64"):
             out.append(_atomic(op, t))
     out.append(_atomic("add", "f32"))
     out.append(_atomic("add", "f64"))
