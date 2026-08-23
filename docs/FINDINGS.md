@@ -1110,10 +1110,11 @@ register it has just read. Real code does it constantly, because registers are s
 compiler reuses them the moment they are dead.
 
 This is the same gap finding 13 names from the other side. Read barriers exist because an
-instruction can consume its operands late, and basalt inherits them rather than computing
-them because it has no measured model of how long a read takes. Here `ptxas` protected the
-same thing with spacing rather than a barrier, so there was nothing to inherit and the gap
-became visible as a wrong answer. Three cycles is the first measurement of that latency.
+instruction can consume its operands late, and at this point basalt inherited them rather
+than computing them. Here `ptxas` protected the same thing with spacing rather than a
+barrier, so there was nothing to inherit and the gap became visible as a wrong answer. Three
+cycles is the first measurement of that latency, and it is what finding 25 needed to stop
+inheriting the barriers as well.
 
 ## 24. An instruction that waits on the scoreboard it signals
 
@@ -1136,12 +1137,12 @@ block. The dataflow never reaches them, so every wait basalt emitted there came 
 inheritance rather than analysis. Those blocks now keep the vendor's words untouched, which
 is the honest thing to do with code the analysis has not read.
 
-**The read-barrier inheritance was program-wide.** basalt keeps the vendor's read-barrier
-numbering because it cannot compute one (finding 13), and it decided which vendor wait bits
-to carry over from a single mask of every read-barrier number used anywhere in the program.
-So a vendor wait on a *write* barrier was inherited whenever its number happened to match a
-read barrier somewhere else. A read barrier is live from the instruction that sets it to the
-one that waits on it, and only there is the wait inherited now.
+**The read-barrier inheritance was program-wide.** basalt kept the vendor's read-barrier
+numbering at the time, and decided which vendor wait bits to carry over from a single mask of
+every read-barrier number used anywhere in the program. So a vendor wait on a *write* barrier
+was inherited whenever its number happened to match a read barrier somewhere else. Scoping
+that to where a barrier is actually live fixed it; finding 25 later removed the inheritance
+altogether, which is the better answer and needed this one first to be reachable.
 
 **The allocator could not see the waits.** Scoreboards are allocated in one pass and the
 waits are computed by a dataflow in the next, so an instruction is given a number before

@@ -74,9 +74,11 @@ every kernel it appears in. That field was solved from real kernels, the label t
 the destination and the word giving the bits, and it is split across bits 16..23 and 34..81
 with the value scaled by four, which is why searching contiguous runs finds nothing.
 
-What it still declines is a handful of fields the prober could only partly attribute, and a
-few operand shapes the harvest has not sampled. Both are coverage rather than correctness,
-and both surface as a refusal with a reason rather than a wrong word.
+What it still declines is five instructions at `-O3`, and they are the same three shapes at
+every level: a `RET` or `WARPSYNC` whose register shares a field with its branch target and
+was never isolated from it, the invert bit on a `BRA` predicate, and a `VIMNMX` immediate
+form the harvest has not sampled. All coverage rather than correctness, and all surfacing as
+a refusal that names the field rather than as a wrong word.
 
 Stages 1 to 6 need no GPU and run in CI. Stage 7 needs an sm_120 card, and only the
 measurement step does; the numbers it produces are a checked-in file everyone else reads.

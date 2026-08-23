@@ -87,20 +87,22 @@ every kernel against a second, third and fourth pattern immediately found a carr
 predicate the operand model had been reading as a source since the beginning. It had
 survived every control up to that point, including the round trip itself.
 
-The same discipline decides what the assembler is allowed to do. It reached 99% of the
-corpus only after six separate rounds of being confidently incorrect:
+The same discipline decides what the assembler is allowed to do. It reached 99.9% of the
+corpus only after eight separate rounds of being confidently incorrect:
 
 - writing a register number into the encoding of an immediate form,
 - treating a uniform register as interchangeable with a regular one,
 - keeping the branch target of whichever kernel the form was harvested from,
 - putting the integer 15 into a field that holds a half-precision float,
 - writing an operand into bits that turned out to be a reuse flag,
-- and writing into a field the prober had only partly attributed, leaving the rest still
-  encoding the old value.
+- writing into a field the prober had only partly attributed, leaving the rest still
+  encoding the old value,
+- spreading a register number across the bit that selects which register file it is in,
+- and reading a register-indexed constant load's index as a displacement.
 
 Every one of those produced a word that assembles, disassembles back to exactly the text
 it came from, and computes something else. That is the same failure the rest of this
-repository exists to catch, which is why all six are now refused with a reason naming what
+repository exists to catch, which is why all eight are now refused with a reason naming what
 the field really holds, and why the count of instructions that assemble to the wrong bytes
 is a test pinned at zero rather than a number in a table.
 
