@@ -73,8 +73,7 @@ class TestUpperBounds:
 
     def test_thin_evidence_is_neutralised_by_the_bound_not_by_a_trust_gate(self) -> None:
         # four observations said `IADD -> MOV` needs 20 and the vendor ships it
-        # at 5. Demoting thin evidence instead let two broken kernels through,
-        # because `VIADD.S32.ISAT -> STG` has three observations and is right
+        # at 5, but demoting thin evidence let two broken kernels through
         record = DEFAULT_MODEL.lookup("IADD")
         thin = ObservedStalls(cuda_version="", arch="sm_120")
         thin.by_pair[("IADD", "MOV")] = StallEvidence("IADD", "MOV", minimum=20, observations=4)

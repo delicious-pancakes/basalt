@@ -27,6 +27,7 @@ __all__ = [
     "ANTI_DEPENDENCY_CYCLES",
     "DEFAULT_MODEL",
     "GUARD_CYCLES",
+    "MEASURED_ANTI_PAIRS",
     "SCOREBOARD_RESIDUE_CYCLES",
     "Confidence",
     "LatencyClass",
@@ -73,6 +74,10 @@ GUARD_CYCLES = 13
 # measured at three for one pairing by shortening the gap until the answer moved,
 # and the ceiling on every pairing since no other figure exists (finding 23)
 ANTI_DEPENDENCY_CYCLES = 3
+
+# and the only pairing it was measured on, so the constant is a scheduler's
+# conservative charge rather than something a checker may allege (finding 32)
+MEASURED_ANTI_PAIRS = frozenset({("ULEA", "UMOV")})
 
 # what a waited-on scoreboard still owes is the pipeline distance between the
 # release and the operand read, and 2 is the only figure fault injection produced

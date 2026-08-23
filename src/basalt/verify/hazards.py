@@ -38,8 +38,8 @@ from ..encoding import STALL_YIELD, effective_stall
 from .cfg import ControlFlowGraph, build_cfg
 from .flow import FlowState
 from .latency import (
-    ANTI_DEPENDENCY_CYCLES,
     GUARD_CYCLES,
+    MEASURED_ANTI_PAIRS,
     SCOREBOARD_RESIDUE_CYCLES,
     Confidence,
     LatencyClass,
@@ -254,9 +254,8 @@ def _check_instruction(
                 if rd.elapsed >= required or not recording:
                     continue
                 if by_distance:
-                    # nothing bounds a variable-latency producer's requirement
-                    # from above, so the mined gap is all there is and it is an
-                    # upper bound: tighter than the vendor is not proof of wrong
+                    # nothing bounds a variable producer's requirement from
+                    # above, so tighter than the vendor is not proof of wrong
                     grounded = False
                 # grounded in hardware or in what the vendor schedules, either of
                 # which makes a shortfall an error rather than a suspicion
@@ -423,9 +422,12 @@ def _check_anti_dependencies(program, block, model, report, seen, observed) -> N
             needed = anti_dependency_cycles(reader_mnemonic, instr.opcode, observed)
             if elapsed.get(reg, 0) >= needed:
                 continue
-            # the constant was measured for one pairing, so it grounds an error
-            # only where this pairing's own evidence is what binds
-            grounded = evidence.minimum <= ANTI_DEPENDENCY_CYCLES
+            # only the pairing fault injection measured grounds an error: the
+            # constant is one pairing's number (finding 32)
+            grounded = (
+                reader_mnemonic.split(".")[0],
+                instr.opcode.split(".")[0],
+            ) in MEASURED_ANTI_PAIRS
             _add(
                 report,
                 seen,

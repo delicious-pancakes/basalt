@@ -44,14 +44,8 @@ LATENCIES = ROOT / "data" / "latency" / "rtx-5070-ti.json"
 OBSERVED = ROOT / "data" / "latency" / "observed-stalls-sm120a.json"
 
 
-# Which ptxas -O levels the positive control sweeps.
-#
-# All three by default, so a local `verify_all.py` and the nightly run get the
-# full sweep. CI narrows the per-push run to -O3 alone: three levels is three
-# builds and three analyses of 449 kernels, and re-proving -O1 and -O2 on every
-# commit costs about eight minutes to re-find nothing. -O3 is the level that
-# schedules hardest, so a regression surfaces there first, and the widened
-# sweep that originally found the two model bugs still runs every night.
+# all three levels locally and nightly; CI narrows to -O3, which schedules
+# hardest, because re-proving -O1 and -O2 per push finds nothing
 OPT_LEVELS: tuple[int, ...] = tuple(
     int(x) for x in os.environ.get("BASALT_CORPUS_OPT", "1,2,3").split(",") if x.strip()
 )

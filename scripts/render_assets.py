@@ -162,8 +162,7 @@ def optimise(path: Path, width: int, height: int) -> tuple[str, str]:
 
     with Image.open(path) as raw:
         # RGB, not RGBA and not P: an alpha channel composites against whatever
-        # the unfurling client uses for a background, which is not a choice to
-        # leave to Slack
+        # background the unfurling client happens to use
         im = raw.convert("RGB")
         if (im.width, im.height) != (width, height):
             im = im.resize((width, height), Image.Resampling.LANCZOS)

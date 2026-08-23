@@ -71,9 +71,8 @@ class ReachingDef:
 
     def advanced(self, stall: int, *, yielded: bool = False) -> ReachingDef:
         elapsed = min(STALL_SATURATION, self.elapsed + stall)
-        # frozen, so returning self where nothing moved is safe, and it is the
-        # common case once a definition saturates: `dataclasses.replace` here
-        # was two thirds of the time spent verifying a shipped library
+        # frozen, so sharing self where nothing moved is safe, and `replace`
+        # here was two thirds of the time spent verifying a shipped library
         if elapsed == self.elapsed and (self.yielded or not yielded):
             return self
         return ReachingDef(

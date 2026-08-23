@@ -109,10 +109,8 @@ class FlowState:
         for by_index in self.defs.values():
             for index, rd in by_index.items():
                 if not rd.satisfied and rd.barrier != 7 and (wait_mask >> rd.barrier) & 1:
-                    # every field carried across: rebuilding without `yielded`
-                    # and `crossed` reset both on every wait, which made a
-                    # definition that had crossed an edge look like one that
-                    # had not, and the gap a distance it is not
+                    # every field carried: rebuilding without `crossed` made a
+                    # gap that spans a branch look like a measurable distance
                     by_index[index] = ReachingDef(
                         rd.index,
                         rd.elapsed,

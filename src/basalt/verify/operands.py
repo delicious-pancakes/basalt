@@ -336,8 +336,7 @@ def operand_access(mnemonic: str, operands: str) -> Access:
                 continue
             if addressed:
                 # a width on the mnemonic describes the data, not the address:
-                # `STS.128 [R0], R8` writes four registers to one 32-bit address.
-                # a suffix on the register still counts, and a descriptor is a pair
+                # `STS.128 [R0], R8` writes four registers to one 32-bit address
                 width = _width_from("", m.group(3))
                 if _in_descriptor(part, m.start()):
                     width = max(width, 2)
