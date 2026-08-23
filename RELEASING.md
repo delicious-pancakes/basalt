@@ -56,10 +56,13 @@ git tag -a vX.Y.Z -m "vX.Y.Z"
 git push origin vX.Y.Z
 ```
 
-The tag triggers `.github/workflows/release.yml`, which builds the sdist and
-wheel, attaches SLSA build provenance through Sigstore, and uploads both to a
-release. Nothing is published to an index from there, deliberately: an artifact
-should be verifiable before it is distributed.
+The tag triggers `.github/workflows/release.yml`, which calls the reusable
+`release-build.yml` to build the sdist and wheel, run the GPU-free suite,
+generate the SBOM and sign all three through Sigstore, then publishes what came
+back from a separate job. The split is what makes the provenance SLSA Build L3,
+and it means the job that builds never holds `contents: write`. Nothing is
+published to an index from there, deliberately: an artifact should be verifiable
+before it is distributed.
 
 ## 5. Verify the provenance before announcing
 
@@ -67,7 +70,9 @@ The whole argument of this project is that a claim without evidence is worth
 nothing, and "these files came from that commit" is a claim like any other:
 
 ```bash
-gh attestation verify basalt-X.Y.Z-py3-none-any.whl --repo sunnypatell/basalt
+gh attestation verify basalt_sass-X.Y.Z-py3-none-any.whl \
+  --repo sunnypatell/basalt \
+  --signer-workflow sunnypatell/basalt/.github/workflows/release-build.yml
 ```
 
 ## 6. If a release is wrong
