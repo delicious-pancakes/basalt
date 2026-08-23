@@ -47,7 +47,7 @@ python -m basalt.cli verify path/to/O0.cubin --latencies data/latency/rtx-5070-t
 Every kernel `ptxas` builds from the generated corpus is compiled and verified.
 Its scheduling is the reference, so an error on any of them is basalt's fault.
 
-| | |
+| Positive control | Result |
 | :--- | ---: |
 | Kernel and optimisation-level pairs | 1,323 |
 | Dependencies checked | 30,421 |
@@ -177,7 +177,7 @@ happens to be wrong.
 So every measured field is written through and read back, across five values
 rather than one, since a single value can agree by accident.
 
-| | |
+| Write-through and read-back | Result |
 | :--- | ---: |
 | Forms checked | 339 |
 | Register-bearing operand slots | 866 |
@@ -346,7 +346,7 @@ shared memory that is actually addressable. The hand-written ones have counted l
 accumulators carried around the back edge, nested loops, a branch inside a loop, barriers
 with traffic on both sides, predicated writes, and long unbranched dependent chains.
 
-| | |
+| Reschedule and re-run | Kernels |
 | :--- | ---: |
 | Kernels rescheduled and run | 441 |
 | Comparable (the vendor runs here, deterministically, and reproducibly) | 314 |
@@ -451,7 +451,7 @@ same afternoon on it.
 "Every comparable kernel" is a claim about kernels, and the useful question is how much of
 the instruction set they contain between them:
 
-| | |
+| Opcode coverage | Count |
 | :--- | ---: |
 | Opcodes in the database | 77 |
 | Opcodes the round trip executes on the GPU | **74 (96%)** |
@@ -808,7 +808,7 @@ basalt says statically, and what the GPU computes against eight input patterns.
 The top-right cell is the one that matters. A miss is a schedule basalt called safe that
 computes a wrong answer, which is the entire failure this repository exists to prevent.
 
-| | |
+| Shortened-dependency study | Kernels |
 | :--- | ---: |
 | Kernels, one dependency shortened in each | 233 |
 | Agreed broken | 79 |
@@ -888,7 +888,7 @@ puts `PT` in that slot.
 
 After the fixes, at 120 mutations per form across five seeds:
 
-| | |
+| Assembler fuzzing | Result |
 | :--- | ---: |
 | Mutations | 219,000 |
 | Assembled and round-tripped | all of them |

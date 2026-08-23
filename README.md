@@ -157,7 +157,7 @@ emitting an unsafe schedule for one of them.
 Every number measured on silicon comes from **one physical card**, named exactly, because
 "a 5070 Ti" is not enough to reproduce a run:
 
-| | |
+| The card | Exactly what it is |
 | :--- | :--- |
 | Board | Gigabyte GeForce RTX 5070 Ti **EAGLE OC** |
 | Reported by the driver | `NVIDIA GeForce RTX 5070 Ti` |
@@ -338,7 +338,7 @@ Numbers here are printed by the tooling and regenerate from a clean checkout. Th
 
 **Instruction database.** Every entry carries an encoding that really assembled and the compiler build that produced it.
 
-| | |
+| Instruction database | Count |
 | :--- | ---: |
 | Instruction forms | 274 |
 | Distinct opcodes | 77 |
