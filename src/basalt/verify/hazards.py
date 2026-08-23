@@ -634,10 +634,8 @@ def _requirement(
                     f"seen no tighter than {evidence.minimum} but an upper bound cannot raise it",
                     True,
                 )
-            # after its own latency the result is written, whatever the vendor
-            # was seen to leave, so a mined figure above it is spacing too. That
-            # bound is what makes thin evidence harmless: four observations
-            # claiming 20 become the producer's 4, which the vendor already beats
+            # after its own latency the result is written, so a mined figure
+            # above it is spacing, and thin evidence is harmless once bounded
             ceiling = record.cycles if bounded else evidence.minimum
             return (
                 min(evidence.minimum, ceiling),
