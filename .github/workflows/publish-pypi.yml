@@ -84,12 +84,17 @@ jobs:
           REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
+          verified=0
           for f in dist/*; do
             gh attestation verify "$f" \
               --repo "$REPO" \
               --signer-workflow "$REPO/.github/workflows/release-build.yml"
+            verified=$((verified + 1))
           done
-          echo "provenance verified for $(ls dist | wc -l) files"
+          # a glob that matched nothing leaves the literal pattern, and the loop
+          # would have "verified" one file that is not there
+          [ "$verified" -ge 2 ] || { echo "expected a wheel and an sdist, saw $verified"; exit 1; }
+          echo "provenance verified for $verified files"
 
       - name: Check the version matches the tag
         env:
