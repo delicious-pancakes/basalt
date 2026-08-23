@@ -428,6 +428,20 @@ def _schedule(args: argparse.Namespace) -> int:
         print(f"error: nothing disassembled from {target}", file=sys.stderr)
         return 1
 
+    # patching writes back by slot, so the listing has to be one program. A
+    # shipped library packs hundreds into one ELF and scheduling the
+    # concatenation would invent dependencies across kernel boundaries
+    from .disasm import disassemble_kernels
+
+    kernels = disassemble_kernels(tc, target)
+    if len(kernels) > 1:
+        print(
+            f"error: {target} holds {len(kernels)} kernels. Scheduling patches the cubin by "
+            f"slot, which needs one program per file; `basalt verify` reads them all",
+            file=sys.stderr,
+        )
+        return 1
+
     result = schedule_program(program, model, observed=observed)
     print(f"{target}")
     print(f"  {result.summary()}")
@@ -468,11 +482,32 @@ def _schedule(args: argparse.Namespace) -> int:
     return 0
 
 
+def _combined(reports):
+    """One report standing for every kernel in a cubin."""
+    from .verify.hazards import VerificationReport
+
+    total = VerificationReport()
+    first = True
+    for report in reports:
+        total.instructions += report.instructions
+        total.blocks += report.blocks
+        total.checked_pairs += report.checked_pairs
+        total.hazards.extend(report.hazards)
+        total.unknown_opcodes |= report.unknown_opcodes
+        total.cross_block |= report.cross_block
+        total.incomplete_graph |= report.incomplete_graph
+        if first:
+            total.model_confidence = report.model_confidence
+            total.model_sku = report.model_sku
+            first = False
+    return total
+
+
 def _verify(args: argparse.Namespace) -> int:
     """Check a cubin's control bits against the latency model."""
     from pathlib import Path
 
-    from .disasm import disassemble_program
+    from .disasm import disassemble_kernels, disassemble_program
     from .toolchain import ToolchainError, find_toolchain
     from .verify.hazards import Severity, verify_program
     from .verify.latency import DEFAULT_MODEL, Confidence, LatencyModel
@@ -503,14 +538,24 @@ def _verify(args: argparse.Namespace) -> int:
     elif (default := Path(DEFAULT_OBSERVED)).is_file():
         observed = ObservedStalls.read(default)
 
-    program = disassemble_program(tc, target)
-    if not program.instructions:
-        print(f"error: nothing disassembled from {target}", file=sys.stderr)
-        return 1
+    # per kernel, because a shipped library holds hundreds in one ELF and
+    # analysing the concatenation invents dependencies across a boundary no warp
+    # crosses: offsets restart at zero and nothing falls through
+    kernels = disassemble_kernels(tc, target)
+    if not kernels:
+        program = disassemble_program(tc, target)
+        if not program.instructions:
+            print(f"error: nothing disassembled from {target}", file=sys.stderr)
+            return 1
+        kernels = {"": program}
 
-    report = verify_program(program, model, observed=observed)
+    reports = {name: verify_program(p, model, observed=observed) for name, p in kernels.items()}
+    report = _combined(reports.values())
 
     print(f"{target}")
+    if len(reports) > 1:
+        flagged = sum(1 for r in reports.values() if not r.ok)
+        print(f"  {len(reports)} kernels, {flagged} with an error")
     print(f"  {report.summary()}")
     if observed is not None:
         trusted = sum(1 for e in observed.by_producer.values() if e.trusted)
@@ -531,15 +576,26 @@ def _verify(args: argparse.Namespace) -> int:
         names = ", ".join(sorted(report.unknown_opcodes)[:8])
         print(f"  opcodes not in the model: {len(report.unknown_opcodes)} ({names})")
 
-    shown = [h for h in report.hazards if args.all or h.severity is not Severity.INFO]
-    if shown:
+    budget = args.limit
+    for name, one in reports.items():
+        shown = [h for h in one.hazards if args.all or h.severity is not Severity.INFO]
+        if not shown or budget <= 0:
+            continue
         print()
-        for h in shown[: args.limit]:
+        if name:
+            print(f"  {name}")
+        for h in shown[:budget]:
             print(f"  {h.describe()}")
             print(f"      def  {h.def_text}")
             print(f"      use  {h.use_text}")
-        if len(shown) > args.limit:
-            print(f"  ... and {len(shown) - args.limit} more (raise --limit to see them)")
+        budget -= len(shown[:budget])
+
+    remaining = sum(
+        len([h for h in r.hazards if args.all or h.severity is not Severity.INFO])
+        for r in reports.values()
+    ) - (args.limit - max(budget, 0))
+    if remaining > 0:
+        print(f"  ... and {remaining} more (raise --limit to see them)")
 
     if report.model_confidence is Confidence.ASSUMED and report.hazards:
         print(

@@ -59,12 +59,20 @@ NVIDIA ships in cuBLAS, cuSOLVER, cuSPARSE, NPP and the rest.
 own documentation that "checking rigorous correctness of the whole program … [is] far from
 possible without official support. So, it is left to the user to guarantee the correctness of
 the program, with very limited help from the assembler."
-[SIP](https://arxiv.org/html/2403.16863v1), on autotuning SASS schedules, puts it flatly:
+[SIP](https://arxiv.org/html/2403.16863v1), on autotuning SASS schedules, states that
 "validation is impossible for GPU native assembly codes because the formal semantics of the
-sass is closed-source." That is the position basalt disagrees with, and the disagreement is
-the whole idea: **deciding whether a schedule is safe does not need the semantics.** It needs
-the dependency structure, which the encoding gives up, and a latency model, which the silicon
-gives up under measurement. Neither requires knowing what the instruction computes.
+sass is closed-source."
+
+Both are about **semantic** correctness: whether a kernel computes what it is supposed to.
+basalt does not answer that, and nothing here claims to. It answers a strictly smaller
+question, and the point is that the smaller question is decidable without the semantics:
+
+> Do this program's control bits cover its own data dependencies?
+
+That needs the dependency structure, which the encoding gives up, and a latency model, which
+the silicon gives up under measurement. Neither requires knowing what any instruction
+computes. A kernel can pass this check and still be the wrong algorithm; what it cannot do is
+read a register before the value lands.
 
 **Second, nothing else is measured against the vendor's own bytes.** basalt's reference is
 `ptxas` output, so a disagreement is basalt's bug until proven otherwise. Its assembler has
@@ -306,7 +314,28 @@ python -m basalt.cli isa IMAD.WIDE.U32  # one form, with its measured field layo
 python -m basalt.cli isa --opcode QMMA  # every form of one opcode
 ```
 
-Then check a cubin, whatever produced it:
+### Check machine code you did not write
+
+This is the part nothing else does, and it needs no GPU and no arguments. The measured
+latency model and the mined requirement table are both committed, so a fresh clone can be
+pointed straight at a cubin, whatever produced it:
+
+```bash
+python -m basalt.cli verify kernel.cubin
+```
+
+```console
+$ python -m basalt.cli verify nvjpeg.sm_120.cubin
+  25 kernels, 0 with an error
+  7984 instructions in 789 blocks, 11580 dependencies checked across blocks: 0 errors, 3 warnings
+  pair data: 3957 pairings from 25634 kernels, 427 producers with enough observations to use
+  latency model: measured on NVIDIA GeForce RTX 5070 Ti
+```
+
+A library ELF holds hundreds of kernels and each is checked on its own, because offsets
+restart at zero and nothing falls through from one into the next. Add `--strict` to exit
+non-zero on a hazard, which is what a build step wants. If you have an sm_120 card and want
+the model measured on your own silicon rather than on the one in this repository:
 
 ```bash
 python -m basalt.cli measure -o data/latency/your-card.json   # needs a GPU, once
