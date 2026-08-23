@@ -244,6 +244,8 @@ _ASSUMED: dict[str, tuple[int, LatencyClass, str]] = {
     "MEMBAR": (0, LatencyClass.CONTROL, ""),
     "DEPBAR": (0, LatencyClass.CONTROL, ""),
     "NOP": (0, LatencyClass.CONTROL, ""),
+    # no operands at all in any of the shipped instances, so nothing to protect
+    "ENDCOLLECTIVE": (0, LatencyClass.CONTROL, "ends a collective, no register result"),
     "YIELD": (0, LatencyClass.CONTROL, ""),
     "PMTRIG": (0, LatencyClass.CONTROL, ""),
     # stores have no destination register, so nothing downstream depends on them

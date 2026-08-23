@@ -1602,9 +1602,9 @@ number it gained.
 | | Errors | Warnings | Dependencies |
 | :--- | ---: | ---: | ---: |
 | First run | 6,593 | 554 | 93,972 |
-| After the corrections | **0** | 204 | 93,489 |
+| After the corrections | **0** | 201 | 93,489 |
 
-Zero hazards in 250 shipped kernels held out of every table the checker reads, and 204
+Zero hazards in 250 shipped kernels held out of every table the checker reads, and 201
 warnings, which is where the model has an assumed number and says so.
 
 Two of the eight corrections were caught on the way back rather than on the way out, and both
@@ -1658,15 +1658,16 @@ Stated so the boundary of the evidence is visible.
   is not a plain field read and the probe is not measuring what it looks like it is measuring.
   Reverted rather than kept, because it changed no outcome: 345 forms either way, and the same
   22,714 of 22,752 at `-O0`. The refusals stand and name the field they could not place.
-- **Eight opcodes have no evidence behind their latency**, out of the 87 the database holds.
-  The other 79 split into 11 measured on silicon, 56 mined from what the vendor schedules, and
-  12 with no register result at all, whose number is never consulted because an instruction
-  that defines nothing is never a producer. The eight are `BPT`, `CCTL`, `CGAERRBAR`,
-  `ENDCOLLECTIVE`, `ERRBAR`, `LDL`, `R2UR` and `REDG`; five of them appear nowhere in 37,008
-  instructions of compiler output, and of the three that do, only `LDL` ever writes a register,
-  where its variable class means a scoreboard covers it and the mined residue is what the
-  checker uses. The model marks every assumed number as assumed, and a hazard derived from one
-  is reported as a warning rather than an error, because the difference between a lead and a
+- **Ten opcodes have no evidence behind their latency**, out of the 134 the model now holds.
+  The other 124 split into 11 measured on silicon, 91 mined from what the vendor schedules
+  across shipped code as well as the corpus, and 22 with no register result at all, whose
+  number is never consulted because an instruction that defines nothing is never a producer.
+  The ten are `BMMA`, `F2IP`, `ISCADD`, `LDGSTS`, `LOP`, `RED`, `SULD`, `TEX`, `TLD` and
+  `VABSDIFF`, none of which appears as a producer anywhere in the corpus or in 24,311 shipped
+  kernels. `F2IP` is the interesting one: it is in the model because the audit found 302 of
+  them, all in a library held out of the mining set, so its class is evidence and its number
+  is not. The model marks every assumed number as assumed, and a hazard derived from one is
+  reported as a warning rather than an error, because the difference between a lead and a
   finding is where the number came from.
 - **Four input patterns were enough, and that was checked rather than assumed.** A stale read
   only changes the answer when the stale value and the fresh one differ, so the round trip's

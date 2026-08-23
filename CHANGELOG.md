@@ -15,7 +15,7 @@ any release. The clean-room position in [`NOTICE`](NOTICE) will not.
   reported 6,593 errors in 250 nvjpeg kernels and not one was real. Seven holes
   in basalt's model were, each of them invisible on a corpus basalt generates
   itself, and after the corrections the same libraries verify with zero errors
-  and 204 warnings. Finding 32.
+  and 201 warnings. Finding 32.
 - `scripts/mine_shipped.py`: the per-pair stall requirement mined from shipped
   kernels rather than from a generated corpus, holding out the libraries the
   audit then reports on, because a table measured on the code it is checked
