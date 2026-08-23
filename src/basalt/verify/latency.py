@@ -24,6 +24,7 @@ from enum import StrEnum
 from pathlib import Path
 
 __all__ = [
+    "ANTI_DEPENDENCY_CYCLES",
     "DEFAULT_MODEL",
     "GUARD_CYCLES",
     "Confidence",
@@ -67,6 +68,12 @@ class LatencyRecord:
 # a guard is consumed at issue and needs 13 cycles where the same predicate read
 # as data needs 5, so this is a property of issue rather than of the file
 GUARD_CYCLES = 13
+
+# An operand read is not instantaneous: overwrite a register one or two cycles
+# after it is read and the reader sees the new value. Measured at three for one
+# pairing by shortening the gap until the answer moved, and used as the ceiling
+# on every pairing because no other figure has been established (finding 23).
+ANTI_DEPENDENCY_CYCLES = 3
 
 _ASSUMED: dict[str, tuple[int, LatencyClass, str]] = {
     # core integer and float ALU, the classic four-stage result bus

@@ -1097,8 +1097,42 @@ Shortening that gap on the card and nothing else:
 | 4 to 7 | correct |
 
 The same shape as finding 1, and for the same reason: zero is the long safe encoding, and
-the first values above it are the ones that corrupt. Three cycles is the requirement, and it
-is a requirement basalt had no concept of.
+the first values above it are the ones that corrupt. Three cycles is the requirement *for
+this pairing*, and it is a requirement basalt had no concept of.
+
+**It is a pairing, not a constant, and reading it as a constant was the first mistake made
+with it.** basalt charged three cycles for every anti-dependency, which passed everything,
+because being too generous is the safe direction. Checking that against the vendor says
+otherwise: across the corpus `ptxas` leaves one or two cycles here 381 times, on hundreds of
+distinct pairings, and it is not wrong 381 times.
+
+So the gap is mined per pairing, exactly as the read-after-write requirement is, and the
+numbers spread the way every other latency in this project does:
+
+| Pairing | Cycles the vendor never goes below | Observations |
+| :--- | ---: | ---: |
+| `FFMA` ~> `FFMA` | 1 | 116 |
+| `IMAD.SHL.U32` ~> `SHF` | 1 | 84 |
+| `IADD` ~> `IADD` | 1 | 47 |
+| `IMAD` ~> `IADD` | 2 | 13 |
+| `STS.128` ~> `LDSM` | 19 | 24 |
+| `ULEA` ~> `UMOV` | *3, and one observation* | 1 |
+
+Evidence only ever lowers the charge, never raises it. The mined minimum is the smallest gap
+the vendor left, and that gap is frequently there for another reason entirely: `DFMA` into
+`DFMA` mines at 64, which is the *result* latency of the instruction before it and nothing
+to do with the read. Charging that would quadruple the cost of every fp64 kernel to cover a
+hazard already covered.
+
+`ULEA` into `UMOV` has one observation, so it is not trusted, so it keeps the constant, which
+is the number fault injection measured for it. That is not a coincidence worth leaning on:
+it is what the fallback is for.
+
+The checker reports this hazard only where the evidence is trusted. A constant there would
+call `ptxas` broken 381 times, and a control that fires on the reference is not a control.
+The scheduler stays stricter than the checker on purpose: it charges three where it has no
+evidence, and the checker says nothing, because being conservative about what to emit and
+being conservative about what to allege are different jobs.
 
 **Every dependency basalt modelled was a read after a write.** A value is produced, and a
 later instruction must not read it too early. This is the other direction: a value is read,
@@ -1444,6 +1478,15 @@ Kept because a method is only as trustworthy as its error log.
   cycles, and the instruction's measured latency is four; the vendor's own thirteen came out
   as an error. Eight observations now, and nothing moved into the negative control's missed
   column when it changed.
+- The anti-dependency requirement was keyed on the bare opcode when the exact form was
+  missing. `IMAD.U32` is a shift the vendor schedules at one cycle and `IMAD` is a multiply
+  it never schedules under four, so collapsing them called two of `ptxas`'s own kernels
+  broken. Exact form only now, which is the same correction `I2F` needed on the other
+  direction of dependency.
+- The scheduler and the checker were given the anti-dependency rule separately, and the
+  checker's was stricter. basalt then produced schedules that failed its own verifier, which
+  is the failure mode the two sharing a model exists to prevent. One function now, read by
+  both.
 - An instruction reaching itself was checked as though the gap were a distance. It can only
   reach itself around a back edge, where the vendor leans on the scoreboard rather than
   padding to the full latency, and `DFMA` was being asked for 64 cycles where 18 was right.

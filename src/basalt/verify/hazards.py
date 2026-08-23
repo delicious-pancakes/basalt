@@ -38,8 +38,8 @@ from ..encoding import STALL_YIELD, effective_stall
 from .cfg import ControlFlowGraph, build_cfg
 from .flow import FlowState
 from .latency import GUARD_CYCLES, Confidence, LatencyClass, LatencyModel, LatencyRecord
-from .observed import ObservedStalls
-from .operands import operand_access
+from .observed import ObservedStalls, anti_dependency_cycles
+from .operands import RegRef, operand_access
 
 __all__ = [
     "Hazard",
@@ -321,6 +321,75 @@ def _check_instruction(
     state.advance(stall, yielded=yielded)
 
 
+def _check_anti_dependencies(program, block, report, seen, observed) -> None:
+    """Overwriting a register something is still reading, without a barrier.
+
+    The other direction of dependency (finding 23), and the half the scheduler
+    charges for. Reported only where the vendor has been seen to leave a wider
+    gap for this exact pairing enough times to trust the number: `ULEA` into
+    `UMOV` is the only figure fault injection has pinned, and the vendor leaves
+    one or two cycles for hundreds of other pairings, so a fixed constant here
+    would produce 381 false alarms on `ptxas`'s own output.
+
+    Within a block. A gap that spans an edge is a minimum over paths, which is
+    the same reason the scoreboard residual is exempted there.
+    """
+    if report is None or seen is None or observed is None:
+        return
+    last_read: dict[RegRef, tuple[int, str]] = {}
+    elapsed: dict[RegRef, int] = {}
+    for index in range(block.start, block.end):
+        instr = program.instructions[index]
+        if instr.word is None:
+            continue
+        access = operand_access(instr.mnemonic, instr.operands)
+
+        for reg in access.real_defs:
+            previous = last_read.get(reg)
+            if previous is None or previous[0] == index:
+                continue
+            reader_index, reader_mnemonic = previous
+            reader = program.instructions[reader_index]
+            # a read barrier covers this, and its wait is not a cycle count
+            if reader.word is None or reader.word.field("read_barrier") != NO_BARRIER:
+                continue
+            evidence = observed.anti_requirement(reader_mnemonic, instr.opcode)
+            if evidence is None:
+                continue
+            needed = anti_dependency_cycles(reader_mnemonic, instr.opcode, observed)
+            if elapsed.get(reg, 0) >= needed:
+                continue
+            _add(
+                report,
+                seen,
+                Hazard(
+                    kind=HazardKind.OVERWRITTEN_BEFORE_READ,
+                    severity=Severity.ERROR,
+                    confidence=Confidence.MEASURED,
+                    register=str(reg),
+                    def_index=reader_index,
+                    use_index=index,
+                    def_text=reader.text,
+                    use_text=instr.text,
+                    detail=(
+                        f"{reg} is overwritten {elapsed.get(reg, 0)} cycles after it is read, "
+                        f"and this pairing needs {needed}: ptxas never leaves it less than "
+                        f"{evidence.minimum} across {evidence.observations} observations"
+                    ),
+                ),
+            )
+
+        stall = effective_stall(instr.word.field("stall"))
+        for key in list(elapsed):
+            elapsed[key] += stall
+        for reg in access.real_defs:
+            last_read.pop(reg, None)
+            elapsed.pop(reg, None)
+        for reg in access.real_uses:
+            last_read[reg] = (index, instr.mnemonic)
+            elapsed[reg] = stall
+
+
 def _run_block(
     cfg: ControlFlowGraph,
     block_index: int,
@@ -334,6 +403,7 @@ def _run_block(
     block = cfg.blocks[block_index]
     for index in range(block.start, block.end):
         _check_instruction(cfg.program, index, state, model, report, seen, observed)
+    _check_anti_dependencies(cfg.program, block, report, seen, observed)
     return state
 
 

@@ -43,9 +43,31 @@ from pathlib import Path
 from ..disasm import Program
 from ..encoding import effective_stall
 from .cfg import build_cfg
+from .latency import ANTI_DEPENDENCY_CYCLES
 from .operands import operand_access
 
-__all__ = ["ObservedStalls", "StallEvidence", "mine_program"]
+__all__ = ["ObservedStalls", "StallEvidence", "anti_dependency_cycles", "mine_program"]
+
+
+def anti_dependency_cycles(reader: str, writer: str, observed: ObservedStalls | None) -> int:
+    """Cycles a read needs before the register it read may be overwritten.
+
+    `ANTI_DEPENDENCY_CYCLES`, unless the vendor is observed to leave fewer for
+    this exact pairing. Evidence only ever lowers the charge, because the mined
+    minimum is the smallest gap `ptxas` left and that gap is frequently there for
+    another reason: `DFMA` into `DFMA` mines at 64, which is the result latency
+    of the instruction before it and nothing to do with the read.
+
+    Shared by the scheduler and the checker deliberately. One charging more than
+    the other allows is a schedule that fails its own verifier, which is exactly
+    what happened the first time these were written apart.
+    """
+    if observed is not None:
+        evidence = observed.anti_requirement(reader, writer)
+        if evidence is not None:
+            return min(ANTI_DEPENDENCY_CYCLES, evidence.minimum)
+    return ANTI_DEPENDENCY_CYCLES
+
 
 # below this, a gap is more likely a coincidence of scheduling than a statement
 # about the requirement, so it is kept and not trusted
@@ -88,6 +110,9 @@ class ObservedStalls:
     # what a scoreboarded producer still owes its consumer. keyed on the full
     # mnemonic and the consumer, because collapsing either errs toward corruption
     by_scoreboarded: dict[tuple[str, str], StallEvidence] = field(default_factory=dict)
+    # what a *reader* still needs before its register may be overwritten. its own
+    # keyspace: this is the other direction of dependency and the numbers differ
+    by_anti: dict[tuple[str, str], StallEvidence] = field(default_factory=dict)
     kernels: int = 0
 
     def observe(self, producer: str, consumer: str, stall: int, sample: str) -> None:
@@ -115,6 +140,33 @@ class ObservedStalls:
         if key not in self.by_scoreboarded:
             self.by_scoreboarded[key] = StallEvidence(mnemonic, consumer, minimum=cycles)
         self.by_scoreboarded[key].observe(cycles, sample)
+
+    def observe_anti(self, reader: str, writer: str, cycles: int, sample: str) -> None:
+        """Record the gap between a read and the overwrite of what it read."""
+        key = (reader, writer)
+        if key not in self.by_anti:
+            self.by_anti[key] = StallEvidence(reader, writer, minimum=cycles)
+        self.by_anti[key].observe(cycles, sample)
+
+    def anti_requirement(self, reader: str, writer: str) -> StallEvidence | None:
+        """Cycles a read needs before its register may be overwritten.
+
+        Keyed on both ends because the number is not a property of either alone.
+        `ULEA` into `UMOV` needs three, measured by shortening it until the card
+        returned a different answer (finding 23), while `UIADD3` into `ULEA` is
+        scheduled at one and `IMAD` into most things at two.
+
+        The exact form only. Collapsing `IMAD.U32` onto `IMAD` reads the wide
+        multiply's four cycles onto a shift that is scheduled at one, and called
+        two `ptxas` kernels broken for it. Modifiers decide the number here as
+        they do everywhere else in this model.
+
+        Only trusted evidence is returned. An untrusted pairing falls back to the
+        caller's constant, which is higher, so a thin observation can never talk
+        the requirement *down*: that direction is the one that corrupts.
+        """
+        evidence = self.by_anti.get((reader, writer))
+        return evidence if evidence is not None and evidence.trusted else None
 
     def scoreboarded_minimum(
         self, mnemonic: str, consumer: str | None = None
@@ -197,9 +249,11 @@ class ObservedStalls:
 
     def summary(self) -> str:
         trusted = sum(1 for e in self.by_producer.values() if e.trusted)
+        anti = sum(1 for e in self.by_anti.values() if e.trusted)
         return (
             f"{self.kernels} kernels, {len(self.by_pair)} distinct pairs, "
-            f"{trusted}/{len(self.by_producer)} producers with enough observations"
+            f"{trusted}/{len(self.by_producer)} producers with enough observations, "
+            f"{anti}/{len(self.by_anti)} anti-dependency pairs"
         )
 
     def write(self, path: Path) -> None:
@@ -233,6 +287,15 @@ class ObservedStalls:
                         }
                         for (p, c), e in sorted(self.by_pair.items())
                     },
+                    "by_anti": {
+                        f"{r}~>{w}": {
+                            "min_stall": e.minimum,
+                            "observations": e.observations,
+                            "trusted": e.trusted,
+                            "samples": e.samples,
+                        }
+                        for (r, w), e in sorted(self.by_anti.items())
+                    },
                     "by_scoreboarded": {
                         f"{m}=>{c}": {
                             "min_stall": e.minimum,
@@ -263,6 +326,12 @@ class ObservedStalls:
             ev = StallEvidence(producer, consumer, minimum=entry["min_stall"])
             ev.observations = entry["observations"]
             out.by_pair[(producer, consumer)] = ev
+        for key, entry in raw.get("by_anti", {}).items():
+            reader, _, writer = key.partition("~>")
+            ev = StallEvidence(reader, writer, minimum=entry["min_stall"])
+            ev.observations = entry["observations"]
+            ev.samples = entry.get("samples", [])
+            out.by_anti[(reader, writer)] = ev
         for key, entry in raw.get("by_scoreboarded", {}).items():
             mnemonic, _, consumer = key.partition("=>")
             ev = StallEvidence(mnemonic, consumer, minimum=entry["min_stall"])
@@ -291,6 +360,11 @@ def mine_program(program: Program, into: ObservedStalls) -> None:
         # the same index does not undo an earlier wait
         signalled: dict[int, int] = {}
         satisfied: set[int] = set()
+        # last reader of each register, its mnemonic, and the stall since. the
+        # other direction of dependency: a read that is still in flight when the
+        # register is overwritten sees the new value (finding 23)
+        last_read: dict[object, tuple[int, str]] = {}
+        since_read: dict[object, int] = {}
 
         for index in range(block.start, block.end):
             instr = program.instructions[index]
@@ -326,9 +400,30 @@ def mine_program(program: Program, into: ObservedStalls) -> None:
                     continue
                 into.observe(producer_mnemonic, consumer_key, elapsed.get(reg, 0), sample)
 
+            # write-after-read, before this instruction's own reads are recorded
+            for reg in access.real_defs:
+                if (previous := last_read.get(reg)) is None or previous[0] == index:
+                    continue
+                reader_index, reader_mnemonic = previous
+                reader_word = program.instructions[reader_index].word
+                if reader_word is None:
+                    continue
+                # a read barrier makes the gap irrelevant, so the number the
+                # vendor left says nothing about what the read requires
+                if reader_word.field("read_barrier") != 7:
+                    continue
+                into.observe_anti(
+                    reader_mnemonic,
+                    instr.opcode,
+                    since_read.get(reg, 0),
+                    f"{program.instructions[reader_index].text} ~> {instr.text}",
+                )
+
             stall = effective_stall(instr.word.field("stall"))
             for key in list(elapsed):
                 elapsed[key] += stall
+            for key in list(since_read):
+                since_read[key] += stall
 
             if (mine := instr.word.field("write_barrier")) != 7:
                 signalled[index] = mine
@@ -337,6 +432,11 @@ def mine_program(program: Program, into: ObservedStalls) -> None:
             for reg in access.real_defs:
                 last_def[reg] = (index, instr.mnemonic)
                 elapsed[reg] = stall
+                last_read.pop(reg, None)
+                since_read.pop(reg, None)
+            for reg in access.real_uses:
+                last_read[reg] = (index, instr.mnemonic)
+                since_read[reg] = stall
 
 
 def mine_corpus(

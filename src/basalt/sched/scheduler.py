@@ -33,7 +33,7 @@ from ..disasm import Instruction, Program
 from ..encoding import NO_BARRIER, STALL_YIELD, Word
 from ..verify.cfg import build_cfg
 from ..verify.latency import GUARD_CYCLES, LatencyClass, LatencyModel
-from ..verify.observed import ObservedStalls
+from ..verify.observed import ObservedStalls, anti_dependency_cycles
 from ..verify.operands import RegRef, operand_access
 
 __all__ = [
@@ -68,11 +68,6 @@ _OPAQUE_TRANSFERS = frozenset({"CALL", "RET", "BRX", "JMX", "RTT", "BPT"})
 # instructions ptxas never gives the zero-stall encoding, and its floor for each.
 # basalt reaches for that encoding as a fallback, so these need somewhere else
 _NEVER_ZERO_STALL: dict[str, int] = {"EXIT": 5, "RET": 5, "CALL": 5, "BAR": 6}
-
-# An operand read is not instantaneous: overwrite a register one or two cycles
-# after it is read and the reader sees the new value. Measured at three by
-# shortening the gap until the answer moved (finding 23).
-ANTI_DEPENDENCY_CYCLES = 3
 
 # Stalls ptxas pairs with the yield hint, as a half-open range. Fitted rather
 # than reasoned: it agrees with the vendor on 93.7% of 36,576 instructions where
@@ -890,12 +885,19 @@ def schedule_program(
                 reader = last_read.get(register)
                 if reader is None or reader == index:
                     continue
+                # a read barrier already covers this one, and the wait for it is
+                # not a number of cycles
+                if read_barriers[reader] != NO_BARRIER:
+                    continue
+                needed = anti_dependency_cycles(
+                    program.instructions[reader].mnemonic, instr.opcode, observed
+                )
                 gap = sum(
                     SATURATION if stalls[i] == STALL_YIELD else stalls[i]
                     for i in range(reader, index)
                 )
-                if gap < ANTI_DEPENDENCY_CYCLES:
-                    stalls[reader] += ANTI_DEPENDENCY_CYCLES - gap
+                if gap < needed:
+                    stalls[reader] += needed - gap
             for register in access.real_uses:
                 last_read[register] = index
 
