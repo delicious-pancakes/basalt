@@ -296,7 +296,7 @@ def _late_reader(opcode: str, model: LatencyModel) -> bool:
     return model.lookup(opcode).kind is LatencyClass.VARIABLE or opcode in _LATE_READING_CONTROL
 
 
-def _read_barrier_windows(cfg, program, model, waits) -> list[tuple[int, int]]:
+def _read_barrier_windows(cfg, program, model, waits, write_barriers) -> list[tuple[int, int]]:
     """`(reader, writer)` pairs where an operand read outlives its register.
 
     A read barrier is in order: everything issued before the setter has finished
@@ -329,8 +329,9 @@ def _read_barrier_windows(cfg, program, model, waits) -> list[tuple[int, int]]:
             # an instruction that reads and writes the same register is not
             # racing itself, so its own entry never counts
             if collect and reader is not None and reader != index:
-                producer = program.instructions[reader]
-                barrier = producer.word.field("write_barrier") if producer.word else NO_BARRIER
+                # basalt's own number, not the vendor's: `waits` is basalt's, and
+                # reading one against the other is what finding 24 was about
+                barrier = write_barriers[reader]
                 if not (barrier != NO_BARRIER and (waits[index] >> barrier) & 1):
                     windows.add((reader, index))
             for reg in access.real_defs:
@@ -698,7 +699,7 @@ def schedule_program(
     # computed from the same dependence rules as everything else rather than
     # inherited from the vendor's word, so a program that never had one still
     # gets them; see `_read_barrier_windows` for the shape being covered
-    windows = _read_barrier_windows(cfg, program, model, waits)
+    windows = _read_barrier_windows(cfg, program, model, waits, write_barriers)
     read_barriers, read_waits, shared = _assign_read_barriers(windows, write_barriers, waits, count)
     for index in range(count):
         waits[index] |= read_waits[index]
