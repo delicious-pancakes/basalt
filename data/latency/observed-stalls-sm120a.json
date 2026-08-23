@@ -297480,5 +297480,21 @@
   "cuda_version": "V13.3.73",
   "kernels": 25634,
   "min_observations": 8,
-  "note": "minimum stall ptxas was observed to leave between a dependent producer and consumer. an empirical lower bound on the required distance, not a proof of it."
+  "note": "minimum stall ptxas was observed to leave between a dependent producer and consumer. an empirical lower bound on the required distance, not a proof of it.",
+  "sources": [
+    "basalt corpus at -O1, -O2, -O3",
+    "cublas64_13",
+    "cublasLt64_13",
+    "cusolver64_12",
+    "cusparse64_12",
+    "nppial64_13",
+    "nppicc64_13",
+    "nppidei64_13",
+    "nppif64_13",
+    "nppig64_13",
+    "nppim64_13",
+    "nppist64_13",
+    "nppitc64_13",
+    "npps64_13"
+  ]
 }

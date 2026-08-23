@@ -125,6 +125,8 @@ class ObservedStalls:
     # than a dependency: nothing here is about registers (finding 13)
     by_issue: dict[tuple[str, str], StallEvidence] = field(default_factory=dict)
     kernels: int = 0
+    # what was mined, so "the vendor never goes below 4" names whose code said so
+    sources: list[str] = field(default_factory=list)
     # lazily counted from `by_pair`, which the checker asks per dependency
     _spacing: dict[str, int] | None = field(default=None, repr=False)
 
@@ -296,6 +298,7 @@ class ObservedStalls:
         for key, ev in other.by_issue.items():
             self._fold(self.by_issue, key, ev)
         self.kernels += other.kernels
+        self.sources.extend(s for s in other.sources if s not in self.sources)
 
     @staticmethod
     def _fold(table: dict, key, ev: StallEvidence) -> None:
@@ -350,6 +353,7 @@ class ObservedStalls:
                     "cuda_version": self.cuda_version,
                     "arch": self.arch,
                     "kernels": self.kernels,
+                    "sources": self.sources,
                     "min_observations": MIN_OBSERVATIONS,
                     "note": (
                         "minimum stall ptxas was observed to leave between a dependent "
@@ -415,6 +419,7 @@ class ObservedStalls:
         raw = json.loads(path.read_text())
         out = cls(cuda_version=raw.get("cuda_version", ""), arch=raw.get("arch", ""))
         out.kernels = raw.get("kernels", 0)
+        out.sources = list(raw.get("sources", []))
         for name, entry in raw.get("by_producer", {}).items():
             ev = StallEvidence(name, "*", minimum=entry["min_stall"])
             ev.emit = entry.get("emit_stall", entry["min_stall"])

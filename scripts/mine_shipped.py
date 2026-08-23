@@ -125,12 +125,13 @@ def main() -> int:
     if held:
         print(f"holding out {', '.join(sorted(held))}")
 
-    total = ObservedStalls(cuda_version="", arch="sm_120")
+    total = ObservedStalls(cuda_version="", arch="sm_120", sources=libraries)
     started = time.perf_counter()
     with ProcessPoolExecutor(max_workers=args.workers or None, initializer=_setup) as pool:
         for done, part in enumerate(pool.map(_mine, _chunks(targets, 8)), start=1):
             if not total.cuda_version:
                 total.cuda_version = part.cuda_version
+            part.sources = []
             total.absorb(part)
             if done % 25 == 0:
                 print(f"  {done * 8}/{len(targets)} cubins, {total.kernels} kernels", flush=True)
