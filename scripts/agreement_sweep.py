@@ -85,6 +85,32 @@ class Case:
         return "MISSED" if self.behaviour == "different" else "agreed safe"
 
 
+def _loops(ptx: str) -> bool:
+    """Does this kernel branch backwards to a label it has already passed?
+
+    Kernels with a loop are excluded from this sweep, and the reason is not
+    tidiness. This is the one tool that breaks a kernel on purpose, and a loop
+    keeps its trip count in a register: shorten the stall in front of that
+    register and the bound becomes whatever was stale there, so the kernel never
+    returns. On a card that is also driving a display, a kernel that never
+    returns is a driver reset and a black screen.
+
+    The round trip still covers every one of them, because it does not break
+    anything: it asks whether basalt's schedule computes what the vendor's does,
+    and both terminate.
+    """
+    seen: set[str] = set()
+    for line in ptx.splitlines():
+        text = line.strip()
+        if text.endswith(":"):
+            seen.add(text[:-1].strip())
+        elif "bra" in text:
+            target = text.rstrip(";").split()[-1]
+            if target in seen:
+                return True
+    return False
+
+
 def _shortenable(program, model, observed):
     """A dependency in this kernel whose stall can be cut, and by how much.
 
@@ -186,7 +212,7 @@ def _build(work: Path, limit: int) -> list[dict]:
     model = LatencyModel.assumed().overlay(latencies) if latencies.is_file() else DEFAULT_MODEL
     observed = ObservedStalls.read(observed_path) if observed_path.is_file() else None
 
-    snippets = generate_scalar() + generate_shapes()
+    snippets = [s for s in generate_scalar() + generate_shapes() if not _loops(s.ptx)]
     if limit:
         snippets = snippets[:limit]
     work.mkdir(parents=True, exist_ok=True)

@@ -782,13 +782,22 @@ computes a wrong answer, which is the entire failure this repository exists to p
 
 | | |
 | :--- | ---: |
-| Kernels, one dependency shortened in each | 162 |
-| Agreed broken | 74 to 76 |
-| Over-strict | 67 to 69 |
+| Kernels, one dependency shortened in each | 156 |
+| Agreed broken | 70 |
+| Over-strict | 68 |
 | **Missed** | **0** |
-| Unstable or unrunnable, excluded | 19 to 21 |
+| Unstable, excluded | 18 |
 
-The ranges are three consecutive runs, not one. Which kernels land in the excluded column moves a little between runs, because several read memory this harness never initialises and are therefore stable until something else has used the card. The missed count does not move.
+Which kernels land in the excluded column moves a little between runs, because several read memory this harness never initialises and are therefore stable until something else has used the card. The missed count does not move.
+
+**Kernels with a loop are left out of this sweep, and not for tidiness.** This is the one
+tool that breaks a kernel on purpose, and a loop keeps its trip count in a register:
+shorten the stall in front of that register and the bound becomes whatever was stale there,
+so the kernel never returns. `s_nested_loops` does exactly that. On a card that is also
+driving a display, a kernel that never returns is a driver reset and a black screen, which
+is not a price worth paying for seven more rows. The round trip still covers every one of
+them, because it breaks nothing: it asks whether basalt's schedule computes what the
+vendor's schedule computes, and both terminate.
 
 **It did not start at zero.** The first run of this sweep reported **34 misses**, all of the
 same shape: `IADD -> STG` shortened from 5 cycles to 1, computing a different answer, with

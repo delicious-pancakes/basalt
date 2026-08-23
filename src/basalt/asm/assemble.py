@@ -58,6 +58,8 @@ _REGISTER = re.compile(r"^(UR|R|UP|P)(\d+|Z|T)((?:\.\w+)*)$")
 _IMMEDIATE = re.compile(r"^-?0[xX][0-9a-fA-F]+$|^-?\d+$")
 _GUARD = re.compile(r"^@(!)?(U?P)(\d+|T)\s+")
 _LABEL = re.compile(r"`\(([^)]+)\)")
+# a register that discards what is written to it
+_SINK = re.compile(r"^(UR|R|UP|P)(Z|T)$")
 
 
 class AssemblyError(Exception):
@@ -74,6 +76,8 @@ class Slot:
     holds: str  # what the prober's example pair shows the field encoding
     # for a composite operand, which bits hold the bank, offset, base register
     parts: dict[str, tuple[int, ...]] = dataclasses.field(default_factory=dict)
+    # what a discarding register encodes as here, when the reference shows one
+    sink: int | None = None
 
     @property
     def width(self) -> int:
@@ -298,10 +302,8 @@ def _register_number(token: str) -> int | None:
     if match is None:
         return None
     kind, number, _suffix = match.groups()
-    if number == "Z":
-        return 255 if kind == "R" else 63
-    if number == "T":
-        return 7
+    if number in ("Z", "T"):
+        return 255 if kind == "R" else 63 if kind == "UR" else 7
     return int(number)
 
 
@@ -344,10 +346,25 @@ class Assembler:
                 # reference: `QMMA` slot 5 carries a reuse flag beside a register
                 # number, and the number is encodable once the flag is named.
                 writable = holds == "value" or SubRole.VALUE in parts
+                sink = None
                 if writable and holds != "float" and token < len(tokens):
                     value_bits = tuple(sorted(parts.get(SubRole.VALUE, operand.bits)))
-                    expected = _token_value(_strip_modifiers(tokens[token])[1])
-                    if expected is None or _read(reference, value_bits) != expected:
+                    bare = _strip_modifiers(tokens[token])[1]
+                    present = _read(reference, value_bits)
+                    # A discarding register does not encode as one number
+                    # everywhere: `URZ` is 63 in a six-bit field and 255 in
+                    # `QMMA`'s eight-bit one. The reference says which, so it is
+                    # read off rather than assumed, and assuming cost seven forms.
+                    if _SINK.match(bare) and present == (1 << len(value_bits)) - 1:
+                        # All ones is the discarding register, so this field is
+                        # the number and nothing else. `PLOP3`'s predicate slot
+                        # reads 14 of a possible 31 for `PT`, which says the
+                        # opposite: something in there is not the number, and
+                        # writing one turns `P1` into `UP0`.
+                        sink, expected = present, present
+                    else:
+                        expected = _token_value(bare)
+                    if expected is None or present != expected:
                         holds = "partial"
                         parts = {
                             role: bits for role, bits in parts.items() if role in _COMPOSITE_ROLES
@@ -361,6 +378,7 @@ class Assembler:
                         token=token,
                         holds=holds,
                         parts=parts,
+                        sink=sink,
                     )
                 )
             self._forms.setdefault(mnemonic, []).append(
@@ -511,7 +529,10 @@ class Assembler:
                     f"a {slot.holds} rather than a plain value, so writing {token!r} into it "
                     f"would encode something else"
                 )
-            value = _register_number(token)
+            # the sink encodes as whatever the reference showed for this field
+            value = slot.sink if (slot.sink is not None and _SINK.match(token)) else None
+            if value is None:
+                value = _register_number(token)
             if value is None:
                 if _IMMEDIATE.match(token):
                     # unmasked on purpose: `_write` decides whether it fits, so
