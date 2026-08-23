@@ -10,12 +10,33 @@ any release. The clean-room position in [`NOTICE`](NOTICE) will not.
 ## [Unreleased]
 
 ### Added
+- Read barriers are derived rather than copied from the schedule being replaced,
+  which is what a scheduler needs to place control bits on a program nobody has
+  compiled. All 334 in the corpus were characterised first: 328 sit on a
+  variable-latency instruction and the rest on a store, 333 of 334 sit on one
+  whose source register is overwritten later, and the barrier goes on the last
+  such reader before the overwrite because it covers every earlier one. Removing
+  them makes `s_tile_matmul` return the wrong answer on the card, which is the
+  evidence they are load-bearing. Finding 25.
+- `cp.async` is scheduled and back in the corpus, in four forms over two cache
+  modifiers and three widths. The obstacle was not the copy but `DEPBAR`, which
+  names its scoreboard in the operand text rather than in the control word, so
+  renumbering the `LDGDEPBAR` that signals it unpaired them with nothing in the
+  encoding to show it. Finding 27.
+- `scripts/probe_kernel.py`: reschedule one kernel and print which control field
+  moved, in seconds rather than the minutes the corpus runner takes, with a
+  standing check for control-word shapes `ptxas` never emits.
+- Plain address operands are taken apart into base and offset, as descriptors
+  already were, so every shared and local address can be assembled. Two traps
+  came with it and are both refused rather than guessed: a bit that swaps the
+  register file is a selector and not part of the number, and `c[0x3][R0]`
+  indexes by register where an offset was assumed.
 - Assembler: SASS text to the 128-bit instruction word, whole cubins as well as
   single instructions, and a `basalt assemble` command that can read its own
   output back through `nvdisasm` to prove it. Assembling every corpus kernel as
-  a program with its labels resolved reproduces 8,572 of 8,584 instructions
-  bit-identically and none to anything else; the second count is a test pinned
-  at zero.
+  a program with its labels resolved reproduces 59,693 of 59,760 instructions
+  bit-identically across four optimisation levels and none to anything else;
+  the second count is a test pinned at zero.
 - `scripts/assembler_coverage.py`: the command that produces the number above.
   Compiles every corpus kernel, hands the disassembly back to the assembler and
   compares the bytes, needing no GPU. It runs in CI so the published figure is
@@ -94,12 +115,31 @@ any release. The clean-room position in [`NOTICE`](NOTICE) will not.
 
 
 ### Changed
+- The yield bit follows a rule fitted to 36,576 instructions of vendor output,
+  93.7% agreement against the 72.9% the previous guess managed. Inverting 680 of
+  them in the vendor's own schedules changed no result on the card, so the field
+  is a hint rather than a correctness input, which is now measured rather than
+  repeated. Finding 26.
+- Shared and local `ld`/`st` corpus kernels used the global pointer as an address
+  in the wrong space: they compiled, faulted, and had been excluded from the round
+  trip for as long as they existed. They now address a slot they own, as do the
+  shared atomics, the shared reduction and every `ldmatrix`, so the round trip's
+  exclusions fell from 19 to 2. Both remaining ones read the clock or the grid id.
 - fp64 is modelled as completing out of order rather than on a fixed schedule.
   All 41 fp64 instructions in the corpus carry a write scoreboard and none goes
   without. The 64 cycle figure stays as the cost of a dependent chain, which is
   a different question from what correctness requires.
 
 ### Fixed
+- A memory access width describes the data, not the address. `STS.128 [R0], R8`
+  moves four registers to one 32-bit shared address, and widening the address
+  invented a dependency on `R1` through `R3` that made the vendor's own schedule
+  read as broken. Caught by the positive control the moment the corpus grew
+  kernels that use it.
+- A producer is credited when a wait covers it rather than when one was written
+  for it. A scoreboard is a counter, so a wait placed for one producer drains
+  every producer sharing the number, and crediting only the intended one dropped
+  barriers that downstream code was leaning on.
 - The scheduler no longer tightens the gaps a read barrier depends on. `ptxas`
   puts one barrier on the last of a run of loads and lets in-order issue carry
   the earlier ones, so compressing the run makes it fire while they are still
@@ -173,6 +213,17 @@ any release. The clean-room position in [`NOTICE`](NOTICE) will not.
   The entry now records both the correction and why it went unnoticed.
 
 ### Found
+- A read barrier is set exactly where an operand read outlives its register, and
+  covers every earlier late reader before the overwrite. 333 of the 334 in
+  36,576 instructions of vendor output fit that rule, and the 444 overwrites left
+  bare are explained by two effects and no third. Finding 25.
+- The yield bit does not gate correctness on sm_120. 680 inversions across fp64,
+  transcendental, tensor, loop, barrier and shared-atomic kernels, and the card
+  computed the vendor's answer every time. Finding 26.
+- A scoreboard can be named in an operand rather than in the control word.
+  `DEPBAR.LE SB0, 0x0` is the only instruction that does it, and it is how
+  `cp.async` synchronises. Anything that rewrites control words has to know.
+  Finding 27.
 - A read barrier covers more reads than its own instruction's. `ptxas` puts one
   on the last of a run of loads and relies on the gaps it chose to carry the
   rest, which nothing in the encoding records. Recorded as finding 13, along
