@@ -104,7 +104,7 @@ slope, or a result more than 0.2 cycles from an integer is rejected rather than 
 with a caveat nobody reads.
 
 ```bash
-python -m basalt.cli measure -o src/basalt/data/latency/your-card.json
+python -m basalt.cli measure -o my-card.json
 ```
 
 ### Results on an RTX 5070 Ti

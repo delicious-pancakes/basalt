@@ -144,7 +144,7 @@ same question.
 | `DFMA` | 64 | 64 | scoreboarded | see below |
 
 ```bash
-python -m basalt.cli measure -o src/basalt/data/latency/your-card.json   # chain timing
+python -m basalt.cli measure -o my-card.json   # chain timing
 python -m basalt.cli probe-stalls                             # fault injection
 ```
 

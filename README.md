@@ -206,16 +206,17 @@ Every number measured on silicon comes from **one physical card**, named exactly
 
 **Most of basalt needs no GPU at all.** Both oracles, the instruction database, the
 assembler and the hazard checker run against `ptxas` and `nvdisasm` as ordinary
-subprocesses, which is why they run in CI on a machine with no graphics card in it. 187 of
-the 202 tests are in that group.
+subprocesses, which is why they run in CI on a machine with no graphics card in it. 237 of
+the 252 tests are in that group, and 200 need neither a card nor the NVIDIA binaries.
 
-A GPU is needed for exactly two things, and they are the two that turn a plausible tool
+A GPU is needed for exactly three things, and they are the three that turn a plausible tool
 into a believable one:
 
 | Needs a card | Why |
 | :--- | :--- |
 | `measure`, `probe-stalls` | Timing an instruction, and finding what a dependency really requires by breaking it |
 | `scripts/roundtrip_corpus.py` | Rescheduling every corpus kernel and running both versions to compare output bytes |
+| `scripts/agreement_sweep.py` | Shortening one dependency per kernel and asking the silicon whether basalt was right |
 
 The factory overclock does not move the measurements. Every latency here is in **cycles**,
 which is a property of the pipeline rather than of the clock, and the boost figure is
@@ -235,8 +236,8 @@ SMs and its own clock behaviour; the encoding will be identical and the latencie
 re-measured rather than assumed:
 
 ```bash
-python -m basalt.cli measure -o src/basalt/data/latency/your-card.json
-python -m basalt.cli verify kernel.cubin --latencies src/basalt/data/latency/your-card.json
+python -m basalt.cli measure -o my-card.json
+python -m basalt.cli verify kernel.cubin --latencies my-card.json
 ```
 
 That is not modesty. A latency model shared between a checker and a scheduler is exactly
@@ -345,8 +346,8 @@ non-zero on a hazard, which is what a build step wants. If you have an sm_120 ca
 the model measured on your own silicon rather than on the one in this repository:
 
 ```bash
-python -m basalt.cli measure -o src/basalt/data/latency/your-card.json   # needs a GPU, once
-python -m basalt.cli verify kernel.cubin --latencies src/basalt/data/latency/your-card.json
+python -m basalt.cli measure -o my-card.json   # needs a GPU, once
+python -m basalt.cli verify kernel.cubin --latencies my-card.json
 ```
 
 <details>
