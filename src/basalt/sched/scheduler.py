@@ -318,40 +318,74 @@ def schedule_program(
 
     cfg = build_cfg(program)
 
+    # Read barriers keep the vendor's numbering, so its waits on them are kept
+    # too, but only where one is live. A single program-wide mask also carries
+    # over a vendor wait on a *write* barrier whenever its number happens to
+    # match a read barrier used elsewhere, which is a wait basalt never earned.
+    inherited = [0] * count
+    for setter, instr in enumerate(program.instructions):
+        if instr.word is None or instr.word.field("read_barrier") == NO_BARRIER:
+            continue
+        barrier = instr.word.field("read_barrier")
+        for later in range(setter + 1, count):
+            word = program.instructions[later].word
+            if word is None:
+                continue
+            inherited[later] |= 1 << barrier
+            if (word.field("wait_mask") >> barrier) & 1:
+                break
+
     # ---- scoreboards
     # allocated per block, then propagated along edges to a fixed point: a value
     # loaded before a loop and used inside it gets no wait from a block-local pass
     barrier_of: list[int] = [NO_BARRIER] * count
 
-    for block in cfg.blocks:
-        # barrier -> registers it guards; freed once a consumer has read them all
-        protects: dict[int, set[RegRef]] = {}
+    forbidden: dict[int, set[int]] = {}
 
-        for index in range(block.start, block.end):
-            instr = program.instructions[index]
-            if instr.word is None:
-                continue
-            access = operand_access(instr.mnemonic, instr.operands)
+    def allocate() -> None:
+        for i in range(count):
+            barrier_of[i] = NO_BARRIER
+            write_barriers[i] = NO_BARRIER
+        for block in cfg.blocks:
+            # barrier -> registers it guards; freed once a consumer has read them all
+            protects: dict[int, set[RegRef]] = {}
 
-            for sb in list(protects):
-                if protects[sb] & access.real_uses:
-                    del protects[sb]
+            for index in range(block.start, block.end):
+                instr = program.instructions[index]
+                if instr.word is None:
+                    continue
+                access = operand_access(instr.mnemonic, instr.operands)
 
-            record = model.lookup(instr.opcode)
-            if record.kind is LatencyClass.VARIABLE and access.real_defs:
-                # lowest free index, so a kernel's scoreboards read in issue order
-                free = next((sb for sb in range(SCOREBOARDS) if sb not in protects), None)
-                if free is not None:
-                    protects[free] = set(access.real_defs)
-                    result.scoreboards_used += 1
-                else:
-                    # all six are busy, so share the one guarding fewest registers;
-                    # refusing instead rejected 45 of 317 kernels outright
-                    free = min(protects, key=lambda sb: (len(protects[sb]), sb))
-                    protects[free] |= set(access.real_defs)
-                    result.scoreboards_shared += 1
-                barrier_of[index] = free
-                write_barriers[index] = free
+                for sb in list(protects):
+                    if protects[sb] & access.real_uses:
+                        del protects[sb]
+
+                record = model.lookup(instr.opcode)
+                if record.kind is LatencyClass.VARIABLE and access.real_defs:
+                    # lowest free index, so a kernel's scoreboards read in issue order
+                    avoid = forbidden.get(index, set())
+                    free = next(
+                        (sb for sb in range(SCOREBOARDS) if sb not in protects and sb not in avoid),
+                        None,
+                    )
+                    if free is not None:
+                        protects[free] = set(access.real_defs)
+                        result.scoreboards_used += 1
+                    else:
+                        # all six are busy, so share the one guarding fewest registers;
+                        # refusing instead rejected 45 of 317 kernels outright
+                        candidates = {sb for sb in protects if sb not in avoid} or set(protects)
+                        if candidates:
+                            free = min(candidates, key=lambda sb: (len(protects[sb]), sb))
+                            protects[free] |= set(access.real_defs)
+                        else:
+                            # nothing in use and every number ruled out, so the
+                            # repair has run out of room and this round is the last
+                            free = 0
+                            protects[free] = set(access.real_defs)
+                        result.scoreboards_shared += 1
+                    barrier_of[index] = free
+                    write_barriers[index] = free
 
     # register -> barriers that may still be outstanding for it on entry
     entry_state: list[dict[RegRef, frozenset[int]]] = [{} for _ in cfg.blocks]
@@ -394,29 +428,54 @@ def schedule_program(
                 live[reg] = (live.get(reg, frozenset()) | mine) if access.guard else mine
         return live
 
-    worklist = [0]
-    # the lattice is finite, so this bound is a bug detector rather than a cutoff
-    guard = 0
-    while worklist and guard < MAX_PASSES * max(1, len(cfg.blocks)):
-        guard += 1
-        current = worklist.pop()
-        out = transfer(current, entry_state[current], emit=False)
-        for succ in cfg.blocks[current].successors:
-            merged = dict(entry_state[succ])
-            changed = False
-            for reg, barriers in out.items():
-                # union rather than intersect: a barrier outstanding on any path in
-                union = merged.get(reg, frozenset()) | barriers
-                if union != merged.get(reg):
-                    merged[reg] = union
-                    changed = True
-            if changed:
-                entry_state[succ] = merged
-                if succ not in worklist:
-                    worklist.append(succ)
+    def converge() -> None:
+        for i in range(count):
+            waits[i] = 0
+        for state in entry_state:
+            state.clear()
+        worklist = [0]
+        # the lattice is finite, so this bound is a bug detector rather than a cutoff
+        guard = 0
+        while worklist and guard < MAX_PASSES * max(1, len(cfg.blocks)):
+            guard += 1
+            current = worklist.pop()
+            out = transfer(current, entry_state[current], emit=False)
+            for succ in cfg.blocks[current].successors:
+                merged = dict(entry_state[succ])
+                changed = False
+                for reg, barriers in out.items():
+                    # union rather than intersect: a barrier outstanding on any path in
+                    union = merged.get(reg, frozenset()) | barriers
+                    if union != merged.get(reg):
+                        merged[reg] = union
+                        changed = True
+                if changed:
+                    entry_state[succ] = merged
+                    if succ not in worklist:
+                        worklist.append(succ)
 
-    for block in cfg.blocks:
-        transfer(block.index, entry_state[block.index], emit=True)
+        for block in cfg.blocks:
+            transfer(block.index, entry_state[block.index], emit=True)
+
+    # Allocate, look at what the dataflow then waits on, and allocate again away
+    # from anything that came back waiting on the barrier it signals. ptxas never
+    # emits that shape; the wait only becomes visible after the dataflow, so it
+    # takes a second pass to see and a third to settle.
+    for _ in range(SCOREBOARDS + 1):
+        allocate()
+        converge()
+        offenders = []
+        for index, instr in enumerate(program.instructions):
+            barrier = barrier_of[index]
+            if barrier == NO_BARRIER or instr.word is None:
+                continue
+            emitted = waits[index] | (instr.word.field("wait_mask") & inherited[index])
+            if (emitted >> barrier) & 1:
+                offenders.append(index)
+        if not offenders:
+            break
+        for index in offenders:
+            forbidden.setdefault(index, set()).add(barrier_of[index])
 
     # ---- stalls, to a fixed point
     for block in cfg.blocks:
@@ -571,15 +630,6 @@ def schedule_program(
                 stalls[covered] = max(stalls[covered], original.word.field("stall"))
         previous_barrier = index
 
-    # read barriers keep the vendor's numbering, so waits on them are kept too
-    read_barrier_mask = 0
-    for instr in program.instructions:
-        if instr.word is None:
-            continue
-        barrier = instr.word.field("read_barrier")
-        if barrier != NO_BARRIER:
-            read_barrier_mask |= 1 << barrier
-
     # ---- anti-dependencies
     # a read still in flight when the register is overwritten reads the new
     # value, so the gap between the two is a requirement of its own
@@ -614,16 +664,38 @@ def schedule_program(
         if floor is not None:
             stalls[index] = max(stalls[index], floor)
 
+    # A cubin holds more than its entry function: `mma.b1` lowers to a call into
+    # an internal helper, and 125 of that kernel's 144 instructions sit in bodies
+    # with no edge from the entry. The dataflow never reaches them, so basalt has
+    # computed nothing for them and leaves the vendor's words alone.
+    reachable: set[int] = set()
+    stack = [0] if cfg.blocks else []
+    while stack:
+        current = stack.pop()
+        if current in reachable:
+            continue
+        reachable.add(current)
+        stack.extend(cfg.blocks[current].successors)
+    analysed = {
+        index
+        for block in cfg.blocks
+        if block.index in reachable
+        for index in range(block.start, block.end)
+    }
+
     # ---- emit
     for index, instr in enumerate(program.instructions):
         if instr.word is None:
             result.words.append(Word(0))
             continue
+        if index not in analysed:
+            result.words.append(instr.word)
+            continue
         word = instr.word
 
         # inherited, not recomputed: no measured model of a late operand read
         inherited_read_barrier = word.field("read_barrier")
-        wait = waits[index] | (word.field("wait_mask") & read_barrier_mask)
+        wait = waits[index] | (word.field("wait_mask") & inherited[index])
 
         word = word.with_field("stall", stalls[index])
         # the yield bit tracks the stall; other pairings are words the vendor

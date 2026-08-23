@@ -1112,84 +1112,50 @@ them because it has no measured model of how long a read takes. Here `ptxas` pro
 same thing with spacing rather than a barrier, so there was nothing to inherit and the gap
 became visible as a wrong answer. Three cycles is the first measurement of that latency.
 
-## 24. A scoreboard the scheduler allocates and never waits on
+## 24. An instruction that waits on the scoreboard it signals
 
-`s_tile_matmul` does not round-trip at `-O2` or `-O3`. It is one kernel of 441 and it is
-stated rather than rounded off, because it is a defect in machinery basalt believes it has
-working rather than a mechanism it has never modelled.
+`s_tile_matmul` did not round-trip at `-O2` or `-O3`. Substituting one half of the control
+word at a time puts it in the scoreboards rather than the spacing: basalt's stalls alone
+compute the vendor's answer, and so do its reuse flags.
 
-Substituting one half of the control word at a time says where to look:
+The thing that named it was asking what shape basalt emits that `ptxas` never does.
 
-| Substituted into the vendor's schedule | Result |
+> Across the kernel, `ptxas` has no instruction that waits on the scoreboard it signals.
+> basalt has three.
+
+The wait is evaluated at issue and the signal follows, so on a counter model that shape looks
+harmless, which is why it survived so long. It is not, and three separate causes were feeding
+it.
+
+**A cubin holds more than its entry function.** `mma.b1` lowers to a call into an internal
+helper, and 125 of that kernel's 144 instructions sit in bodies with no edge from the entry
+block. The dataflow never reaches them, so every wait basalt emitted there came from
+inheritance rather than analysis. Those blocks now keep the vendor's words untouched, which
+is the honest thing to do with code the analysis has not read.
+
+**The read-barrier inheritance was program-wide.** basalt keeps the vendor's read-barrier
+numbering because it cannot compute one (finding 13), and it decided which vendor wait bits
+to carry over from a single mask of every read-barrier number used anywhere in the program.
+So a vendor wait on a *write* barrier was inherited whenever its number happened to match a
+read barrier somewhere else. A read barrier is live from the instruction that sets it to the
+one that waits on it, and only there is the wait inherited now.
+
+**The allocator could not see the waits.** Scoreboards are allocated in one pass and the
+waits are computed by a dataflow in the next, so an instruction is given a number before
+anything knows what it will wait on. It could therefore be handed the very barrier its own
+incoming wait covers. Allocation and the dataflow now run to a fixed point together: allocate,
+see what came back waiting on its own barrier, and allocate again away from it. Two rounds
+settle every kernel in the corpus.
+
+None of the three is sufficient alone. Fixing only the inheritance changes the answer for the
+emulated 1-bit `MMA` kernels, because those are the ones running on inherited waits; fixing
+only the allocator leaves the inherited leak feeding it. Three earlier attempts each traded
+one kernel for another, and the reason was always that a second cause was still in place.
+
+| | Round trip |
 | :--- | :--- |
-| basalt's stalls | correct |
-| basalt's reuse flags | correct |
-| **basalt's write barriers and wait masks** | **wrong** |
-
-Forcing one instruction to wait on everything narrows it to a single bit. `STS [R0], R9`
-waits on nothing, and the register it stores was loaded by an `LDG` that basalt put on
-scoreboard 1. The same kernel loads `R9` twice and only the first is waited for:
-
-```
-#5   LDG.E R9  ->  basalt scoreboard 2 ;  #16 STS R9  waits on 2   correct
-#38  LDG.E R9  ->  basalt scoreboard 1 ;  #46 STS R9  waits on nothing
-```
-
-**A structural screen clears it, which is the informative part.** Walking every dependency
-the vendor's schedule covers with a scoreboard, and asking whether basalt's schedule still
-covers it, flags four kernels across the corpus and this is not one of them. By def-use
-reasoning basalt's schedule is sound here. So whatever is missing is not a register
-dependency basalt failed to notice, which is where the search had been pointed.
-
-**basalt's own bookkeeping thinks it is right.** An instruction between the two waits on
-scoreboard 1 for an unrelated register, and waiting on a scoreboard drains its counter, so
-every producer on it has landed and the barrier is cleared from every register that was
-waiting behind it. By that reasoning `R9` is available at `#46` and no wait is needed. The
-silicon disagrees, so the reasoning has a hole in it, and the hole is not yet found.
-
-**What has been ruled out, which is most of what is known.** Each of these was tested on the
-card rather than argued about:
-
-| Hypothesis | Test | Verdict |
-| :--- | :--- | :--- |
-| the extra wait is really a delay | stall 4, 8 and 15 at the same instruction, no wait | **no**, delay alone never fixes it |
-| a register dependency basalt missed | screen every scoreboard-covered dependency in the corpus | **no**, this kernel is not flagged |
-| a write barrier allocated onto an inherited read-barrier number | reserve those numbers | fixes this kernel, breaks two others |
-| the wait is covering something still outstanding | trace the scoreboard | **no**, `#39` already waits on it and drains it |
-
-The last row is the strange one. `#38` signals scoreboard 1 and `#39` waits on it, so by the
-counter semantics the load has landed long before `#46` reads the register. Adding a wait on
-that same scoreboard at `#45` should therefore be a no-op on a counter already at zero, and
-it changes the answer. Either the counter is not at zero when that reasoning says it is, or
-`wait_mask` does not mean here what it means elsewhere. Both are worth knowing and neither is
-established.
-
-**Two things about basalt's schedule that ptxas never does.** Both were found looking for
-this and neither has been shown to cause it:
-
-- *An instruction waits on the scoreboard it signals.* `ptxas` does this nowhere in the
-  kernel; basalt does it three times. The wait is evaluated at issue and the signal follows,
-  so on a counter model it should be harmless, and the shape is still one the vendor avoids.
-- *The read-barrier inheritance is program-wide.* basalt keeps the vendor's read-barrier
-  numbering because it cannot compute one (finding 13), and it decides which vendor wait bits
-  to carry over using a single mask of every read-barrier number used anywhere in the
-  program. So a vendor wait on a *write* barrier is inherited whenever its number happens to
-  match a read barrier somewhere else, and two of the three self-waits above come from
-  exactly that.
-
-Scoping the inheritance to where a read barrier is actually live is clearly more correct, and
-it is not the fix: doing it changes the answer for the emulated 1-bit `MMA` kernels, which
-had been passing. So the leak is real, something depends on it, and what that is has not been
-established. Three attempts on this allocator have each traded one kernel for another, which
-is the signal to leave it characterised rather than keep guessing.
-
-**What it is not.** The two kinds of barrier share one six-bit space and only write barriers
-are renumbered, so an obvious theory is that basalt allocates a write barrier onto a number
-the vendor is using for a read barrier. Reserving the inherited numbers does fix this kernel.
-It also costs three of the six scoreboards, which starved the two emulated 1-bit `MMA`
-kernels into failing, so the change was measured, found to be a net loss, and reverted. A
-fix that trades one kernel for two is not a fix, and a scoreboard allocator is exactly where
-guesswork turns into a silent wrong answer.
+| Before | `-O1` clean, one kernel short at `-O2` and `-O3` |
+| After | **every comparable kernel, at all three levels** |
 
 ## 25. What is deliberately not claimed
 
