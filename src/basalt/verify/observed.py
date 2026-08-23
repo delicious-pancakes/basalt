@@ -83,6 +83,13 @@ class StallEvidence:
     minimum: int
     observations: int = 0
     samples: list[str] = field(default_factory=list)
+    # what a scheduler may emit, which a second body of code may raise and never
+    # lower: alleging a schedule is wrong and choosing one are different jobs
+    emit: int = -1
+
+    def __post_init__(self) -> None:
+        if self.emit < 0:
+            self.emit = self.minimum
 
     @property
     def trusted(self) -> bool:
@@ -91,6 +98,7 @@ class StallEvidence:
     def observe(self, stall: int, sample: str) -> None:
         if stall < self.minimum:
             self.minimum = stall
+            self.emit = stall
             # keep the example that produced the tightest gap, since that is
             # the one a reader will want to check by hand
             self.samples = [sample]
@@ -292,7 +300,7 @@ class ObservedStalls:
         current = table.get(key)
         if current is None:
             table[key] = StallEvidence(
-                ev.producer, ev.consumer, ev.minimum, ev.observations, list(ev.samples)
+                ev.producer, ev.consumer, ev.minimum, ev.observations, list(ev.samples), ev.emit
             )
             return
         if ev.minimum < current.minimum:
@@ -300,6 +308,7 @@ class ObservedStalls:
             current.samples = list(ev.samples)
         elif ev.minimum == current.minimum and len(current.samples) < 3:
             current.samples.extend(ev.samples[: 3 - len(current.samples)])
+        current.emit = max(current.emit, ev.emit)
         current.observations += ev.observations
 
     def summary(self) -> str:
@@ -330,6 +339,7 @@ class ObservedStalls:
                     "by_producer": {
                         name: {
                             "min_stall": e.minimum,
+                            "emit_stall": e.emit,
                             "observations": e.observations,
                             "trusted": e.trusted,
                             "samples": e.samples,
@@ -339,6 +349,7 @@ class ObservedStalls:
                     "by_pair": {
                         f"{p}->{c}": {
                             "min_stall": e.minimum,
+                            "emit_stall": e.emit,
                             "observations": e.observations,
                             "trusted": e.trusted,
                         }
@@ -347,6 +358,7 @@ class ObservedStalls:
                     "by_anti": {
                         f"{r}~>{w}": {
                             "min_stall": e.minimum,
+                            "emit_stall": e.emit,
                             "observations": e.observations,
                             "trusted": e.trusted,
                             "samples": e.samples,
@@ -356,6 +368,7 @@ class ObservedStalls:
                     "by_issue": {
                         f"{a}|{b}": {
                             "min_stall": e.minimum,
+                            "emit_stall": e.emit,
                             "observations": e.observations,
                             "trusted": e.trusted,
                         }
@@ -364,6 +377,7 @@ class ObservedStalls:
                     "by_scoreboarded": {
                         f"{m}=>{c}": {
                             "min_stall": e.minimum,
+                            "emit_stall": e.emit,
                             "observations": e.observations,
                             "trusted": e.trusted,
                             "samples": e.samples,
@@ -383,28 +397,33 @@ class ObservedStalls:
         out.kernels = raw.get("kernels", 0)
         for name, entry in raw.get("by_producer", {}).items():
             ev = StallEvidence(name, "*", minimum=entry["min_stall"])
+            ev.emit = entry.get("emit_stall", entry["min_stall"])
             ev.observations = entry["observations"]
             ev.samples = entry.get("samples", [])
             out.by_producer[name] = ev
         for key, entry in raw.get("by_pair", {}).items():
             producer, _, consumer = key.partition("->")
             ev = StallEvidence(producer, consumer, minimum=entry["min_stall"])
+            ev.emit = entry.get("emit_stall", entry["min_stall"])
             ev.observations = entry["observations"]
             out.by_pair[(producer, consumer)] = ev
         for key, entry in raw.get("by_anti", {}).items():
             reader, _, writer = key.partition("~>")
             ev = StallEvidence(reader, writer, minimum=entry["min_stall"])
+            ev.emit = entry.get("emit_stall", entry["min_stall"])
             ev.observations = entry["observations"]
             ev.samples = entry.get("samples", [])
             out.by_anti[(reader, writer)] = ev
         for key, entry in raw.get("by_issue", {}).items():
             first, _, second = key.partition("|")
             ev = StallEvidence(first, second, minimum=entry["min_stall"])
+            ev.emit = entry.get("emit_stall", entry["min_stall"])
             ev.observations = entry["observations"]
             out.by_issue[(first, second)] = ev
         for key, entry in raw.get("by_scoreboarded", {}).items():
             mnemonic, _, consumer = key.partition("=>")
             ev = StallEvidence(mnemonic, consumer, minimum=entry["min_stall"])
+            ev.emit = entry.get("emit_stall", entry["min_stall"])
             ev.observations = entry["observations"]
             ev.samples = entry.get("samples", [])
             out.by_scoreboarded[(mnemonic, consumer)] = ev

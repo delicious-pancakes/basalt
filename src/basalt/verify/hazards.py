@@ -37,7 +37,15 @@ from ..disasm import Instruction, Program
 from ..encoding import STALL_YIELD, effective_stall
 from .cfg import ControlFlowGraph, build_cfg
 from .flow import FlowState
-from .latency import GUARD_CYCLES, Confidence, LatencyClass, LatencyModel, LatencyRecord
+from .latency import (
+    ANTI_DEPENDENCY_CYCLES,
+    GUARD_CYCLES,
+    SCOREBOARD_RESIDUE_CYCLES,
+    Confidence,
+    LatencyClass,
+    LatencyModel,
+    LatencyRecord,
+)
 from .observed import ObservedStalls, anti_dependency_cycles
 from .operands import RegRef, operand_access
 
@@ -359,13 +367,16 @@ def _check_anti_dependencies(program, block, report, seen, observed) -> None:
             needed = anti_dependency_cycles(reader_mnemonic, instr.opcode, observed)
             if elapsed.get(reg, 0) >= needed:
                 continue
+            # the constant was measured for one pairing, so it grounds an error
+            # only where this pairing's own evidence is what binds
+            grounded = evidence.minimum <= ANTI_DEPENDENCY_CYCLES
             _add(
                 report,
                 seen,
                 Hazard(
                     kind=HazardKind.OVERWRITTEN_BEFORE_READ,
-                    severity=Severity.ERROR,
-                    confidence=Confidence.MEASURED,
+                    severity=Severity.ERROR if grounded else Severity.WARNING,
+                    confidence=Confidence.MEASURED if grounded else Confidence.ASSUMED,
                     register=str(reg),
                     def_index=reader_index,
                     use_index=index,
@@ -510,19 +521,25 @@ def _check_scoreboarded_minimum(
     evidence = observed.scoreboarded_minimum(producer.mnemonic, consumer_key)
     if evidence is None or rd.elapsed >= evidence.minimum:
         return
+    # the residue is a pipeline constant, so a wider mined gap is spacing the
+    # compiler had work to fill rather than a distance the hardware needs
+    required = min(evidence.minimum, SCOREBOARD_RESIDUE_CYCLES)
+    grounded = rd.elapsed < required
     _add(
         report,
         seen,
         Hazard(
             kind=HazardKind.UNDERSTALLED,
-            severity=Severity.ERROR,
-            confidence=Confidence.MEASURED,
+            # only the measured residue may allege the code is wrong; between it
+            # and the mined figure the code is merely tighter than the vendor
+            severity=Severity.ERROR if grounded and evidence.trusted else Severity.WARNING,
+            confidence=Confidence.MEASURED if grounded else Confidence.ASSUMED,
             register=str(rd.register) if hasattr(rd, "register") else "",
             def_index=rd.index,
             use_index=index,
             def_text=f"{producer.mnemonic} {producer.operands}".strip(),
             use_text=f"{instr.mnemonic} {instr.operands}".strip(),
-            required=evidence.minimum,
+            required=required if grounded else evidence.minimum,
             actual=rd.elapsed,
             detail=(
                 f"{producer.mnemonic} signals a scoreboard and is waited on, but a "
@@ -568,8 +585,20 @@ def _requirement(
     if observed is not None:
         evidence = observed.requirement(producer, key)
         if evidence is not None:
+            # a guard has a measured requirement, and a mined figure is an upper
+            # bound, so evidence may lower it and never raise it
+            if guard and evidence.minimum > GUARD_CYCLES:
+                return (
+                    GUARD_CYCLES,
+                    f"a guard predicate needs {GUARD_CYCLES} cycles, measured; the vendor was "
+                    f"seen no tighter than {evidence.minimum} but an upper bound cannot raise it",
+                    True,
+                )
+            # after its own latency the result is written, whatever the vendor
+            # was seen to leave, so a mined figure above it is spacing too
+            ceiling = record.cycles if record.kind is LatencyClass.FIXED else evidence.minimum
             return (
-                evidence.minimum,
+                min(evidence.minimum, ceiling),
                 f"{evidence.producer} -> {evidence.consumer} is scheduled no tighter than "
                 f"{evidence.minimum} cycles across {evidence.observations} observations",
                 # thin evidence is a scheduling coincidence, not a requirement

@@ -27,6 +27,7 @@ __all__ = [
     "ANTI_DEPENDENCY_CYCLES",
     "DEFAULT_MODEL",
     "GUARD_CYCLES",
+    "SCOREBOARD_RESIDUE_CYCLES",
     "Confidence",
     "LatencyClass",
     "LatencyModel",
@@ -72,6 +73,10 @@ GUARD_CYCLES = 13
 # measured at three for one pairing by shortening the gap until the answer moved,
 # and the ceiling on every pairing since no other figure exists (finding 23)
 ANTI_DEPENDENCY_CYCLES = 3
+
+# what a waited-on scoreboard still owes is the pipeline distance between the
+# release and the operand read, and 2 is the only figure fault injection produced
+SCOREBOARD_RESIDUE_CYCLES = 2
 
 _ASSUMED: dict[str, tuple[int, LatencyClass, str]] = {
     # core integer and float ALU, the classic four-stage result bus

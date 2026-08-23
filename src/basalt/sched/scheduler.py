@@ -32,7 +32,12 @@ from dataclasses import dataclass, field
 from ..disasm import Instruction, Program
 from ..encoding import NO_BARRIER, STALL_YIELD, Word
 from ..verify.cfg import build_cfg
-from ..verify.latency import GUARD_CYCLES, LatencyClass, LatencyModel
+from ..verify.latency import (
+    GUARD_CYCLES,
+    SCOREBOARD_RESIDUE_CYCLES,
+    LatencyClass,
+    LatencyModel,
+)
 from ..verify.observed import ObservedStalls, anti_dependency_cycles
 from ..verify.operands import RegRef, operand_access
 
@@ -141,11 +146,14 @@ def _requirement(
     quietly returns the wrong answer.
     """
     key = ("@" if guard else "") + consumer
+    floor = GUARD_CYCLES if guard else cycles
     if observed is not None:
         evidence = observed.requirement(producer, key)
         if evidence is not None:
-            return evidence.minimum
-    return GUARD_CYCLES if guard else cycles
+            # `emit` and not `minimum`: a wider body of code may raise this floor
+            # and never lower it, since a schedule has to be right, not defensible
+            return max(evidence.emit, floor)
+    return floor
 
 
 def _scoreboarded_requirement(
@@ -163,7 +171,9 @@ def _scoreboarded_requirement(
     if observed is None:
         return 0
     evidence = observed.scoreboarded_minimum(producer_mnemonic, ("@" if guard else "") + consumer)
-    return evidence.minimum if evidence is not None else 0
+    if evidence is None:
+        return 0
+    return max(evidence.emit, SCOREBOARD_RESIDUE_CYCLES)
 
 
 def _live_out(cfg, program) -> list[set[RegRef]]:
@@ -524,12 +534,14 @@ def schedule_program(
                     continue
                 access = operand_access(instr.mnemonic, instr.operands)
 
-                for sb in list(protects):
-                    if protects[sb] & access.real_uses:
-                        del protects[sb]
+                # freed after this instruction takes its own, never before: a
+                # barrier signalled by the instruction waiting on it is finding 24
+                released = [sb for sb in protects if protects[sb] & access.real_uses]
 
                 if index in pinned_barrier:
                     barrier_of[index] = write_barriers[index] = pinned_barrier[index]
+                    for sb in released:
+                        del protects[sb]
                     continue
 
                 record = model.lookup(instr.opcode)
@@ -560,6 +572,9 @@ def schedule_program(
                         result.scoreboards_shared += 1
                     barrier_of[index] = free
                     write_barriers[index] = free
+                for sb in released:
+                    if sb in protects and sb != barrier_of[index]:
+                        del protects[sb]
 
     # register -> producers still outstanding on entry. keyed on the producer,
     # since a number is reused and a wait on the second use says nothing
