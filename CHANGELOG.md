@@ -23,6 +23,21 @@ any release. The clean-room position in [`NOTICE`](NOTICE) will not.
   names its scoreboard in the operand text rather than in the control word, so
   renumbering the `LDGDEPBAR` that signals it unpaired them with nothing in the
   encoding to show it. Finding 27.
+- `scripts/verify_all.py`: run every control in order and print what each one
+  answered. The README quotes about a dozen numbers and reproducing the set meant
+  running the commands behind them by hand in the right order, which works once
+  for the person who wrote it. A step needing hardware this machine does not have
+  is reported as skipped rather than quietly passing.
+- `scripts/across_the_family.py`: `ptxas` compiles the corpus to byte-identical
+  code, control words included, for all six targets in this family including
+  `sm_121`, which is a different chip. The schedule a kernel needs is therefore a
+  property of the architecture rather than of the part, which is the per-SKU
+  question answered without a second card. Finding 28.
+- `scripts/cross_toolchain.py`: the instruction model derived a second time from
+  CUDA 13.0.3 and compared with the 13.3.1 one. 195 of 343 exemplar encodings
+  differ and no operand field does, and the 13.3.1 database assembles 13.0.3's
+  output at 12,351 of 12,360 with none wrong. Stage 9b. Finding 29.
+- `scripts/rebuild_and_compare.py`: the two-command drift check as one command.
 - `scripts/corpus_figures.py`: recompute every corpus-derived figure the
   documentation quotes, from a fresh compile, in one command. Several had already
   drifted as the corpus grew, and one had been measured from a scratch directory
@@ -150,6 +165,8 @@ any release. The clean-room position in [`NOTICE`](NOTICE) will not.
   a different question from what correctness requires.
 
 ### Fixed
+- `python scripts/fetch_toolchain.py --list` divided a string by a float and had
+  never run. The redistributable manifest quotes the size as a string.
 - Removed a repair loop that reallocated scoreboards away from any instruction
   waiting on the number it signals. `ptxas` emits that shape 251 times in 37,008
   instructions, so the rule was invented to avoid a hazard that is not one, and

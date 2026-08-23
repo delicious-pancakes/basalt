@@ -248,6 +248,7 @@ pip install -e ".[dev]"
 
 python scripts/fetch_toolchain.py     # pinned ptxas + nvdisasm
 python -m basalt.cli doctor           # verify both oracles end to end
+python scripts/verify_all.py          # every control in this README, in order
 ```
 
 ```console
