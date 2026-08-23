@@ -38,6 +38,7 @@ from ..verify.operands import RegRef, operand_access
 
 __all__ = [
     "SCOREBOARDS",
+    "SCOREBOARD_OPERAND",
     "STALL_MAX",
     "YIELD_COST",
     "ScheduleResult",
@@ -83,7 +84,7 @@ YIELD_STALL_RANGE = (1, 12)
 # `DEPBAR.LE SB0, 0x0` waits on SB0 by naming it, so renumbering whatever
 # signals SB0 breaks the pairing and nothing in the encoding records it. This is
 # how `cp.async` synchronises, and why it could not be rescheduled (finding 27).
-_SCOREBOARD_OPERAND = re.compile(r"\bSB(\d)\b")
+SCOREBOARD_OPERAND = re.compile(r"\bSB(\d)\b")
 
 # Opcodes with no register result, so no latency class of their own, whose
 # operand read is still not finished at issue. A store hands its data register
@@ -483,7 +484,7 @@ def schedule_program(
     for index, instr in enumerate(program.instructions):
         if instr.word is None:
             continue
-        for match in _SCOREBOARD_OPERAND.finditer(instr.operands):
+        for match in SCOREBOARD_OPERAND.finditer(instr.operands):
             sb = int(match.group(1))
             signaller = next(
                 (
@@ -674,6 +675,7 @@ def schedule_program(
     # this because it runs before the dataflow that decides who waits
     live_out = _live_out(cfg, program)
     block_of = {i: b.index for b in cfg.blocks for i in range(b.start, b.end)}
+
     def uncredited(i: int) -> bool:
         # a pinned barrier is waited on by name in a later operand, which the
         # dataflow never sees, so it is never credited and must not be dropped

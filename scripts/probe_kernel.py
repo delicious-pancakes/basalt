@@ -88,7 +88,7 @@ def _shapes(program, words) -> list[str]:
     self-wait line is what finally located the scoreboard defect in finding 24.
     """
     from basalt.encoding import NO_BARRIER
-    from basalt.sched.scheduler import _SCOREBOARD_OPERAND
+    from basalt.sched.scheduler import SCOREBOARD_OPERAND
 
     signalled = 0
     waited = 0
@@ -103,7 +103,7 @@ def _shapes(program, words) -> list[str]:
         # `DEPBAR.LE SB0, 0x0` waits by naming the scoreboard in its operand
         instruction = program.instructions[index]
         if instruction.word is not None:
-            for match in _SCOREBOARD_OPERAND.finditer(instruction.operands):
+            for match in SCOREBOARD_OPERAND.finditer(instruction.operands):
                 waited |= 1 << int(match.group(1))
 
     notes = []

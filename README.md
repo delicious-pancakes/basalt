@@ -58,13 +58,14 @@ One standard, three tools: **agree with the vendor exactly, or say why not.**
 
 | | What it does | How it is checked | Result |
 | :--- | :--- | :--- | ---: |
-| **Assembler** | SASS text to the 128-bit word | Reassemble every instruction `ptxas` emitted and compare bytes | 11,988 of 12,008 exact, **0 wrong** |
-| **Checker** | Reads a schedule, reports hazards | The vendor's own output must verify clean, and a deliberately shortened stall must be caught | 0 errors over 1,323 vendor kernel and optimisation-level pairs, **0 missed** on 226 broken ones |
-| **Scheduler** | Assigns the control bits from scratch | Discard every control bit, compute new ones, run both on the GPU against four inputs, compare output bytes | **every comparable kernel** byte-identical, at all three optimisation levels |
+| **Assembler** | SASS text to the 128-bit word | Reassemble every instruction `ptxas` emitted and compare bytes | 59,693 of 59,760 exact across four optimisation levels, **0 wrong** |
+| **Checker** | Reads a schedule, reports hazards | The vendor's own output must verify clean, and a deliberately shortened stall must be caught | 0 errors over 1,323 vendor kernel and optimisation-level pairs, **0 missed** on 233 broken ones |
+| **Scheduler** | Assigns every control bit from scratch | Discard the vendor's, compute new ones, run both on the GPU against four inputs, compare output bytes | **439 of 439 comparable kernels** byte-identical, at all three optimisation levels |
 
 And the part a scheduler is usually quiet about: what the correctness costs. basalt's
-schedules spend **1.05x** the vendor's issue cycles, slower on 66 of the 441 kernels and
-cheaper on the rest, with every comparable kernel still byte-identical on the GPU.
+schedules spend **1.06x** the vendor's issue cycles, slower on 180 of the 1,323 kernel and
+optimisation-level pairs and cheaper on the rest, with every comparable kernel still
+byte-identical on the GPU.
 
 Cheaper than the vendor is not a claim to be smug about. basalt schedules every dependency
 at the tightest gap `ptxas` was ever seen to leave for that exact pairing, and `ptxas` is
@@ -337,17 +338,17 @@ Three of those contradict the assumed model basalt shipped with: `DADD` was assu
 | 3 | 5.88 | wrong |
 | 4 | 6.88 | correct |
 
-**It agrees with the vendor compiler on every kernel in the corpus.** Every kernel `ptxas` builds from the corpus is verified against its own scheduling: 6,165 dependencies, zero errors. That sweep runs in CI on every push, and every modelling error this project has made was caught by it rather than by reasoning.
+**It agrees with the vendor compiler on every kernel in the corpus.** Every kernel `ptxas` builds from the corpus is verified against its own scheduling, at every optimisation level that schedules: 30,421 dependencies, zero errors. That sweep runs in CI on every push, and every modelling error this project has made was caught by it rather than by reasoning.
 
 **The verdicts match the silicon.** For every encodable stall on a dependent producer, basalt's static answer and what the hardware actually computes agree, including the zero case. That is held as a test, not asserted here. Full evidence, including three independent methods for the required stall and the corrections made along the way, is in [findings](docs/FINDINGS.md).
 
-**And when it says a schedule is unsafe, the silicon agrees.** Take the vendor's own working schedule for 226 kernels, shorten one real dependency in each, and compare basalt's verdict against what the GPU computes: 73 that it called broken were broken, and **nothing it called safe computed a wrong answer**. That number started at 34 missed rather than zero, and [findings](docs/FINDINGS.md) says what the cause was and what fixing it cost in false alarms, because a sweep that only ever reported its final figure would be worth less than one that reported its first.
+**And when it says a schedule is unsafe, the silicon agrees.** Take the vendor's own working schedule for 233 kernels, shorten one real dependency in each, and compare basalt's verdict against what the GPU computes: 74 that it called broken were broken, and **nothing it called safe computed a wrong answer**. That number started at 34 missed rather than zero, and [findings](docs/FINDINGS.md) says what the cause was and what fixing it cost in false alarms, because a sweep that only ever reported its final figure would be worth less than one that reported its first.
 
 ## It can assign the control bits too
 
 The verifier answers whether a schedule is safe. The scheduler answers what a safe schedule would be, from the same measurements: it discards every control bit `ptxas` produced, computes its own, hands the result back to the verifier, and then runs it on the GPU beside the vendor's version of the same kernel.
 
-Run over the whole corpus on the card, at every optimisation level that produces a schedule, every one of the comparable kernels comes out computing byte-identical results to the vendor schedule, from control bits basalt worked out itself. The 12 that are excluded are excluded for reasons that have nothing to do with the schedule, and [findings](docs/FINDINGS.md) says which and why rather than folding them into a percentage.
+Run over the whole corpus on the card, at every optimisation level that produces a schedule, all 439 comparable kernels come out computing byte-identical results to the vendor schedule, from control bits basalt worked out itself. The 2 that are excluded read the clock and the grid id, so they do not agree with themselves either, and [findings](docs/FINDINGS.md) says so rather than folding them into a percentage.
 
 That control is the reason any of the rest is trustworthy. The checker and the scheduler read the same latency model, so a wrong entry in it satisfies both at once and they agree with each other while both being wrong. Only the silicon has no stake in the argument. Running the scheduler over seven hand-written kernels passed seven of seven for a long time; running it over three hundred found forty-one wrong ones, and every model correction since came out of watching that number move.
 
