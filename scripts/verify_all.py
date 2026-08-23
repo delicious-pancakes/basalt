@@ -16,6 +16,8 @@ Nothing here is new work. It shells out to the same scripts CI runs, in the same
 order, and reports the exit code and the line each one calls its answer. A step
 that needs hardware this machine does not have is reported as skipped rather than
 quietly passing, because a control that did not run is not a control that passed.
+The audit needs the shipped libraries fetched first, and reports what it could
+not find rather than passing on an empty directory.
 """
 
 from __future__ import annotations
@@ -43,6 +45,8 @@ class Step:
     answer: tuple[str, ...] = ()
     needs_gpu: bool = False
     slow: bool = False
+    # a path that has to exist first, so an unfetched input reads as skipped
+    needs_path: str = ""
 
 
 PY = sys.executable
@@ -98,6 +102,13 @@ STEPS: tuple[Step, ...] = (
         needs_gpu=True,
         slow=True,
     ),
+    Step(
+        "shipped libraries audit",
+        [PY, "scripts/audit_shipped.py", "--cubins", "third_party/cuda/13.3.1/cubins"],
+        ("errors:",),
+        slow=True,
+        needs_path="third_party/cuda/13.3.1/cubins",
+    ),
     Step("the suite", [PY, "-m", "pytest", "-q"], ("passed", "failed", "error"), slow=True),
 )
 
@@ -133,6 +144,10 @@ def main() -> int:
     for step in STEPS:
         if step.needs_gpu and not have_gpu:
             print(f"  {step.name:<{width}}  skipped, needs a GPU")
+            skipped += 1
+            continue
+        if step.needs_path and not (ROOT / step.needs_path).exists():
+            print(f"  {step.name:<{width}}  skipped, run fetch_toolchain.py --libs first")
             skipped += 1
             continue
         if step.slow and args.quick:

@@ -10,6 +10,53 @@ any release. The clean-room position in [`NOTICE`](NOTICE) will not.
 ## [Unreleased]
 
 ### Added
+- Stage 10, the audit: the checker pointed at 2,473 sm_120 kernels NVIDIA ships
+  in CUDA 13.3.1, 844 MB of device code basalt did not compile. The first run
+  reported 6,593 errors in 250 nvjpeg kernels and not one was real. Seven holes
+  in basalt's model were, each of them invisible on a corpus basalt generates
+  itself, and after the corrections the same libraries verify with zero hazards.
+  Finding 32.
+- `scripts/mine_shipped.py`: the per-pair stall requirement mined from shipped
+  kernels rather than from a generated corpus, holding out the libraries the
+  audit then reports on, because a table measured on the code it is checked
+  against cannot fail. 909 cubins and 24,311 kernels take the table from 340
+  dependent pairings to 3,957. Where the wider corpus disagrees with the narrow
+  one it lands on the number fault injection had already measured: a guard
+  predicate at 13 cycles, from 229,567 observations instead of 9.
+- `scripts/fetch_toolchain.py --libs` fetches those libraries and records the
+  exact component version beside each, since a finding against cuBLAS is worth
+  nothing without saying which build of it.
+- Whether a missing scoreboard is a hazard is now measured rather than assumed.
+  The vendor covers `LDG`, `LDC`, `LDL`, `S2R` and `LD` with spacing alone zero
+  times across millions of dependent pairs, and `LDS` 734,837 times, so the
+  first group keeps the error and the second gets a warning.
+
+### Fixed
+- `F2IP` read `F2I`'s entry through the longest-prefix rule and was treated as
+  completing out of order. It is the third instruction to fall into a trap two
+  comments in the same file already warned about, and the only one the corpus
+  could not reach: it appears nowhere in 37,008 instructions of compiler output.
+- `R2UR` was classed variable and is never scoreboarded once in 3,098 corpus
+  instances. Every one of them carries the safe stall encoding, which exempted
+  it from the check that would have caught it.
+- Evidence may lower what basalt alleges and never what it emits. The figure
+  collapsed over consumers puts `IMAD` at 2 cycles across 733,217 observations,
+  true of `IMAD -> IMAD` and nothing else, and scheduling to it broke 8 kernels
+  on the card. Every entry now carries the floor a scheduler must respect
+  alongside the tightest gap the checker may call an error.
+- A requirement may not exceed the producer's own latency, and a guard's may not
+  exceed the 13 cycles measured for it. Both are upper bounds by construction.
+- A mined exact pairing was reported as grounded however thin, so four
+  observations claiming `IADD -> MOV` needs 20 cycles became an error against
+  code the vendor ships at 5.
+- The scoreboard residue is a pipeline constant. `LDG.E.64 => FFMA` mined at 461
+  cycles from 3 observations, and 2 is the only figure fault injection produced.
+- A scoreboard is freed after an instruction takes its own rather than before,
+  so a load can no longer end up waiting on the barrier it signals.
+- A definition guarded by `@P0` no longer reaches a use guarded by `@!P0`.
+  Within a thread exactly one of them runs.
+
+### Added
 - Read barriers are derived rather than copied from the schedule being replaced,
   which is what a scheduler needs to place control bits on a program nobody has
   compiled. All 334 in the corpus were characterised first: 328 sit on a

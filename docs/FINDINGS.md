@@ -1487,6 +1487,131 @@ Two forms exist only in 13.3.1 and one only in 13.0.3, which is a code generator
 
     python scripts/cross_toolchain.py
 
+## 32. Pointing the checker at code basalt did not produce
+
+Every control up to here runs on kernels the corpus compiled. That establishes the checker
+agrees with `ptxas` on `ptxas` output, which is necessary and is not the question anyone
+holding a cubin actually has. Stage 10 asks the real one.
+
+The subject is every sm_120 kernel NVIDIA ships in CUDA 13.3.1: `cublas`, `cublasLt`,
+`cusolver`, `cusparse`, `npp`, `curand` and `nvjpeg`, 2,473 cubins and 844 MB of device code,
+scheduled by a compiler basalt has never seen the output of, at instruction mixes the corpus
+does not reach.
+
+```bash
+python scripts/fetch_toolchain.py --libs
+python scripts/audit_shipped.py --libs third_party/cuda/13.3.1/libs --report audit.json
+```
+
+**The first run reported 6,593 errors in 250 nvjpeg kernels.** Twenty-six per kernel, in
+production code that decodes JPEGs correctly on every Blackwell card sold. Nothing in
+NVIDIA's code was wrong. Seven separate things in basalt's model were, and no other control
+could have found any of them, because every one is invisible on the corpus.
+
+| # | What was wrong | Why the corpus could not show it |
+| :-- | :--- | :--- |
+| 1 | `F2IP` read `F2I`'s entry and was called variable latency | `F2IP` appears nowhere in 37,008 instructions of corpus output |
+| 2 | `R2UR` was called variable latency | all 3,098 corpus instances carry the safe stall encoding, which exempts them |
+| 3 | an exact mined pairing was grounded however thin | four observations said `IADD -> MOV` needs 20 and the vendor ships it at 5 |
+| 4 | a mined figure could exceed the producer's own latency | after `L` cycles the result is written, so no requirement can be larger |
+| 5 | the scoreboard residue was whatever was mined | `LDG.E.64 => FFMA` mined at 461 cycles from 3 observations |
+| 6 | a missing scoreboard was always an error | the vendor covers `LDS` with spacing alone 734,837 times |
+| 7 | `@P0` was treated as reaching `@!P0` | a generated corpus almost never writes complementary guards |
+
+**The corpus-mined requirement table cannot fail on the corpus it came from.** That is the
+structural point, and it is why 1,323 kernels of positive control kept passing while the
+model carried all seven. The tightest gap `ptxas` was seen to leave *is* the floor, by
+construction, for exactly the code it was measured on. Finding 21 caught the narrow version
+of this: `FADD` read 5 from a thin corpus and 4 from a wider one, and 4 was what fault
+injection said. Stage 10 is the same finding three orders of magnitude out.
+
+### The requirement, re-mined from a corpus a thousand times larger
+
+`scripts/mine_shipped.py` mines the same per-pair gaps out of shipped kernels, **holding out
+the libraries the audit then reports on**, because a table measured on the code it is checked
+against is the flaw being fixed rather than a fix for it. 909 cubins, 24,311 kernels.
+
+| | Corpus | With shipped code | New pairings | Read too high |
+| :--- | ---: | ---: | ---: | ---: |
+| dependent pairs | 340 | **3,957** | 3,617 | 66 |
+| per producer | 162 | **512** | 350 | 50 |
+| scoreboard residue | 255 | **1,850** | 1,595 | 51 |
+| anti-dependency | 256 | **6,177** | 5,921 | 73 |
+| issue rate | 1,146 | **30,735** | 29,589 | 337 |
+
+The corroboration is the part worth reading. Where the wider corpus disagrees with the
+narrow one, it lands on the number basalt had already measured on silicon by an entirely
+different method:
+
+| Pairing | Corpus | Shipped | Independently |
+| :--- | ---: | ---: | :--- |
+| `ISETP -> @BRA` | 18, from 9 observations | **13**, from 229,567 | 13 is what fault injection measured for a guard (finding 9) |
+| `FADD -> FMUL` | 18, from 15 | **4**, from 18,663 | 4 is `FADD`'s measured latency (finding 4) |
+| `IADD -> MOV` | 20, from 4 | **5**, from 17,426 | above `IADD`'s measured 4, as it has to be |
+
+A guard predicate needing thirteen cycles was measured on this card by shortening the gap
+until the answer changed. Two hundred and twenty-nine thousand independent scheduling
+decisions by NVIDIA's compiler, in code written years apart from that experiment, put the
+floor at the same thirteen.
+
+### Whether a missing scoreboard is a hazard is measurable
+
+The checker used to treat any variable-latency producer without a `write_barrier` as an
+error. Mining separates the two cases cleanly, since a producer that signalled a barrier is
+recorded in one table and one that did not in another, so the question has an answer:
+
+| Producer | Covered by a scoreboard | Covered by spacing alone |
+| :--- | ---: | ---: |
+| `LDG` | 1,363,466 | **0** |
+| `LDC` | 532,295 | **0** |
+| `LDL` | 144,529 | **0** |
+| `S2R` | 135,333 | **0** |
+| `LD` | 99,975 | **0** |
+| `LDS` | 1,972,507 | **734,837** |
+| `SHFL` | 228,185 | **59,347** |
+| `I2F` | 77,816 | **15,186** |
+
+A global load is never once covered without a barrier across 1.3 million dependent pairs, and
+a shared load is covered that way in one case in four. basalt's classification is exactly
+right for global, constant, local and special-register reads, and saying the same thing about
+a shared load is alleging a race in code that demonstrably works. Severity now follows the
+evidence rather than the class.
+
+### What it costs, and the line it draws
+
+Re-mining is not free, and the control said so immediately. Scheduling to the tightest gap in
+the new table broke **8 corpus kernels on the card**, and the reason is precise: collapsed
+over consumers, the figure puts `IMAD` at 2 cycles across 733,217 observations, which is true
+of `IMAD -> IMAD` and of nothing else.
+
+That is not a reason to discard the evidence. It is the difference between two jobs that had
+been sharing one number:
+
+> Evidence may lower what basalt **alleges** and never what it **emits**.
+
+Every entry now carries both: the tightest gap anyone has been seen to use, which is what the
+checker may call an error, and the floor a scheduler must respect, which a wider body of code
+may raise and never lower. Finding 23 drew this line for the anti-dependency rule; this draws
+it everywhere else. With it the round trip is back to 439 of 439 and the audit keeps every
+number it gained.
+
+### The result
+
+| | Errors | Warnings | Dependencies |
+| :--- | ---: | ---: | ---: |
+| First run | 6,593 | 554 | 93,972 |
+| After the seven corrections | **0** | 1,158 | 93,489 |
+
+Zero hazards in 250 shipped kernels held out of every table the checker reads.
+
+**What that is and is not.** It is not a clean bill of health for NVIDIA's code and is not
+meant to be. The finding is that a checker built and calibrated entirely on one body of code
+reported twenty-six hazards per kernel the first time it saw another, and that every one of
+them was its own. Anyone auditing machine code against a model tuned on a corpus should
+expect the same, and this is the measurement of how much. The warnings are not noise either:
+they are the places shipped code schedules tighter than the vendor's habit elsewhere, which
+is the honest thing for a tool to say where it cannot ground a claim.
+
 ## 30. What is deliberately not claimed
 
 Stated so the boundary of the evidence is visible.
@@ -1621,5 +1746,14 @@ Kept because a method is only as trustworthy as its error log.
   reach itself around a back edge, where the vendor leans on the scoreboard rather than
   padding to the full latency, and `DFMA` was being asked for 64 cycles where 18 was right.
 
+- `F2IP` read `F2I`'s entry, the third instruction to fall into a trap two comments in the
+  same file already warned about, and the only one of the three the corpus could not reach.
+- A scoreboard was freed the moment an instruction read what it guarded, including by the
+  instruction then allocating one, so a load could end up waiting on the barrier it signals.
+  The probe had a standing check for that shape and it took tighter schedules to trip it.
+- A definition guarded by `@P0` was treated as reaching a use guarded by `@!P0`. Within a
+  thread exactly one of them runs.
+
 Each of these was caught by the positive control: the vendor compiler's own output must
-verify clean, and every one of them made it fail.
+verify clean, and every one of them made it fail. The last three came from stage 10, where
+the output belongs to someone else.

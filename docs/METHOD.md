@@ -230,3 +230,17 @@ else is the same failure this project exists to catch.
 trade it made, so the issue cycles of both schedules are compared and the ratio is pinned
 from both sides. Getting slower is a regression; getting much faster without the round trip
 also moving is a reason to distrust the costing rather than to celebrate it.
+
+**Holding out the code the audit reports on.** The stall requirement is mined from what the
+compiler schedules, which means a table mined from a body of code cannot fail when checked
+against that same code: the tightest gap it left *is* the floor, by construction. That is not
+a hypothetical. basalt passed 1,323 kernels of positive control while carrying seven model
+errors, and every one surfaced the first time the checker read machine code from somewhere
+else. So the requirement is mined from one set of shipped libraries and the audit reports on
+another, and the split is the control rather than a tidiness.
+
+**Alleging and emitting are different jobs.** A mined minimum is an upper bound on the
+requirement, so evidence from a wider body of code may lower what the checker is willing to
+call an error. It may not lower what the scheduler emits, because a schedule has to be right
+rather than defensible, and the figure collapsed over consumers is the tightest gap any one
+of them got. Every entry in the table carries both numbers for that reason.

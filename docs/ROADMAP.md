@@ -38,7 +38,7 @@ vendor compiler's own output, which is what makes it useful rather than self-ref
 | 8b | Fault injection | Required stall measured by breaking programs on hardware | **done** |
 | 9 | Field validation | Prove the measured fields can be written through | **done** |
 | 9b | Cross-check | The ISA model derived twice, from two compiler releases | **done**, 0 operand fields differ |
-| 10 | Audit | Every public sm_120 SASS kernel, ptxas as the control | planned |
+| 10 | Audit | Every sm_120 kernel NVIDIA ships, held out of every table | **done**, 0 hazards, 7 model bugs |
 | 11 | Scheduler | Assign the control bits, not only check them | **done**, every field derived |
 | 12 | Assembler | SASS text to the instruction word | **working** |
 
@@ -102,10 +102,18 @@ A tool can be ignored; a measurement cannot.
    including `sm_121`, which is a different chip. The required schedule is a property of the
    architecture rather than of the part, so a scheduler tuned on one part is sound on the
    others, with evidence rather than hope. Finding 28.
-3. **Unsafe control bits in shipped kernels.** Hand-written SASS is now in production use. The
-   verifier either finds hazards there or establishes that it does not.
+3. **Unsafe control bits in shipped kernels.** *Answered, and the answer is about basalt.*
+   2,473 sm_120 cubins out of CUDA 13.3.1, 844 MB of device code nobody here compiled. The
+   first run reported 6,593 errors in 250 nvjpeg kernels and every one was a hole in basalt's
+   model, seven of them, each invisible on the corpus by construction. After the corrections:
+   zero, on libraries held out of every table the checker reads. Finding 32.
 
 ## The control that keeps the audit honest
+
+> [!IMPORTANT]
+> A table mined from the code it is then checked against cannot fail. That is what stage 10
+> found, so the requirement is mined from one set of libraries and the audit reports on
+> another, and the corpus positive control still runs first.
 
 > [!IMPORTANT]
 > The verifier runs against `ptxas` output first, always. The vendor compiler's scheduling is
@@ -118,7 +126,7 @@ A tool can be ignored; a measurement cannot.
 Stated so the boundary is deliberate rather than accidental.
 
 - **Competing on code generation.** basalt must work on *other* tools' output, not only its own.
-  The stage 10 assembler exists to generate test programs, not to win a comparison.
+  The stage 12 assembler exists to generate test programs, not to win a comparison.
 - **Optimising schedules.** Making SASS faster is a separate problem with existing research
   behind it. basalt answers whether a schedule is *safe*, not whether it is *good*.
 - **Architectures other than sm_120.** The method generalises; the measurements do not. Claiming

@@ -13,7 +13,10 @@ honest: each of the four errors this project has made so far was found here or
 by the smaller version of it, never by reasoning.
 
 Marked `toolchain` and needs no GPU. Every class here shares one compile of the
-corpus, so the cost is the analysis rather than another pass over `ptxas`.
+corpus per `-O` level, and that compile is effectively the whole cost: measured
+over 449 kernels on 16 cores, the three builds take 55s and the 1347 analyses
+that follow take 2.1s. So the price of this file is the number of `-O` levels
+swept, not the number of assertions made, which is why `OPT_LEVELS` exists.
 """
 
 from __future__ import annotations
@@ -41,6 +44,19 @@ LATENCIES = ROOT / "data" / "latency" / "rtx-5070-ti.json"
 OBSERVED = ROOT / "data" / "latency" / "observed-stalls-sm120a.json"
 
 
+# Which ptxas -O levels the positive control sweeps.
+#
+# All three by default, so a local `verify_all.py` and the nightly run get the
+# full sweep. CI narrows the per-push run to -O3 alone: three levels is three
+# builds and three analyses of 449 kernels, and re-proving -O1 and -O2 on every
+# commit costs about eight minutes to re-find nothing. -O3 is the level that
+# schedules hardest, so a regression surfaces there first, and the widened
+# sweep that originally found the two model bugs still runs every night.
+OPT_LEVELS: tuple[int, ...] = tuple(
+    int(x) for x in os.environ.get("BASALT_CORPUS_OPT", "1,2,3").split(",") if x.strip()
+)
+
+
 @pytest.fixture(scope="module")
 def model() -> LatencyModel:
     if LATENCIES.is_file():
@@ -66,7 +82,7 @@ def reports(corpus_builds, model, observed):
     """
     return [
         (f"{name} -O{opt}", verify_program(program, model, observed=observed))
-        for opt in (1, 2, 3)
+        for opt in OPT_LEVELS
         for name, (_, program) in corpus_builds.at(opt).items()
     ]
 
