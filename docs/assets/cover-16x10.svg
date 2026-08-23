@@ -1,0 +1,190 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900" width="1440" height="900" role="img"
+     aria-label="basalt: the hazard check NVIDIA never shipped for sm_120. Twenty-one bits of every 128-bit instruction are a scheduling control word the hardware never validates, and one stall count shorter than the latency it covers makes the GPU read a stale register and return a wrong answer silently.">
+  <title>basalt: the hazard check NVIDIA never shipped for sm_120</title>
+
+  <defs>
+    <!-- basalt cools into interlocking hexagonal columns of near-uniform width,
+         which is the same shape as a fixed-width instruction stream -->
+    <pattern id="columns" width="112" height="130" patternUnits="userSpaceOnUse"
+             patternTransform="translate(-18 -22)">
+      <g fill="#151b23" stroke="#2b3542" stroke-width="1.4">
+        <path d="M56 2 L106 30.5 L106 87.5 L56 116 L6 87.5 L6 30.5 Z"/>
+        <path d="M0 67 L50 95.5 L50 152.5 L0 181 L-50 152.5 L-50 95.5 Z"/>
+        <path d="M112 67 L162 95.5 L162 152.5 L112 181 L62 152.5 L62 95.5 Z"/>
+      </g>
+    </pattern>
+
+    <!-- a mask reads luminance, so this has to run black to white rather than
+         opaque to transparent; getting that backwards hides the pattern entirely -->
+    <linearGradient id="fadeGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0.40" stop-color="#000000"/>
+      <stop offset="0.68" stop-color="#5c5c5c"/>
+      <stop offset="0.94" stop-color="#d8d8d8"/>
+    </linearGradient>
+    <!-- second axis so the pattern does not compete with the callouts along
+         the bottom edge, where the smallest type sits -->
+    <linearGradient id="fadeVert" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0.00" stop-color="#ffffff"/>
+      <stop offset="0.62" stop-color="#ffffff"/>
+      <stop offset="0.86" stop-color="#3a3a3a"/>
+      <stop offset="1.00" stop-color="#000000"/>
+    </linearGradient>
+    <mask id="fadeMask">
+      <g style="mask-type:luminance">
+        <rect width="1440" height="900" fill="url(#fadeGrad)"/>
+        <rect width="1440" height="900" fill="url(#fadeVert)" style="mix-blend-mode:multiply"/>
+      </g>
+    </mask>
+
+    <radialGradient id="glow" cx="0.20" cy="0.30" r="0.85">
+      <stop offset="0" stop-color="#1b2531" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#0d1117" stop-opacity="0"/>
+    </radialGradient>
+
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#76b900"/>
+      <stop offset="1" stop-color="#a6e831"/>
+    </linearGradient>
+
+    <linearGradient id="hexGlow" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#76b900" stop-opacity="0.30"/>
+      <stop offset="1" stop-color="#76b900" stop-opacity="0.06"/>
+    </linearGradient>
+
+    <style>
+      .sans  { font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Inter, Helvetica, Arial, sans-serif; }
+      .mono  { font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
+      .wordmark { font-weight: 700; font-size: 122px; letter-spacing: -4.6px; fill: #e6edf3; }
+      .lede  { font-weight: 600; font-size: 36px; fill: #e6edf3; letter-spacing: -0.3px; }
+      .body  { font-weight: 400; font-size: 21px; fill: #8b949e; }
+      .micro { font-size: 13px; fill: #6e7781; letter-spacing: 0.7px; }
+      .tag   { font-size: 15px; fill: #566069; letter-spacing: 0.7px; }
+      .hz    { font-size: 18px; font-weight: 700; }
+    </style>
+  </defs>
+
+  <rect width="1440" height="900" fill="#0d1117"/>
+  <rect width="1440" height="900" fill="url(#glow)"/>
+  <rect width="1440" height="900" fill="url(#columns)" mask="url(#fadeMask)"/>
+
+  <!-- one column lit, the instruction the verifier is looking at -->
+  <g opacity="0.95">
+    <path d="M1206 168 L1256 196.5 L1256 253.5 L1206 282 L1156 253.5 L1156 196.5 Z"
+          fill="url(#hexGlow)" stroke="#76b900" stroke-width="1.6" stroke-opacity="0.75"/>
+  </g>
+
+  <text x="96" y="214" class="sans wordmark">basalt</text>
+  <rect x="99" y="242" width="134" height="6" rx="3" fill="url(#accent)"/>
+
+  <text x="96" y="278" class="mono micro" fill="#76b900">RTX 50 SERIES  &#183;  sm_120  &#183;  PROVEN ON SILICON, NOT ASSUMED</text>
+
+  <text x="96" y="340" class="sans lede">The hazard check NVIDIA</text>
+  <text x="96" y="386" class="sans lede">never shipped for sm_120.</text>
+
+  <text x="96" y="448" class="sans body">sm_120 has no hardware interlock. One wrong stall count and the</text>
+  <text x="96" y="480" class="sans body">GPU reads a stale register and returns a wrong answer, silently.</text>
+
+  <g transform="translate(96 584) scale(1.12)">
+    <text x="0" y="-13" class="mono micro">128-BIT INSTRUCTION WORD</text>
+
+    <!-- bits 0..104: payload, with the opcode selector cells called out -->
+    <g fill="#2d333b">
+      <rect x="0" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="8.7" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="17.4" y="0" width="6.1" height="28" rx="1.3" fill="#5c7086"/>
+      <rect x="26.1" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="34.8" y="0" width="6.1" height="28" rx="1.3" fill="#5c7086"/>
+      <rect x="43.5" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="52.2" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="60.9" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="69.6" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="78.3" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="87" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="95.7" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="104.4" y="0" width="6.1" height="28" rx="1.3" fill="#5c7086"/>
+      <rect x="113.1" y="0" width="6.1" height="28" rx="1.3" fill="#5c7086"/>
+      <rect x="121.8" y="0" width="6.1" height="28" rx="1.3" fill="#5c7086"/>
+      <rect x="130.5" y="0" width="6.1" height="28" rx="1.3" fill="#5c7086"/>
+      <rect x="139.2" y="0" width="6.1" height="28" rx="1.3"/><rect x="147.9" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="156.6" y="0" width="6.1" height="28" rx="1.3"/><rect x="165.3" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="174" y="0" width="6.1" height="28" rx="1.3"/><rect x="182.7" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="191.4" y="0" width="6.1" height="28" rx="1.3"/><rect x="200.1" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="208.8" y="0" width="6.1" height="28" rx="1.3"/><rect x="217.5" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="226.2" y="0" width="6.1" height="28" rx="1.3"/><rect x="234.9" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="243.6" y="0" width="6.1" height="28" rx="1.3"/><rect x="252.3" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="261" y="0" width="6.1" height="28" rx="1.3"/><rect x="269.7" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="278.4" y="0" width="6.1" height="28" rx="1.3"/><rect x="287.1" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="295.8" y="0" width="6.1" height="28" rx="1.3"/><rect x="304.5" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="313.2" y="0" width="6.1" height="28" rx="1.3"/><rect x="321.9" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="330.6" y="0" width="6.1" height="28" rx="1.3"/><rect x="339.3" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="348" y="0" width="6.1" height="28" rx="1.3"/><rect x="356.7" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="365.4" y="0" width="6.1" height="28" rx="1.3"/><rect x="374.1" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="382.8" y="0" width="6.1" height="28" rx="1.3"/><rect x="391.5" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="400.2" y="0" width="6.1" height="28" rx="1.3"/><rect x="408.9" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="417.6" y="0" width="6.1" height="28" rx="1.3"/><rect x="426.3" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="435" y="0" width="6.1" height="28" rx="1.3"/><rect x="443.7" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="452.4" y="0" width="6.1" height="28" rx="1.3"/><rect x="461.1" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="469.8" y="0" width="6.1" height="28" rx="1.3"/><rect x="478.5" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="487.2" y="0" width="6.1" height="28" rx="1.3"/><rect x="495.9" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="504.6" y="0" width="6.1" height="28" rx="1.3"/><rect x="513.3" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="522" y="0" width="6.1" height="28" rx="1.3"/><rect x="530.7" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="539.4" y="0" width="6.1" height="28" rx="1.3"/><rect x="548.1" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="556.8" y="0" width="6.1" height="28" rx="1.3"/><rect x="565.5" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="574.2" y="0" width="6.1" height="28" rx="1.3"/><rect x="582.9" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="591.6" y="0" width="6.1" height="28" rx="1.3"/><rect x="600.3" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="609" y="0" width="6.1" height="28" rx="1.3"/><rect x="617.7" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="626.4" y="0" width="6.1" height="28" rx="1.3"/><rect x="635.1" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="643.8" y="0" width="6.1" height="28" rx="1.3"/><rect x="652.5" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="661.2" y="0" width="6.1" height="28" rx="1.3"/><rect x="669.9" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="678.6" y="0" width="6.1" height="28" rx="1.3"/><rect x="687.3" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="696" y="0" width="6.1" height="28" rx="1.3"/><rect x="704.7" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="713.4" y="0" width="6.1" height="28" rx="1.3"/><rect x="722.1" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="730.8" y="0" width="6.1" height="28" rx="1.3"/><rect x="739.5" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="748.2" y="0" width="6.1" height="28" rx="1.3"/><rect x="756.9" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="765.6" y="0" width="6.1" height="28" rx="1.3"/><rect x="774.3" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="783" y="0" width="6.1" height="28" rx="1.3"/><rect x="791.7" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="800.4" y="0" width="6.1" height="28" rx="1.3"/><rect x="809.1" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="817.8" y="0" width="6.1" height="28" rx="1.3"/><rect x="826.5" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="835.2" y="0" width="6.1" height="28" rx="1.3"/><rect x="843.9" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="852.6" y="0" width="6.1" height="28" rx="1.3"/><rect x="861.3" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="870" y="0" width="6.1" height="28" rx="1.3"/><rect x="878.7" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="887.4" y="0" width="6.1" height="28" rx="1.3"/><rect x="896.1" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="904.8" y="0" width="6.1" height="28" rx="1.3"/>
+    </g>
+
+    <!-- bits 105..125: the scheduling control section -->
+    <g fill="url(#accent)">
+      <rect x="913.5" y="0" width="6.1" height="28" rx="1.3"/><rect x="922.2" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="930.9" y="0" width="6.1" height="28" rx="1.3"/><rect x="939.6" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="948.3" y="0" width="6.1" height="28" rx="1.3"/><rect x="957" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="965.7" y="0" width="6.1" height="28" rx="1.3"/><rect x="974.4" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="983.1" y="0" width="6.1" height="28" rx="1.3"/><rect x="991.8" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="1000.5" y="0" width="6.1" height="28" rx="1.3"/><rect x="1009.2" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="1017.9" y="0" width="6.1" height="28" rx="1.3"/><rect x="1026.6" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="1035.3" y="0" width="6.1" height="28" rx="1.3"/><rect x="1044" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="1052.7" y="0" width="6.1" height="28" rx="1.3"/><rect x="1061.4" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="1070.1" y="0" width="6.1" height="28" rx="1.3"/><rect x="1078.8" y="0" width="6.1" height="28" rx="1.3"/>
+      <rect x="1087.5" y="0" width="6.1" height="28" rx="1.3"/>
+    </g>
+    <g fill="#2d333b">
+      <rect x="1096.2" y="0" width="6.1" height="28" rx="1.3"/><rect x="1104.9" y="0" width="6.1" height="28" rx="1.3"/>
+    </g>
+
+    <!-- callouts: opcode on the left where the selector cells actually are -->
+    <path d="M17.4 40 L17.4 47 L136.6 47 L136.6 40" fill="none" stroke="#5c7086" stroke-width="1.6"/>
+    <text x="77" y="66" class="mono micro" text-anchor="middle" fill="#7d8fa3">OPCODE SELECTOR</text>
+
+    <path d="M913.5 40 L913.5 47 L1093.6 47 L1093.6 40" fill="none" stroke="#76b900" stroke-width="1.8"/>
+    <text x="1003.5" y="66" class="mono micro" text-anchor="middle" fill="#76b900">SCHEDULING CONTROL</text>
+    <text x="1003.5" y="84" class="mono micro" text-anchor="middle" fill="#5e8f13">NEVER VALIDATED BY HARDWARE</text>
+  </g>
+
+  <g transform="translate(96 748) scale(1.12)">
+    <text x="0" y="0" class="mono hz" fill="#d29922">stall</text>
+    <text x="62" y="0" class="mono" font-size="18" fill="#6e7781">&#60;</text>
+    <text x="86" y="0" class="mono hz" fill="#f85149">latency</text>
+    <text x="196" y="0" class="mono" font-size="18" fill="#8b949e">&#8594;  stale read, no fault, full speed</text>
+  </g>
+
+  <text x="96" y="818" class="mono tag">CLEAN-ROOM  &#183;  APACHE-2.0  &#183;  GITHUB.COM/SUNNYPATELL/BASALT</text>
+</svg>
