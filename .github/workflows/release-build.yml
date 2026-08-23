@@ -1,0 +1,117 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 Sunny Patel
+#
+# The trusted builder. Everything that produces a released artefact happens
+# here, and nothing else does.
+#
+# This is a reusable workflow rather than a job in release.yml on purpose, and
+# the reason is the whole provenance argument. A `workflow_call` workflow runs
+# with its own identity, isolated from whatever dispatched it, so the Sigstore
+# certificate names *this file* as the builder. That isolation between the
+# build instructions and the caller is the difference between SLSA Build L2 and
+# Build L3:
+#
+#   https://docs.github.com/actions/security-guides/using-artifact-attestations-and-reusable-workflows-to-achieve-slsa-v1-build-level-3
+#
+# It also means a verifier can pin the builder, not just the repository:
+#
+#     gh attestation verify basalt-<version>-py3-none-any.whl \
+#       --repo sunnypatell/basalt \
+#       --signer-workflow sunnypatell/basalt/.github/workflows/release-build.yml
+#
+# Note what this job cannot do: it has no `contents: write`. It builds, tests,
+# describes and signs, then hands the files to the caller. Publishing is a
+# separate job with a separate permission, so a compromised build step cannot
+# reach the release page.
+name: release-build
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: "tag or commit to build"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build, attest
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read # the build reads source and nothing else
+      id-token: write # Sigstore needs an OIDC token to sign with
+      attestations: write # store the provenance alongside the artefacts
+    steps:
+      # audit, not block. an allowlist that has to be maintained becomes an
+      # allowlist that gets widened until it means nothing; what is useful here
+      # is the record of what the build actually talked to, which is checkable
+      # after the fact against what it should have needed
+      - name: Record what this build talks to
+        uses: step-security/harden-runner@05e31511f85b41b11d1cf0ef85d0992719546e2c # v2.21.0
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Build the distributions
+        run: |
+          python -m pip install --upgrade build
+          python -m build
+
+      - name: Check the metadata is well formed
+        run: |
+          python -m pip install --upgrade twine
+          python -m twine check dist/*
+
+      # a release whose tests were never run is a release nobody should install,
+      # and the GPU-free suite is the part a hosted runner can actually verify
+      - name: Run the tests that need no GPU or toolchain
+        run: |
+          python -m pip install -e ".[dev]"
+          python -m pytest -m "not toolchain and not gpu and not slow" -q
+
+      # basalt has no runtime dependencies, so this is a short document. That is
+      # the point of publishing it: "nothing but the standard library" is a
+      # claim, and an SBOM is the machine-readable form of one.
+      #
+      # It is built in a throwaway environment holding nothing but the wheel
+      # that is about to ship. Running it in the job's own environment would
+      # describe the test rig instead, listing pytest as though installing
+      # basalt pulled it in.
+      - name: Generate the software bill of materials
+        run: |
+          python -m venv --without-pip /tmp/sbom-env
+          python -m pip --python /tmp/sbom-env/bin/python install --quiet dist/*.whl
+          python -m pip install --quiet cyclonedx-bom
+          python -m cyclonedx_py environment /tmp/sbom-env \
+            --output-format JSON --output-file dist/basalt-sbom.cdx.json --validate
+
+      - name: Record the checksums
+        run: |
+          cd dist
+          sha256sum ./* | tee SHA256SUMS
+
+      # signs the wheel, the sdist and the SBOM. the SBOM being a subject and
+      # not just an attachment is what binds "these are the dependencies" to
+      # "of exactly these bytes"
+      - name: Attest the build provenance
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: "dist/*.whl, dist/*.tar.gz, dist/*.cdx.json"
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: distributions
+          path: dist/
+          if-no-files-found: error
