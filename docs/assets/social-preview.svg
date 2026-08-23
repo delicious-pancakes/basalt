@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" width="1280" height="640" role="img"
-     aria-label="basalt: the first checker for NVIDIA Blackwell (sm_120) machine code, with an assembler and scheduler measured byte for byte against NVIDIA's own compiler. The check they never shipped. sm_120 has no hardware interlock, so one wrong stall count makes the GPU read a stale register and return a wrong answer silently.">
-  <title>basalt: the first checker for NVIDIA Blackwell (sm_120) machine code, measured byte for byte against their own compiler</title>
+     aria-label="basalt: world's first hazard checker for NVIDIA Blackwell (sm_120), with an assembler and scheduler matched against their own compiler byte for byte. The check they never shipped. sm_120 has no hardware interlock, so one wrong stall count makes the GPU read a stale register and return a wrong answer silently.">
+  <title>basalt: world's first hazard checker for NVIDIA Blackwell (sm_120), matched against their own compiler byte for byte</title>
 
   <defs>
     <!-- basalt cools into interlocking hexagonal columns of near-uniform width,
@@ -78,8 +78,8 @@
   <rect x="87" y="202" width="116" height="5" rx="2.5" fill="url(#accent)"/>
 
   <text x="84" y="230" class="mono micro" fill="#76b900">RTX 50 SERIES  ·  sm_120  ·  PROVEN ON SILICON, NOT ASSUMED</text>
-  <text x="84" y="264" class="sans lede">The check NVIDIA never</text>
-  <text x="84" y="302" class="sans lede">shipped for sm_120.</text>
+  <text x="84" y="264" class="sans lede">The hazard check NVIDIA</text>
+  <text x="84" y="302" class="sans lede">never shipped for sm_120.</text>
 
   <text x="84" y="354" class="sans body">sm_120 has no hardware interlock. One wrong stall count and the</text>
   <text x="84" y="381" class="sans body">GPU reads a stale register and returns a wrong answer, silently.</text>

@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="./docs/assets/social-preview.svg" alt="basalt: the first checker for NVIDIA Blackwell (sm_120) machine code, with an assembler and scheduler measured byte for byte against NVIDIA's own compiler. The check they never shipped. sm_120 has no hardware interlock, so one wrong stall count makes the GPU read a stale register and return a wrong answer silently." width="880" />
+<img src="./docs/assets/social-preview.svg" alt="basalt: world's first hazard checker for NVIDIA Blackwell (sm_120), with an assembler and scheduler matched against their own compiler byte for byte. The check they never shipped. sm_120 has no hardware interlock, so one wrong stall count makes the GPU read a stale register and return a wrong answer silently." width="880" />
 
 <br/>
 
@@ -54,6 +54,17 @@ program with one stall deliberately shortened. The scheduler is what forces the 
 commit to an answer rather than grade someone else's. And the audit is where the sentence
 stops being an absence and becomes a measurement: basalt pointed at 2,473 sm_120 kernels
 NVIDIA ships in cuBLAS, cuSOLVER, cuSPARSE, NPP and the rest.
+
+**Why it did not exist, in the field's own words.** The most used SASS assembler says in its
+own documentation that "checking rigorous correctness of the whole program … [is] far from
+possible without official support. So, it is left to the user to guarantee the correctness of
+the program, with very limited help from the assembler."
+[SIP](https://arxiv.org/html/2403.16863v1), on autotuning SASS schedules, puts it flatly:
+"validation is impossible for GPU native assembly codes because the formal semantics of the
+sass is closed-source." That is the position basalt disagrees with, and the disagreement is
+the whole idea: **deciding whether a schedule is safe does not need the semantics.** It needs
+the dependency structure, which the encoding gives up, and a latency model, which the silicon
+gives up under measurement. Neither requires knowing what the instruction computes.
 
 **Second, nothing else is measured against the vendor's own bytes.** basalt's reference is
 `ptxas` output, so a disagreement is basalt's bug until proven otherwise. Its assembler has
@@ -125,6 +136,11 @@ it came from, and computes something else. That is the same failure the rest of 
 repository exists to catch, which is why all eight are now refused with a reason naming what
 the field really holds, and why the count of instructions that assemble to the wrong bytes
 is a test pinned at zero rather than a number in a table.
+
+A ninth turned up the first time the assembler was pointed at machine code it had not
+produced, and it was a different kind. `c[0x0][UR4]` indexes its offset by a register where
+the recorded form holds a number, and the encoder raised rather than refusing. A crash on
+foreign input is worse than a wrong verdict, because the caller gets neither.
 
 ## Which GPUs
 
