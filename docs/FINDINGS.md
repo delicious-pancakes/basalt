@@ -50,13 +50,11 @@ Its scheduling is the reference, so an error on any of them is basalt's fault.
 | | |
 | :--- | ---: |
 | Kernel and optimisation-level pairs | 1,323 |
-| Dependencies checked | 24,399 |
+| Dependencies checked | 30,421 |
 | Errors | **0** |
-| Kernels with warnings | 1 |
 
-The remaining warning is a late-read case, reported as a warning rather than an
-error because basalt has no measured model of how long an operand read takes.
-Finding 13 is what that gap costs and what basalt does about it.
+Every dependency in that count is judged against a rule basalt derived rather
+than copied, read barriers included since finding 25.
 
 This is not a formality. Every modelling error basalt has made was found here or
 by the smaller version of it, never by reasoning about the architecture:
@@ -181,12 +179,12 @@ rather than one, since a single value can agree by accident.
 
 | | |
 | :--- | ---: |
-| Forms checked | 270 |
-| Register-bearing operand slots | 713 |
-| Slots that behave as measured | **695 (97.5%)** |
-| Forms with every register slot controllable | 246 |
+| Forms checked | 339 |
+| Register-bearing operand slots | 866 |
+| Slots that behave as measured | **845 (97.6%)** |
+| Forms with every register slot controllable | 310 |
 
-The 207 remaining slots hold something other than a register, a branch target,
+The 268 remaining slots hold something other than a register, a branch target,
 an immediate, a named special register such as `SR_CLOCKLO`, and are counted
 apart rather than reported as failures, because reading a register number back
 out of them is the wrong question.
@@ -525,7 +523,7 @@ label under this rule and none decodes wrongly.
 The rule is a measurement, and a measurement written down as a constant is exactly what goes
 quietly wrong when a compiler version changes, so it is re-derived from the corpus by a test
 rather than trusted. With it, assembling every corpus kernel as a whole program reproduces
-11,988 of 12,008 instructions bit-identically, and none to anything else.
+12,395 of 12,400 instructions bit-identically at `-O3`, and none to anything else.
 
 ## 12. What the correctness costs
 
@@ -534,12 +532,12 @@ schedules are correct on every comparable corpus kernel, and here is what they c
 
 | | Issue cycles |
 | :--- | ---: |
-| `ptxas -O3` | 13,571 |
-| basalt | 12,168 |
-| | **1.05x** |
+| `ptxas`, all three levels | 56,441 |
+| basalt | 59,735 |
+| | **1.06x** |
 
-Slower on 66 of the 441 kernels and cheaper on the rest, with every comparable kernel still
-byte-identical on the GPU at all three optimisation levels.
+Slower on 180 of the 1,323 kernel and optimisation-level pairs and cheaper on the rest, with
+every comparable kernel still byte-identical on the GPU at all three.
 
 Cheaper than the vendor is believable rather than suspicious, for a specific reason: basalt
 schedules every dependency at the tightest gap `ptxas` was ever observed to leave for that
@@ -568,9 +566,8 @@ one pair also separates every other pair spanning that point. So a later pair ca
 satisfied by stall placed for an earlier one, leaving the earlier placement larger than
 anything requires. Walking that back, one cycle at a time, judged by the same requirement
 function that placed them, took 1.29x to 0.93x. Charging for anti-dependencies (finding 23)
-took it back to 1.05x, which is what that correctness costs. `LDC` alone was half the excess
-before any of it,
-almost all overshoot rather than requirement.
+took it back to 1.06x, which is what that correctness costs. `LDC` alone was half the excess
+before any of it, almost all overshoot rather than requirement.
 
 **Not leaning on a wait a predicated instruction carries.** `ptxas` does lean on them and
 its output runs; basalt emits its own wait instead, because relying on one was measurably
@@ -631,10 +628,11 @@ schedule whole and changes only stalls, which is always safe:
 That separates the two hypotheses in one run. The bug is a stall, not a barrier, and a
 second bisection over which stalls have to be raised lands on the run of loads.
 
-**The rule basalt adopted.** It has no measured model of how long an operand read takes, so
-it cannot compute a safe gap here. What it can do is decline to make the window tighter than
-`ptxas` made it, and that is what it does: inside the window a read barrier covers, the
-vendor's stalls are a floor.
+**The rule basalt adopted.** It has no measured figure for how long an operand read takes,
+so it cannot compute a safe gap here. What it can do is decline to make the window tighter
+than `ptxas` made it, and that is what it does: inside the window a read barrier covers, the
+vendor's stalls are a floor. Where the *barrier* goes is a separate question, and finding 25
+answers that one from measurement.
 
 The window is bounded by the previous read barrier and by the enclosing basic block, and
 the block bound is not a convenience. `s_loop_double` at `-O1` has a read barrier on a
@@ -666,6 +664,11 @@ That is deliberately not turned into a model. One pattern of four `LDG.E` in one
 data point, not a latency, and this is exactly the shape of evidence that produced the wrong
 answer in finding 7. The rule stays "do not make the window tighter than the vendor made
 it", and the number above records what it costs rather than justifying a shortcut.
+
+> [!NOTE]
+> The barriers themselves are no longer inherited. This finding is what established that a
+> read barrier stands in for its neighbours; finding 25 turns that into the rule basalt now
+> places them by, and the stall floor above still applies inside each window.
 
 ## 14. A modifier is one bit, and it is nowhere near its operand
 
@@ -784,11 +787,11 @@ computes a wrong answer, which is the entire failure this repository exists to p
 
 | | |
 | :--- | ---: |
-| Kernels, one dependency shortened in each | 226 |
-| Agreed broken | 73 |
-| Over-strict | 90 |
+| Kernels, one dependency shortened in each | 233 |
+| Agreed broken | 74 |
+| Over-strict | 101 |
 | **Missed** | **0** |
-| Unstable, excluded | 63 |
+| Unstable, excluded | 58 |
 
 Which kernels land in the excluded column moves between runs, because several read memory
 this harness never initialises and are therefore stable only until something else has used
@@ -1003,7 +1006,7 @@ defects in the corpus.
 | | Mnemonics | Opcodes | Instructions reproduced |
 | :--- | ---: | ---: | ---: |
 | Before | 276 | 77 | 9,846 of 9,856 |
-| After | **337** | **86** | **11,988 of 12,008** |
+| After | **345** | **90** | **12,395 of 12,400** |
 
 ## 21. A corpus of two-instruction kernels overestimates what the compiler requires
 
@@ -1050,7 +1053,7 @@ the missed column, which stayed at zero.
 | | Errors on vendor output | Kernel/level pairs checked | Dependencies |
 | :--- | ---: | ---: | ---: |
 | Before | not measured at `-O1`, or on any shape kernel | 423 | 7,325 |
-| After | **0** | **1,323** | **24,399** |
+| After | **0** | **1,323** | **30,421** |
 
 ## 22. A loop-carried dependency is not a distance
 
@@ -1157,7 +1160,188 @@ one kernel for another, and the reason was always that a second cause was still 
 | Before | `-O1` clean, one kernel short at `-O2` and `-O3` |
 | After | **every comparable kernel, at all three levels** |
 
-## 25. What is deliberately not claimed
+## 25. Deriving the read barrier instead of copying it
+
+For most of this project basalt computed the stall counts, the write barriers and the waits,
+and copied the read barrier straight out of the vendor's word. That is a real limit rather
+than an untidy one. A tool that can only place three of the four fields cannot schedule a
+program nobody has compiled, which is the whole point of the assembler, and a round trip
+that carries a field across unchanged is not evidence about that field.
+
+The question is what a read barrier is *for*, and the corpus answers it. Across 36,576
+instructions of `ptxas` output at three optimisation levels there are **334** read barriers,
+which is few enough to characterise exhaustively:
+
+| Opcode carrying one | Count | Latency class |
+| :--- | ---: | :--- |
+| `LDG` | 219 | variable |
+| `MOVM` | 22 | variable |
+| `DFMA`, `DADD`, `DMUL`, `DSETP` | 45 | variable |
+| `F2I` | 12 | variable |
+| `MUFU` | 7 | variable |
+| `STS` | 6 | control, no register result |
+| `SHFL` | 2 | variable |
+
+**328 of 334 are on variable-latency instructions**, and the six that are not are stores. So
+the rule is not about memory, and not about any particular opcode: an instruction whose
+*result* the hardware makes you wait for is also one whose *operands* it has not finished
+taking at issue, and a store is the same case with no result to wait for. Nothing outside
+those two sets ever carries one.
+
+That says who can need a barrier. When they actually need one takes a second measurement.
+Of the candidate instructions whose source register something later overwrites:
+
+| | Read barrier | No read barrier |
+| :--- | ---: | ---: |
+| A source is overwritten later | 333 | 444 |
+| No source is ever overwritten | 1 | 4,796 |
+
+The first column is almost perfectly explained: **333 of the 334 barriers sit on an
+instruction whose source register is overwritten later**, and essentially none sit anywhere
+else. The 444 in the top right are the interesting cell, and two effects account for all of
+them. **318** of the 444 are separated from the overwrite by a wait on the reader's *own
+write barrier*, which cannot clear before the read has happened, so the read is already
+covered. The remaining **126** are the in-order property from finding 13: the barrier is on
+the *last* late reader before the overwrite and covers every earlier one, so a run of four
+loads takes one barrier and my first pass counted the other three as unprotected.
+
+```
+#3 LDG.E.64 R4, [R2.64]            rb 7    <- reads R2, no barrier
+#4 LDG.E.64 R6, [R2.64+0x8]        rb 0    <- reads R2, signals SB0
+#5 LDC.64    R2, c[0x0][0x388]     wait 0x01   <- overwrites R2
+```
+
+**The rule basalt now uses**, stated in full: walk the graph forwards to a fixed point,
+tracking for each register the latest variable-latency instruction or store that read it. An
+instruction overwriting that register opens a window, unless it already waits on the
+reader's write barrier. Give each window the lowest scoreboard no write barrier is
+outstanding across, and put the wait on the overwriter.
+
+The fixed point over the graph is not decoration. `s_tile_matmul` needs read barriers on
+three `STS` instructions whose registers are overwritten by *the next iteration of the
+loop*, and a pass that walks each block once sees an outstanding read at the end of the body
+and no overwrite anywhere. Those three are every read barrier that kernel has.
+
+**How it was checked.** The strongest available test is that removing them breaks something:
+
+| Schedule | `s_tile_matmul` at `-O3` |
+| :--- | :--- |
+| computed read barriers | matches the vendor |
+| no read barriers at all | **wrong answer on the card** |
+| vendor's read barriers copied across | matches the vendor |
+
+So the derived barriers are load-bearing rather than decorative, and the whole corpus agrees
+at all three optimisation levels with nothing inherited. basalt does not reproduce the
+vendor's *choice* of barrier everywhere; it over-approximates, because a scoreboard is a
+counter and sharing one over-synchronises rather than corrupting. What it no longer does is
+copy an answer it could not derive.
+
+### The defect this exposed on the way
+
+Deriving read barriers needs free scoreboards, and basalt did not have any: it was assigning
+a write barrier to every variable-latency instruction with a result, whether or not anything
+ever waited on it. Fixing that meant knowing which producer a wait was *for*, which the
+dataflow could not say, because it tracked scoreboard numbers rather than the instructions
+that signalled them, and one number is reused several times in a kernel.
+
+Re-keying it on the producer exposed a second thing, and this one is a correctness rule
+worth stating on its own. A scoreboard is a counter, so a wait placed for one producer
+drains every producer sharing that number. Crediting only the producer the wait was written
+for therefore calls the others unwaited-for, and dropping *their* barriers takes away
+synchronisation that downstream code was leaning on. `s_tile_matmul` returned the wrong
+answer on the card until the credit followed the counter rather than the intent.
+
+## 26. The yield bit is a hint, and that is a measurement rather than an assumption
+
+Five of the six control fields decide whether a program is correct. The sixth, one bit at
+109, is described everywhere as a hint to the warp scheduler, and basalt set it by a rule
+nobody had checked: yield when the stall is exactly 1. That agrees with `ptxas` on 72.9% of
+36,576 instructions, which is not a model, it is a coincidence that held for the commonest
+stall value.
+
+Two questions, and they need different kinds of evidence.
+
+**Does it affect the answer?** Take the vendor's own schedule, invert every yield bit in it,
+and run both on the card against four input patterns.
+
+| Kernel | Level | Bits inverted | Result |
+| :--- | :--- | ---: | :--- |
+| `k_fma_rn_f32` | -O1, -O3 | 24, 24 | same |
+| `k_sqrt_rn_f32` | -O1, -O3 | 56, 56 | same |
+| `k_rcp_rn_f64` | -O1, -O3 | 144, 144 | same |
+| `k_atom_shared_exch_b32` | -O1, -O3 | 24, 24 | same |
+| `s_loop_double` | -O1, -O3 | 24, 40 | same |
+| `s_tile_matmul` | -O1, -O3 | 48, 72 | same |
+
+680 inversions across the fp64, transcendental, tensor, loop, barrier and shared-atomic
+kernels, and every one produced the vendor's answer. So on this part the bit does not gate
+correctness, and basalt is free to choose it on any grounds it likes. Worth saying plainly,
+because "it is only a hint" is the kind of claim that gets repeated without anyone checking,
+and a scheduler that writes it is one experiment away from knowing.
+
+**What does `ptxas` actually do with it?** Fit against the same 36,576 instructions:
+
+| Rule | Agreement |
+| :--- | ---: |
+| yield when the stall is 1 *(what basalt did)* | 72.9% |
+| yield whenever the stall is not 0 | 92.1% |
+| **yield when the stall is 1 to 11** | **93.7%** |
+| yield when the stall is 1 to 8, or 11 | 93.9% |
+
+basalt takes `1 <= stall < 12`. The last row fits marginally better and is worse: it is two
+disjoint intervals to buy 0.2%, which is a rule shaped by the residuals rather than by
+anything.
+
+The remaining 6.3% is one-directional. Every disagreement is the vendor declining to yield
+where the rule says it would, never the reverse, and the obvious explanations do not hold:
+the operand reuse cache does not require it (all 212 instructions with a reuse flag also
+have the bit set, so reuse *implies* yield rather than forbidding it), and neither "the next
+instruction consumes this result" nor "this instruction waits on a scoreboard" improves the
+fit. It looks like an occupancy heuristic, and there is no evidence here that would let it
+be reconstructed, so it is left as a stated residual rather than guessed at.
+
+## 27. A scoreboard named in an operand, and the third way of waiting
+
+`cp.async` was out of the corpus for most of this project, with a stated reason: it lowers to
+`LDGSTS`, the copy signals no scoreboard, and giving one a fresh schedule returned different
+bytes on the card at every optimisation level. The reason was right about the symptom and
+wrong about the cause, which is a good argument for going back to limitations that were
+written down once and left alone.
+
+Here is what `ptxas` emits, with the control fields printed beside it:
+
+```
+#12  LDGSTS.E [R7], desc[UR6][R2.64]     stall 4  wait 0x08  wb 7   <- signals nothing
+#13  LDGDEPBAR                           stall 1             wb 0   <- signals SB0
+#14  DEPBAR.LE SB0, 0x0                  stall 4             wb 7   <- waits for SB0
+#15  BAR.SYNC.DEFER_BLOCKING 0x0         stall 6
+#16  LDS R9, [R7]                        stall 4             wb 4   <- reads what was copied
+```
+
+The copy really does signal nothing, and completion really is tracked by a separate pair of
+instructions. But that is a mechanism, not an obstacle: basalt never reorders, so it only has
+to leave the pair intact. What actually broke it is on line 14. **`DEPBAR` names its
+scoreboard in the operand text.** Every other wait in the architecture is the six-bit mask in
+the control word, which basalt rewrites; this one is `SB0` printed in the disassembly and
+encoded in the operand field. So renumbering `LDGDEPBAR`'s write barrier leaves `DEPBAR`
+waiting on a scoreboard nothing signals any more, and there is nothing in the control word
+to notice it by. basalt then went one worse: with nothing waiting on SB0 in the mask, the
+pass that reclaims barriers nobody waits for deleted the signal as well.
+
+**The rule.** A scoreboard named in an operand is pinned to the vendor's number, and that
+number is unavailable to the allocator from the signaller until the instruction that names
+it. Twenty lines, and it generalises past `cp.async` to anything else that waits by name.
+
+With that in place `cp.async` is back in the corpus, in four forms across two cache
+modifiers and three widths, and all twelve kernel and optimisation-level pairs match the
+vendor's output exactly.
+
+The general lesson is worth more than the fix. basalt rewrites a control word on the
+assumption that the control word is where control lives. `DEPBAR` is a counter-example
+sitting in the instruction stream, and the way to find the rest of them is to look for
+operands that name a piece of scheduling state rather than a register.
+
+## 28. What is deliberately not claimed
 
 Stated so the boundary of the evidence is visible.
 
@@ -1181,9 +1365,16 @@ Stated so the boundary of the evidence is visible.
   definitions carry a `crossed` flag for exactly this, and every other rule still applies
   to them. It is a gap in the checker's coverage, not a wrong answer, and the round trip
   covers the same ground from the other side.
-- **Most opcodes still carry assumed latencies.** The model marks them as such, and a hazard
-  derived from an assumed number is reported as a warning rather than an error. The difference
-  between a lead and a finding is where the number came from.
+- **Eight opcodes have no evidence behind their latency**, out of the 87 the database holds.
+  The other 79 split into 11 measured on silicon, 56 mined from what the vendor schedules, and
+  12 with no register result at all, whose number is never consulted because an instruction
+  that defines nothing is never a producer. The eight are `BPT`, `CCTL`, `CGAERRBAR`,
+  `ENDCOLLECTIVE`, `ERRBAR`, `LDL`, `R2UR` and `REDG`; five of them appear nowhere in 36,576
+  instructions of compiler output, and of the three that do, only `LDL` ever writes a register,
+  where its variable class means a scoreboard covers it and the mined residue is what the
+  checker uses. The model marks every assumed number as assumed, and a hazard derived from one
+  is reported as a warning rather than an error, because the difference between a lead and a
+  finding is where the number came from.
 - **A test that cannot detect corruption proves nothing.** An early version of the injection
   probe multiplied by 1.0000001, so a stale read rounded back to the same float and `FMUL`
   appeared to need only one cycle. Every probe now runs a sensitivity control first: a chain
@@ -1195,7 +1386,7 @@ Stated so the boundary of the evidence is visible.
   first conversion. An earlier run reported `I2FP` as requiring 4 cycles; the control
   retracted it, and it is listed as not established rather than quietly kept.
 
-## 26. Corrections made along the way
+## 29. Corrections made along the way
 
 Kept because a method is only as trustworthy as its error log.
 

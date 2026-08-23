@@ -326,7 +326,7 @@ class TestAssemblerAgainstTheVendorsBytes:
         exact = sum(1 for verdict, _ in assembled if verdict == "exact")
         total = len(assembled)
         assert total > 5000, f"only {total} instructions seen; the corpus did not build"
-        # 95.6% when written. below that on purpose, so a database that learns to
+        # 95.8% when written. below that on purpose, so a database that learns to
         # refuse something it was guessing at does not fail here
         assert exact / total >= 0.92, f"only {exact}/{total} ({exact / total:.1%}) reproduced"
 
@@ -376,9 +376,9 @@ class TestWholeProgramAssembly:
         exact, wrong, refused = assembled
         total = exact + wrong + refused
         assert total > 5000, "the corpus did not build"
-        # 99.9% when written. a point below rather than four, or coverage can
+        # 99.96% when written. a floor far under the real number lets coverage
         # fall a long way without anything going red
-        assert exact / total >= 0.99, f"only {exact}/{total} ({exact / total:.1%}) reproduced"
+        assert exact / total >= 0.995, f"only {exact}/{total} ({exact / total:.1%}) reproduced"
 
 
 class TestTheBranchFieldIsStillWhereItWasFound:
@@ -460,9 +460,9 @@ class TestWhatTheCorrectnessCosts:
         vendor, basalt = cycles
         assert vendor > 5000, "the corpus did not build"
         ratio = basalt / vendor
-        # 1.05x when written, pinned from both sides: faster is a reason to
+        # 1.06x when written, pinned from both sides: faster is a reason to
         # distrust the costing rather than to celebrate it (finding 12)
-        assert ratio < 1.15, f"basalt's schedules cost {ratio:.2f}x the vendor's, up from 1.05x"
+        assert ratio < 1.15, f"basalt's schedules cost {ratio:.2f}x the vendor's, up from 1.06x"
         assert ratio > 0.75, (
             f"basalt's schedules cost {ratio:.2f}x, which is far cheaper than the vendor's and "
             f"is the shape a costing bug takes. check the hardware round trip before believing it"

@@ -39,25 +39,34 @@ vendor compiler's own output, which is what makes it useful rather than self-ref
 | 9 | Field validation | Prove the measured fields can be written through | **done** |
 | 9b | Cross-check | basalt's ISA model against independently derived tables | planned |
 | 10 | Audit | Every public sm_120 SASS kernel, ptxas as the control | planned |
-| 11 | Scheduler | Assign the control bits, not only check them | **working**, read barriers inherited |
+| 11 | Scheduler | Assign the control bits, not only check them | **done**, every field derived |
 | 12 | Assembler | SASS text to the instruction word | **working** |
 
 The scheduler discards every control bit `ptxas` produced and computes its own, then hands the
-result back to the verifier and then to the GPU, for every kernel the corpus generates.
-Every one of the comparable ones comes out byte-identical to the vendor schedule, at all
-three optimisation levels. The rest are named in the findings rather than summarised, and
-that count is what the work is measured against: it was 246 when the control was first run,
-and every model correction since came out of watching it move.
+result back to the verifier and then to the GPU, for every kernel the corpus generates. All
+439 comparable ones come out byte-identical to the vendor schedule, at all three optimisation
+levels. The two excluded read the clock and the grid id, so they do not agree with themselves
+either. That count is what the work is measured against: it was 246 when the control was first
+run, and every model correction since came out of watching it move.
 
-One thing it does not do from scratch is read barriers, which it inherits from the schedule
-it is replacing. Those guard an instruction that consumes its operands late, basalt has no
-measured model of how long that takes, and finding 13 is what happened the one time it
-treated the surrounding gaps as free to compress.
+Every field is derived, read barriers included. Those guard an instruction that has not
+finished taking its operands at issue, and for most of this project basalt copied them out
+of the schedule it was replacing, which meant it could not have scheduled a program nobody
+had compiled. Characterising all 334 of them in the corpus gave the rule it places them by
+now (finding 25), and the test that it is a real rule rather than a plausible one is that
+taking the derived barriers away makes a kernel return the wrong answer on the card.
 
 The assembler encodes SASS text back into the instruction word, and its standard is the
 vendor's own bytes: assembling every corpus kernel as a whole program, with its labels
-resolved, reproduces 11,988 of 12,008 instructions bit-identically and none to anything else.
-That second number is a test pinned at zero.
+resolved, reproduces 59,693 of 59,760 instructions bit-identically across four optimisation
+levels, and none to anything else. That second number is a test pinned at zero.
+
+| `ptxas` level | Exact | Refused | Wrong |
+| :--- | ---: | ---: | ---: |
+| -O0 | 22,714 of 22,752 | 38 | **0** |
+| -O1 | 12,189 of 12,208 | 19 | **0** |
+| -O2 | 12,395 of 12,400 | 5 | **0** |
+| -O3 | 12,395 of 12,400 | 5 | **0** |
 
 Whole programs rather than lone instructions because a branch cannot be assembled alone.
 Its field holds the distance to the destination, so the same text encodes differently in
@@ -108,22 +117,6 @@ Stated so the boundary is deliberate rather than accidental.
   exists to catch.
 - **Anything requiring NVIDIA source, headers, or decompilation.** See
   [`NOTICE`](../NOTICE) and [`CONTRIBUTING.md`](../CONTRIBUTING.md).
-- **Asynchronous copies, for now.** `cp.async` lowers to `LDGSTS`, and the scheduler cannot
-  place one safely. This is a measured limit rather than an assumed one, and worth stating
-  exactly, because it is a third dependency mechanism beside the stall count and the
-  scoreboard:
-
-  ```
-  LDGSTS.E [R7], desc[UR4][R2.64]     no write barrier at all
-  LDGDEPBAR                           signals SB0
-  DEPBAR.LE SB0, 0x0                  waits for the outstanding copies to drain
-  BAR.SYNC.DEFER_BLOCKING 0x0
-  LDS R9, [R7]                        reads what the copy wrote
-  ```
-
-  The copy signals no scoreboard, so nothing basalt models connects it to the read. Give it
-  a fresh schedule and the round trip returns different bytes on the card, at every
-  optimisation level, which is how this was found rather than argued. Modelling `LDGDEPBAR`
-  and `DEPBAR.LE` is the work; until it is done the corpus does not emit `cp.async`, because
-  a corpus kernel the scheduler is known to get wrong would either break the round trip or
-  need an excuse carved into it, and neither is worth having.
+- **Reordering instructions.** basalt rewrites the control word and leaves the order alone,
+  which is what makes a change in behaviour attributable to the bits rather than to the
+  schedule. A reordering scheduler is a different tool with a different control.
