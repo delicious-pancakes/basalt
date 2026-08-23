@@ -26,6 +26,7 @@ reported rather than silently dropped.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 
 from ..disasm import Instruction, Program
@@ -72,6 +73,24 @@ _NEVER_ZERO_STALL: dict[str, int] = {"EXIT": 5, "RET": 5, "CALL": 5, "BAR": 6}
 # shortening the gap until the answer moved (finding 23).
 ANTI_DEPENDENCY_CYCLES = 3
 
+# Stalls ptxas pairs with the yield hint, as a half-open range. Fitted rather
+# than reasoned: it agrees with the vendor on 93.7% of 36,576 instructions where
+# "yield when the stall is 1" agreed on 72.9%. The bit is a hint and not a
+# correctness input, which is measured rather than assumed (finding 26).
+YIELD_STALL_RANGE = (1, 12)
+
+# A scoreboard named in operand text rather than in the control word.
+# `DEPBAR.LE SB0, 0x0` waits on SB0 by naming it, so renumbering whatever
+# signals SB0 breaks the pairing and nothing in the encoding records it. This is
+# how `cp.async` synchronises, and why it could not be rescheduled (finding 27).
+_SCOREBOARD_OPERAND = re.compile(r"\bSB(\d)\b")
+
+# Opcodes with no register result, so no latency class of their own, whose
+# operand read is still not finished at issue. A store hands its data register
+# to the memory pipe rather than to a result bus, and the vendor guards it with
+# a read barrier exactly as it does a variable-latency reader (finding 25).
+_LATE_READING_CONTROL = frozenset({"STG", "STS", "STL", "ST", "RED"})
+
 
 @dataclass
 class ScheduleResult:
@@ -83,6 +102,7 @@ class ScheduleResult:
     scoreboards_used: int = 0
     # shared an already-busy scoreboard: over-synchronised, so counted not hidden
     scoreboards_shared: int = 0
+    read_barriers_used: int = 0
     unplaceable: list[str] = field(default_factory=list)
     out_of_scoreboards: list[str] = field(default_factory=list)
     # Instructions given the safe stall encoding because their dependency could
@@ -98,7 +118,8 @@ class ScheduleResult:
         return (
             f"{len(self.words)} instructions, {self.passes} passes, "
             f"{self.stalls_added} stall cycles, {self.scoreboards_used} scoreboards, "
-            f"{self.scoreboards_shared} shared, {len(self.yielded)} safe stalls: {verdict}"
+            f"{self.scoreboards_shared} shared, {self.read_barriers_used} read barriers, "
+            f"{len(self.yielded)} safe stalls: {verdict}"
         )
 
 
@@ -254,6 +275,142 @@ def _short_pair(block, program, stalls, pinned, model, observed) -> bool:
     return False
 
 
+def _defs(program, index: int) -> set[RegRef]:
+    """Registers one instruction writes, or nothing when it did not decode."""
+    instr = program.instructions[index]
+    if instr.word is None:
+        return set()
+    return operand_access(instr.mnemonic, instr.operands).real_defs
+
+
+def _late_reader(opcode: str, model: LatencyModel) -> bool:
+    """Does this instruction still hold its source registers after it issues?
+
+    Variable latency is the signal. Something that answers on a fixed schedule
+    has taken its operands by a fixed point too, and the anti-dependency stall
+    covers that; something the hardware makes you wait for has not. Every one of
+    the 334 read barriers in the corpus is on an instruction in one of these two
+    sets, and nothing outside them ever carries one.
+    """
+    return model.lookup(opcode).kind is LatencyClass.VARIABLE or opcode in _LATE_READING_CONTROL
+
+
+def _read_barrier_windows(cfg, program, model, waits) -> list[tuple[int, int]]:
+    """`(reader, writer)` pairs where an operand read outlives its register.
+
+    A read barrier is in order: everything issued before the setter has finished
+    reading by the time it clears. So one barrier on the *last* late reader
+    before an overwrite covers every earlier reader too, which is why the vendor
+    emits 334 of them across 36,576 instructions rather than one per load.
+
+    Nothing is needed where the overwriter already waits on the reader's write
+    barrier, since that wait cannot clear before the read has happened. That one
+    exemption accounts for 318 of the 444 overwrites the vendor leaves bare.
+
+    A forwards fixed point over the graph rather than a walk through each block,
+    because the case that matters most is loop-carried: a tiled matmul stores to
+    shared memory and the next iteration overwrites the register it stored from,
+    and a per-block scan sees an outstanding read at the end of the body and no
+    overwrite anywhere. Every read barrier that kernel needs is on that edge.
+    """
+    entry: list[dict[RegRef, int]] = [{} for _ in cfg.blocks]
+    windows: set[tuple[int, int]] = set()
+
+    def walk(block, state: dict[RegRef, int], collect: bool) -> dict[RegRef, int]:
+        latest = dict(state)
+        for index in range(block.start, block.end):
+            instr = program.instructions[index]
+            if instr.word is None:
+                continue
+            access = operand_access(instr.mnemonic, instr.operands)
+
+            reader = max((latest[reg] for reg in access.real_defs if reg in latest), default=None)
+            # an instruction that reads and writes the same register is not
+            # racing itself, so its own entry never counts
+            if collect and reader is not None and reader != index:
+                producer = program.instructions[reader]
+                barrier = producer.word.field("write_barrier") if producer.word else NO_BARRIER
+                if not (barrier != NO_BARRIER and (waits[index] >> barrier) & 1):
+                    windows.add((reader, index))
+            for reg in access.real_defs:
+                latest.pop(reg, None)
+
+            if _late_reader(instr.opcode, model):
+                for reg in access.real_uses:
+                    latest[reg] = index
+        return latest
+
+    worklist = [0] if cfg.blocks else []
+    guard = 0
+    while worklist and guard < MAX_PASSES * max(1, len(cfg.blocks)):
+        guard += 1
+        current = worklist.pop()
+        out = walk(cfg.blocks[current], entry[current], collect=False)
+        for succ in cfg.blocks[current].successors:
+            merged = dict(entry[succ])
+            changed = False
+            for reg, reader in out.items():
+                # the latest reader wins: its barrier covers every earlier one
+                if merged.get(reg, -1) < reader:
+                    merged[reg] = reader
+                    changed = True
+            if changed:
+                entry[succ] = merged
+                if succ not in worklist:
+                    worklist.append(succ)
+
+    for block in cfg.blocks:
+        walk(block, entry[block.index], collect=True)
+    return sorted(windows)
+
+
+def _assign_read_barriers(
+    windows, write_barriers, waits, count
+) -> tuple[list[int], list[int], int]:
+    """Give each window a scoreboard, and the waits that go with it.
+
+    Read and write barriers share one six-entry space, so a number is only free
+    over a window if no write barrier is outstanding across it. Windows that
+    end at the same instruction are merged onto the later reader first, since
+    that is the one whose barrier covers the rest.
+    """
+    busy = [0] * count
+    for setter, barrier in enumerate(write_barriers):
+        if barrier == NO_BARRIER:
+            continue
+        # busy until the *next* wait, not the last one anywhere: a scoreboard
+        # reused four times would otherwise read as occupied for the whole kernel
+        last = next((i for i in range(setter + 1, count) if (waits[i] >> barrier) & 1), count - 1)
+        for i in range(setter, last + 1):
+            busy[i] |= 1 << barrier
+
+    read_barrier_of = [NO_BARRIER] * count
+    extra = [0] * count
+    shared = 0
+    for reader, writer in sorted(windows, key=lambda w: (w[1], -w[0])):
+        if read_barrier_of[reader] != NO_BARRIER:
+            extra[writer] |= 1 << read_barrier_of[reader]
+            continue
+        # a loop-carried window runs from the reader to the end of the body and
+        # again from the head to the writer, so the whole enclosing span is taken
+        span = range(min(reader, writer), max(reader, writer) + 1)
+        taken = 0
+        for i in span:
+            taken |= busy[i]
+        free = next((sb for sb in range(SCOREBOARDS) if not (taken >> sb) & 1), None)
+        if free is None:
+            # every number is spoken for across this window. a scoreboard is a
+            # counter, so sharing one waits for both signals rather than losing
+            # either: over-synchronised, and counted, but never a stale read
+            free = min(range(SCOREBOARDS), key=lambda sb: sum((busy[i] >> sb) & 1 for i in span))
+            shared += 1
+        read_barrier_of[reader] = free
+        extra[writer] |= 1 << free
+        for i in span:
+            busy[i] |= 1 << free
+    return read_barrier_of, extra, shared
+
+
 def _place_stall(
     stalls: list[int],
     pinned: set[int],
@@ -318,22 +475,28 @@ def schedule_program(
 
     cfg = build_cfg(program)
 
-    # Read barriers keep the vendor's numbering, so its waits on them are kept
-    # too, but only where one is live. A single program-wide mask also carries
-    # over a vendor wait on a *write* barrier whenever its number happens to
-    # match a read barrier used elsewhere, which is a wait basalt never earned.
-    inherited = [0] * count
-    for setter, instr in enumerate(program.instructions):
-        if instr.word is None or instr.word.field("read_barrier") == NO_BARRIER:
+    # ---- scoreboards named in an operand
+    # pinned to the vendor's number, and the number is off limits until the
+    # instruction that names it has run
+    pinned_barrier: dict[int, int] = {}
+    reserved: list[tuple[int, int, int]] = []
+    for index, instr in enumerate(program.instructions):
+        if instr.word is None:
             continue
-        barrier = instr.word.field("read_barrier")
-        for later in range(setter + 1, count):
-            word = program.instructions[later].word
-            if word is None:
-                continue
-            inherited[later] |= 1 << barrier
-            if (word.field("wait_mask") >> barrier) & 1:
-                break
+        for match in _SCOREBOARD_OPERAND.finditer(instr.operands):
+            sb = int(match.group(1))
+            signaller = next(
+                (
+                    earlier
+                    for earlier in range(index - 1, -1, -1)
+                    if (word := program.instructions[earlier].word) is not None
+                    and word.field("write_barrier") == sb
+                ),
+                None,
+            )
+            if signaller is not None:
+                pinned_barrier[signaller] = sb
+                reserved.append((sb, signaller, index))
 
     # ---- scoreboards
     # allocated per block, then propagated along edges to a fixed point: a value
@@ -341,6 +504,10 @@ def schedule_program(
     barrier_of: list[int] = [NO_BARRIER] * count
 
     forbidden: dict[int, set[int]] = {}
+
+    def unavailable(index: int) -> set[int]:
+        """Scoreboards a named-operand pairing is using across this instruction."""
+        return {sb for sb, start, end in reserved if start <= index <= end}
 
     def allocate() -> None:
         for i in range(count):
@@ -360,10 +527,14 @@ def schedule_program(
                     if protects[sb] & access.real_uses:
                         del protects[sb]
 
+                if index in pinned_barrier:
+                    barrier_of[index] = write_barriers[index] = pinned_barrier[index]
+                    continue
+
                 record = model.lookup(instr.opcode)
                 if record.kind is LatencyClass.VARIABLE and access.real_defs:
                     # lowest free index, so a kernel's scoreboards read in issue order
-                    avoid = forbidden.get(index, set())
+                    avoid = forbidden.get(index, set()) | unavailable(index)
                     free = next(
                         (sb for sb in range(SCOREBOARDS) if sb not in protects and sb not in avoid),
                         None,
@@ -374,7 +545,9 @@ def schedule_program(
                     else:
                         # all six are busy, so share the one guarding fewest registers;
                         # refusing instead rejected 45 of 317 kernels outright
-                        candidates = {sb for sb in protects if sb not in avoid} or set(protects)
+                        candidates = {sb for sb in protects if sb not in avoid} or (
+                            set(protects) - unavailable(index)
+                        )
                         if candidates:
                             free = min(candidates, key=lambda sb: (len(protects[sb]), sb))
                             protects[free] |= set(access.real_defs)
@@ -387,8 +560,14 @@ def schedule_program(
                     barrier_of[index] = free
                     write_barriers[index] = free
 
-    # register -> barriers that may still be outstanding for it on entry
+    # register -> producers that may still be outstanding for it on entry.
+    # keyed on the producer rather than on its scoreboard number, because a
+    # number is reused several times in a kernel and a wait on the second use
+    # says nothing about the first
     entry_state: list[dict[RegRef, frozenset[int]]] = [{} for _ in cfg.blocks]
+    # producers some consumer actually waits for; the rest are signalling into
+    # a void and are taking a scoreboard a read barrier could have had
+    credited: set[int] = set()
 
     def transfer(block_index: int, state: dict[RegRef, frozenset[int]], emit: bool):
         """Walk a block, optionally recording the waits it needs."""
@@ -400,28 +579,40 @@ def schedule_program(
                 continue
             access = operand_access(instr.mnemonic, instr.operands)
 
-            needed = 0
+            wanted: set[int] = set()
             for reg in access.real_uses:
-                for sb in live.get(reg, ()):
-                    needed |= 1 << sb
+                wanted |= set(live.get(reg, ()))
 
             if instr.opcode in _OPAQUE_TRANSFERS:
                 # the callee may read anything, so wait on every live scoreboard
                 # rather than only the ones named here
-                for barriers in live.values():
-                    for sb in barriers:
-                        needed |= 1 << sb
+                for producers in live.values():
+                    wanted |= set(producers)
+
+            needed = 0
+            for producer in wanted:
+                needed |= 1 << barrier_of[producer]
             if emit:
                 waits[index] |= needed
+                # credited here as well as on being cleared below, because a
+                # guarded consumer emits its wait and clears nothing. crediting
+                # only there dropped the barrier a guarded `SHFL` result needed
+                credited.update(wanted)
 
             if needed and not access.guard:
                 # a predicated wait may not happen, so downstream cannot lean on it.
                 # the checker stays lenient here because ptxas does lean on it
-                cleared = {sb for sb in range(SCOREBOARDS) if (needed >> sb) & 1}
-                live = {r: frozenset(bs - cleared) for r, bs in live.items()}
+                covered = {q for ps in live.values() for q in ps if (needed >> barrier_of[q]) & 1}
+                live = {r: frozenset(ps - covered) for r, ps in live.items()}
+                if emit:
+                    # credited on being cleared, not on being asked for: a
+                    # scoreboard is a counter, so a wait placed for one producer
+                    # drains every producer sharing the number, and downstream
+                    # leans on that. crediting only `wanted` would call those
+                    # others unwaited-for and drop the barrier out from under them
+                    credited.update(covered)
 
-            barrier = barrier_of[index]
-            mine = frozenset({barrier}) if barrier != NO_BARRIER else frozenset()
+            mine = frozenset({index}) if barrier_of[index] != NO_BARRIER else frozenset()
             for reg in access.real_defs:
                 # a predicated write may not happen, so the earlier producer is
                 # still outstanding: add rather than replace
@@ -433,6 +624,7 @@ def schedule_program(
             waits[i] = 0
         for state in entry_state:
             state.clear()
+        credited.clear()
         worklist = [0]
         # the lattice is finite, so this bound is a bug detector rather than a cutoff
         guard = 0
@@ -443,9 +635,9 @@ def schedule_program(
             for succ in cfg.blocks[current].successors:
                 merged = dict(entry_state[succ])
                 changed = False
-                for reg, barriers in out.items():
-                    # union rather than intersect: a barrier outstanding on any path in
-                    union = merged.get(reg, frozenset()) | barriers
+                for reg, producers in out.items():
+                    # union rather than intersect: a producer outstanding on any path in
+                    union = merged.get(reg, frozenset()) | producers
                     if union != merged.get(reg):
                         merged[reg] = union
                         changed = True
@@ -469,13 +661,49 @@ def schedule_program(
             barrier = barrier_of[index]
             if barrier == NO_BARRIER or instr.word is None:
                 continue
-            emitted = waits[index] | (instr.word.field("wait_mask") & inherited[index])
-            if (emitted >> barrier) & 1:
+            if (waits[index] >> barrier) & 1:
                 offenders.append(index)
         if not offenders:
             break
         for index in offenders:
             forbidden.setdefault(index, set()).add(barrier_of[index])
+
+    # ---- barriers nothing waits for
+    # a scoreboard that is signalled and never waited on is not synchronisation,
+    # it is a scoreboard a read barrier could have had. the allocator cannot see
+    # this because it runs before the dataflow that decides who waits
+    live_out = _live_out(cfg, program)
+    block_of = {i: b.index for b in cfg.blocks for i in range(b.start, b.end)}
+    def uncredited(i: int) -> bool:
+        # a pinned barrier is waited on by name in a later operand, which the
+        # dataflow never sees, so it is never credited and must not be dropped
+        return (
+            i in block_of
+            and write_barriers[i] != NO_BARRIER
+            and i not in credited
+            and i not in pinned_barrier
+            and not _defs(program, i) & live_out[block_of[i]]
+        )
+
+    if any(uncredited(i) for i in range(count)):
+        for index in range(count):
+            if not uncredited(index):
+                continue
+            write_barriers[index] = NO_BARRIER
+            barrier_of[index] = NO_BARRIER
+            result.scoreboards_used -= 1
+        converge()
+
+    # ---- read barriers
+    # computed from the same dependence rules as everything else rather than
+    # inherited from the vendor's word, so a program that never had one still
+    # gets them; see `_read_barrier_windows` for the shape being covered
+    windows = _read_barrier_windows(cfg, program, model, waits)
+    read_barriers, read_waits, shared = _assign_read_barriers(windows, write_barriers, waits, count)
+    for index in range(count):
+        waits[index] |= read_waits[index]
+    result.read_barriers_used = sum(1 for b in read_barriers if b != NO_BARRIER)
+    result.scoreboards_shared += shared
 
     # ---- stalls, to a fixed point
     for block in cfg.blocks:
@@ -595,7 +823,6 @@ def schedule_program(
     # ---- anything crossing a block boundary
     # the safe stall encoding covers what leaves a block, and costs ~37 cycles,
     # so it goes only where liveness says something actually does
-    live_out = _live_out(cfg, program)
     for block in cfg.blocks:
         last = block.end - 1
         if not (0 <= last < count) or last in pinned:
@@ -693,17 +920,14 @@ def schedule_program(
             continue
         word = instr.word
 
-        # inherited, not recomputed: no measured model of a late operand read
-        inherited_read_barrier = word.field("read_barrier")
-        wait = waits[index] | (word.field("wait_mask") & inherited[index])
+        wait = waits[index]
 
         word = word.with_field("stall", stalls[index])
-        # the yield bit tracks the stall; other pairings are words the vendor
-        # never emits and nvdisasm refuses while the GPU runs them anyway
-        word = word.with_field("yield_", 1 if stalls[index] == 1 else 0)
+        low, high = YIELD_STALL_RANGE
+        word = word.with_field("yield_", int(low <= stalls[index] < high))
         word = word.with_field("wait_mask", wait)
         word = word.with_field("write_barrier", write_barriers[index])
-        word = word.with_field("read_barrier", inherited_read_barrier)
+        word = word.with_field("read_barrier", read_barriers[index])
         # a reuse flag from a different schedule is a hazard, so it is cleared
         word = word.with_field("reuse", 0)
         result.words.append(word)
