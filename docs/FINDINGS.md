@@ -958,8 +958,8 @@ with the half-precision bug that prompted it.
 
 | | Mnemonics | Opcodes | Instructions reproduced |
 | :--- | ---: | ---: | ---: |
-| Before | 276 | 77 | 9,856 |
-| After | **295** | **81** | **10,406** |
+| Before | 276 | 77 | 9,846 of 9,856 |
+| After | **295** | **81** | **10,406 of 10,416** |
 
 ## 21. What is deliberately not claimed
 
