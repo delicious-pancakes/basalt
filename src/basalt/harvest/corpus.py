@@ -96,10 +96,8 @@ def _reg(ptx_type: str, idx: int) -> str:
     return f"%{prefix}{idx}"
 
 
-# `ld` and `st` have no `.f16` type: a half moves as raw bits and only the
-# arithmetic names the format. Emitting `ld.global.f16` made every one of the
-# corpus's 25 half-precision kernels fail to build, in silence, for as long as
-# they had existed
+# `ld` and `st` have no `.f16`: a half moves as raw bits. emitting one made all
+# 25 half-precision kernels fail to build, silently, from the start
 _MOVE_TYPE = {"f16": "b16"}
 
 
@@ -208,9 +206,8 @@ def _ternary(op: str, ptx_type: str, mods: tuple[str, ...] = ()) -> Snippet:
 def _unary(
     op: str, ptx_type: str, mods: tuple[str, ...] = (), result_type: str | None = None
 ) -> Snippet:
-    # the result is not always the operand's width: `popc.b64` and `clz.b64`
-    # count the bits of a 64-bit word into a 32-bit one, and giving them a
-    # 64-bit destination is a kernel that has never compiled
+    # the result is not always the operand's width: `popc.b64` counts a 64-bit
+    # word into a 32-bit one
     out_type = result_type or ptx_type
     a, d = _reg(ptx_type, 1), _reg(out_type, 2)
     suffix = "".join("." + m for m in mods)
@@ -288,18 +285,29 @@ def _atomic_shared(op: str, ptx_type: str) -> Snippet:
 
     `_atomic` has carried a `space` parameter since it was written and was never
     passed anything but its default, so the shared opcode was never harvested.
+
+    One slot per thread, initialised before a barrier. Sharing one slot makes the
+    returned prior value depend on which thread got there first, so the kernel
+    answers differently run to run and the round trip can only exclude it. Here
+    every thread reads back what it wrote, so the value is fixed while the
+    dependency on the atomic's result, which is the thing being scheduled, is not.
     """
     a, d = _reg(ptx_type, 1), _reg(ptx_type, 3)
     body = "\n".join(
         [
             _load(ptx_type, a, 0),
+            "    mov.u32 %r6, %tid.x;",
+            "    shl.b32 %r6, %r6, 2;",
             "    mov.u32 %r7, slot;",
+            "    add.u32 %r7, %r7, %r6;",
+            f"    st.shared.{_MOVE_TYPE.get(ptx_type, ptx_type)} [%r7], {a};",
+            "    bar.sync 0;",
             f"    atom.shared.{op}.{ptx_type} {d}, [%r7], {a};",
             _store(ptx_type, d),
         ]
     )
     name = f"k_atom_shared_{op}_{ptx_type}"
-    decls = "    .shared .align 8 .b8 slot[16];"
+    decls = "    .shared .align 8 .b8 slot[256];"
     return Snippet(name, _kernel(name, body, decls), "atomic", f"atom.{op}", ptx_type, ("shared",))
 
 
@@ -311,6 +319,10 @@ def _reduce(op: str, ptx_type: str, space: str = "global") -> Snippet:
             [
                 _load(ptx_type, a, 0),
                 "    mov.u32 %r7, slot;",
+                # initialised first: reducing into whatever the last kernel left
+                # in shared memory answers differently every run
+                f"    st.shared.{ptx_type} [%r7], 0;",
+                "    bar.sync 0;",
                 f"    red.shared.{op}.{ptx_type} [%r7], {a};",
                 "    bar.sync 0;",
                 f"    ld.shared.{ptx_type} {a}, [%r7];",
@@ -335,6 +347,71 @@ def _memory(op: str, ptx_type: str, space: str, mods: tuple[str, ...] = ()) -> S
         body = "\n".join([_load(ptx_type, d, 0), f"    st.{space}{suffix}.{ptx_type} [%out], {d};"])
     name = f"k_{op}_{space}{''.join('_' + m for m in mods)}_{ptx_type}"
     return Snippet(name, _kernel(name, body, ""), "memory", op, ptx_type, (space, *mods))
+
+
+def _async_copy(kind: str, size: int) -> Snippet:
+    """`cp.async`, which is `LDGSTS` and a third way of tracking completion.
+
+    Not a scoreboard on the copy and not a stall count: `LDGDEPBAR` signals, and
+    `DEPBAR.LE SB0, 0x0` waits for the outstanding copies to drain. The
+    scoreboard is named in `DEPBAR`'s operand text rather than in its control
+    word, so renumbering the signaller silently unpairs them, which is why these
+    kernels were out of the corpus until the scheduler learned to pin it
+    (finding 27).
+    """
+    body = "\n".join(
+        [
+            "    mov.u32 %r1, buf;",
+            "    mov.u32 %r2, %tid.x;",
+            f"    mul.lo.u32 %r3, %r2, {size};",
+            "    add.u32 %r1, %r1, %r3;",
+            f"    cp.async.{kind}.shared.global [%r1], [%in], {size};",
+            "    cp.async.commit_group;",
+            "    cp.async.wait_group 0;",
+            "    bar.sync 0;",
+            "    ld.shared.b32 %r5, [%r1];",
+            "    st.global.b32 [%out], %r5;",
+        ]
+    )
+    name = f"k_cp_async_{kind}_{size}"
+    decls = f"    .shared .align 16 .b8 buf[{size * 32}];"
+    return Snippet(name, _kernel(name, body, decls), "async", "cp.async", "b32", (kind, str(size)))
+
+
+def _window(ptx_type: str, space: str) -> Snippet:
+    """Store into a window of `space` and read the same address back.
+
+    Shared and local memory are their own address spaces, so the global pointer
+    the harness passes in is not an address in either of them. Handing one to
+    `ld.shared` compiles and faults, which is a kernel that can be harvested and
+    never run, and both spaces were exactly that here until this replaced them.
+
+    One slot per thread, so the value read back is the one this thread wrote
+    whatever order the warp runs in, and the barrier makes that hold across the
+    block as well as within a thread.
+    """
+    move = _MOVE_TYPE.get(ptx_type, ptx_type)
+    width = _TYPES[ptx_type][1]
+    body = [
+        _load(ptx_type, _reg(ptx_type, 1), 0),
+        "    mov.u32 %r6, %tid.x;",
+        f"    mul.lo.u32 %r6, %r6, {width};",
+        "    mov.u32 %r7, slot;",
+        "    add.u32 %r7, %r7, %r6;",
+        f"    st.{space}.{move} [%r7], {_reg(ptx_type, 1)};",
+    ]
+    if space == "shared":
+        # local memory is per-thread, so only shared needs the block to agree
+        body.append("    bar.sync 0;")
+    body += [
+        f"    ld.{space}.{move} {_reg(ptx_type, 2)}, [%r7];",
+        _store(ptx_type, _reg(ptx_type, 2)),
+    ]
+    name = f"k_ldst_{space}_{ptx_type}"
+    decls = f"    .{space} .align 8 .b8 slot[{width * 32}];"
+    return Snippet(
+        name, _kernel(name, "\n".join(body), decls), "memory", "ldst", ptx_type, (space,)
+    )
 
 
 def _special(name_suffix: str, body: str, op: str) -> Snippet:
@@ -433,11 +510,13 @@ def generate() -> list[Snippet]:
         out.append(_convert(dst, src, mods))
 
     # memory spaces and cache modifiers
-    for space in ("global", "shared", "local", "const"):
-        for t in ("b32", "b64", "u16"):
-            out.append(_memory("ld", t, space))
-            if space != "const":
-                out.append(_memory("st", t, space))
+    for t in ("b32", "b64", "u16"):
+        out.append(_memory("ld", t, "global"))
+        out.append(_memory("st", t, "global"))
+        out.append(_memory("ld", t, "const"))
+        # shared and local go through a slot they actually own, so they run
+        out.append(_window(t, "shared"))
+        out.append(_window(t, "local"))
     for mod in ("ca", "cg", "cs", "lu", "cv"):
         out.append(_memory("ld", "b32", "global", (mod,)))
     for mod in ("wb", "cg", "cs", "wt"):
@@ -465,10 +544,11 @@ def generate() -> list[Snippet]:
     for op in ("add", "min", "max", "and", "or", "xor"):
         out.append(_reduce(op, "b32" if op in ("and", "or", "xor") else "u32"))
     out.append(_reduce("add", "u32", "shared"))
-    # `cp.async` is deliberately absent: its completion is tracked by
-    # `LDGDEPBAR` and `DEPBAR` rather than by a scoreboard on the copy, which the
-    # scheduler has no model of, so rescheduling one computes a different answer
-    # on the card. The roadmap carries the evidence and the PTX to reproduce it.
+    for size in (4, 8, 16):
+        for kind in ("ca", "cg"):
+            if kind == "cg" and size != 16:
+                continue  # `cg` bypasses L1, which only the widest copy may do
+            out.append(_async_copy(kind, size))
 
     # warp-level and special registers, which have no arithmetic equivalent
     out += [
@@ -567,9 +647,8 @@ def generate() -> list[Snippet]:
         ),
         _special(
             "loop",
-            # the trip count comes from the input, and the round trip feeds four
-            # arbitrary byte patterns, so unmasked this runs up to 2^31 times per
-            # launch and costs more than the rest of the corpus put together
+            # the trip count comes from the input, so unmasked this runs 2^31
+            # times and costs more than the rest of the corpus together
             "    ld.global.b32 %r1, [%in];\n"
             "    and.b32 %r1, %r1, 63;\n"
             "    mov.u32 %r2, 0;\n"

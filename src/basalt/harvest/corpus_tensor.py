@@ -52,9 +52,8 @@ def _mma_kernel(name: str, form: MmaForm) -> str:
     Fragments are loaded from global memory so nothing folds, and the first
     result register is stored so nothing is eliminated.
     """
-    # `.f16` accumulate packs two halves into a 32-bit register, so it takes a
-    # `.b32` like the integer forms rather than an `.f32`. Matching on the first
-    # letter put it in the float bank and the kernel never compiled
+    # `.f16` accumulate packs two halves into a `.b32`, like the integer forms;
+    # matching on the first letter put it in the float bank and never compiled
     acc_reg = "f" if form.ctype == "f32" else "c"
     acc_ld = "f32" if form.ctype == "f32" else "b32"
 
@@ -121,6 +120,24 @@ def _mma_kernel(name: str, form: MmaForm) -> str:
 """
 
 
+# `ldmatrix` reads shared memory nothing here writes, so unfilled it answers with
+# whatever the last kernel left. eight vector stores, and no branch to harvest
+_FILL_TILE = (
+    "    ld.global.v4.b32 {%r33, %r34, %r35, %r36}, [%in];\n"
+    "    mov.u32 %m1, tile;\n"
+    "    mov.u32 %m2, %tid.x;\n"
+    "    shl.b32 %m2, %m2, 7;\n"
+    "    add.u32 %m2, %m1, %m2;\n"
+    + "".join(
+        f"    st.shared.v4.b32 [%m2+{16 * i}], "
+        f"{{%r{33 + i % 4}, %r{33 + (i + 1) % 4}, "
+        f"%r{33 + (i + 2) % 4}, %r{33 + (i + 3) % 4}}};\n"
+        for i in range(8)
+    )
+    + "    bar.sync 0;\n"
+)
+
+
 def _matrix_kernel(name: str, body: str) -> str:
     return f""".version {PTX_VERSION}
 .target sm_120a
@@ -142,9 +159,8 @@ def _matrix_kernel(name: str, body: str) -> str:
 """
 
 
-# Dense forms. The FP8/FP6/FP4 types all route through kind::f8f6f4 on sm_120a
-# and lower to QMMA; the f16/bf16/tf32 forms lower to HMMA and the integer
-# forms to IMMA.
+# dense forms: FP8/FP6/FP4 route through kind::f8f6f4 to QMMA, f16/bf16/tf32 to
+# HMMA, and the integer forms to IMMA
 _LOW_PRECISION = ("e4m3", "e5m2", "e3m2", "e2m3", "e2m1")
 
 
@@ -167,9 +183,8 @@ def _dense_forms() -> list[MmaForm]:
         MmaForm("m16n8k256", "b1", "b1", "s32", 4, 2, 4, bitop="and.popc"),
         MmaForm("m16n8k256", "b1", "b1", "s32", 4, 2, 4, bitop="xor.popc"),
     ]
-    # every ordered pair of the low-precision types, mixed inputs included:
-    # ptxas accepts asymmetric operand types here and each pair is a distinct
-    # QMMA type-code combination worth having in the database
+    # every ordered pair, mixed inputs included: each is a distinct QMMA
+    # type-code combination
     for a in _LOW_PRECISION:
         for b in _LOW_PRECISION:
             forms.append(MmaForm("m16n8k32", a, b, "f32", 4, 2, 4, kind="kind::f8f6f4"))
@@ -228,7 +243,11 @@ def generate_tensor() -> list[Snippet]:
             )
         )
 
-    # sparse variants carry a metadata operand and a selector
+    # sparse variants carry a metadata operand and a selector. `.sp` and
+    # `.sp::ordered_metadata` are two forms, not a spelling: ptxas advises the
+    # second and accepts both, and only emitting the first left the other
+    # unharvested. FP4 is here without a shape that builds, because every shape
+    # sm_120a offers rejects it and a recorded rejection is the negative result
     for shape, atype, ctype, na, nb, nc in (
         # a sparse A is compressed to half its dense width, so `m16n8k32` takes
         # the same four registers `m16n8k16` does, and B spans the full k at four
@@ -243,30 +262,37 @@ def generate_tensor() -> list[Snippet]:
         loads += [f"    ld.global.b32 %b{i + 1}, [%in+{64 + 4 * i}];" for i in range(nb)]
         loads += [f"    ld.global.{acc_ld} %{acc}{i + 1}, [%in+{128 + 4 * i}];" for i in range(nc)]
         loads.append("    ld.global.b32 %s1, [%in+192];")
-        # the dense low-precision forms take `.kind::f8f6f4`; the sparse ones
-        # reject it, and carrying it over is why they never built
-        kind = ""
-        body = "\n".join(
-            [
-                *loads,
-                f"    mma.sp.sync.aligned.{shape}.row.col{kind}.{ctype}.{atype}.{atype}.{ctype} "
-                f"{_regs(acc, nc, base=nc + 1)},{_regs('a', na)},{_regs('b', nb)},"
-                f"{_regs(acc, nc)},%s1,0x0;",
-                f"    st.global.{acc_ld} [%out], %{acc}{nc + 1};",
-            ]
-        )
-        name = f"k_mmasp_{shape}_{atype}_{ctype}"
-        out.append(
-            Snippet(name, _mma_kernel_raw(name, body), "mma.sparse", "mma.sp.sync", atype, (shape,))
-        )
+        # the low-precision types need the kind qualifier here as they do dense
+        kind = ".kind::f8f6f4" if atype in _LOW_PRECISION else ""
+        for op, tag in (("sp", ""), ("sp::ordered_metadata", "_ordered")):
+            body = "\n".join(
+                [
+                    *loads,
+                    f"    mma.{op}.sync.aligned.{shape}.row.col{kind}."
+                    f"{ctype}.{atype}.{atype}.{ctype} "
+                    f"{_regs(acc, nc, base=nc + 1)},{_regs('a', na)},{_regs('b', nb)},"
+                    f"{_regs(acc, nc)},%s1,0x0;",
+                    f"    st.global.{acc_ld} [%out], %{acc}{nc + 1};",
+                ]
+            )
+            name = f"k_mmasp{tag}_{shape}_{atype}_{ctype}"
+            out.append(
+                Snippet(
+                    name,
+                    _mma_kernel_raw(name, body),
+                    "mma.sparse",
+                    f"mma.{op}.sync",
+                    atype,
+                    (shape,),
+                )
+            )
 
     # matrix load / store / transpose, which feed the fragments above
     for count in ("x1", "x2", "x4"):
         n = {"x1": 1, "x2": 2, "x4": 4}[count]
         for trans in ("", ".trans"):
             body = (
-                "    mov.u32 %m1, tile;\n"
-                f"    ldmatrix.sync.aligned.m8n8.{count}{trans}.shared.b16 "
+                _FILL_TILE + f"    ldmatrix.sync.aligned.m8n8.{count}{trans}.shared.b16 "
                 f"{_regs('r', n)}, [%m1];\n"
                 "    st.global.b32 [%out], %r1;"
             )
@@ -303,14 +329,13 @@ def generate_tensor() -> list[Snippet]:
                 )
             )
 
-    # m16n16 ldmatrix over 8-bit elements. A 16x16 tile of bytes is two
-    # registers per lane rather than one, and `.x4` does not exist for this
-    # shape, so the obvious one-register-per-matrix reading never compiled
+    # a 16x16 tile of bytes is two registers per lane, and `.x4` does not exist
+    # for this shape
     for count in ("x1", "x2"):
         n = {"x1": 2, "x2": 4}[count]
         body = (
-            "    mov.u32 %m1, tile;\n"
-            f"    ldmatrix.sync.aligned.m16n16.{count}.trans.shared.b8 {_regs('r', n)}, [%m1];\n"
+            _FILL_TILE
+            + f"    ldmatrix.sync.aligned.m16n16.{count}.trans.shared.b8 {_regs('r', n)}, [%m1];\n"
             "    st.global.b32 [%out], %r1;"
         )
         name = f"k_ldsm_m16n16_{count}_b8"
