@@ -61,17 +61,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # linux only, on purpose. development happens on Windows, so every local
+        # pytest run is already the Windows leg; what never gets exercised there
+        # is Linux, and that is the gap CI is here to close. the two places the
+        # platforms actually diverge are still covered: `mypy --platform win32`
+        # in the lint job checks the `os.name == "nt"` branch in toolchain
+        # discovery and the driver's WinDLL branch, without booting a runner.
         os: [ubuntu-latest]
+        # none of these are the interpreter used locally, which is the point
         python: ["3.11", "3.12", "3.13"]
-        include:
-          # windows gets one leg rather than three. what actually differs there
-          # is `os.name == "nt"` choosing the .exe suffix in toolchain discovery
-          # and platform_key() in the fetcher, and neither varies by python
-          # version. the driver's WinDLL branch is not covered by this matrix at
-          # all: it sits behind the gpu marker, and `mypy --platform win32` in
-          # the lint job is what checks it.
-          - os: windows-latest
-            python: "3.12"
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20
     steps:
@@ -88,7 +86,15 @@ jobs:
 
   oracles:
     # needs ptxas and nvdisasm but no GPU, which is the whole reason the
-    # instruction database and the checker are reproducible by anyone
+    # instruction database and the checker are reproducible by anyone.
+    #
+    # Not on pushes. Every step here needs the NVIDIA toolchain fetched and
+    # unpacked, and every one of them is something scripts/verify_all.py runs
+    # locally before the push happens. Downloading a redistributable per commit
+    # to re-answer a question already answered on the machine that made the
+    # commit is the definition of a redundant job. Pull requests and the nightly
+    # run still do all of it, which is where an outside reader looks anyway.
+    if: github.event_name != 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -132,7 +138,6 @@ jobs:
         # so re-running it per commit buys a second opinion from an identical
         # pinned toolchain and costs twelve minutes to do it. `isa-drift` below
         # is gated the same way for the same reason.
-        if: github.event_name != 'push'
         run: pytest -m slow
 
       - name: Try to make the assembler emit something else
@@ -152,7 +157,6 @@ jobs:
         # correctness is therefore already gated above. this is a reporting
         # pass that recompiles all 449 kernels a fourth time for about a
         # hundred seconds, so it belongs on the nightly run, not on every push.
-        if: github.event_name != 'push'
         run: python scripts/assembler_coverage.py
 
   isa-drift:
