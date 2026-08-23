@@ -543,21 +543,9 @@ class TestWhatTheCorrectnessCosts:
         vendor, basalt = cycles
         assert vendor > 5000, "the corpus did not build"
         ratio = basalt / vendor
-        # 0.90x when this was written: slightly cheaper than the vendor, and
-        # correct on every comparable kernel of the hardware round trip at
-        # all three optimisation levels.
-        #
-        # Cheaper is believable rather than suspicious, for a specific reason.
-        # basalt schedules every dependency at the tightest gap `ptxas` was ever
-        # observed to leave for that exact pairing, and `ptxas` does not always
-        # schedule at its own minimum: it is balancing register pressure and
-        # memory alongside issue latency, and this is optimising one number.
-        #
-        # It was not believed on sight. When this first went under 1.0 the round
-        # trip was run before anything was written down, and the first time it
-        # was the round trip broke, on an `IMNMX` whose destination the operand
-        # model could not see. Both bounds stay because a ratio drifting either
-        # way is a reason to look.
+        # 0.90x when this was written, pinned from both sides: slower is a
+        # regression, and faster is a reason to distrust the costing rather
+        # than to celebrate it (finding 12)
         assert ratio < 1.15, f"basalt's schedules cost {ratio:.2f}x the vendor's, up from 0.90x"
         assert ratio > 0.75, (
             f"basalt's schedules cost {ratio:.2f}x, which is far cheaper than the vendor's and "

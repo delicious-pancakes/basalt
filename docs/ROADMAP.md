@@ -5,7 +5,7 @@ stages land. Anything claimed here as done has a command that demonstrates it.
 
 ## The position
 
-basalt is a **checker**, not a code generator.
+basalt is the world's first **checker** for this architecture, and not a code generator.
 
 Tools that emit sm_120 machine code *assign* the scheduling control word from a latency model,
 and the ones that check themselves do it by running their own kernels and seeing that the

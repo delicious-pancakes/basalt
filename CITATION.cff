@@ -1,6 +1,6 @@
 cff-version: 1.2.0
 message: "If you use basalt in your work, please cite it as below."
-title: "basalt: a verified assembler, hazard checker and scheduler for NVIDIA consumer Blackwell (sm_120)"
+title: "basalt: the first hazard checker for NVIDIA consumer Blackwell (sm_120) machine code, with an assembler and scheduler held to the same standard"
 abstract: >-
   On NVIDIA sm_120 there is no hardware interlock on fixed-latency instructions:
   a stall count shorter than the latency of a value the next instruction reads

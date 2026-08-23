@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="./docs/assets/social-preview.svg" alt="basalt: the correctness layer for NVIDIA Blackwell GPU machine code. sm_120 has no hardware interlock, so one wrong stall count makes the GPU read a stale register and return a wrong answer silently." width="880" />
+<img src="./docs/assets/social-preview.svg" alt="basalt: the world's first hazard checker for NVIDIA Blackwell GPU machine code. sm_120 has no hardware interlock, so one wrong stall count makes the GPU read a stale register and return a wrong answer silently." width="880" />
 
 <br/>
 
@@ -29,29 +29,25 @@ That is a strange kind of bug. It does not crash. It does not appear in a debugg
 
 Tools that generate machine code for this architecture *assign* those control bits from a latency model. basalt is the thing that checks the answer.
 
-## The first one that checks somebody else's work
+## The world's first hazard checker for this architecture
 
-Machine-code assemblers for NVIDIA GPUs have existed for a decade, and there is prior work
-on Blackwell specifically: the encoding has been reverse engineered before, there are
-published cycle-level characterisations of `sm_120`, and there are tools that generate its
-scheduling control bits and run their own kernels on a real card to see that the answers
-come out right. Being first to write one is not the claim here, and neither is being first
-to run one.
+Nothing else reads `sm_120` machine code and tells you whether it is safe to run.
 
-Being first to **check code you did not write** is.
+That is not a gap for want of tools. Machine-code assemblers for NVIDIA GPUs have existed
+for a decade, the Blackwell encoding has been reverse engineered before, there are published
+cycle-level characterisations of `sm_120`, and there are tools that generate its scheduling
+control bits and run their own kernels on a card to see that the answers come out right.
+Every one of them answers the same question: *did the thing I just produced work?*
 
-Generating a kernel and confirming it computes the right answer is a real control, and it
-is a different question. It says nothing about the cubin in front of you, because it did
-not produce that cubin. There is no tool that reads `sm_120` machine code, whatever emitted
-it, and tells you whether its control bits actually cover its data dependencies, which on
-an architecture with no hardware interlock is the difference between "it ran" and "it is
-correct": a wrong stall count produces a wrong number at full speed, with no fault and no
-warning.
+Nobody has answered the question everyone actually has, which is whether the cubin in front
+of you is safe. Your compiler produced it, or a library shipped it, or someone hand-wrote it,
+and on an architecture with no hardware interlock the difference between "it ran" and "it is
+correct" is invisible: a stall count one cycle short reads a stale register and returns a
+wrong number at full speed, with no fault and no warning, every single time.
 
-basalt reads a cubin and answers that question. The reference it is held to is the vendor
-compiler's own output, so a disagreement is basalt's bug until proven otherwise, and the
-schedules it writes itself have to reproduce what the vendor's schedules compute, byte for
-byte, on the card.
+basalt answers it. The reference it is held to is the vendor compiler's own output, so a
+disagreement is basalt's bug until proven otherwise, and the schedules it writes itself have
+to reproduce what the vendor's schedules compute, byte for byte, on the card.
 
 So basalt is three tools, each held to the same standard, and the standard is the point:
 **agree with the vendor exactly, or say why not.**

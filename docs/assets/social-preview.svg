@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" width="1280" height="640" role="img"
-     aria-label="basalt: assembler, checker and scheduler for NVIDIA Blackwell GPU machine code, for the RTX 50 series. sm_120 has no hardware interlock, so one wrong stall count makes the GPU read a stale register and return a wrong answer silently.">
-  <title>basalt — assembler, checker and scheduler for NVIDIA Blackwell GPU machine code</title>
+     aria-label="basalt: the world's first hazard checker for NVIDIA Blackwell GPU machine code, for the RTX 50 series. sm_120 has no hardware interlock, so one wrong stall count makes the GPU read a stale register and return a wrong answer silently.">
+  <title>basalt: the world's first hazard checker for NVIDIA Blackwell GPU machine code</title>
 
   <defs>
     <!-- basalt cools into interlocking hexagonal columns of near-uniform width,
@@ -78,7 +78,7 @@
   <rect x="87" y="202" width="116" height="5" rx="2.5" fill="url(#accent)"/>
 
   <text x="84" y="230" class="mono micro" fill="#76b900">RTX 50 SERIES  ·  sm_120  ·  PROVEN ON SILICON, NOT ASSUMED</text>
-  <text x="84" y="264" class="sans lede">Assembler, checker and scheduler for</text>
+  <text x="84" y="264" class="sans lede">The world&#8217;s first hazard checker for</text>
   <text x="84" y="302" class="sans lede">NVIDIA Blackwell GPU machine code.</text>
 
   <text x="84" y="354" class="sans body">sm_120 has no hardware interlock. One wrong stall count and the</text>

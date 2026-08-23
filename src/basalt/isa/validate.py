@@ -18,7 +18,9 @@ that hold something else both look right if the only value tried is zero.
 
 from __future__ import annotations
 
+import os
 import re
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 
 from ..disasm import decode_words, raw_arch
@@ -208,9 +210,15 @@ def validate_database(
     if limit is not None:
         forms = forms[:limit]
 
-    for index, form in enumerate(forms):
-        summary.results.append(validate_form(tc, form, arch=raw))
-        if progress and (index + 1) % 50 == 0:
-            print(f"  validated {index + 1}/{len(forms)} forms")
+    # every form is an independent chain of decoder calls, so this scales with
+    # cores rather than with the size of the database
+    workers = min(32, (os.cpu_count() or 4) * 2)
+    done = 0
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        for result in pool.map(lambda form: validate_form(tc, form, arch=raw), forms):
+            summary.results.append(result)
+            done += 1
+            if progress and done % 50 == 0:
+                print(f"  validated {done}/{len(forms)} forms")
 
     return summary

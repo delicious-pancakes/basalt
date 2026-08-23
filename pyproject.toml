@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "basalt-sass"
 version = "0.1.0.dev0"
-description = "The correctness layer for NVIDIA consumer Blackwell (sm_120) GPU machine code."
+description = "The world's first hazard checker for NVIDIA consumer Blackwell (sm_120) GPU machine code."
 readme = "README.md"
 requires-python = ">=3.11"
 license = "Apache-2.0"
