@@ -1505,7 +1505,7 @@ python scripts/audit_shipped.py --libs third_party/cuda/13.3.1/libs --report aud
 
 **The first run reported 6,593 errors in 250 nvjpeg kernels.** Twenty-six per kernel, in
 production code that decodes JPEGs correctly on every Blackwell card sold. Nothing in
-NVIDIA's code was wrong. Seven separate things in basalt's model were, and no other control
+NVIDIA's code was wrong. Eight separate things in basalt's model were, and no other control
 could have found any of them, because every one is invisible on the corpus.
 
 | # | What was wrong | Why the corpus could not show it |
@@ -1517,6 +1517,7 @@ could have found any of them, because every one is invisible on the corpus.
 | 5 | the scoreboard residue was whatever was mined | `LDG.E.64 => FFMA` mined at 461 cycles from 3 observations |
 | 6 | a missing scoreboard was always an error | the vendor covers `LDS` with spacing alone 734,837 times |
 | 7 | `@P0` was treated as reaching `@!P0` | a generated corpus almost never writes complementary guards |
+| 8 | a missing barrier was noted rather than measured | `DSETP -> FSEL` is 66 cycles apart 4,322 times, and nothing was checking the 66 |
 
 **The corpus-mined requirement table cannot fail on the corpus it came from.** That is the
 structural point, and it is why 1,323 kernels of positive control kept passing while the
@@ -1600,9 +1601,18 @@ number it gained.
 | | Errors | Warnings | Dependencies |
 | :--- | ---: | ---: | ---: |
 | First run | 6,593 | 554 | 93,972 |
-| After the seven corrections | **0** | 1,158 | 93,489 |
+| After the corrections | **0** | 204 | 93,489 |
 
-Zero hazards in 250 shipped kernels held out of every table the checker reads.
+Zero hazards in 250 shipped kernels held out of every table the checker reads, and 204
+warnings, which is where the model has an assumed number and says so.
+
+Two of the eight corrections were caught on the way back rather than on the way out, and both
+by the negative control. Demoting thin evidence to a warning let two deliberately broken
+kernels through, because `VIADD.S32.ISAT -> STG` has three observations and is right about
+them; the bound on the producer's own latency was already neutralising thin evidence, so the
+trust gate was redundant and harmful. And 945 of the first 1,149 warnings were the gap beside
+a waited-on scoreboard, which carries no requirement at all, since the wait is the mechanism.
+A tool that cannot ground a claim should not make it.
 
 **What that is and is not.** It is not a clean bill of health for NVIDIA's code and is not
 meant to be. The finding is that a checker built and calibrated entirely on one body of code

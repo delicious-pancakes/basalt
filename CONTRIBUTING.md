@@ -86,7 +86,9 @@ That is enough to reproduce without your machine. A `.ptx` file that provokes th
 ## The rule that matters
 
 > [!IMPORTANT]
-> **basalt is a clean-room project and stays that way.** Do not contribute NVIDIA source, headers, documentation text, or anything decompiled or extracted from their binaries. basalt observes the behaviour of publicly distributed executables and records it. That distinction is what keeps the project on the same footing every prior SASS assembler has stood on for over a decade, and it is only true while we keep it true.
+> **basalt is a clean-room project and stays that way.** Do not contribute NVIDIA source, headers, documentation text, or anything decompiled or extracted from their binaries. basalt observes the behaviour of publicly distributed executables and records it, and that
+extends to measuring the machine code a shipped library contains without copying any of it
+into the repository. That distinction is what keeps the project on the same footing every prior SASS assembler has stood on for over a decade, and it is only true while we keep it true.
 
 If you are unsure whether something crosses that line, open a discussion before writing code.
 

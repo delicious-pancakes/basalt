@@ -4,7 +4,7 @@
 
 Pointing the checker at machine code basalt did not compile reported 6,593
 errors against a JPEG decoder that has never returned a wrong pixel. Every one
-was basalt's, and the seven corrections behind finding 32 are what these hold.
+was basalt's, and the eight corrections behind finding 32 are what these hold.
 
 None of them can be checked by running the corpus, which is the whole point: a
 table mined from the code it is then checked against cannot fail. So each rule

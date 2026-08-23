@@ -6,8 +6,11 @@ This product includes software developed by Sunny Patel
 
 basalt is an independent, clean-room work. It does not incorporate, link
 against, or redistribute any NVIDIA source code, headers, libraries, or
-documentation. It drives the publicly distributed `ptxas` and `nvdisasm`
-executables as external processes and records their observable behaviour.
+documentation. It drives the publicly distributed `ptxas`, `nvdisasm` and
+`cuobjdump` executables as external processes and records their observable
+behaviour. Where it reads machine code from a distributed library, it measures
+that code and stores measurements; no part of it is copied into this
+repository, and none of the libraries are vendored or redistributed.
 
 NVIDIA, CUDA, and Blackwell are trademarks of NVIDIA Corporation. This
 project is not affiliated with, endorsed by, or sponsored by NVIDIA.

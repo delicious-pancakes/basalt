@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="./docs/assets/social-preview.svg" alt="basalt: world's first assembler, checker and scheduler for NVIDIA Blackwell (sm_120), matching their own compiler byte for byte, the check they never shipped. sm_120 has no hardware interlock, so one wrong stall count makes the GPU read a stale register and return a wrong answer silently." width="880" />
+<img src="./docs/assets/social-preview.svg" alt="basalt: the first checker for NVIDIA Blackwell (sm_120) machine code, with an assembler and scheduler measured byte for byte against NVIDIA's own compiler. The check they never shipped. sm_120 has no hardware interlock, so one wrong stall count makes the GPU read a stale register and return a wrong answer silently." width="880" />
 
 <br/>
 
@@ -62,7 +62,7 @@ One standard, three tools: **agree with the vendor exactly, or say why not.**
 | :--- | :--- | :--- | ---: |
 | **Assembler** | SASS text to the 128-bit word | Reassemble every instruction `ptxas` emitted and compare bytes | 59,693 of 59,760 exact across four optimisation levels, **0 wrong** |
 | **Checker** | Reads a schedule, reports hazards | The vendor's own output must verify clean, and a deliberately shortened stall must be caught | 0 errors over 1,323 vendor kernel and optimisation-level pairs, **0 missed** on 233 broken ones |
-| **Audit** | The same checker, on shipped libraries | Run it over production sm_120 kernels held out of every table it reads | **0 hazards** in 250 kernels, after the run that found 6,593 and traced every one to basalt |
+| **Audit** | The same checker, on shipped libraries | Run it over production sm_120 kernels held out of every table it reads | **0 errors** in 250 kernels and 93,489 dependencies, after the run that found 6,593 and traced every one to basalt |
 | **Scheduler** | Assigns every control bit from scratch | Discard the vendor's, compute new ones, run both on the GPU against eight inputs, compare output bytes | **439 of 439 comparable kernels** byte-identical, at all three optimisation levels |
 
 And the part a scheduler is usually quiet about: what the correctness costs. basalt's
@@ -76,7 +76,8 @@ by construction, for exactly the code it was measured on. The first time this on
 from somewhere else it reported twenty-six hazards per kernel in a JPEG decoder that has
 never returned a wrong pixel, and all 6,593 were basalt's: an instruction the corpus never
 emits, a requirement mined from four observations, a shared-memory load whose barrier the
-vendor legitimately omits 734,837 times. Re-mining the requirement from 24,311 shipped
+vendor legitimately omits 734,837 times, and a definition under `@P0` that never reaches a
+use under `@!P0`. Re-mining the requirement from 24,311 shipped
 kernels put a guard predicate at 13 cycles across 229,567 observations, which is the number
 fault injection had measured on the card by breaking a program on purpose. See
 [finding 32](docs/FINDINGS.md).
@@ -311,10 +312,14 @@ python -m basalt.cli verify kernel.cubin --latencies data/latency/your-card.json
 
 </details>
 
-And the control that keeps the rest honest, which does need a card:
+And the two controls that keep the rest honest. The first needs a card; the second needs
+the shipped libraries and no hardware at all:
 
 ```bash
 python scripts/roundtrip_corpus.py    # reschedule all 441 corpus kernels, run both on the GPU
+
+python scripts/fetch_toolchain.py --libs                  # ~1.2 GB, no admin, nothing on PATH
+python scripts/audit_shipped.py --libs third_party/cuda/13.3.1/libs
 ```
 
 ```console

@@ -14,8 +14,8 @@ any release. The clean-room position in [`NOTICE`](NOTICE) will not.
   in CUDA 13.3.1, 844 MB of device code basalt did not compile. The first run
   reported 6,593 errors in 250 nvjpeg kernels and not one was real. Seven holes
   in basalt's model were, each of them invisible on a corpus basalt generates
-  itself, and after the corrections the same libraries verify with zero hazards.
-  Finding 32.
+  itself, and after the corrections the same libraries verify with zero errors
+  and 204 warnings. Finding 32.
 - `scripts/mine_shipped.py`: the per-pair stall requirement mined from shipped
   kernels rather than from a generated corpus, holding out the libraries the
   audit then reports on, because a table measured on the code it is checked
@@ -55,6 +55,13 @@ any release. The clean-room position in [`NOTICE`](NOTICE) will not.
   so a load can no longer end up waiting on the barrier it signals.
 - A definition guarded by `@P0` no longer reaches a use guarded by `@!P0`.
   Within a thread exactly one of them runs.
+- A variable-latency result the vendor covers with spacing is checked against
+  that distance rather than merely noted. `DSETP.GT.AND -> FSEL` is scheduled 66
+  cycles apart 4,322 times with no barrier, which is fp64's measured 64 plus the
+  residue, and reporting a missing scoreboard said nothing about the 66.
+- The scoreboard residue no longer warns between the measured figure and the
+  mined one. The wait is what makes the pair safe, so the gap beside it carries
+  no requirement, and that band was 945 of the first 1,149 warnings.
 
 ### Added
 - Read barriers are derived rather than copied from the schedule being replaced,

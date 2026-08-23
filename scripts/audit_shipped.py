@@ -21,8 +21,9 @@ knowing.
     python scripts/audit_shipped.py --cubins <dir of extracted cubins>
     python scripts/audit_shipped.py --cubins <dir> --report audit.json
 
-Needs no GPU. The libraries are not vendored; fetch them yourself from the same
-redistributable archive `scripts/fetch_toolchain.py` uses.
+Needs no GPU. The libraries are not vendored and never enter the repository;
+`python scripts/fetch_toolchain.py --libs` fetches them from the same pinned
+redistributable the compiler comes from and records which build each one was.
 """
 
 from __future__ import annotations
@@ -74,6 +75,14 @@ class Tally:
         self.findings.extend(other.findings)
 
 
+def _opcode(text: str) -> str:
+    """The bare opcode, skipping the guard predicate printed before it."""
+    parts = text.split()
+    if parts and parts[0].startswith("@"):
+        parts = parts[1:]
+    return parts[0].split(".")[0] if parts else "?"
+
+
 _STATE: dict = {}
 
 
@@ -114,8 +123,8 @@ def _audit(path: Path) -> Tally:
                 tally.warnings += 1
             else:
                 continue
-            producer = hazard.def_text.split()[0].split(".")[0].lstrip("@!")
-            consumer = hazard.use_text.split()[0].split(".")[0].lstrip("@!")
+            producer = _opcode(hazard.def_text)
+            consumer = _opcode(hazard.use_text)
             key = (str(hazard.kind), producer, consumer)
             tally.patterns[key] += 1
             # one example per pattern, because the second one teaches nothing

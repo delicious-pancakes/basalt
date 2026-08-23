@@ -234,7 +234,7 @@ also moving is a reason to distrust the costing rather than to celebrate it.
 **Holding out the code the audit reports on.** The stall requirement is mined from what the
 compiler schedules, which means a table mined from a body of code cannot fail when checked
 against that same code: the tightest gap it left *is* the floor, by construction. That is not
-a hypothetical. basalt passed 1,323 kernels of positive control while carrying seven model
+a hypothetical. basalt passed 1,323 kernels of positive control while carrying eight model
 errors, and every one surfaced the first time the checker read machine code from somewhere
 else. So the requirement is mined from one set of shipped libraries and the audit reports on
 another, and the split is the control rather than a tidiness.
