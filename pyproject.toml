@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "basalt-sass"
-version = "0.1.0.dev0"
+version = "1.0.0"
 description = "The check NVIDIA never shipped: an assembler, hazard checker and scheduler for consumer Blackwell (sm_120), matched to ptxas byte for byte."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -20,7 +20,7 @@ keywords = [
 # no license classifier here: PEP 639 supersedes them with the `license`
 # expression above, and setuptools rejects a project that carries both
 classifiers = [
-  "Development Status :: 3 - Alpha",
+  "Development Status :: 5 - Production/Stable",
   "Environment :: GPU :: NVIDIA CUDA",
   "Intended Audience :: Developers",
   "Programming Language :: Python :: 3.11",

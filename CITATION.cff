@@ -1,6 +1,6 @@
 cff-version: 1.2.0
 message: "If you use basalt in your work, please cite it as below."
-title: "basalt: a verified assembler, hazard checker and scheduler for NVIDIA consumer Blackwell (sm_120)"
+title: "basalt: a hazard checker, assembler and scheduler for NVIDIA consumer Blackwell (sm_120)"
 abstract: >-
   On NVIDIA sm_120 there is no hardware interlock on fixed-latency instructions:
   a stall count shorter than the latency of a value the next instruction reads
@@ -8,10 +8,13 @@ abstract: >-
   measures what the hardware requires, checks whether a schedule's control bits
   meet it, and assigns them from scratch. Each part is validated against the
   vendor compiler's own bytes and against the silicon, by rescheduling every
-  kernel in a generated corpus and comparing GPU output byte for byte.
+  kernel in a generated corpus and comparing GPU output byte for byte, and by
+  reading 5.2 million instructions of shipped NVIDIA library code held out of
+  every table the checker uses.
 type: software
-# tracks the package version; there is no 0.1.0 to cite until one is tagged
-version: 0.1.0.dev0
+# tracks the package version
+version: 1.0.0
+date-released: "2026-08-23"
 authors:
   - family-names: Patel
     given-names: Sunny

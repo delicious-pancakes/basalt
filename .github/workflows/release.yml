@@ -67,8 +67,16 @@ jobs:
           name: distributions
           path: dist
 
+      # created here only if the tag was pushed without one, so the pipeline
+      # cannot fail at the last step for a reason nobody would guess. A real
+      # release is written by hand first and this leaves it alone.
       - name: Attach everything to the release
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.ref_name }}
-        run: gh release upload "$TAG" dist/* --clobber
+          REPO: ${{ github.repository }}
+        run: |
+          if ! gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
+            gh release create "$TAG" --repo "$REPO" --title "$TAG" --generate-notes
+          fi
+          gh release upload "$TAG" dist/* --clobber --repo "$REPO"

@@ -9,6 +9,14 @@ any release. The clean-room position in [`NOTICE`](NOTICE) will not.
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-08-23
+
+First release. Every stage in the roadmap is done, every published figure has a
+command that regenerates it, and the claim the project is named for is a
+measurement rather than an absence: pointed at 2,762 sm_120 kernels NVIDIA
+ships, held out of every table it reads, the checker reports 0 errors over
+10,218,030 dependencies with all 2,762 kernels fully analysed.
+
 ### Added
 - Stage 10, the audit: the checker pointed at 2,473 sm_120 kernels NVIDIA ships
   in CUDA 13.3.1, 844 MB of device code basalt did not compile. The first run
@@ -361,3 +369,6 @@ any release. The clean-room position in [`NOTICE`](NOTICE) will not.
   All 1,548 branches in the corpus decode to their label.
 - `EXIT`, `RET`, `CALL` and `BAR` never take the zero-stall encoding, in 0 of
   329, 0 of 5, 0 of 5 and 0 of 3 instances, while `BRA` takes it 329 times.
+
+[Unreleased]: https://github.com/sunnypatell/basalt/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/sunnypatell/basalt/releases/tag/v1.0.0

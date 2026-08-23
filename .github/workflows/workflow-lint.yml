@@ -10,8 +10,8 @@
 # Two tools, two questions. actionlint asks whether the workflow is correct
 # (bad expressions, undefined matrix keys, shell mistakes). zizmor asks whether
 # it is safe (template injection, credential persistence, unpinned actions,
-# cache poisoning) and files what it finds in the security tab, where a
-# regression is visible without anyone remembering to look.
+# cache poisoning) and annotates what it finds on the diff, where a regression
+# is visible without anyone remembering to look.
 #
 # Both run in pre-commit too, at the same severity gate, so the answer does not
 # change between a laptop and a runner.
@@ -59,7 +59,6 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: read
-      security-events: write # SARIF upload to the security tab
       actions: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -72,3 +71,8 @@ jobs:
           # medium and up fails the build; low and informational stay visible
           # locally without turning every run into noise to be ignored
           min-severity: medium
+          # annotations rather than the security tab: uploading SARIF needs code
+          # scanning enabled, and a lint that fails on a setting nobody turned
+          # on reports the setting rather than the workflows
+          advanced-security: false
+          annotations: true

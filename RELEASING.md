@@ -49,9 +49,27 @@ database format and is not the package version. Do not move it to match.
   bottom, repoint `[Unreleased]`
 - Commit: `chore(release): vX.Y.Z`, push `main`
 
-## 4. Tag
+## 4. Enable Zenodo, once, before the first tag
+
+Zenodo mints the DOI from a GitHub release, so the integration has to be on
+*before* the tag is pushed or that release gets no DOI. It is a one-time switch
+and only the repository owner can flip it.
+
+1. Sign in at [zenodo.org](https://zenodo.org) with GitHub
+2. Under **GitHub**, find `sunnypatell/basalt` and turn the toggle on
+3. Check `CITATION.cff` has the right `version` and `date-released`
+
+Zenodo issues two DOIs: one for the specific version and a **concept DOI** that
+always resolves to the newest. The concept DOI is the one to put in the README
+badge and in `CITATION.cff`, because it never has to change again.
+
+## 5. Write the release, then tag
+
+The workflow attaches artefacts to a release; it does not write one. Create it
+first so the body is yours rather than generated:
 
 ```bash
+gh release create vX.Y.Z --draft --title "vX.Y.Z" --notes-file NOTES.md
 git tag -a vX.Y.Z -m "vX.Y.Z"
 git push origin vX.Y.Z
 ```
@@ -64,7 +82,7 @@ and it means the job that builds never holds `contents: write`. Nothing is
 published to an index from there, deliberately: an artifact should be verifiable
 before it is distributed.
 
-## 5. Verify the provenance before announcing
+## 6. Verify the provenance before announcing
 
 The whole argument of this project is that a claim without evidence is worth
 nothing, and "these files came from that commit" is a claim like any other:
@@ -75,7 +93,18 @@ gh attestation verify basalt_sass-X.Y.Z-py3-none-any.whl \
   --signer-workflow sunnypatell/basalt/.github/workflows/release-build.yml
 ```
 
-## 6. If a release is wrong
+## 7. After the DOI exists
+
+Zenodo mints it within a minute of the release being published. Then, in one
+commit:
+
+- add the concept DOI badge to the README
+- add `doi:` and an `identifiers:` block to `CITATION.cff`
+
+A post-release commit for this is normal and expected; the DOI cannot exist
+before the release it describes.
+
+## 8. If a release is wrong
 
 Yank rather than rewrite. Tags are cheap and a moved tag breaks every checkout
 that already has it. Cut `X.Y.Z+1` with the fix and note in the changelog what
