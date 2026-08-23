@@ -125,6 +125,9 @@ _ASSUMED: dict[str, tuple[int, LatencyClass, str]] = {
     # ptxas reads `F2FP` five cycles later with no scoreboard, so it does not
     # complete out of order; the 6 is `I2FP`'s, the same pipe
     "F2FP": (6, LatencyClass.FIXED, "packed float to half, never scoreboarded"),
+    # absent from the corpus, so the trap its two neighbours close caught it only
+    # when the shipped audit found 302 unscoreboarded (finding 32)
+    "F2IP": (6, LatencyClass.FIXED, "packed float to integer, never scoreboarded"),
     # `I2I` is absent from the corpus, so it keeps the conservative default
     # rather than being classed with its pipe on the strength of its name
     "I2I": (6, LatencyClass.FIXED, "conversion pipeline, class unobserved"),
@@ -174,7 +177,9 @@ _ASSUMED: dict[str, tuple[int, LatencyClass, str]] = {
     "UFLO": (4, LatencyClass.FIXED, ""),
     "CS2UR": (4, LatencyClass.FIXED, "uniform special-register read, fast path"),
     "MATCH": (0, LatencyClass.VARIABLE, ""),
-    "R2UR": (0, LatencyClass.VARIABLE, ""),
+    # VOTEU's argument with 3,098 instances behind it: never scoreboarded, so it
+    # cannot complete out of order, and shipped code spaces it by 13 (finding 32)
+    "R2UR": (13, LatencyClass.FIXED, "vector to uniform register, never scoreboarded"),
     # uniform datapath mirrors the vector one
     "UIADD3": (4, LatencyClass.FIXED, "uniform integer add"),
     "UIMAD": (4, LatencyClass.FIXED, ""),

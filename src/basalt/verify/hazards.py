@@ -572,7 +572,8 @@ def _requirement(
                 evidence.minimum,
                 f"{evidence.producer} -> {evidence.consumer} is scheduled no tighter than "
                 f"{evidence.minimum} cycles across {evidence.observations} observations",
-                True,  # only trusted evidence reaches here, three observations or more
+                # thin evidence is a scheduling coincidence, not a requirement
+                evidence.trusted,
             )
     if guard:
         return (

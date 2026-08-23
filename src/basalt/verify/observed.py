@@ -266,6 +266,42 @@ class ObservedStalls:
                 return evidence
         return None
 
+    def absorb(self, other: ObservedStalls) -> None:
+        """Fold another mining run into this one, keeping the tighter number.
+
+        Both runs report the smallest gap their source was seen to leave, and
+        both are upper bounds on the same requirement, so the smaller is the
+        better estimate and the observations add. That is what lets a table
+        mined from one body of code be improved by another rather than replaced
+        by it, and it is how a table mined across processes is reassembled.
+        """
+        for name, ev in other.by_producer.items():
+            self._fold(self.by_producer, name, ev)
+        for key, ev in other.by_pair.items():
+            self._fold(self.by_pair, key, ev)
+        for key, ev in other.by_scoreboarded.items():
+            self._fold(self.by_scoreboarded, key, ev)
+        for key, ev in other.by_anti.items():
+            self._fold(self.by_anti, key, ev)
+        for key, ev in other.by_issue.items():
+            self._fold(self.by_issue, key, ev)
+        self.kernels += other.kernels
+
+    @staticmethod
+    def _fold(table: dict, key, ev: StallEvidence) -> None:
+        current = table.get(key)
+        if current is None:
+            table[key] = StallEvidence(
+                ev.producer, ev.consumer, ev.minimum, ev.observations, list(ev.samples)
+            )
+            return
+        if ev.minimum < current.minimum:
+            current.minimum = ev.minimum
+            current.samples = list(ev.samples)
+        elif ev.minimum == current.minimum and len(current.samples) < 3:
+            current.samples.extend(ev.samples[: 3 - len(current.samples)])
+        current.observations += ev.observations
+
     def summary(self) -> str:
         trusted = sum(1 for e in self.by_producer.values() if e.trusted)
         anti = sum(1 for e in self.by_anti.values() if e.trusted)
