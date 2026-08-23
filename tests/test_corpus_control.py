@@ -460,9 +460,9 @@ class TestWhatTheCorrectnessCosts:
         vendor, basalt = cycles
         assert vendor > 5000, "the corpus did not build"
         ratio = basalt / vendor
-        # 1.06x when written, pinned from both sides: faster is a reason to
+        # 1.05x when written, pinned from both sides: faster is a reason to
         # distrust the costing rather than to celebrate it (finding 12)
-        assert ratio < 1.15, f"basalt's schedules cost {ratio:.2f}x the vendor's, up from 1.06x"
+        assert ratio < 1.15, f"basalt's schedules cost {ratio:.2f}x the vendor's, up from 1.05x"
         assert ratio > 0.75, (
             f"basalt's schedules cost {ratio:.2f}x, which is far cheaper than the vendor's and "
             f"is the shape a costing bug takes. check the hardware round trip before believing it"

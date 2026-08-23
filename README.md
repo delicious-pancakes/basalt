@@ -63,7 +63,7 @@ One standard, three tools: **agree with the vendor exactly, or say why not.**
 | **Scheduler** | Assigns every control bit from scratch | Discard the vendor's, compute new ones, run both on the GPU against four inputs, compare output bytes | **439 of 439 comparable kernels** byte-identical, at all three optimisation levels |
 
 And the part a scheduler is usually quiet about: what the correctness costs. basalt's
-schedules spend **1.06x** the vendor's issue cycles, slower on 180 of the 1,323 kernel and
+schedules spend **1.05x** the vendor's issue cycles, slower on 168 of the 1,323 kernel and
 optimisation-level pairs and cheaper on the rest, with every comparable kernel still
 byte-identical on the GPU.
 

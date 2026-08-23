@@ -534,9 +534,9 @@ schedules are correct on every comparable corpus kernel, and here is what they c
 | :--- | ---: |
 | `ptxas`, all three levels | 56,441 |
 | basalt | 59,735 |
-| | **1.06x** |
+| | **1.05x** |
 
-Slower on 180 of the 1,323 kernel and optimisation-level pairs and cheaper on the rest, with
+Slower on 168 of the 1,323 kernel and optimisation-level pairs and cheaper on the rest, with
 every comparable kernel still byte-identical on the GPU at all three.
 
 Cheaper than the vendor is believable rather than suspicious, for a specific reason: basalt
@@ -566,7 +566,8 @@ one pair also separates every other pair spanning that point. So a later pair ca
 satisfied by stall placed for an earlier one, leaving the earlier placement larger than
 anything requires. Walking that back, one cycle at a time, judged by the same requirement
 function that placed them, took 1.29x to 0.93x. Charging for anti-dependencies (finding 23)
-took it back to 1.06x, which is what that correctness costs. `LDC` alone was half the excess
+took it back to 1.06x, and mining the anti-dependency per pairing rather than
+charging a constant took it to 1.05x, which is what that correctness costs. `LDC` alone was half the excess
 before any of it, almost all overshoot rather than requirement.
 
 **Not leaning on a wait a predicated instruction carries.** `ptxas` does lean on them and

@@ -115,6 +115,14 @@ any release. The clean-room position in [`NOTICE`](NOTICE) will not.
 
 
 ### Changed
+- The anti-dependency requirement is mined per pairing rather than charged as a
+  constant. Three cycles is what fault injection measured for `ULEA` into
+  `UMOV`; the vendor leaves one or two for hundreds of other pairings, 381 times
+  across the corpus, so a constant was both over-charging and unprovable.
+  Evidence only ever lowers the charge, because the smallest gap `ptxas` left is
+  frequently there for another reason. The checker tests the same rule through
+  the same function, which closed a gap where the scheduler charged for a hazard
+  the checker never looked for. Issue cost 1.06x to 1.05x.
 - The yield bit follows a rule fitted to 36,576 instructions of vendor output,
   93.7% agreement against the 72.9% the previous guess managed. Inverting 680 of
   them in the vendor's own schedules changed no result on the card, so the field
