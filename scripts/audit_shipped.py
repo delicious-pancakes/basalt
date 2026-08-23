@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 import time
@@ -44,6 +45,9 @@ import _repo
 _repo.use_repo_source()
 
 ROOT = _repo.ROOT
+
+# above this a cubin is split across workers by kernel, one shard per multiple
+SHARD_BYTES = 2_000_000
 DEFAULT_LATENCIES = ROOT / "data" / "latency" / "rtx-5070-ti.json"
 DEFAULT_OBSERVED = ROOT / "data" / "latency" / "observed-stalls-sm120a.json"
 
@@ -109,15 +113,24 @@ def _setup() -> None:
     )
 
 
-def _audit(path: Path) -> Tally:
+def _audit(job: tuple[Path, int, int]) -> Tally:
+    """Audit one cubin, or every `stride`-th kernel of it starting at `offset`.
+
+    A shipped library is not evenly sized: cuSOLVER-Mg carries a 29 MB ELF beside
+    fifty small ones, and one core sits on it while fifteen finish. Sharding by
+    kernel costs the disassembly again per shard and buys the analysis, which is
+    where the time goes by a factor of fifteen.
+    """
     from basalt.disasm import disassemble_kernels
     from basalt.verify.hazards import Severity, verify_program
 
     if not _STATE:
         _setup()
 
-    tally = Tally(cubins=1)
-    for name, program in disassemble_kernels(_STATE["tc"], path).items():
+    path, stride, offset = job
+    tally = Tally(cubins=1 if offset == 0 else 0)
+    kernels = sorted(disassemble_kernels(_STATE["tc"], path).items())
+    for name, program in kernels[offset::stride]:
         report = verify_program(program, _STATE["model"], observed=_STATE["observed"])
         tally.kernels += 1
         tally.instructions += report.instructions
@@ -218,19 +231,23 @@ def main() -> int:
     # largest first, one at a time: a 5 MB cubin takes minutes and a 50 KB one
     # milliseconds, so a fixed chunk leaves fifteen cores idle behind a straggler
     targets.sort(key=lambda p: p.stat().st_size, reverse=True)
+    workers = args.workers or os.cpu_count() or 8
+    jobs: list[tuple[Path, int, int]] = []
+    for path in targets:
+        shards = min(workers, max(1, path.stat().st_size // SHARD_BYTES))
+        jobs.extend((path, shards, offset) for offset in range(shards))
 
     print(f"{_repo.provenance()}\n")
     print(f"auditing {len(targets)} cubins from {len({t.parent.name for t in targets})} libraries")
 
     total = Tally()
     started = time.perf_counter()
-    workers = args.workers or None
     with ProcessPoolExecutor(max_workers=workers, initializer=_setup) as pool:
-        for done, tally in enumerate(pool.map(_audit, targets, chunksize=1), start=1):
+        for done, tally in enumerate(pool.map(_audit, jobs, chunksize=1), start=1):
             total.merge(tally)
             if done % 10 == 0:
                 print(
-                    f"  {done}/{len(targets)} cubins, {total.kernels} kernels, "
+                    f"  {done}/{len(jobs)} shards, {total.kernels} kernels, "
                     f"{total.instructions} instructions, {total.errors} errors "
                     f"({time.perf_counter() - started:.0f}s)",
                     flush=True,
