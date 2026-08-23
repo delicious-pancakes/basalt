@@ -32,7 +32,14 @@ class TestDirection:
         assert defs("STG.E", "desc[UR4][R2.64], R7") == set()
 
     def test_store_reads_its_address_and_value(self):
-        assert uses("STG.E", "desc[UR4][R2.64], R7") == {"R2", "R3", "R7", "UR4"}
+        # the descriptor is a pair: `ptxas` fills it with `LDCU.64 UR4`, so a
+        # dependency on UR5 is real even though nothing in the text says 64
+        assert uses("STG.E", "desc[UR4][R2.64], R7") == {"R2", "R3", "R7", "UR4", "UR5"}
+
+    def test_a_store_width_describes_the_data_and_not_the_address(self):
+        """`STS.128 [R0], R8` writes four registers to one 32-bit address."""
+        assert uses("STS.128", "[R0+0x50], R8") == {"R0", "R8", "R9", "R10", "R11"}
+        assert uses("LDS.64", "R4, [UR4+0x400]") == {"UR4"}
 
     def test_exit_touches_nothing(self):
         assert defs("EXIT", "") == set()

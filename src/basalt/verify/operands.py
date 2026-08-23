@@ -206,6 +206,15 @@ _PREDICATES_THEN_REGISTER = frozenset({"IMNMX", "FMNMX", "DMNMX", "HMNMX", "HMNM
 # the factors are not; `.U32` describes the factors, so the suffix rule misreads it
 
 
+def _in_descriptor(part: str, position: int) -> bool:
+    """Does the token at `position` sit inside the `desc[...]` group?"""
+    start = part.find("desc[")
+    if start < 0:
+        return False
+    end = part.find("]", start)
+    return start < position < end
+
+
 def _width_from(mnemonic: str, tail: str) -> int:
     """How many registers a reference covers.
 
@@ -310,9 +319,20 @@ def operand_access(mnemonic: str, operands: str) -> Access:
             ref = _mk(m.group(1), m.group(2))
             if ref is None:
                 continue
-            width = _width_from(mnemonic, m.group(3))
-            if wide and (idx == 0 or idx == len(parts) - 1):
-                width = max(width, 2)
+            if addressed:
+                # A width on the mnemonic describes the data, not the address.
+                # `STS.128 [R0], R8` moves four registers to one 32-bit shared
+                # address, and widening the address invented a dependency on
+                # R1..R3 that made the vendor's own schedule read as broken. A
+                # suffix on the register itself, as `[R2.64]` has, still counts,
+                # and a descriptor is a 64-bit pair whether or not it says so.
+                width = _width_from("", m.group(3))
+                if _in_descriptor(part, m.start()):
+                    width = max(width, 2)
+            else:
+                width = _width_from(mnemonic, m.group(3))
+                if wide and (idx == 0 or idx == len(parts) - 1):
+                    width = max(width, 2)
             regs = _expand(ref, width)
             if is_def_slot and not addressed:
                 access.defs |= regs
