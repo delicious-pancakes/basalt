@@ -106,6 +106,8 @@ _ASSUMED: dict[str, tuple[int, LatencyClass, str]] = {
     "HADD2": (4, LatencyClass.FIXED, "packed half"),
     "HMUL2": (4, LatencyClass.FIXED, "packed half"),
     "HFMA2": (4, LatencyClass.FIXED, "packed half"),
+    # missing from this group until the half-precision kernels started building
+    "HMNMX2": (4, LatencyClass.FIXED, "packed half, like IMNMX and FMNMX"),
     "HSETP2": (4, LatencyClass.FIXED, ""),
     "VIMNMX": (4, LatencyClass.FIXED, "packed integer min/max"),
     "VIADD": (4, LatencyClass.FIXED, ""),
@@ -119,6 +121,11 @@ _ASSUMED: dict[str, tuple[int, LatencyClass, str]] = {
     # `I2FP` is a different instruction, not `I2F` with a suffix, and the
     # longest-prefix rule would otherwise hand it the conversion pipe's entry
     "I2FP": (6, LatencyClass.FIXED, "packed integer to float, never scoreboarded"),
+    # `F2FP` is the same case for `F2F`: ptxas packs two floats to half and reads
+    # the result five cycles later with no scoreboard anywhere, so it is not
+    # completing out of order. The 6 is `I2FP`'s, the same pipe; where there is
+    # mined evidence for a pair it is the mined number that applies
+    "F2FP": (6, LatencyClass.FIXED, "packed float to half, never scoreboarded"),
     # `I2I` does not appear anywhere in the corpus, so there is no evidence for
     # its class either way and it keeps the conservative default rather than
     # being classed with the rest of the pipe on the strength of its name.

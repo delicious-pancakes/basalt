@@ -44,7 +44,7 @@ vendor compiler's own output, which is what makes it useful rather than self-ref
 
 The scheduler discards every control bit `ptxas` produced and computes its own, then hands the
 result back to the verifier and then to the GPU, for every kernel the corpus generates.
-Every one of the 369 comparable ones comes out byte-identical to the vendor schedule, at all
+Every one of the 392 comparable ones comes out byte-identical to the vendor schedule, at all
 three optimisation levels. The rest are named in the findings rather than summarised, and
 that count is what the work is measured against: it was 246 when the control was first run,
 and every model correction since came out of watching it move.
@@ -56,7 +56,7 @@ treated the surrounding gaps as free to compress.
 
 The assembler encodes SASS text back into the instruction word, and its standard is the
 vendor's own bytes: assembling every corpus kernel as a whole program, with its labels
-resolved, reproduces 9,846 of 9,856 instructions bit-identically and none to anything else.
+resolved, reproduces 10,406 of 10,416 instructions bit-identically and none to anything else.
 That second number is a test pinned at zero.
 
 Whole programs rather than lone instructions because a branch cannot be assembled alone.

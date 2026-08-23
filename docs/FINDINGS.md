@@ -49,8 +49,8 @@ Its scheduling is the reference, so an error on any of them is basalt's fault.
 
 | | |
 | :--- | ---: |
-| Kernels compiled | 370 |
-| Dependencies checked | 6,105 |
+| Kernels compiled | 393 |
+| Dependencies checked | 6,359 |
 | Errors | **0** |
 | Kernels with warnings | 1 |
 
@@ -294,7 +294,7 @@ The staircase is the useful part. A single wrong answer could be anything; a val
 climbs monotonically toward the right one as the gap widens, and then stops changing, is a
 timing requirement being met.
 
-**Across the corpus.** Every dependent pair in the 370 kernel corpus, split by how the
+**Across the corpus.** Every dependent pair in the 393 kernel corpus, split by how the
 consumer reads the value, scoreboard-covered pairs excluded because there the stall says
 nothing:
 
@@ -350,7 +350,7 @@ with traffic on both sides, predicated writes, and long unbranched dependent cha
 
 | | |
 | :--- | ---: |
-| Kernels rescheduled and run | 383 |
+| Kernels rescheduled and run | 406 |
 | Comparable (the vendor runs here, deterministically, and reproducibly) | 314 |
 | **Byte-identical to the vendor schedule** | **314** |
 | Wrong | 0 |
@@ -525,7 +525,7 @@ label under this rule and none decodes wrongly.
 The rule is a measurement, and a measurement written down as a constant is exactly what goes
 quietly wrong when a compiler version changes, so it is re-derived from the corpus by a test
 rather than trusted. With it, assembling every corpus kernel as a whole program reproduces
-9,846 of 9,856 instructions bit-identically, and none to anything else.
+10,406 of 10,416 instructions bit-identically, and none to anything else.
 
 ## 12. What the correctness costs
 
@@ -536,9 +536,9 @@ schedules are correct on every comparable corpus kernel, and here is what they c
 | :--- | ---: |
 | `ptxas -O3` | 13,571 |
 | basalt | 12,168 |
-| | **0.88x** |
+| | **0.87x** |
 
-Slower on 34 of the 383 kernels and cheaper on the rest, with every comparable kernel still
+Slower on 34 of the 406 kernels and cheaper on the rest, with every comparable kernel still
 byte-identical on the GPU at all three optimisation levels.
 
 Cheaper than the vendor is believable rather than suspicious, for a specific reason: basalt
@@ -567,7 +567,7 @@ a consumer that is short and spends cycles in the window before it, and a cycle 
 one pair also separates every other pair spanning that point. So a later pair can be
 satisfied by stall placed for an earlier one, leaving the earlier placement larger than
 anything requires. Walking that back, one cycle at a time, judged by the same requirement
-function that placed them, took 1.29x to 0.88x. `LDC` alone was half the excess before it,
+function that placed them, took 1.29x to 0.87x. `LDC` alone was half the excess before it,
 almost all overshoot rather than requirement.
 
 **Not leaning on a wait a predicated instruction carries.** `ptxas` does lean on them and
@@ -782,11 +782,11 @@ computes a wrong answer, which is the entire failure this repository exists to p
 
 | | |
 | :--- | ---: |
-| Kernels, one dependency shortened in each | 206 |
-| Agreed broken | 71 |
-| Over-strict | 78 |
+| Kernels, one dependency shortened in each | 209 |
+| Agreed broken | 74 |
+| Over-strict | 84 |
 | **Missed** | **0** |
-| Unstable, excluded | 57 |
+| Unstable, excluded | 51 |
 
 Which kernels land in the excluded column moves between runs, because several read memory
 this harness never initialises and are therefore stable only until something else has used
@@ -862,7 +862,7 @@ After the fixes, at 120 mutations per form across five seeds:
 
 | | |
 | :--- | ---: |
-| Mutations | 207,000 |
+| Mutations | 219,000 |
 | Assembled and round-tripped | all of them |
 | Same word, printed differently | counted separately |
 | **Wrong** | **0** |
@@ -929,7 +929,39 @@ The ten that remain are bits the prober could not attribute to anything, spread 
 `RET.REL.NODEC`, three `LDC` base fields, one `FADD` and one `IADD3`. Those refuse rather
 than guess, which is the designed answer.
 
-## 20. What is deliberately not claimed
+## 20. Kernels that never compiled, and the count that hid them
+
+`ptxas` rejecting a snippet is an ordinary result here. The corpus is deliberately broad and
+tries forms the architecture may not have, so a rejection is recorded as a negative rather
+than raised, and the harvest prints how many there were and carries on. That is the right
+design, and it hid three separate bugs for as long as they had existed:
+
+| Kernels | What was wrong | What it cost |
+| :--- | :--- | :--- |
+| all 22 half precision | `ld.global.f16`, a load type PTX does not have | `HADD2`, `HMUL2`, `HFMA2`, `HMNMX2` and the f16 conversions, absent from the database, the latency model and the mined stall table alike |
+| `popc.b64`, `clz.b64` | a 64-bit destination for a count that is 32 bits wide | both 64-bit forms |
+| `mma.m16n8k16.f16.f16.f16` | `.f16` accumulate given `.f32` registers, when it packs two halves into a `.b32` | the only f16-accumulating tensor form |
+
+The half-precision case is the one worth dwelling on. The type table had carried `b16` as
+f16's container since it was written, in a column that nothing read; `_load` interpolated the
+arithmetic type straight into the instruction instead. So the corpus claimed a whole
+precision class and covered none of it.
+
+**A corpus bug and a form the architecture does not have look identical from outside.** Both
+are one more rejected snippet. The difference is in the reason, which was being recorded and
+never read. So the reasons are now sorted: a parse error, a type mismatch or an arguments
+mismatch means the PTX is wrong, and anything else is a genuine negative. The harvest counts
+the first kind separately and a test fails if there are any.
+
+That test found `popc`, `clz` and `mma` on its first run, none of which had anything to do
+with the half-precision bug that prompted it.
+
+| | Mnemonics | Opcodes | Instructions reproduced |
+| :--- | ---: | ---: | ---: |
+| Before | 276 | 77 | 9,856 |
+| After | **295** | **81** | **10,406** |
+
+## 21. What is deliberately not claimed
 
 Stated so the boundary of the evidence is visible.
 
@@ -967,7 +999,7 @@ Stated so the boundary of the evidence is visible.
   first conversion. An earlier run reported `I2FP` as requiring 4 cycles; the control
   retracted it, and it is listed as not established rather than quietly kept.
 
-## 21. Corrections made along the way
+## 22. Corrections made along the way
 
 Kept because a method is only as trustworthy as its error log.
 
@@ -1012,6 +1044,13 @@ Kept because a method is only as trustworthy as its error log.
   vendor scheduled it at two, and the mined floor came down to match. Re-mining changed
   nothing about how many dependencies are checked, 6,105 either way; it turned four false
   errors into none.
+- `F2FP` was reading `F2F`'s entry, the conversion pipe, which signals a scoreboard and
+  completes out of order. `ptxas` emits `F2FP` with no scoreboard anywhere and reads the
+  packed result five cycles later, so it cannot be. It is on the fixed pipeline, the same
+  correction `I2FP` and `VOTEU` needed before it, and the half-precision kernels are what
+  finally reached it.
+- `HMNMX2` had no latency entry at all, while `HADD2`, `HMUL2` and `HFMA2` beside it did.
+  Nothing had noticed because no kernel producing one ever compiled.
 
 Each of these was caught by the positive control: the vendor compiler's own output must
 verify clean, and every one of them made it fail.

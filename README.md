@@ -58,12 +58,12 @@ One standard, three tools: **agree with the vendor exactly, or say why not.**
 
 | | What it does | How it is checked | Result |
 | :--- | :--- | :--- | ---: |
-| **Assembler** | SASS text to the 128-bit word | Reassemble every instruction `ptxas` emitted and compare bytes | 9,846 of 9,856 exact, **0 wrong** |
-| **Checker** | Reads a schedule, reports hazards | The vendor's own output must verify clean, and a deliberately shortened stall must be caught | 0 errors on 370 vendor kernels, **0 missed** on 206 broken ones |
-| **Scheduler** | Assigns the control bits from scratch | Discard every control bit, compute new ones, run both on the GPU against four inputs, compare output bytes | **369 of 369** byte-identical, at every optimisation level |
+| **Assembler** | SASS text to the 128-bit word | Reassemble every instruction `ptxas` emitted and compare bytes | 10,406 of 10,416 exact, **0 wrong** |
+| **Checker** | Reads a schedule, reports hazards | The vendor's own output must verify clean, and a deliberately shortened stall must be caught | 0 errors on 393 vendor kernels, **0 missed** on 209 broken ones |
+| **Scheduler** | Assigns the control bits from scratch | Discard every control bit, compute new ones, run both on the GPU against four inputs, compare output bytes | **392 of 392** byte-identical, at every optimisation level |
 
 And the part a scheduler is usually quiet about: what the correctness costs. basalt's
-schedules spend **0.88x** the vendor's issue cycles, slower on 34 of the 383 kernels and
+schedules spend **0.87x** the vendor's issue cycles, slower on 34 of the 406 kernels and
 cheaper on the rest, with every comparable kernel still byte-identical on the GPU.
 
 Cheaper than the vendor is not a claim to be smug about. basalt schedules every dependency
@@ -289,7 +289,7 @@ python -m basalt.cli verify kernel.cubin --latencies data/latency/your-card.json
 And the control that keeps the rest honest, which does need a card:
 
 ```bash
-python scripts/roundtrip_corpus.py    # reschedule all 383 corpus kernels, run both on the GPU
+python scripts/roundtrip_corpus.py    # reschedule all 406 corpus kernels, run both on the GPU
 ```
 
 ```console
@@ -341,13 +341,13 @@ Three of those contradict the assumed model basalt shipped with: `DADD` was assu
 
 **The verdicts match the silicon.** For every encodable stall on a dependent producer, basalt's static answer and what the hardware actually computes agree, including the zero case. That is held as a test, not asserted here. Full evidence, including three independent methods for the required stall and the corrections made along the way, is in [findings](docs/FINDINGS.md).
 
-**And when it says a schedule is unsafe, the silicon agrees.** Take the vendor's own working schedule for 206 kernels, shorten one real dependency in each, and compare basalt's verdict against what the GPU computes: 71 that it called broken were broken, and **nothing it called safe computed a wrong answer**. That number started at 34 missed rather than zero, and [findings](docs/FINDINGS.md) says what the cause was and what fixing it cost in false alarms, because a sweep that only ever reported its final figure would be worth less than one that reported its first.
+**And when it says a schedule is unsafe, the silicon agrees.** Take the vendor's own working schedule for 209 kernels, shorten one real dependency in each, and compare basalt's verdict against what the GPU computes: 74 that it called broken were broken, and **nothing it called safe computed a wrong answer**. That number started at 34 missed rather than zero, and [findings](docs/FINDINGS.md) says what the cause was and what fixing it cost in false alarms, because a sweep that only ever reported its final figure would be worth less than one that reported its first.
 
 ## It can assign the control bits too
 
 The verifier answers whether a schedule is safe. The scheduler answers what a safe schedule would be, from the same measurements: it discards every control bit `ptxas` produced, computes its own, hands the result back to the verifier, and then runs it on the GPU beside the vendor's version of the same kernel.
 
-Run over the whole corpus on the card, at every optimisation level that produces a schedule, every one of the 369 comparable kernels comes out computing byte-identical results to the vendor schedule, from control bits basalt worked out itself. The 14 that are excluded are excluded for reasons that have nothing to do with the schedule, and [findings](docs/FINDINGS.md) says which and why rather than folding them into a percentage.
+Run over the whole corpus on the card, at every optimisation level that produces a schedule, every one of the 392 comparable kernels comes out computing byte-identical results to the vendor schedule, from control bits basalt worked out itself. The 14 that are excluded are excluded for reasons that have nothing to do with the schedule, and [findings](docs/FINDINGS.md) says which and why rather than folding them into a percentage.
 
 That control is the reason any of the rest is trustworthy. The checker and the scheduler read the same latency model, so a wrong entry in it satisfies both at once and they agree with each other while both being wrong. Only the silicon has no stake in the argument. Running the scheduler over seven hand-written kernels passed seven of seven for a long time; running it over three hundred found forty-one wrong ones, and every model correction since came out of watching that number move.
 

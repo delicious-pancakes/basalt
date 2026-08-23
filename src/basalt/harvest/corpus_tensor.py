@@ -51,7 +51,10 @@ def _mma_kernel(name: str, form: MmaForm) -> str:
     Fragments are loaded from global memory so nothing folds, and the first
     result register is stored so nothing is eliminated.
     """
-    acc_reg = "f" if form.ctype.startswith("f") else "c"
+    # `.f16` accumulate packs two halves into a 32-bit register, so it takes a
+    # `.b32` like the integer forms rather than an `.f32`. Matching on the first
+    # letter put it in the float bank and the kernel never compiled
+    acc_reg = "f" if form.ctype == "f32" else "c"
     acc_ld = "f32" if form.ctype == "f32" else "b32"
 
     loads = []

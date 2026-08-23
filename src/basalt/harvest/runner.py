@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
@@ -68,6 +69,16 @@ class Observation:
         )
 
 
+# a corpus bug and a form the architecture does not have look identical from
+# out here: both are one rejected snippet. These are the reasons that mean the
+# PTX we wrote is wrong, and naming them is what makes the difference visible
+_MALFORMED = re.compile(
+    r"parsing error|syntax error|unexpected instruction types"
+    r"|arguments mismatch|not defined|unknown symbol",
+    re.IGNORECASE,
+)
+
+
 @dataclass
 class HarvestResult:
     """Everything one harvest run produced, plus its provenance."""
@@ -83,6 +94,16 @@ class HarvestResult:
         return {o.opcode for o in self.observations}
 
     @property
+    def malformed(self) -> dict[str, str]:
+        """Rejections that mean the corpus is wrong, not that the form is absent.
+
+        Every half-precision kernel emitted `ld.global.f16`, which PTX has no
+        such type for, and failed to build for as long as they had existed. The
+        count was in the summary the whole time; what it needed was a name.
+        """
+        return {name: why for name, why in self.rejected.items() if _MALFORMED.search(why)}
+
+    @property
     def mnemonics(self) -> set[str]:
         return {o.mnemonic for o in self.observations}
 
@@ -92,6 +113,7 @@ class HarvestResult:
             f"{len(self.mnemonics)} distinct mnemonics, "
             f"{len(self.opcodes)} distinct opcodes, "
             f"{len(self.rejected)} snippets rejected"
+            + (f", {len(bad)} of them malformed" if (bad := self.malformed) else "")
         )
 
     def write(self, path: Path) -> None:

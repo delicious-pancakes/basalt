@@ -30,6 +30,7 @@ from basalt.disasm import disassemble_program
 from basalt.encoding import NO_BARRIER
 from basalt.harvest.corpus import generate
 from basalt.harvest.corpus_tensor import generate_tensor
+from basalt.harvest.runner import _MALFORMED
 from basalt.verify.hazards import Severity, verify_program
 from basalt.verify.latency import DEFAULT_MODEL, LatencyModel
 from basalt.verify.observed import ObservedStalls
@@ -69,6 +70,24 @@ class TestPositiveControl:
     def test_the_corpus_actually_compiled(self, reports):
         """A control over nothing proves nothing."""
         assert len(reports) > 200, f"only {len(reports)} kernels compiled"
+
+    def test_no_kernel_is_rejected_for_being_malformed(self, corpus_builds):
+        """A corpus bug must not go on looking like a form sm_120 lacks.
+
+        `ptxas` rejecting a snippet is an ordinary negative result, so the count
+        alone says nothing. It hid every half-precision kernel emitting a load
+        type PTX does not have, which cost four opcodes and eighteen mnemonics
+        for as long as those kernels had existed.
+        """
+        corpus_builds.at(3)
+        broken = {
+            name: why.strip().splitlines()[0] if why.strip() else ""
+            for name, why in corpus_builds.rejected.items()
+            if _MALFORMED.search(why)
+        }
+        assert not broken, "kernels that do not compile because the PTX is wrong:\n" + "\n".join(
+            f"  {name}: {why}" for name, why in list(broken.items())[:10]
+        )
 
     def test_dependencies_were_actually_checked(self, reports):
         total = sum(report.checked_pairs for _, report in reports)
@@ -439,10 +458,10 @@ class TestWhatTheCorrectnessCosts:
         vendor, basalt = cycles
         assert vendor > 5000, "the corpus did not build"
         ratio = basalt / vendor
-        # 0.88x when this was written, pinned from both sides: slower is a
+        # 0.87x when this was written, pinned from both sides: slower is a
         # regression, and faster is a reason to distrust the costing rather
         # than to celebrate it (finding 12)
-        assert ratio < 1.15, f"basalt's schedules cost {ratio:.2f}x the vendor's, up from 0.88x"
+        assert ratio < 1.15, f"basalt's schedules cost {ratio:.2f}x the vendor's, up from 0.87x"
         assert ratio > 0.75, (
             f"basalt's schedules cost {ratio:.2f}x, which is far cheaper than the vendor's and "
             f"is the shape a costing bug takes. check the hardware round trip before believing it"

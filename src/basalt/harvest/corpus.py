@@ -97,12 +97,19 @@ def _reg(ptx_type: str, idx: int) -> str:
     return f"%{prefix}{idx}"
 
 
+# `ld` and `st` have no `.f16` type: a half moves as raw bits and only the
+# arithmetic names the format. Emitting `ld.global.f16` made every one of the
+# corpus's 25 half-precision kernels fail to build, in silence, for as long as
+# they had existed
+_MOVE_TYPE = {"f16": "b16"}
+
+
 def _load(ptx_type: str, dst: str, off: int) -> str:
-    return f"    ld.global.{ptx_type} {dst}, [%in+{off}];"
+    return f"    ld.global.{_MOVE_TYPE.get(ptx_type, ptx_type)} {dst}, [%in+{off}];"
 
 
 def _store(ptx_type: str, src: str) -> str:
-    return f"    st.global.{ptx_type} [%out], {src};"
+    return f"    st.global.{_MOVE_TYPE.get(ptx_type, ptx_type)} [%out], {src};"
 
 
 def _binary(op: str, ptx_type: str, mods: tuple[str, ...] = ()) -> Snippet:
@@ -199,14 +206,20 @@ def _ternary(op: str, ptx_type: str, mods: tuple[str, ...] = ()) -> Snippet:
     return Snippet(name, _kernel(name, body, ""), "ternary", op, ptx_type, mods)
 
 
-def _unary(op: str, ptx_type: str, mods: tuple[str, ...] = ()) -> Snippet:
-    a, d = _reg(ptx_type, 1), _reg(ptx_type, 2)
+def _unary(
+    op: str, ptx_type: str, mods: tuple[str, ...] = (), result_type: str | None = None
+) -> Snippet:
+    # the result is not always the operand's width: `popc.b64` and `clz.b64`
+    # count the bits of a 64-bit word into a 32-bit one, and giving them a
+    # 64-bit destination is a kernel that has never compiled
+    out_type = result_type or ptx_type
+    a, d = _reg(ptx_type, 1), _reg(out_type, 2)
     suffix = "".join("." + m for m in mods)
     body = "\n".join(
         [
             _load(ptx_type, a, 0),
             f"    {op}{suffix}.{ptx_type} {d}, {a};",
-            _store(ptx_type, d),
+            _store(out_type, d),
         ]
     )
     name = f"k_{op}{''.join('_' + m for m in mods)}_{ptx_type}"
@@ -329,7 +342,7 @@ def generate() -> list[Snippet]:
     for t in _FLOAT:
         out += [_binary_imm(op, t) for op in ("add", "sub", "mul", "min", "max")]
     out.append(_binary_imm("add", "f32", ("ftz",)))
-    out += [_binary_imm(op, "f16") for op in ("add", "sub", "mul")]
+    # no f16 row: `add.f16` takes no immediate operand, in either literal syntax
     for t in _BITS:
         out += [_binary_imm(op, t) for op in ("and", "or", "xor")]
     out += [
@@ -349,8 +362,8 @@ def generate() -> list[Snippet]:
         out.append(_unary("not", t))
     for t in ("b32", "b64"):
         out += [_shift("shl", t), _shift("shr", t)]
-    out += [_unary("popc", "b32"), _unary("popc", "b64")]
-    out += [_unary("clz", "b32"), _unary("clz", "b64")]
+    out += [_unary("popc", "b32"), _unary("popc", "b64", result_type="b32")]
+    out += [_unary("clz", "b32"), _unary("clz", "b64", result_type="b32")]
     out += [_unary("brev", "b32"), _unary("brev", "b64")]
 
     # comparison across every predicate ptxas accepts for the type class

@@ -98,6 +98,9 @@ class CorpusBuilds:
         self._toolchain = toolchain
         self._root = root
         self._cache: dict[int, dict[str, tuple[Path, Program]]] = {}
+        # kept so a kernel that never compiled cannot go on looking like a form
+        # the architecture does not have
+        self.rejected: dict[str, str] = {}
 
     def at(self, opt: int) -> dict[str, tuple[Path, Program]]:
         """Every kernel that built at `-O{opt}`, by name, with its cubin path."""
@@ -131,12 +134,17 @@ class CorpusBuilds:
             )
             # a kernel ptxas rejects is a recorded negative, not a failure
             if built.returncode != 0:
-                return None
-            return snippet.name, (cubin, disassemble_program(self._toolchain, cubin))
+                return snippet.name, None, f"{built.stdout}\n{built.stderr}"
+            program = disassemble_program(self._toolchain, cubin)
+            return snippet.name, (cubin, program), None
 
         snippets = generate() + generate_tensor() + generate_shapes()
         with ThreadPoolExecutor(max_workers=min(32, (os.cpu_count() or 4) * 2)) as pool:
-            return dict(row for row in pool.map(one, snippets) if row is not None)
+            rows = list(pool.map(one, snippets))
+        for name, built, why in rows:
+            if built is None:
+                self.rejected[f"{name}@O{opt}"] = why or ""
+        return {name: built for name, built, _ in rows if built is not None}
 
 
 @pytest.fixture(scope="session")

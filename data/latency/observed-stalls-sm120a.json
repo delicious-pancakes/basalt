@@ -21,6 +21,11 @@
       "observations": 3,
       "trusted": true
     },
+    "F2FP.F16.F32.PACK_AB->STG": {
+      "min_stall": 5,
+      "observations": 3,
+      "trusted": true
+    },
     "FADD->STG": {
       "min_stall": 5,
       "observations": 24,
@@ -206,6 +211,11 @@
       "observations": 3,
       "trusted": true
     },
+    "HADD2->STG": {
+      "min_stall": 5,
+      "observations": 6,
+      "trusted": true
+    },
     "HFMA2->FSEL": {
       "min_stall": 6,
       "observations": 3,
@@ -223,7 +233,12 @@
     },
     "HFMA2->STG": {
       "min_stall": 5,
-      "observations": 12,
+      "observations": 15,
+      "trusted": true
+    },
+    "HMMA.16816.F16->STG": {
+      "min_stall": 28,
+      "observations": 3,
       "trusted": true
     },
     "HMMA.16816.F32->STG": {
@@ -253,6 +268,16 @@
     },
     "HMMA.1688.F32.TF32->STG": {
       "min_stall": 28,
+      "observations": 3,
+      "trusted": true
+    },
+    "HMNMX2->STG": {
+      "min_stall": 5,
+      "observations": 6,
+      "trusted": true
+    },
+    "HMUL2->STG": {
+      "min_stall": 5,
       "observations": 3,
       "trusted": true
     },
@@ -308,7 +333,7 @@
     },
     "IADD->IADD": {
       "min_stall": 5,
-      "observations": 46,
+      "observations": 49,
       "trusted": true
     },
     "IADD->IADD3": {
@@ -353,7 +378,7 @@
     },
     "IADD->STG": {
       "min_stall": 5,
-      "observations": 71,
+      "observations": 77,
       "trusted": true
     },
     "IADD.64->STG": {
@@ -711,6 +736,11 @@
       "observations": 6,
       "trusted": true
     },
+    "ISETP.NE.U32.AND->@IADD": {
+      "min_stall": 18,
+      "observations": 3,
+      "trusted": true
+    },
     "ISETP.NE.U32.AND->@LOP3": {
       "min_stall": 31,
       "observations": 6,
@@ -718,7 +748,7 @@
     },
     "ISETP.NE.U32.AND->SEL": {
       "min_stall": 5,
-      "observations": 6,
+      "observations": 9,
       "trusted": true
     },
     "LEA->STSM": {
@@ -864,6 +894,11 @@
     "PLOP3.LUT->ISETP": {
       "min_stall": 6,
       "observations": 8,
+      "trusted": true
+    },
+    "POPC->IADD": {
+      "min_stall": 3,
+      "observations": 3,
       "trusted": true
     },
     "PRMT->IADD": {
@@ -1028,6 +1063,11 @@
     },
     "QMMA.SF.16832.F32.E5M2.E5M2.E8->STG": {
       "min_stall": 28,
+      "observations": 3,
+      "trusted": true
+    },
+    "SEL->FLO": {
+      "min_stall": 6,
       "observations": 3,
       "trusted": true
     },
@@ -1341,11 +1381,12 @@
       "trusted": true
     },
     "@ISETP.NE.U32.AND": {
-      "min_stall": 31,
-      "observations": 6,
+      "min_stall": 18,
+      "observations": 9,
       "samples": [
-        "ISETP.NE.U32.AND P2, PT, R7, RZ, PT -> @!P2 LOP3.LUT R5, RZ, R7, RZ, 0x33, !PT",
-        "ISETP.NE.U32.AND P1, PT, R7, RZ, PT -> @!P1 LOP3.LUT R0, RZ, R7, RZ, 0x33, !PT"
+        "ISETP.NE.U32.AND P0, PT, R3, RZ, PT -> @P0 IADD R7, R4, RZ",
+        "ISETP.NE.U32.AND P0, PT, R3, RZ, PT -> @P0 IADD R7, R6, RZ",
+        "ISETP.NE.U32.AND P0, PT, R3, RZ, PT -> @P0 IADD R7, R6, RZ"
       ],
       "trusted": true
     },
@@ -1396,6 +1437,16 @@
         "CS2R.32 R5, SR_CLOCKLO -> STG.E desc[UR4][R2.64], R5",
         "CS2R.32 R5, SR_CLOCKLO -> STG.E desc[UR4][R2.64], R5",
         "CS2R.32 R5, SR_CLOCKLO -> STG.E desc[UR4][R2.64], R5"
+      ],
+      "trusted": true
+    },
+    "F2FP.F16.F32.PACK_AB": {
+      "min_stall": 5,
+      "observations": 3,
+      "samples": [
+        "F2FP.F16.F32.PACK_AB R0, RZ, R2 -> STG.E.U16 desc[UR4][R4.64], R0",
+        "F2FP.F16.F32.PACK_AB R0, RZ, R2 -> STG.E.U16 desc[UR4][R4.64], R0",
+        "F2FP.F16.F32.PACK_AB R0, RZ, R2 -> STG.E.U16 desc[UR4][R4.64], R0"
       ],
       "trusted": true
     },
@@ -1589,13 +1640,33 @@
       ],
       "trusted": true
     },
+    "HADD2": {
+      "min_stall": 5,
+      "observations": 6,
+      "samples": [
+        "HADD2 R0, R0.H0_H0, R5.H0_H0 -> STG.E.U16 desc[UR4][R4.64], R0",
+        "HADD2 R0, R0.H0_H0, R5.H0_H0 -> STG.E.U16 desc[UR4][R4.64], R0",
+        "HADD2 R0, R0.H0_H0, R5.H0_H0 -> STG.E.U16 desc[UR4][R4.64], R0"
+      ],
+      "trusted": true
+    },
     "HFMA2": {
       "min_stall": 5,
-      "observations": 39,
+      "observations": 42,
       "samples": [
         "HFMA2 R4, -RZ, RZ, 0, 0 -> IMAD.HI R7, R7, R0, R4",
         "HFMA2 R6, -RZ, RZ, 0, 0 -> IMAD.HI R9, R9, R0, R6",
         "HFMA2 R6, -RZ, RZ, 0, 0 -> IMAD.HI R9, R9, R0, R6"
+      ],
+      "trusted": true
+    },
+    "HMMA.16816.F16": {
+      "min_stall": 28,
+      "observations": 3,
+      "samples": [
+        "HMMA.16816.F16 R6, R4, R8, R10 -> STG.E desc[UR4][R4.64], R6",
+        "HMMA.16816.F16 R6, R4, R8, R10 -> STG.E desc[UR4][R4.64], R6",
+        "HMMA.16816.F16 R6, R4, R8, R10 -> STG.E desc[UR4][R4.64], R6"
       ],
       "trusted": true
     },
@@ -1659,6 +1730,26 @@
       ],
       "trusted": true
     },
+    "HMNMX2": {
+      "min_stall": 5,
+      "observations": 6,
+      "samples": [
+        "HMNMX2 R0, R0.H0_H0, R5.H0_H0, PT -> STG.E.U16 desc[UR4][R4.64], R0",
+        "HMNMX2 R0, R0.H0_H0, R5.H0_H0, PT -> STG.E.U16 desc[UR4][R4.64], R0",
+        "HMNMX2 R0, R0.H0_H0, R5.H0_H0, PT -> STG.E.U16 desc[UR4][R4.64], R0"
+      ],
+      "trusted": true
+    },
+    "HMUL2": {
+      "min_stall": 5,
+      "observations": 3,
+      "samples": [
+        "HMUL2 R0, R0.H0_H0, R5.H0_H0 -> STG.E.U16 desc[UR4][R4.64], R0",
+        "HMUL2 R0, R0.H0_H0, R5.H0_H0 -> STG.E.U16 desc[UR4][R4.64], R0",
+        "HMUL2 R0, R0.H0_H0, R5.H0_H0 -> STG.E.U16 desc[UR4][R4.64], R0"
+      ],
+      "trusted": true
+    },
     "I2FP.F32.S32": {
       "min_stall": 5,
       "observations": 3,
@@ -1691,7 +1782,7 @@
     },
     "IADD": {
       "min_stall": 4,
-      "observations": 305,
+      "observations": 314,
       "samples": [
         "IADD R4, R6, 0xffffffe -> F2I.FTZ.U32.TRUNC.NTZ R5, R4",
         "IADD R4, R6, 0xffffffe -> F2I.FTZ.U32.TRUNC.NTZ R5, R4",
@@ -1981,11 +2072,11 @@
     },
     "ISETP.NE.U32.AND": {
       "min_stall": 5,
-      "observations": 6,
+      "observations": 9,
       "samples": [
-        "ISETP.NE.U32.AND P0, PT, R0, R5, PT -> SEL R7, RZ, 0x1, P0",
-        "ISETP.NE.U32.AND P0, PT, R0, R5, PT -> SEL R7, RZ, 0x1, P0",
-        "ISETP.NE.U32.AND P0, PT, R0, R5, PT -> SEL R7, RZ, 0x1, P0"
+        "ISETP.NE.U32.AND P0, PT, R3, RZ, PT -> SEL R0, R2, R3, !P0",
+        "ISETP.NE.U32.AND P0, PT, R3, RZ, PT -> SEL R0, R2, R3, !P0",
+        "ISETP.NE.U32.AND P0, PT, R3, RZ, PT -> SEL R0, R2, R3, !P0"
       ],
       "trusted": true
     },
@@ -2045,6 +2136,16 @@
       "samples": [
         "@P1 PLOP3.LUT P0, PT, PT, PT, PT, 0x8, 0x80 -> ISETP.LT.OR P0, PT, R2, R4, P0",
         "@P1 PLOP3.LUT P0, PT, PT, PT, PT, 0x8, 0x80 -> ISETP.LT.OR P0, PT, R2, R4, P0"
+      ],
+      "trusted": true
+    },
+    "POPC": {
+      "min_stall": 3,
+      "observations": 3,
+      "samples": [
+        "POPC R0, R2 -> IADD R7, R0, R5",
+        "POPC R0, R2 -> IADD R7, R0, R7",
+        "POPC R0, R2 -> IADD R7, R0, R7"
       ],
       "trusted": true
     },
@@ -2360,7 +2461,7 @@
     },
     "SEL": {
       "min_stall": 5,
-      "observations": 222,
+      "observations": 225,
       "samples": [
         "SEL R5, R6, R13, P1 -> STG.E.64 desc[UR4][R2.64], R4",
         "SEL R5, R6, R13, P1 -> STG.E.64 desc[UR4][R2.64], R4",
@@ -2894,6 +2995,16 @@
       ],
       "trusted": true
     },
+    "F2F.F16.F64=>STG": {
+      "min_stall": 2,
+      "observations": 3,
+      "samples": [
+        "F2F.F16.F64 R7, R2 -> STG.E.U16 desc[UR4][R4.64], R7",
+        "F2F.F16.F64 R7, R2 -> STG.E.U16 desc[UR4][R4.64], R7",
+        "F2F.F16.F64 R7, R2 -> STG.E.U16 desc[UR4][R4.64], R7"
+      ],
+      "trusted": true
+    },
     "F2F.F32.F64=>STG": {
       "min_stall": 2,
       "observations": 3,
@@ -2901,6 +3012,16 @@
         "F2F.F32.F64 R7, R2 -> STG.E desc[UR4][R4.64], R7",
         "F2F.F32.F64 R7, R2 -> STG.E desc[UR4][R4.64], R7",
         "F2F.F32.F64 R7, R2 -> STG.E desc[UR4][R4.64], R7"
+      ],
+      "trusted": true
+    },
+    "F2I.F16.NTZ=>STG": {
+      "min_stall": 2,
+      "observations": 3,
+      "samples": [
+        "F2I.F16.NTZ R7, R2 -> STG.E desc[UR4][R4.64], R7",
+        "F2I.F16.NTZ R7, R2 -> STG.E desc[UR4][R4.64], R7",
+        "F2I.F16.NTZ R7, R2 -> STG.E desc[UR4][R4.64], R7"
       ],
       "trusted": true
     },
@@ -2944,6 +3065,16 @@
       ],
       "trusted": true
     },
+    "F2I.S16.F16.NTZ=>STG": {
+      "min_stall": 2,
+      "observations": 3,
+      "samples": [
+        "F2I.S16.F16.NTZ R7, R2 -> STG.E.S16 desc[UR4][R4.64], R7",
+        "F2I.S16.F16.NTZ R7, R2 -> STG.E.S16 desc[UR4][R4.64], R7",
+        "F2I.S16.F16.NTZ R7, R2 -> STG.E.S16 desc[UR4][R4.64], R7"
+      ],
+      "trusted": true
+    },
     "F2I.S16.F64=>STG": {
       "min_stall": 2,
       "observations": 3,
@@ -2961,6 +3092,16 @@
         "F2I.S16.NTZ R7, R2 -> STG.E.S16 desc[UR4][R4.64], R7",
         "F2I.S16.NTZ R7, R2 -> STG.E.S16 desc[UR4][R4.64], R7",
         "F2I.S16.NTZ R7, R2 -> STG.E.S16 desc[UR4][R4.64], R7"
+      ],
+      "trusted": true
+    },
+    "F2I.S64.F16=>STG": {
+      "min_stall": 2,
+      "observations": 3,
+      "samples": [
+        "F2I.S64.F16 R4, R2 -> STG.E.64 desc[UR4][R6.64], R4",
+        "F2I.S64.F16 R4, R2 -> STG.E.64 desc[UR4][R6.64], R4",
+        "F2I.S64.F16 R4, R2 -> STG.E.64 desc[UR4][R6.64], R4"
       ],
       "trusted": true
     },
@@ -2984,6 +3125,16 @@
       ],
       "trusted": true
     },
+    "F2I.U16.F16.NTZ=>STG": {
+      "min_stall": 2,
+      "observations": 3,
+      "samples": [
+        "F2I.U16.F16.NTZ R7, R2 -> STG.E.U16 desc[UR4][R4.64], R7",
+        "F2I.U16.F16.NTZ R7, R2 -> STG.E.U16 desc[UR4][R4.64], R7",
+        "F2I.U16.F16.NTZ R7, R2 -> STG.E.U16 desc[UR4][R4.64], R7"
+      ],
+      "trusted": true
+    },
     "F2I.U16.F64=>STG": {
       "min_stall": 2,
       "observations": 3,
@@ -3004,6 +3155,16 @@
       ],
       "trusted": true
     },
+    "F2I.U32.F16.NTZ=>STG": {
+      "min_stall": 2,
+      "observations": 3,
+      "samples": [
+        "F2I.U32.F16.NTZ R7, R2 -> STG.E desc[UR4][R4.64], R7",
+        "F2I.U32.F16.NTZ R7, R2 -> STG.E desc[UR4][R4.64], R7",
+        "F2I.U32.F16.NTZ R7, R2 -> STG.E desc[UR4][R4.64], R7"
+      ],
+      "trusted": true
+    },
     "F2I.U32.F64=>STG": {
       "min_stall": 2,
       "observations": 3,
@@ -3021,6 +3182,16 @@
         "F2I.U32.NTZ R7, R2 -> STG.E desc[UR4][R4.64], R7",
         "F2I.U32.NTZ R7, R2 -> STG.E desc[UR4][R4.64], R7",
         "F2I.U32.NTZ R7, R2 -> STG.E desc[UR4][R4.64], R7"
+      ],
+      "trusted": true
+    },
+    "F2I.U64.F16=>STG": {
+      "min_stall": 2,
+      "observations": 3,
+      "samples": [
+        "F2I.U64.F16 R4, R2 -> STG.E.64 desc[UR4][R6.64], R4",
+        "F2I.U64.F16 R4, R2 -> STG.E.64 desc[UR4][R6.64], R4",
+        "F2I.U64.F16 R4, R2 -> STG.E.64 desc[UR4][R6.64], R4"
       ],
       "trusted": true
     },
@@ -3046,7 +3217,7 @@
     },
     "FLO.U32=>IADD": {
       "min_stall": 2,
-      "observations": 3,
+      "observations": 9,
       "samples": [
         "FLO.U32 R0, R2 -> IADD R7, -R0, 0x1f",
         "FLO.U32 R0, R2 -> IADD R7, -R0, 0x1f",
@@ -3070,6 +3241,66 @@
         "FLO.U32 R0, UR6 -> SHFL.IDX PT, R9, R7, R0, 0x1f",
         "FLO.U32 R0, UR6 -> SHFL.IDX PT, R9, R7, R0, 0x1f",
         "FLO.U32 R0, UR6 -> SHFL.IDX PT, R9, R7, R0, 0x1f"
+      ],
+      "trusted": true
+    },
+    "I2F.F16.S16=>STG": {
+      "min_stall": 2,
+      "observations": 3,
+      "samples": [
+        "I2F.F16.S16 R7, R2 -> STG.E.U16 desc[UR4][R4.64], R7",
+        "I2F.F16.S16 R7, R2 -> STG.E.U16 desc[UR4][R4.64], R7",
+        "I2F.F16.S16 R7, R2 -> STG.E.U16 desc[UR4][R4.64], R7"
+      ],
+      "trusted": true
+    },
+    "I2F.F16.S64=>STG": {
+      "min_stall": 2,
+      "observations": 3,
+      "samples": [
+        "I2F.F16.S64 R7, R2 -> STG.E.U16 desc[UR4][R4.64], R7",
+        "I2F.F16.S64 R7, R2 -> STG.E.U16 desc[UR4][R4.64], R7",
+        "I2F.F16.S64 R7, R2 -> STG.E.U16 desc[UR4][R4.64], R7"
+      ],
+      "trusted": true
+    },
+    "I2F.F16.U16=>STG": {
+      "min_stall": 2,
+      "observations": 3,
+      "samples": [
+        "I2F.F16.U16 R7, R2 -> STG.E.U16 desc[UR4][R4.64], R7",
+        "I2F.F16.U16 R7, R2 -> STG.E.U16 desc[UR4][R4.64], R7",
+        "I2F.F16.U16 R7, R2 -> STG.E.U16 desc[UR4][R4.64], R7"
+      ],
+      "trusted": true
+    },
+    "I2F.F16.U32=>STG": {
+      "min_stall": 2,
+      "observations": 3,
+      "samples": [
+        "I2F.F16.U32 R7, R2 -> STG.E.U16 desc[UR4][R4.64], R7",
+        "I2F.F16.U32 R7, R2 -> STG.E.U16 desc[UR4][R4.64], R7",
+        "I2F.F16.U32 R7, R2 -> STG.E.U16 desc[UR4][R4.64], R7"
+      ],
+      "trusted": true
+    },
+    "I2F.F16.U64=>STG": {
+      "min_stall": 2,
+      "observations": 3,
+      "samples": [
+        "I2F.F16.U64 R7, R2 -> STG.E.U16 desc[UR4][R4.64], R7",
+        "I2F.F16.U64 R7, R2 -> STG.E.U16 desc[UR4][R4.64], R7",
+        "I2F.F16.U64 R7, R2 -> STG.E.U16 desc[UR4][R4.64], R7"
+      ],
+      "trusted": true
+    },
+    "I2F.F16=>STG": {
+      "min_stall": 2,
+      "observations": 3,
+      "samples": [
+        "I2F.F16 R7, R2 -> STG.E.U16 desc[UR4][R4.64], R7",
+        "I2F.F16 R7, R2 -> STG.E.U16 desc[UR4][R4.64], R7",
+        "I2F.F16 R7, R2 -> STG.E.U16 desc[UR4][R4.64], R7"
       ],
       "trusted": true
     },
@@ -3193,7 +3424,7 @@
     },
     "LDC.64=>LDG": {
       "min_stall": 2,
-      "observations": 5544,
+      "observations": 5766,
       "samples": [
         "LDC.64 R2, c[0x0][0x380] -> LDG.E.S16 R0, desc[UR4][R2.64]",
         "LDC.64 R2, c[0x0][0x380] -> LDG.E.S16 R0, desc[UR4][R2.64]",
@@ -3203,7 +3434,7 @@
     },
     "LDC.64=>STG": {
       "min_stall": 2,
-      "observations": 2272,
+      "observations": 2410,
       "samples": [
         "LDC.64 R6, c[0x0][0x388] -> STG.E.64 desc[UR4][R6.64], R4",
         "LDC.64 R6, c[0x0][0x388] -> STG.E.64 desc[UR4][R6.64], R4",
@@ -3253,7 +3484,7 @@
     },
     "LDCU.64=>LDG": {
       "min_stall": 9,
-      "observations": 3150,
+      "observations": 3276,
       "samples": [
         "LDCU.64 UR4, c[0x0][0x358] -> LDG.E.S16 R0, desc[UR4][R2.64]",
         "LDCU.64 UR4, c[0x0][0x358] -> LDG.E.S16 R0, desc[UR4][R2.64]",
@@ -3263,7 +3494,7 @@
     },
     "LDCU.64=>STG": {
       "min_stall": 2,
-      "observations": 1344,
+      "observations": 1419,
       "samples": [
         "LDCU.64 UR4, c[0x0][0x358] -> STG.E desc[UR4][R2.64], R5",
         "LDCU.64 UR4, c[0x0][0x358] -> STG.E desc[UR4][R2.64], R5",
@@ -3402,11 +3633,11 @@
     },
     "LDG.E.64=>F2F": {
       "min_stall": 7,
-      "observations": 3,
+      "observations": 6,
       "samples": [
-        "LDG.E.64 R2, desc[UR4][R2.64] -> F2F.F32.F64 R7, R2",
-        "LDG.E.64 R2, desc[UR4][R2.64] -> F2F.F32.F64 R7, R2",
-        "LDG.E.64 R2, desc[UR4][R2.64] -> F2F.F32.F64 R7, R2"
+        "LDG.E.64 R2, desc[UR4][R2.64] -> F2F.F16.F64 R7, R2",
+        "LDG.E.64 R2, desc[UR4][R2.64] -> F2F.F16.F64 R7, R2",
+        "LDG.E.64 R2, desc[UR4][R2.64] -> F2F.F16.F64 R7, R2"
       ],
       "trusted": true
     },
@@ -3431,11 +3662,11 @@
     },
     "LDG.E.64=>I2F": {
       "min_stall": 7,
-      "observations": 12,
+      "observations": 18,
       "samples": [
-        "LDG.E.64 R2, desc[UR4][R2.64] -> I2F.S64 R7, R2",
-        "LDG.E.64 R2, desc[UR4][R2.64] -> I2F.S64 R7, R2",
-        "LDG.E.64 R2, desc[UR4][R2.64] -> I2F.S64 R7, R2"
+        "LDG.E.64 R2, desc[UR4][R2.64] -> I2F.F16.S64 R7, R2",
+        "LDG.E.64 R2, desc[UR4][R2.64] -> I2F.F16.S64 R7, R2",
+        "LDG.E.64 R2, desc[UR4][R2.64] -> I2F.F16.S64 R7, R2"
       ],
       "trusted": true
     },
@@ -3479,9 +3710,9 @@
     },
     "LDG.E.64=>ISETP": {
       "min_stall": 2,
-      "observations": 42,
+      "observations": 45,
       "samples": [
-        "LDG.E.64 R6, desc[UR4][R2.64+0x8] -> ISETP.NE.S64.AND P0, PT, R4, R6, PT",
+        "LDG.E.64 R2, desc[UR4][R2.64] -> ISETP.NE.U32.AND P0, PT, R3, RZ, PT",
         "LDG.E.64 R6, desc[UR4][R2.64+0x8] -> ISETP.NE.S64.AND P0, PT, R4, R6, PT",
         "LDG.E.64 R6, desc[UR4][R2.64+0x8] -> ISETP.NE.S64.AND P0, PT, R4, R6, PT"
       ],
@@ -3517,13 +3748,20 @@
       ],
       "trusted": true
     },
-    "LDG.E.64=>SEL": {
-      "min_stall": 10,
-      "observations": 4,
+    "LDG.E.64=>POPC": {
+      "min_stall": 2,
+      "observations": 6,
       "samples": [
-        "LDG.E.64 R2, desc[UR4][R2.64] -> SEL R4, R2, RZ, P0",
-        "LDG.E.64 R2, desc[UR4][R2.64] -> SEL R4, R2, RZ, P0",
-        "LDG.E.64 R2, desc[UR4][R2.64] -> SEL R4, R2, RZ, P0"
+        "LDG.E.64 R2, desc[UR4][R2.64] -> POPC R0, R2"
+      ],
+      "trusted": true
+    },
+    "LDG.E.64=>SEL": {
+      "min_stall": 7,
+      "observations": 10,
+      "samples": [
+        "LDG.E.64 R2, desc[UR4][R2.64] -> SEL R0, R2, R3, !P0",
+        "LDG.E.64 R2, desc[UR4][R2.64] -> SEL R0, R2, R3, !P0"
       ],
       "trusted": true
     },
@@ -3599,11 +3837,11 @@
     },
     "LDG.E.S16=>I2F": {
       "min_stall": 7,
-      "observations": 6,
+      "observations": 9,
       "samples": [
-        "LDG.E.S16 R2, desc[UR4][R2.64] -> I2F.S16 R7, R2",
-        "LDG.E.S16 R2, desc[UR4][R2.64] -> I2F.S16 R7, R2",
-        "LDG.E.S16 R2, desc[UR4][R2.64] -> I2F.S16 R7, R2"
+        "LDG.E.S16 R2, desc[UR4][R2.64] -> I2F.F16.S16 R7, R2",
+        "LDG.E.S16 R2, desc[UR4][R2.64] -> I2F.F16.S16 R7, R2",
+        "LDG.E.S16 R2, desc[UR4][R2.64] -> I2F.F16.S16 R7, R2"
       ],
       "trusted": true
     },
@@ -3685,13 +3923,63 @@
       ],
       "trusted": true
     },
+    "LDG.E.U16=>F2I": {
+      "min_stall": 7,
+      "observations": 18,
+      "samples": [
+        "LDG.E.U16 R2, desc[UR4][R2.64] -> F2I.S16.F16.NTZ R7, R2",
+        "LDG.E.U16 R2, desc[UR4][R2.64] -> F2I.S16.F16.NTZ R7, R2",
+        "LDG.E.U16 R2, desc[UR4][R2.64] -> F2I.S16.F16.NTZ R7, R2"
+      ],
+      "trusted": true
+    },
+    "LDG.E.U16=>HADD2": {
+      "min_stall": 2,
+      "observations": 12,
+      "samples": [
+        "LDG.E.U16 R5, desc[UR4][R2.64+0x2] -> HADD2 R0, R0.H0_H0, R5.H0_H0",
+        "LDG.E.U16 R5, desc[UR4][R2.64+0x2] -> HADD2 R0, R0.H0_H0, R5.H0_H0",
+        "LDG.E.U16 R5, desc[UR4][R2.64+0x2] -> HADD2 R0, R0.H0_H0, R5.H0_H0"
+      ],
+      "trusted": true
+    },
+    "LDG.E.U16=>HFMA2": {
+      "min_stall": 2,
+      "observations": 9,
+      "samples": [
+        "LDG.E.U16 R4, desc[UR4][R2.64+0x4] -> HFMA2 R0, R0.H0_H0, R5.H0_H0, R4.H0_H0",
+        "LDG.E.U16 R4, desc[UR4][R2.64+0x4] -> HFMA2 R0, R0.H0_H0, R5.H0_H0, R4.H0_H0",
+        "LDG.E.U16 R4, desc[UR4][R2.64+0x4] -> HFMA2 R0, R0.H0_H0, R5.H0_H0, R4.H0_H0"
+      ],
+      "trusted": true
+    },
+    "LDG.E.U16=>HMNMX2": {
+      "min_stall": 2,
+      "observations": 12,
+      "samples": [
+        "LDG.E.U16 R5, desc[UR4][R2.64+0x2] -> HMNMX2 R0, R0.H0_H0, R5.H0_H0, PT",
+        "LDG.E.U16 R5, desc[UR4][R2.64+0x2] -> HMNMX2 R0, R0.H0_H0, R5.H0_H0, PT",
+        "LDG.E.U16 R5, desc[UR4][R2.64+0x2] -> HMNMX2 R0, R0.H0_H0, R5.H0_H0, PT"
+      ],
+      "trusted": true
+    },
+    "LDG.E.U16=>HMUL2": {
+      "min_stall": 2,
+      "observations": 6,
+      "samples": [
+        "LDG.E.U16 R5, desc[UR4][R2.64+0x2] -> HMUL2 R0, R0.H0_H0, R5.H0_H0",
+        "LDG.E.U16 R5, desc[UR4][R2.64+0x2] -> HMUL2 R0, R0.H0_H0, R5.H0_H0",
+        "LDG.E.U16 R5, desc[UR4][R2.64+0x2] -> HMUL2 R0, R0.H0_H0, R5.H0_H0"
+      ],
+      "trusted": true
+    },
     "LDG.E.U16=>I2F": {
       "min_stall": 7,
-      "observations": 3,
+      "observations": 6,
       "samples": [
-        "LDG.E.U16 R2, desc[UR4][R2.64] -> I2F.F64.U16 R4, R2",
-        "LDG.E.U16 R2, desc[UR4][R2.64] -> I2F.F64.U16 R4, R2",
-        "LDG.E.U16 R2, desc[UR4][R2.64] -> I2F.F64.U16 R4, R2"
+        "LDG.E.U16 R2, desc[UR4][R2.64] -> I2F.F16.U16 R7, R2",
+        "LDG.E.U16 R2, desc[UR4][R2.64] -> I2F.F16.U16 R7, R2",
+        "LDG.E.U16 R2, desc[UR4][R2.64] -> I2F.F16.U16 R7, R2"
       ],
       "trusted": true
     },
@@ -3803,6 +4091,16 @@
       ],
       "trusted": true
     },
+    "LDG.E=>F2FP": {
+      "min_stall": 7,
+      "observations": 3,
+      "samples": [
+        "LDG.E R2, desc[UR4][R2.64] -> F2FP.F16.F32.PACK_AB R0, RZ, R2",
+        "LDG.E R2, desc[UR4][R2.64] -> F2FP.F16.F32.PACK_AB R0, RZ, R2",
+        "LDG.E R2, desc[UR4][R2.64] -> F2FP.F16.F32.PACK_AB R0, RZ, R2"
+      ],
+      "trusted": true
+    },
     "LDG.E=>F2I": {
       "min_stall": 7,
       "observations": 18,
@@ -3872,18 +4170,16 @@
       "trusted": true
     },
     "LDG.E=>HMMA": {
-      "min_stall": 14,
-      "observations": 54,
+      "min_stall": 6,
+      "observations": 63,
       "samples": [
-        "LDG.E R12, desc[UR4][R2.64+0x80] -> HMMA.16816.F32 R12, R4, R8, R12",
-        "LDG.E R12, desc[UR4][R2.64+0x80] -> HMMA.16816.F32 R12, R4, R8, R12",
-        "LDG.E R12, desc[UR4][R2.64+0x80] -> HMMA.16816.F32 R12, R4, R8, R12"
+        "LDG.E R10, desc[UR4][R2.64+0x80] -> HMMA.16816.F16 R6, R4, R8, R10"
       ],
       "trusted": true
     },
     "LDG.E=>I2F": {
       "min_stall": 5,
-      "observations": 12,
+      "observations": 18,
       "samples": [
         "LDG.E R7, desc[UR4][R2.64+0x4] -> I2F.U32.RP R6, R7",
         "LDG.E R7, desc[UR4][R2.64+0x4] -> I2F.U32.RP R6, R7",
@@ -4366,6 +4662,16 @@
       ],
       "trusted": true
     },
+    "POPC=>IADD": {
+      "min_stall": 2,
+      "observations": 3,
+      "samples": [
+        "POPC R5, R3 -> IADD R7, R0, R5",
+        "POPC R7, R3 -> IADD R7, R0, R7",
+        "POPC R7, R3 -> IADD R7, R0, R7"
+      ],
+      "trusted": true
+    },
     "POPC=>IMAD": {
       "min_stall": 3,
       "observations": 12,
@@ -4480,7 +4786,7 @@
     }
   },
   "cuda_version": "V13.3.73",
-  "kernels": 1149,
+  "kernels": 1218,
   "min_observations": 3,
   "note": "minimum stall ptxas was observed to leave between a dependent producer and consumer. an empirical lower bound on the required distance, not a proof of it."
 }
