@@ -203,16 +203,3 @@ def harvest(
 
     result.observations.sort(key=lambda o: (o.opcode, o.mnemonic, o.encoding))
     return result
-
-
-def distinct_by_payload(observations: list[Observation]) -> dict[str, Observation]:
-    """Collapse observations that differ only in scheduling.
-
-    Two encodings with the same payload are the same instruction issued under
-    different control bits, which is one instruction for ISA purposes and two
-    for scheduling purposes. The ISA database wants the former.
-    """
-    out: dict[str, Observation] = {}
-    for o in observations:
-        out.setdefault(o.payload, o)
-    return out
