@@ -66,7 +66,7 @@ One standard for all of it: **agree with the vendor exactly, or say why not.**
 | :--- | :--- | :--- | ---: |
 | **Assembler** | SASS text to the 128-bit word | Reassemble every instruction `ptxas` emitted and compare bytes | 59,693 of 59,760 exact across four optimisation levels, **0 wrong** |
 | **Checker** | Reads a schedule, reports hazards | The vendor's own output must verify clean, and a deliberately shortened stall must be caught | 0 errors over 1,323 vendor kernel and optimisation-level pairs, **0 missed** on 233 broken ones |
-| **Audit** | The same checker, on shipped libraries | Run it over production sm_120 kernels held out of every table it reads | **0 errors** in 250 kernels and 93,489 dependencies, after the run that found 6,593 and traced every one to basalt |
+| **Audit** | The same checker, on shipped libraries | Run it over production sm_120 kernels held out of every table it reads | **0 errors** in 250 kernels, 250 of them fully analysed, after the run that found 6,593 and traced every one to basalt |
 | **Scheduler** | Assigns every control bit from scratch | Discard the vendor's, compute new ones, run both on the GPU against eight inputs, compare output bytes | **439 of 439 comparable kernels** byte-identical, at all three optimisation levels |
 
 And the part a scheduler is usually quiet about: what the correctness costs. basalt's

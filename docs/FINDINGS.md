@@ -1607,6 +1607,11 @@ number it gained.
 Zero hazards in 250 shipped kernels held out of every table the checker reads, and 201
 warnings, which is where the model has an assumed number and says so.
 
+The count that keeps the zero honest is beside it: **250 of 250 kernels fully analysed**, no
+indirect branch leaving an edge the dataflow could not follow, and 0 of 63,968 instructions
+failing to decode. A checker that quietly skipped a tenth of the code could report the same
+zero, so the audit prints how much of each library it actually reached.
+
 Two of the eight corrections were caught on the way back rather than on the way out, and both
 by the negative control. Demoting thin evidence to a warning let two deliberately broken
 kernels through, because `VIADD.S32.ISAT -> STG` has three observations and is right about

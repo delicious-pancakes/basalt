@@ -55,6 +55,10 @@ class Tally:
     kernels: int = 0
     instructions: int = 0
     pairs: int = 0
+    # an indirect branch leaves an edge the analysis cannot follow, so the
+    # verdict on that kernel is partial and saying "clean" without it overstates
+    incomplete: int = 0
+    undecoded: int = 0
     errors: int = 0
     warnings: int = 0
     unknown: Counter = field(default_factory=Counter)
@@ -68,6 +72,8 @@ class Tally:
         self.kernels += other.kernels
         self.instructions += other.instructions
         self.pairs += other.pairs
+        self.incomplete += other.incomplete
+        self.undecoded += other.undecoded
         self.errors += other.errors
         self.warnings += other.warnings
         self.unknown.update(other.unknown)
@@ -115,6 +121,8 @@ def _audit(path: Path) -> Tally:
         tally.kernels += 1
         tally.instructions += report.instructions
         tally.pairs += report.checked_pairs
+        tally.incomplete += report.incomplete_graph
+        tally.undecoded += sum(1 for i in program.instructions if i.word is None)
         tally.unknown.update(report.unknown_opcodes)
         for hazard in report.hazards:
             if hazard.severity is Severity.ERROR:
@@ -221,6 +229,12 @@ def main() -> int:
     )
     print(f"errors: {total.errors}")
     print(f"warnings: {total.warnings}")
+    complete = total.kernels - total.incomplete
+    print(
+        f"fully analysed: {complete} of {total.kernels} kernels "
+        f"({total.incomplete} carry an indirect branch the analysis cannot follow, "
+        f"{total.undecoded} instructions did not decode)"
+    )
     if total.unknown:
         top = ", ".join(f"{op}" for op, _ in total.unknown.most_common(12))
         print(f"opcodes not in the latency model: {len(total.unknown)} ({top})")
@@ -243,6 +257,9 @@ def main() -> int:
                     "kernels": total.kernels,
                     "instructions": total.instructions,
                     "dependencies": total.pairs,
+                    "kernels_fully_analysed": total.kernels - total.incomplete,
+                    "kernels_with_an_indirect_branch": total.incomplete,
+                    "instructions_not_decoded": total.undecoded,
                     "errors": total.errors,
                     "warnings": total.warnings,
                     "unknown_opcodes": dict(total.unknown.most_common()),
