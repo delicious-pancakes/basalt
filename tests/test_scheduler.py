@@ -9,10 +9,9 @@ kernel. If the two disagree, something in that chain is wrong, and no amount of
 internal consistency makes up for it.
 
 `ptxas`'s control bits are discarded entirely and recomputed; only the
-instruction order and the read barriers are kept. Order, because reordering would
-make it impossible to attribute a behaviour change to the control bits. Read
-barriers, because basalt has no measured model for how long a late operand read
-takes and inventing one would be worse than preserving something known to work.
+instruction order is kept, because reordering would make it impossible to
+attribute a behaviour change to the control bits. Read barriers used to be kept
+too, and are derived now (finding 25), so nothing in the control word survives.
 
 Marked `gpu`. Nothing here is meaningful without silicon: a scheduler that
 satisfies its own checker and produces wrong numbers is precisely the failure

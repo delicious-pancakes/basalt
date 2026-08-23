@@ -104,6 +104,11 @@ class ScheduleResult:
     # shared an already-busy scoreboard: over-synchronised, so counted not hidden
     scoreboards_shared: int = 0
     read_barriers_used: int = 0
+    # Instructions this actually computed a control word for. A cubin holds more
+    # than its entry function, and what the dataflow cannot reach keeps the
+    # vendor's word; saying which is the difference between a schedule basalt
+    # stands behind and one it partly copied.
+    analysed: set[int] = field(default_factory=set)
     unplaceable: list[str] = field(default_factory=list)
     out_of_scoreboards: list[str] = field(default_factory=list)
     # Instructions given the safe stall encoding because their dependency could
@@ -389,13 +394,21 @@ def _assign_read_barriers(
     extra = [0] * count
     shared = 0
     for reader, writer in sorted(windows, key=lambda w: (w[1], -w[0])):
-        if read_barrier_of[reader] != NO_BARRIER:
-            extra[writer] |= 1 << read_barrier_of[reader]
-            continue
         # a loop-carried window runs from the reader to the end of the body and
         # again from the head to the writer, so the whole enclosing span is taken
         span = range(min(reader, writer), max(reader, writer) + 1)
-        taken = 0
+        if read_barrier_of[reader] != NO_BARRIER:
+            # one reader can cover two overwrites, and the barrier stays
+            # outstanding until the later one. marking only the first window
+            # busy let a second reuse the number and wait on its own read
+            already = read_barrier_of[reader]
+            extra[writer] |= 1 << already
+            for i in span:
+                busy[i] |= 1 << already
+            continue
+        # never one the reader waits on itself: signalling a barrier the same
+        # instruction waits on is waiting for a read that has not started
+        taken = waits[reader] | extra[reader]
         for i in span:
             taken |= busy[i]
         free = next((sb for sb in range(SCOREBOARDS) if not (taken >> sb) & 1), None)
@@ -403,7 +416,11 @@ def _assign_read_barriers(
             # every number is spoken for across this window. a scoreboard is a
             # counter, so sharing one waits for both signals rather than losing
             # either: over-synchronised, and counted, but never a stale read
-            free = min(range(SCOREBOARDS), key=lambda sb: sum((busy[i] >> sb) & 1 for i in span))
+            mine = waits[reader] | extra[reader]
+            choices = [sb for sb in range(SCOREBOARDS) if not (mine >> sb) & 1] or list(
+                range(SCOREBOARDS)
+            )
+            free = min(choices, key=lambda sb: sum((busy[i] >> sb) & 1 for i in span))
             shared += 1
         read_barrier_of[reader] = free
         extra[writer] |= 1 << free
@@ -905,11 +922,12 @@ def schedule_program(
             continue
         reachable.add(current)
         stack.extend(cfg.blocks[current].successors)
-    analysed = {
+    result.analysed = {
         index
         for block in cfg.blocks
         if block.index in reachable
         for index in range(block.start, block.end)
+        if program.instructions[index].word is not None
     }
 
     # ---- emit
@@ -917,7 +935,7 @@ def schedule_program(
         if instr.word is None:
             result.words.append(Word(0))
             continue
-        if index not in analysed:
+        if index not in result.analysed:
             result.words.append(instr.word)
             continue
         word = instr.word
