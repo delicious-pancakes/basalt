@@ -206,11 +206,8 @@ def main() -> int:
             counts["round-tripped"] += 1
             continue
 
-        # The text came back different, which is not the same as the instruction
-        # being different. `P7` and `PT` are one register, `URZ` prints as
-        # `UR63`, and a negative immediate prints as its two's complement. The
-        # test that tells those apart from a real mis-encode is whether what
-        # came back assembles to the very same word.
+        # different text is not a different instruction: `P7` is `PT`, and a
+        # negative immediate prints unsigned. re-assembling it settles which
         try:
             again = assembler.assemble(_normalise(got.text), control=form.word)
         except AssemblyError:
@@ -219,11 +216,8 @@ def main() -> int:
             counts["same word, printed differently"] += 1
             continue
 
-        # A suffix that follows the operand's value is finding 15 all over
-        # again: `IMAD` prints as `.SHL` when the multiplier is a power of two
-        # and as `.MOV` when a source is `RZ`. Identical operands under the same
-        # base opcode is the operand encoding being right, which is the part the
-        # assembler is answerable for. A different base opcode stays a defect.
+        # a suffix that follows the operand's value is finding 15 again, so the
+        # same operands under the same base opcode means the encoding is right
         asked_head, _, asked_rest = _normalise(text).partition(" ")
         got_head, _, got_rest = _normalise(got.text).partition(" ")
         if asked_rest == got_rest and asked_head.split(".")[0] == got_head.split(".")[0]:

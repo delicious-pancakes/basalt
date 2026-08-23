@@ -118,13 +118,8 @@ def _modifier_change(before: str, after: str) -> str | None:
             return role
     if a == f"|{b}|" or b == f"|{a}|":
         return SubRole.ABSOLUTE
-    # `R5.COL` against `R5.ROW` is one operand with a selector attached, and the
-    # bit that moves it is not part of the register number: reading it as one
-    # makes `IMMA`'s second source read 261 where the text says 5. Bracket
-    # operands are excluded because a dot inside one is an access width, and
-    # `desc[UR4][R2.64]` against `desc[UR4][R2.64+0x8]` is an offset.
-    # the head has to be a name: `0.5` against `0.500000059` shares the digit 0
-    # and is one float field rather than a register wearing a selector
+    # a selector attached to an operand is not part of its number (finding 14).
+    # the head has to be a name, or `0.5` against `0.500000059` reads as one
     head = a.split(".")[0]
     plain = "[" not in a and "[" not in b and head[:1].isalpha()
     if plain and head == b.split(".")[0] and a.split(".")[1:] != b.split(".")[1:]:

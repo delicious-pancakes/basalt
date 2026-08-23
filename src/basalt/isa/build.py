@@ -188,11 +188,8 @@ def build_database(
         operands = []
         for slot, bits in fmap.operand_fields().items():
             mine = [o for o in fmap.observations if o.bit in bits and o.role is BitRole.OPERAND]
-            # the sample decides what an assembler thinks this field holds, so
-            # take one that shows a float where any bit reveals one: `FFMA`'s
-            # immediate prints as `1` and flipping a high bit keeps it looking
-            # like an integer, which is how a float field is mistaken for a
-            # plain value and given an integer to encode
+            # the sample decides what an assembler thinks the field holds, so
+            # prefer one that reveals a float: `FFMA`'s immediate prints as `1`
             sample = next((o for o in mine if _reveals_float(o)), mine[0] if mine else None)
             operands.append(
                 OperandField(

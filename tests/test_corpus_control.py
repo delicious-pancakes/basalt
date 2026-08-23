@@ -144,11 +144,8 @@ class TestSchedulerOverTheWholeCorpus:
         from basalt.sched.scheduler import schedule_program
 
         def one(task):
-            # Every level that schedules, not just -O3. They emit different code
-            # from the same source: -O3 unrolls a loop into ordinary registers
-            # where -O1 keeps its counter in uniform ones, and the uniform
-            # datapath had no coverage at all until the round trip was run at
-            # -O1 and found two kernels basalt scheduled wrong.
+            # every level that schedules: -O1 keeps a loop counter in the
+            # uniform datapath that -O3 unrolls away, and two bugs lived there
             snippet, opt = task
             with TemporaryDirectory(prefix="basalt-sched-") as tmp:
                 src = Path(tmp) / "k.ptx"

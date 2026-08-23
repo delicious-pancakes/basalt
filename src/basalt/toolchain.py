@@ -28,6 +28,9 @@ class ToolchainError(RuntimeError):
 # harvester can be pinned to one ptxas build across a whole corpus run.
 _ENV_VAR = "BASALT_CUDA_BIN"
 _FALLBACK_ENVS = ("CUDA_PATH", "CUDA_HOME", "CUDA_ROOT")
+# where scripts/fetch_toolchain.py installs, searched last so a configured
+# toolchain always wins over one that happens to be lying in the tree
+_VENDORED = Path(__file__).resolve().parents[2] / "third_party" / "cuda"
 
 
 @dataclass(frozen=True)
@@ -124,6 +127,12 @@ def find_toolchain(explicit: str | os.PathLike[str] | None = None) -> Toolchain:
             candidates.append(Path(root) / "bin")
     if which := shutil.which("ptxas"):
         candidates.append(Path(which).parent)
+    if _VENDORED.is_dir():
+        # newest first, so a tree holding two fetched versions picks one and
+        # keeps picking it rather than depending on directory order
+        candidates.extend(
+            sorted((d / "bin" for d in _VENDORED.iterdir() if d.is_dir()), reverse=True)
+        )
 
     for cand in candidates:
         if (cand / "ptxas").is_file() or (cand / "ptxas.exe").is_file():

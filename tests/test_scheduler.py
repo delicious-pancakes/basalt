@@ -225,12 +225,8 @@ def test_rescheduled_kernel_matches_the_vendor_schedule(
     rescheduled = tmp_path / f"{case.name}.resched.cubin"
     cubin.save(rescheduled)
 
-    # basalt must accept its own work before the hardware is asked.
-    #
-    # The re-disassembly is checked for content first, and that is not defensive
-    # noise: basalt emitted a control word `nvdisasm` refused for a while, which
-    # made this read back an empty program and call it clean. An assertion that
-    # passes when it read nothing is worse than no assertion at all.
+    # content is checked first: this once read back an empty program and called
+    # it clean, and an assertion that passes on nothing is worse than none
     written = disassemble_program(toolchain, rescheduled)
     assert len(written.instructions) == len(program.instructions), (
         f"the rescheduled cubin disassembled to {len(written.instructions)} instructions "

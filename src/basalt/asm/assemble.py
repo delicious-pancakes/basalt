@@ -334,37 +334,26 @@ class Assembler:
                     continue
                 token, holds = classified
                 parts = dict(operand.subfields)
-                # A field that cannot reproduce its own reference value was only
-                # partly attributed, so writing through it leaves the rest
-                # behind. Checked against the bits that would actually carry the
-                # value, which is the sub-field where a modifier was split out:
-                # `PLOP3.LUT`'s predicate slot is a uniform-register flag, a
-                # number and a negate sharing five bits, and taking four of them
-                # for the number turns `P1` into `UP0`.
-                # A field the prober called a modifier is still writable when a
-                # value was split out of it and that value reproduces its own
-                # reference: `QMMA` slot 5 carries a reuse flag beside a register
-                # number, and the number is encodable once the flag is named.
+                # a field the prober called a modifier still holds a number when
+                # one was split out of it: `QMMA` slot 5 is a reuse flag beside a
+                # register, and the register is encodable once the flag is named
                 writable = holds == "value" or SubRole.VALUE in parts
                 sink = None
                 if writable and holds != "float" and token < len(tokens):
                     value_bits = tuple(sorted(parts.get(SubRole.VALUE, operand.bits)))
                     bare = _strip_modifiers(tokens[token])[1]
                     present = _read(reference, value_bits)
-                    # A discarding register does not encode as one number
-                    # everywhere: `URZ` is 63 in a six-bit field and 255 in
-                    # `QMMA`'s eight-bit one. The reference says which, so it is
-                    # read off rather than assumed, and assuming cost seven forms.
+                    # `URZ` is 63 in six bits and 255 in `QMMA`'s eight, so the
+                    # sink is read off the reference; all ones also proves the
+                    # field is only the number (`PLOP3`'s reads 14 of 31 for `PT`)
+                    expected: int | None
                     if _SINK.match(bare) and present == (1 << len(value_bits)) - 1:
-                        # All ones is the discarding register, so this field is
-                        # the number and nothing else. `PLOP3`'s predicate slot
-                        # reads 14 of a possible 31 for `PT`, which says the
-                        # opposite: something in there is not the number, and
-                        # writing one turns `P1` into `UP0`.
                         sink, expected = present, present
                     else:
                         expected = _token_value(bare)
                     if expected is None or present != expected:
+                        # a field that cannot reproduce its own reference value
+                        # was only partly attributed; writing it drops the rest
                         holds = "partial"
                         parts = {
                             role: bits for role, bits in parts.items() if role in _COMPOSITE_ROLES
