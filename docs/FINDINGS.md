@@ -1164,6 +1164,25 @@ it changes the answer. Either the counter is not at zero when that reasoning say
 `wait_mask` does not mean here what it means elsewhere. Both are worth knowing and neither is
 established.
 
+**Two things about basalt's schedule that ptxas never does.** Both were found looking for
+this and neither has been shown to cause it:
+
+- *An instruction waits on the scoreboard it signals.* `ptxas` does this nowhere in the
+  kernel; basalt does it three times. The wait is evaluated at issue and the signal follows,
+  so on a counter model it should be harmless, and the shape is still one the vendor avoids.
+- *The read-barrier inheritance is program-wide.* basalt keeps the vendor's read-barrier
+  numbering because it cannot compute one (finding 13), and it decides which vendor wait bits
+  to carry over using a single mask of every read-barrier number used anywhere in the
+  program. So a vendor wait on a *write* barrier is inherited whenever its number happens to
+  match a read barrier somewhere else, and two of the three self-waits above come from
+  exactly that.
+
+Scoping the inheritance to where a read barrier is actually live is clearly more correct, and
+it is not the fix: doing it changes the answer for the emulated 1-bit `MMA` kernels, which
+had been passing. So the leak is real, something depends on it, and what that is has not been
+established. Three attempts on this allocator have each traded one kernel for another, which
+is the signal to leave it characterised rather than keep guessing.
+
 **What it is not.** The two kinds of barrier share one six-bit space and only write barriers
 are renumbered, so an obvious theory is that basalt allocates a write barrier onto a number
 the vendor is using for a read barrier. Reserving the inherited numbers does fix this kernel.
