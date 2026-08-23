@@ -13,15 +13,17 @@ so a figure differing on a different SKU is interesting rather than contradictor
 
 <br/>
 
-Stated in full because "a 5070 Ti" is not enough to reproduce a timing, and because the
-wall-clock figures quoted for the controls depend on the host as much as on the card.
+Every measurement here was taken on one machine, a personal desktop build rather than a
+datacentre part or a cloud instance. Stated in full because "a 5070 Ti" is not enough to
+reproduce a timing, and because the wall-clock figures quoted for the controls depend on the
+host as much as on the card.
 
-| | |
+| Component | Exactly what it is |
 | :--- | :--- |
 | GPU | Gigabyte GeForce RTX 5070 Ti EAGLE OC, sm_120a, 70 SMs, 16,303 MiB, 2,542 MHz boost |
 | Driver | 610.88 |
 | CPU | AMD Ryzen 7 9800X3D, 8 cores, 16 threads |
-| Memory | 32 GB |
+| Memory | 32 GB Patriot 6000 Series DDR5, 2 x 16 GB, running at 6000 MT/s under EXPO |
 | Storage | PCIe 4.0 NVMe |
 | OS | Windows 11 Pro, build 26200 |
 | Python | 3.14.6 |

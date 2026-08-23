@@ -250,3 +250,51 @@ requirement, so evidence from a wider body of code may lower what the checker is
 call an error. It may not lower what the scheduler emits, because a schedule has to be right
 rather than defensible, and the figure collapsed over consumers is the tightest gap any one
 of them got. Every entry in the table carries both numbers for that reason.
+
+## The published position, and where it does not reach
+
+Two sources state that this cannot be done, and both are worth quoting rather than
+paraphrasing. `CuAssembler`, the most used SASS assembler, says in its own documentation:
+
+> Checking rigorous correctness of the whole program needs comprehensive understanding of the
+> launch model and instruction set, both grammatically and semantically, far from possible
+> without official support. So, it is left to the user to guarantee the correctness of the
+> program, with very limited help from the assembler.
+
+[SIP](https://arxiv.org/html/2403.16863v1), on autotuning SASS schedules, is blunter:
+
+> Validation is impossible for GPU native assembly codes because the formal semantics of the
+> sass is closed-source.
+
+**Both are correct, and neither is about the question basalt asks.** They describe *semantic*
+validation: proving that a kernel computes what it is supposed to compute. That does need the
+semantics, the semantics are closed, and basalt does not claim to answer it. A kernel can pass
+every check here and still implement the wrong algorithm.
+
+The question here is strictly smaller, and separating it from the semantic one is the whole
+method:
+
+> Do this program's control bits cover its own data dependencies?
+
+Answering that needs two things, and neither of them is what an instruction computes.
+
+**The dependency structure, which the encoding gives up.** Which registers an instruction
+writes and which it reads is a property of the operand fields, and those are recoverable by
+differential bit probing without knowing the operation. basalt reads `IMAD R2, R3, R4, RZ` as
+"defines R2, uses R3 and R4" without any model of multiplication.
+
+**A latency requirement, which the silicon gives up under measurement.** How long a value
+takes to land is not in any document, and it does not have to be: shorten the gap on real
+hardware until the answer changes, and the boundary is the requirement (finding 4). That is a
+measurement of the machine, not a reading of a specification.
+
+So the closed semantics bound what can be *proven about a program's meaning*, and leave
+untouched what can be *measured about its timing*. The two published positions rule out the
+first and were never tested against the second, because the second requires a body of work
+neither project set out to do: a per-pair requirement mined at scale, cross-checked against
+fault injection on a card, and held out from the code it is then used to check.
+
+Where that reasoning would break, and does not: if the dependency structure were not
+recoverable from the encoding, or if the requirement varied with something unobservable.
+Neither holds. The operand fields are recovered and their writability is proven (stage 9), and
+finding 28 shows the requirement is a property of the architecture rather than of the part.
