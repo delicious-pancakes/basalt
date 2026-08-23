@@ -84,12 +84,17 @@ def _reschedule(tc, snippet, opt: int, work: Path):
     return program, schedule_program(program, model, observed=observed), vendor
 
 
-def _shapes(program, words) -> list[str]:
+def _shapes(program, words, result) -> list[str]:
     """Control-word pairings ptxas never emits, found in a rescheduled program.
 
     A cheap standing check rather than a latency question. Each of these is wrong
     on its face, so finding one needs no card and no reference output, and the
     self-wait line is what finally located the scoreboard defect in finding 24.
+
+    A self-wait is only reported where the kernel had a scoreboard to spare. A
+    long fp64 Newton chain takes all six, and sharing then forces the shape: the
+    wait is evaluated before issue and the signal raised at write-back, so it
+    over-synchronises rather than racing, and those kernels round-trip.
     """
     from basalt.encoding import NO_BARRIER
     from basalt.sched.scheduler import SCOREBOARD_OPERAND
@@ -114,10 +119,14 @@ def _shapes(program, words) -> list[str]:
     for index, word in enumerate(words):
         if word is None or program.instructions[index].word is None:
             continue
-        barrier = word.field("write_barrier")
-        if barrier != NO_BARRIER and (word.field("wait_mask") >> barrier) & 1:
-            name = program.instructions[index].mnemonic
-            notes.append(f"#{index} {name}: waits on SB{barrier}, the scoreboard it signals")
+        for field, spare in (
+            ("read_barrier", True),
+            ("write_barrier", not result.scoreboards_shared),
+        ):
+            barrier = word.field(field)
+            if spare and barrier != NO_BARRIER and (word.field("wait_mask") >> barrier) & 1:
+                name = program.instructions[index].mnemonic
+                notes.append(f"#{index} {name}: waits on SB{barrier}, the {field} it signals")
     for sb in range(6):
         if (waited >> sb) & 1 and not (signalled >> sb) & 1:
             notes.append(f"SB{sb}: waited on, and nothing signals it")
@@ -241,7 +250,7 @@ def main() -> int:
         moved = _diff(program, result.words, args.all)
         print(f"  {moved} of {len(program.instructions)} control words changed")
 
-        for note in _shapes(program, result.words):
+        for note in _shapes(program, result.words, result):
             print(f"  ! {note}")
             failures += 1
         for note in result.unplaceable:

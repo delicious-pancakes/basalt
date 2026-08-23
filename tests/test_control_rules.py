@@ -86,40 +86,36 @@ class TestTheDerivedReadBarriers:
                     stranded.append(f"{name} #{index} SB{barrier}")
         assert not stranded, f"{len(stranded)} read barriers nothing waits on: {stranded[:5]}"
 
-    def test_nothing_waits_on_its_own_read_barrier(self, scheduled):
-        """Waiting for your own operand read to finish before issuing is nonsense."""
-        offenders = []
-        for name, _, result in scheduled:
-            for index in sorted(result.analysed):
-                word = result.words[index]
-                barrier = word.field("read_barrier")
-                if barrier != NO_BARRIER and (word.field("wait_mask") >> barrier) & 1:
-                    offenders.append(f"{name} #{index} SB{barrier}")
-        assert not offenders, f"{len(offenders)} wait on their own read: {offenders[:5]}"
+    def test_the_vendor_waits_on_barriers_it_signals(self, scheduled):
+        """Which is why basalt is not required to avoid it.
 
-    def test_a_write_barrier_self_wait_only_happens_under_pressure(self, scheduled):
-        """`ptxas` never emits this shape, and finding 24 is what emitting it cost.
+        A wait is evaluated before the instruction issues and its barrier is
+        raised at or after issue, so an instruction carrying both is reusing a
+        number that has just drained rather than waiting on its own result. It
+        reads wrong and is not, and basalt spent a repair loop reallocating away
+        from it on the strength of a sample too small to see `ptxas` doing it
+        260 times in 36,576 instructions.
 
-        The repair loop reallocates away from it, and succeeds wherever there is
-        a free number to move to. A long fp64 Newton chain exhausts all six, and
-        the shape is then forced and harmless: the wait is evaluated before
-        issue and the signal is raised at write-back, so waiting on a number an
-        earlier producer shares is over-synchronisation rather than a race, and
-        every one of those kernels round-trips. So the rule is not "never" but
-        "never with a free scoreboard to hand".
+        Pinned as a fact about the vendor rather than about basalt: if a future
+        toolchain stops emitting the shape, that is worth re-examining rather
+        than silently inheriting.
         """
-        offenders = []
-        for name, _, result in scheduled:
-            if result.scoreboards_shared:
-                continue
-            for index in sorted(result.analysed):
-                word = result.words[index]
-                barrier = word.field("write_barrier")
-                if barrier != NO_BARRIER and (word.field("wait_mask") >> barrier) & 1:
-                    offenders.append(f"{name} #{index} SB{barrier}")
-        assert not offenders, (
-            f"{len(offenders)} wait on a barrier they signal with scoreboards to spare, "
-            f"which the repair loop should have moved: {offenders[:5]}"
+        from basalt.encoding import NO_BARRIER
+
+        found = 0
+        for _, program, _ in scheduled:
+            for instruction in program.instructions:
+                if instruction.word is None:
+                    continue
+                for field in ("write_barrier", "read_barrier"):
+                    barrier = instruction.word.field(field)
+                    if barrier == NO_BARRIER:
+                        continue
+                    if (instruction.word.field("wait_mask") >> barrier) & 1:
+                        found += 1
+        assert found > 100, (
+            f"ptxas emitted this shape only {found} times; basalt stopped avoiding it "
+            f"because the vendor does it freely, and that premise needs re-checking"
         )
 
     def test_a_late_read_is_covered_before_its_register_moves(self, scheduled, model):

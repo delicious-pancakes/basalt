@@ -516,8 +516,6 @@ def schedule_program(
     # loaded before a loop and used inside it gets no wait from a block-local pass
     barrier_of: list[int] = [NO_BARRIER] * count
 
-    forbidden: dict[int, set[int]] = {}
-
     def unavailable(index: int) -> set[int]:
         """Scoreboards a named-operand pairing is using across this instruction."""
         return {sb for sb, start, end in reserved if start <= index <= end}
@@ -547,7 +545,7 @@ def schedule_program(
                 record = model.lookup(instr.opcode)
                 if record.kind is LatencyClass.VARIABLE and access.real_defs:
                     # lowest free index, so a kernel's scoreboards read in issue order
-                    avoid = forbidden.get(index, set()) | unavailable(index)
+                    avoid = unavailable(index)
                     free = next(
                         (sb for sb in range(SCOREBOARDS) if sb not in protects and sb not in avoid),
                         None,
@@ -662,24 +660,12 @@ def schedule_program(
         for block in cfg.blocks:
             transfer(block.index, entry_state[block.index], emit=True)
 
-    # Allocate, look at what the dataflow then waits on, and allocate again away
-    # from anything that came back waiting on the barrier it signals. ptxas never
-    # emits that shape; the wait only becomes visible after the dataflow, so it
-    # takes a second pass to see and a third to settle.
-    for _ in range(SCOREBOARDS + 1):
-        allocate()
-        converge()
-        offenders = []
-        for index, instr in enumerate(program.instructions):
-            barrier = barrier_of[index]
-            if barrier == NO_BARRIER or instr.word is None:
-                continue
-            if (waits[index] >> barrier) & 1:
-                offenders.append(index)
-        if not offenders:
-            break
-        for index in offenders:
-            forbidden.setdefault(index, set()).add(barrier_of[index])
+    # An instruction may wait on the number it is about to signal: the wait is
+    # evaluated before issue and the barrier raised at or after it, so this is
+    # reusing a number that has just drained rather than waiting on itself.
+    # `ptxas` does it 260 times in 36,576 instructions (finding 24).
+    allocate()
+    converge()
 
     # ---- barriers nothing waits for
     # a scoreboard that is signalled and never waited on is not synchronisation,

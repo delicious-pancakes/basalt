@@ -139,6 +139,13 @@ any release. The clean-room position in [`NOTICE`](NOTICE) will not.
   a different question from what correctness requires.
 
 ### Fixed
+- Removed a repair loop that reallocated scoreboards away from any instruction
+  waiting on the number it signals. `ptxas` emits that shape 260 times in 36,576
+  instructions, so the rule was invented to avoid a hazard that is not one, and
+  it was not free: forbidding a number pushes the allocator onto a fresh
+  scoreboard, and `s_tile_matmul` was taking 57 where it needs 20. Removing it
+  changes no answer, 439 of 439 at every level. Finding 24 records what the
+  symptom did lead to, which was two real causes.
 - A memory access width describes the data, not the address. `STS.128 [R0], R8`
   moves four registers to one 32-bit shared address, and widening the address
   invented a dependency on `R1` through `R3` that made the vendor's own schedule

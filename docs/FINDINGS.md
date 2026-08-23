@@ -1163,8 +1163,15 @@ The thing that named it was asking what shape basalt emits that `ptxas` never do
 > basalt has three.
 
 The wait is evaluated at issue and the signal follows, so on a counter model that shape looks
-harmless, which is why it survived so long. It is not, and three separate causes were feeding
-it.
+harmless. **It is harmless, and reading it as a defect was a mistake worth keeping in the
+record**, because the diagnosis it led to was right and the rule it produced was not.
+
+`ptxas` emits that shape 260 times in 36,576 instructions: 209 on a write barrier and 51 on a
+read barrier. `LDC.64 R2, c[0x0][0x388]` waits on SB0 and then signals SB0, which is reusing a
+number that has just drained rather than waiting on its own result. The observation above was
+true of that kernel and false in general, and the sample that produced it was one kernel.
+
+What the shape was, was a *symptom*. Three separate causes were feeding it, all three real.
 
 **A cubin holds more than its entry function.** `mma.b1` lowers to a call into an internal
 helper, and 125 of that kernel's 144 instructions sit in bodies with no edge from the entry
@@ -1181,20 +1188,30 @@ altogether, which is the better answer and needed this one first to be reachable
 
 **The allocator could not see the waits.** Scoreboards are allocated in one pass and the
 waits are computed by a dataflow in the next, so an instruction is given a number before
-anything knows what it will wait on. It could therefore be handed the very barrier its own
-incoming wait covers. Allocation and the dataflow now run to a fixed point together: allocate,
-see what came back waiting on its own barrier, and allocate again away from it. Two rounds
-settle every kernel in the corpus.
-
-None of the three is sufficient alone. Fixing only the inheritance changes the answer for the
-emulated 1-bit `MMA` kernels, because those are the ones running on inherited waits; fixing
-only the allocator leaves the inherited leak feeding it. Three earlier attempts each traded
-one kernel for another, and the reason was always that a second cause was still in place.
+anything knows what it will wait on. The fix at the time was a repair loop: allocate, look at
+what came back waiting on its own barrier, and allocate again away from it.
 
 | | Round trip |
 | :--- | :--- |
 | Before | `-O1` clean, one kernel short at `-O2` and `-O3` |
 | After | **every comparable kernel, at all three levels** |
+
+### The repair loop did not survive its own premise
+
+Once the vendor was checked properly and found emitting the shape 260 times, the loop had
+nothing left to justify it, and the honest test is whether removing it changes an answer.
+It does not: 439 of 439 at every optimisation level with the loop gone, on the same eight
+input patterns.
+
+It was not free, either. Forbidding a number the instruction happens to wait on pushes the
+allocator onto a fresh scoreboard each time, and `s_tile_matmul` was using 57 where it needs
+20. That pressure is what forces sharing elsewhere, so a rule invented to avoid an imagined
+hazard was manufacturing a real cost.
+
+What did the work, then, was the other two causes: unreachable blocks are no longer given
+computed waits, and read barriers are no longer inherited at all (finding 25). Both were
+found by chasing the symptom, which is the argument for chasing symptoms and against
+promoting one into a rule before checking how often the reference produces it.
 
 ## 25. Deriving the read barrier instead of copying it
 
