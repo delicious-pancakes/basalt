@@ -1,0 +1,34 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 Sunny Patel
+#
+# basalt ships with no runtime dependencies, which is a deliberate constraint
+# rather than an accident: the pipeline shells out to ptxas and nvdisasm and
+# parses text, so the ISA database can be rebuilt from a pinned redistributable
+# and nothing else.
+#
+# This job is what keeps that true. A pull request that adds a runtime
+# dependency has to argue for it in review instead of arriving quietly in a
+# diff, and the same pass checks the licence of anything new against the
+# clean-room position in NOTICE.
+name: dependency-review
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: moderate
+          # a dependency whose terms are unstated is exactly the kind of thing
+          # this project cannot take on trust
+          deny-licenses: GPL-3.0, AGPL-3.0, LGPL-3.0
+          comment-summary-in-pr: on-failure

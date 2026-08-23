@@ -1,0 +1,49 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 Sunny Patel
+#
+# OpenSSF Scorecard: an outside assessment of this repository's supply-chain
+# posture, published rather than self-reported.
+#
+# The reasoning is the same one the rest of the project runs on. basalt's
+# argument is that a claim needs evidence produced by something other than the
+# thing making the claim, and "this repository is maintained responsibly" is a
+# claim like any other. The results land in the security tab, and a regression
+# shows up there without anyone remembering to look.
+name: scorecard
+
+on:
+  branch_protection_rule:
+  schedule:
+    - cron: "17 5 * * 1"
+  push:
+    branches: [main]
+
+permissions: read-all
+
+jobs:
+  analysis:
+    name: Scorecard analysis
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      id-token: write
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Run analysis
+        uses: ossf/scorecard-action@v2.4.3
+        with:
+          results_file: results.sarif
+          results_format: sarif
+          # publishing makes the result checkable by anyone rather than only by
+          # the maintainer, which is the whole point of running it
+          publish_results: true
+
+      - name: Upload to the security tab
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: results.sarif

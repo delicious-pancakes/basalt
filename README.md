@@ -408,6 +408,8 @@ Licensed under [Apache-2.0](LICENSE). Apache rather than something restrictive o
 
 The highest-value contribution is an encoding basalt gets wrong. See [`CONTRIBUTING.md`](CONTRIBUTING.md) and the [ISA gap template](.github/ISSUE_TEMPLATE/isa_gap.yml), which collects enough to reproduce without your machine.
 
+[`SUPPORT.md`](SUPPORT.md) says where a question goes, [`GOVERNANCE.md`](GOVERNANCE.md) what a change has to clear, [`RELEASING.md`](RELEASING.md) how a release is cut and verified, and [`SECURITY.md`](SECURITY.md) how to report privately.
+
 ## Author
 
 **Sunny Patel** &middot; [sunnypatel.net](https://www.sunnypatel.net) &middot; [ORCID 0009-0005-3863-7642](https://orcid.org/0009-0005-3863-7642) &middot; [github.com/sunnypatell](https://github.com/sunnypatell)

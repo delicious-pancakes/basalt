@@ -1,0 +1,63 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 Sunny Patel
+#
+# The same checks CI runs, before the commit rather than after it.
+#
+#     pip install pre-commit && pre-commit install
+#
+# Nothing here is unique to pre-commit: CI is still the authority, and a hook
+# that disagreed with it would be worse than no hook.
+default_language_version:
+  python: python3.12
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-added-large-files
+        # a cubin belongs in a scratch directory, not in history
+        args: [--maxkb=1024]
+      - id: check-merge-conflict
+      - id: check-toml
+      - id: check-yaml
+      - id: end-of-file-fixer
+        exclude: ^data/
+      - id: mixed-line-ending
+        args: [--fix=lf]
+      - id: trailing-whitespace
+        exclude: ^data/
+      - id: forbid-submodules
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.0
+    hooks:
+      - id: ruff-check
+        args: [--fix]
+      - id: ruff-format
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.14.1
+    hooks:
+      # both platforms from one machine: the driver loads a different library on
+      # each, and only the host's branch would otherwise be type-checked
+      - id: mypy
+        name: mypy (linux)
+        args: [--platform=linux]
+        additional_dependencies: [pytest]
+      - id: mypy
+        name: mypy (win32)
+        args: [--platform=win32]
+        additional_dependencies: [pytest]
+
+  - repo: local
+    hooks:
+      - id: no-vendored-nvidia-source
+        name: no vendored NVIDIA source
+        # the clean-room position is the licence position: basalt drives the
+        # published executables and never carries their source or headers
+        entry: >-
+          python -c "import sys;
+          bad=[p for p in sys.argv[1:] if p.endswith(('.h','.hpp','.cuh','.cu'))];
+          sys.exit(bad and print('refusing vendored source:', *bad) or 0)"
+        language: system
+        files: ^third_party/

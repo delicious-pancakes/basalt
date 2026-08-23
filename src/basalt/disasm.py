@@ -19,6 +19,7 @@ hardware at all, which is what makes the ISA database reproducible in CI.
 
 from __future__ import annotations
 
+import itertools
 import re
 import tempfile
 from collections.abc import Sequence
@@ -35,6 +36,7 @@ __all__ = [
     "decode_word",
     "decode_words",
     "disassemble_cubin",
+    "disassemble_kernels",
     "disassemble_program",
     "raw_arch",
 ]
@@ -241,23 +243,56 @@ def _parse_program(listing: str) -> Program:
     return Program(instructions=instructions, labels=labels)
 
 
+def _keep_encoded(program: Program) -> Program:
+    """Drop instructions nvdisasm printed without an encoding, renumbering labels."""
+    keep = [i for i, instr in enumerate(program.instructions) if instr.word is not None]
+    if len(keep) == len(program.instructions):
+        return program
+    remap = {old: new for new, old in enumerate(keep)}
+    return Program(
+        instructions=[program.instructions[i] for i in keep],
+        labels={name: remap[idx] for name, idx in program.labels.items() if idx in remap},
+    )
+
+
 def disassemble_program(tc: Toolchain, cubin: Path, *, arch: str = "SM120a") -> Program:
     """Ground-truth oracle, keeping the labels a control-flow graph needs."""
     res = tc.run([str(tc.nvdisasm), "-c", "-hex", str(cubin)], check=False)
     if res.returncode != 0:
         return Program(instructions=[], labels={})
 
-    program = _parse_program(res.stdout)
-    keep = [i for i, instr in enumerate(program.instructions) if instr.word is not None]
-    if len(keep) == len(program.instructions):
-        return program
+    return _keep_encoded(_parse_program(res.stdout))
 
-    # drop instructions with no encoding and renumber the labels to match
-    remap = {old: new for new, old in enumerate(keep)}
-    return Program(
-        instructions=[program.instructions[i] for i in keep],
-        labels={name: remap[idx] for name, idx in program.labels.items() if idx in remap},
-    )
+
+# nvdisasm opens each kernel with its own section directive
+_SECTION = re.compile(r"^\s*\.section\s+\.text\.(?P<name>[\w$.]+)", re.MULTILINE)
+
+
+def disassemble_kernels(tc: Toolchain, cubin: Path) -> dict[str, Program]:
+    """Every kernel in a cubin, kept apart.
+
+    A cubin built from one `.cu` holds one kernel and the whole listing is that
+    kernel, which is why everything else here takes a listing whole. A shipped
+    library is not built that way: one ELF inside `cublasLt` carries hundreds,
+    and analysing the concatenation invents dependencies across a boundary no
+    warp ever crosses, because offsets restart at zero and nothing falls through
+    from one kernel into the next.
+    """
+    res = tc.run([str(tc.nvdisasm), "-c", "-hex", str(cubin)], check=False)
+    if res.returncode != 0:
+        return {}
+
+    bounds = [(m.start(), m.group("name")) for m in _SECTION.finditer(res.stdout)]
+    if not bounds:
+        return {}
+    bounds.append((len(res.stdout), ""))
+
+    out: dict[str, Program] = {}
+    for (start, name), (end, _) in itertools.pairwise(bounds):
+        program = _keep_encoded(_parse_program(res.stdout[start:end]))
+        if program.instructions:
+            out[name] = program
+    return out
 
 
 def disassemble_cubin(tc: Toolchain, cubin: Path, *, arch: str = "SM120a") -> list[Instruction]:
