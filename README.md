@@ -25,7 +25,7 @@
 
 <br/><br/>
 
-<strong><a href="#the-problem">The problem</a> &nbsp;&middot;&nbsp; <a href="#which-gpus">Which GPUs</a> &nbsp;&middot;&nbsp; <a href="#how-it-works">How it works</a> &nbsp;&middot;&nbsp; <a href="#quickstart">Quickstart</a> &nbsp;&middot;&nbsp; <a href="#measured-not-assumed">Measured, not assumed</a> &nbsp;&middot;&nbsp; <a href="https://github.com/sunnypatell/basalt/blob/main/docs/FINDINGS.md">Findings</a> &nbsp;&middot;&nbsp; <a href="https://github.com/sunnypatell/basalt/blob/main/docs/METHOD.md">Method</a> &nbsp;&middot;&nbsp; <a href="https://github.com/sunnypatell/basalt/blob/main/docs/ROADMAP.md">Roadmap</a> &nbsp;&middot;&nbsp; <a href="#clean-room-position">Clean-room</a></strong>
+<strong><a href="#the-problem">The problem</a> &nbsp;&middot;&nbsp; <a href="#which-gpus">Which GPUs</a> &nbsp;&middot;&nbsp; <a href="#how-it-works">How it works</a> &nbsp;&middot;&nbsp; <a href="#quickstart">Quickstart</a> &nbsp;&middot;&nbsp; <a href="#measured-not-assumed">Measured, not assumed</a> &nbsp;&middot;&nbsp; <a href="https://github.com/sunnypatell/basalt/blob/main/docs/FINDINGS.md">Findings</a> &nbsp;&middot;&nbsp; <a href="https://github.com/sunnypatell/basalt/blob/main/docs/API.md">API</a> &nbsp;&middot;&nbsp; <a href="https://github.com/sunnypatell/basalt/blob/main/docs/METHOD.md">Method</a> &nbsp;&middot;&nbsp; <a href="https://github.com/sunnypatell/basalt/blob/main/docs/ROADMAP.md">Roadmap</a> &nbsp;&middot;&nbsp; <a href="#clean-room-position">Clean-room</a></strong>
 
 </div>
 
@@ -436,6 +436,9 @@ python -m basalt.cli verify kernel.cubin --latencies my-card.json
 
 </details>
 
+Everything the CLI does is importable, and the library surface with runnable examples is
+in [`docs/API.md`](https://github.com/sunnypatell/basalt/blob/main/docs/API.md).
+
 And the two controls that keep the rest honest. The first needs a card; the second needs
 the shipped libraries and no hardware at all:
 
@@ -536,7 +539,7 @@ src/basalt/
 src/basalt/data/   The measured tables, inside the package so an installed copy
                    has them: the ISA database, the latency model and the mined
                    stall requirement
-docs/              Findings, method, roadmap, artwork sources
+docs/              Findings, method, the Python API, roadmap, artwork sources
 scripts/           Toolchain fetch, asset rendering, drift check, and the two
                    hardware controls: the corpus round trip and the agreement sweep
 tests/             Unit tests, plus toolchain- and GPU-marked suites
