@@ -125,10 +125,8 @@ def _write(word: int, bits: tuple[int, ...], value: int) -> int:
     return word
 
 
-# The parts of a bracket operand, as opposed to the modifier parts below. A
-# slot carrying any of these is a composite operand and goes through
-# `_write_composite`; one carrying only modifiers is an ordinary field with a
-# sign bit parked somewhere else in the word.
+# a slot carrying any of these is a bracket operand and goes through
+# `_write_composite`; modifiers alone mean an ordinary field
 _COMPOSITE_ROLES = frozenset({SubRole.BANK, SubRole.OFFSET, SubRole.BASE, SubRole.DESCRIPTOR})
 _MODIFIER_SYMBOLS = {"-": SubRole.NEGATE, "~": SubRole.NOT, "!": SubRole.INVERT}
 
@@ -192,18 +190,15 @@ def _kind(token: str) -> str:
     recorded field, so they are separate encodings of one mnemonic and the
     database holds one of them.
     """
-    # `|R2|` is a register wearing a modifier bit, not a literal. reading it as
-    # anything else makes the abs form collide with the immediate form, and one
-    # of the two then has no encoding in the database at all
+    # `|R2|` is a register wearing a modifier bit; read as a literal it collides
+    # with the immediate form
     token = _strip_modifiers(token)[1]
     if (match := _REGISTER.match(token)) is not None:
         file = {"R": "register", "UR": "uniform", "P": "predicate", "UP": "upredicate"}[
             match.group(1)
         ]
-        # A suffix other than `.reuse` is part of the encoding, not decoration:
-        # `R4.ROW` and `R4.COL` are the two operands of a matrix multiply and
-        # are not interchangeable, so they have to read as different kinds while
-        # `R4.ROW` and `R12.ROW` read as the same one.
+        # a suffix other than `.reuse` is part of the encoding: `R4.ROW` and
+        # `R4.COL` are different kinds, `R4.ROW` and `R12.ROW` the same one
         suffix = match.group(3).replace(".reuse", "")
         return file + suffix
     if _IMMEDIATE.match(token):
@@ -225,10 +220,8 @@ def _kind(token: str) -> str:
     return "other"
 
 
-# How a float field of a given width might be laid out. A 32-bit field is not
-# always a float32: `DMUL R6, R6, 2.2250738585072013831e-308` keeps the *top
-# half* of a double there and lets the low half be zero, so packing a float32
-# into it sets the wrong exponent bit and assembles a different number.
+# a 32-bit field is not always a float32: `DMUL` keeps the top half of a double
+# there, and packing a float32 into it assembles a different number
 _FLOAT_LAYOUTS: dict[int, tuple[tuple[str, int], ...]] = {
     16: (("<e", 0),),
     32: (("<f", 0), ("<d", 32)),
@@ -312,6 +305,12 @@ def branch_target(word: Word, address: int) -> int:
     return address + 16 + raw * BRANCH_SCALE
 
 
+def _register_file(token: str) -> str | None:
+    """Which register file a token names: `R`, `UR`, `P` or `UP`."""
+    match = _REGISTER.match(token)
+    return match.group(1) if match else None
+
+
 def _register_number(token: str) -> int | None:
     """The number a register token encodes, or None if it is not one."""
     match = _REGISTER.match(token)
@@ -327,9 +326,8 @@ class Assembler:
     """Builds instruction words from text, for the forms the database knows."""
 
     def __init__(self, database: IsaDatabase) -> None:
-        # every recorded shape of a mnemonic, not just the canonical one. one
-        # mnemonic covers several encodings and the text decides which applies,
-        # so assembling tries each and keeps the one that fits.
+        # every recorded shape, since one mnemonic covers several encodings and
+        # the text decides which applies
         self._forms: dict[str, list[Form]] = {}
         entries = [
             (mnemonic, form) for mnemonic in database.forms for form in database.shapes(mnemonic)
@@ -344,24 +342,21 @@ class Assembler:
             for operand in entry.operands:
                 classified = _classify(operand, tokens)
                 if classified is None:
-                    # the prober never established which token this field
-                    # belongs to, so it is left at the reference value and any
-                    # text that disagrees is refused rather than mis-encoded
+                    # unattributed by the prober, so it keeps the reference value
+                    # and disagreeing text is refused rather than mis-encoded
                     continue
                 token, holds = classified
                 parts = dict(operand.subfields)
-                # a field the prober called a modifier still holds a number when
-                # one was split out of it: `QMMA` slot 5 is a reuse flag beside a
-                # register, and the register is encodable once the flag is named
+                # a modifier field still holds a number once one is split out of
+                # it: `QMMA` slot 5 is a reuse flag beside an encodable register
                 writable = holds == "value" or SubRole.VALUE in parts
                 sink = None
                 if writable and holds != "float" and token < len(tokens):
                     value_bits = tuple(sorted(parts.get(SubRole.VALUE, operand.bits)))
                     bare = _strip_modifiers(tokens[token])[1]
                     present = _read(reference, value_bits)
-                    # `URZ` is 63 in six bits and 255 in `QMMA`'s eight, so the
-                    # sink is read off the reference; all ones also proves the
-                    # field is only the number (`PLOP3`'s reads 14 of 31 for `PT`)
+                    # `URZ` is 63 in six bits and 255 in eight, so the sink is
+                    # read off the reference rather than assumed
                     expected: int | None
                     if _SINK.match(bare) and present == (1 << len(value_bits)) - 1:
                         sink, expected = present, present
@@ -410,10 +405,8 @@ class Assembler:
         """Encode one instruction, optionally with a control word to copy."""
         body = text.strip().rstrip(";").strip()
 
-        # The guard can be written before the mnemonic, which is how a reader
-        # writes it, or after it, which is how `nvdisasm` prints it. Both are
-        # accepted; taking the second for an operand silently encodes a branch
-        # target into a predicate field.
+        # a guard reads either side of the mnemonic; taking the trailing form
+        # for an operand encodes a branch target into a predicate field
         guard_register: str | None = None
         negated = False
         leading = _GUARD.match(body + " ")
@@ -440,10 +433,8 @@ class Assembler:
         if not shapes:
             raise AssemblyError(f"{mnemonic} is not in the instruction database")
 
-        # Try every recorded shape and keep the first that fits. Order does not
-        # matter for correctness: a shape that does not match the text raises
-        # rather than encoding something else, which is what makes trying them
-        # in turn safe rather than a search for one that happens not to complain.
+        # order is irrelevant: a shape that does not match raises rather than
+        # encoding something else
         failures: list[str] = []
         for form in shapes:
             try:
@@ -511,10 +502,8 @@ class Assembler:
                 word = _write_composite(word, slot, token, reference_token, mnemonic)
                 continue
 
-            # When the prober separated a modifier out, the rest of the field is
-            # the value and is named; otherwise the whole field is the value.
-            # Either way what the field holds still decides: splitting a negate
-            # bit off a float immediate does not turn the rest into an integer.
+            # what the field holds still decides: splitting a negate bit off a
+            # float immediate does not turn the rest into an integer
             value_bits = slot.parts.get(SubRole.VALUE) or slot.bits
             if slot.holds == "float":
                 # the whole field, not the split: a float's sign bit is part of
@@ -531,8 +520,8 @@ class Assembler:
             if slot.holds != "value":
                 raise AssemblyError(
                     f"{mnemonic} operand {slot.index} sits in a field the prober found to hold "
-                    f"a {slot.holds} rather than a plain value, so writing {token!r} into it "
-                    f"would encode something else"
+                    f"{'an' if slot.holds[0] in 'aeiou' else 'a'} {slot.holds} rather than a "
+                    f"plain value, so writing {token!r} into it would encode something else"
                 )
             # the sink encodes as whatever the reference showed for this field
             value = slot.sink if (slot.sink is not None and _SINK.match(token)) else None
@@ -565,10 +554,8 @@ class Assembler:
                 f"{form.tokens[position]!r}, and no field is known to encode it"
             )
 
-        # The guard is always written, even when the text has none. A recorded
-        # form can itself be a predicated instruction, and its reference
-        # encoding then carries that predicate; leaving the field alone would
-        # emit `@P0 MOV` for text that said `MOV`.
+        # always written: a recorded form can itself be predicated, and leaving
+        # the field alone emits `@P0 MOV` for text that said `MOV`
         word = _apply_guard(word, guard_register or "PT", negated)
 
         result = Word(word)
@@ -580,13 +567,19 @@ class Assembler:
 
 # `c[0x0][0x380]`, `c[0x0][R4+0x10]`, `desc[UR4][R2.64]`, `desc[UR4][R2.64+0x8]`
 _COMPOSITE = re.compile(r"^(?P<kind>c|cx|desc)\[(?P<first>[^\]]*)\]\[(?P<inner>[^\]]*)\]$")
+# `[R3]` and `[UR4+0x400]`: no bank and no descriptor, just a base and a
+# displacement, which still live in different bits of the same field
+_PLAIN_ADDRESS = re.compile(r"^\[(?P<inner>[^\]]*)\]$")
 
 
 def _split_composite(token: str) -> tuple[str, str, str, str] | None:
     """A bracket operand as (kind, bank-or-descriptor, base register, offset)."""
     match = _COMPOSITE.match(token)
     if match is None:
-        return None
+        if (plain := _PLAIN_ADDRESS.match(token)) is None:
+            return None
+        base, _, offset = plain.group("inner").partition("+")
+        return "mem", "", base.strip(), offset.strip() or "0x0"
     inner = match.group("inner")
     if "+" in inner:
         base, _, offset = inner.partition("+")
@@ -628,13 +621,25 @@ def _write_composite(word: int, slot: Slot, token: str, reference: str, mnemonic
                 f"{mnemonic} operand {slot.index} needs a different {role} and the prober "
                 f"never located bits for it in this form"
             )
-        if role == "offset":
-            # unmasked for the same reason as an immediate: too wide is a refusal
+        if role == "offset" or (role == "bank" and _IMMEDIATE.match(value_text)):
+            # a constant bank is a number, as in `c[0x1][0x0]`, and only `cx`
+            # names it with a uniform register. reading `0x1` as a register
+            # refused 875 of the 913 instructions -O0 could not assemble
             value = int(value_text or "0x0", 0)
         else:
             # the base register carries its access width, as in `R2.64`, and the
             # width is part of the opcode rather than of this field
             bare = value_text.split(".")[0]
+            # `[R3]` and `[UR4]` are different register files behind the same
+            # brackets, and the vendor encodes the uniform one as a sink here
+            # plus a selector elsewhere. writing 4 into the base bits produced a
+            # word that disassembles as a different address
+            if _register_file(bare) != _register_file(reference_text.split(".")[0]):
+                raise AssemblyError(
+                    f"{mnemonic} operand {slot.index} has {value_text!r} as its {role} where the "
+                    f"recorded form has {reference_text!r}; those are different register files "
+                    f"and this database holds an encoding for one of them"
+                )
             number = _register_number(bare)
             if number is None:
                 raise AssemblyError(
@@ -682,10 +687,8 @@ def _classify(operand, tokens: tuple[str, ...]) -> tuple[int, str] | None:
     before, after = operand.example_before, operand.example_after
     if not before or not after:
         return None
-    # The example text carries the guard and the reference tokens do not, so a
-    # guarded form counted one token more than it was compared against and every
-    # slot in it was dropped. That is why `FMUL @!P0 R0, R0, 0.5` could describe
-    # no field at all: not a missing measurement, an off-by-one against it.
+    # the example carries the guard and the reference does not, so a guarded form
+    # counted one token more and lost every slot
     before = _GUARD.sub("", before + " ", count=1).strip()
     after = _GUARD.sub("", after + " ", count=1).strip()
     left, right = _tokenise(before), _tokenise(after)
@@ -697,9 +700,8 @@ def _classify(operand, tokens: tuple[str, ...]) -> tuple[int, str] | None:
     position = moved[0]
     was, now = left[position], right[position]
 
-    # The token gained or lost a dotted suffix, so the field is a modifier. Only
-    # where the thing before the dot is a name: `0.5` against `0.50000005960464`
-    # shares the digit 0 and is a float field, not a suffix on a register.
+    # a dotted suffix means a modifier, but only where the head is a name:
+    # `0.5` against `0.50000005960464` is a float field
     head = was.split(".")[0]
     if head[:1].isalpha() and head == now.split(".")[0] and "." in (was + now).replace(head, ""):
         return position, "modifier"

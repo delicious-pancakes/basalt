@@ -38,7 +38,12 @@ __all__ = ["SubRole", "classify_bit", "subfields"]
 _CONSTANT = re.compile(r"\b(c|cx)\[([^\]]*)\]\[([^\]]*)\]")
 # `desc[UR4][R2.64+0x8]`
 _DESCRIPTOR = re.compile(r"\bdesc\[([^\]]*)\]\[([^\]]*)\]")
+# `[R3]` and `[UR4+0x400]`, matched only where no name precedes the bracket so a
+# constant bank or a descriptor is never read as one of these
+_MEMORY = re.compile(r"(?<![\w\]])\[([^\]]*)\]")
 _HEX = re.compile(r"^-?0[xX][0-9a-fA-F]+$")
+# the file a register belongs to, which is not part of its number
+_REGISTER_FILE = re.compile(r"^(UR|R|UP|P)(?:\d+|Z|T)\b")
 
 
 class SubRole:
@@ -62,10 +67,15 @@ class SubRole:
 # the prober groups the two together and this splits them (finding 14)
 _MODIFIERS = {"-": SubRole.NEGATE, "~": SubRole.NOT, "!": SubRole.INVERT}
 _MODIFIER_ROLES = frozenset({*_MODIFIERS.values(), SubRole.ABSOLUTE, SubRole.SUFFIX})
-# a sign on a literal belongs to the literal. `-R0` negates a register with a
-# bit of its own, but the `-` on `-2.875` is IEEE bit 31, and splitting it off
-# as a modifier leaves the assembler writing 31 bits of a 32-bit float
+# a sign on a literal belongs to the literal: the `-` on `-2.875` is IEEE bit 31,
+# and splitting it off writes 31 bits of a 32-bit float
 _NUMERIC = re.compile(r"^(0[xX][0-9a-fA-F]|\d|\.\d|INF|QNAN|NAN)", re.IGNORECASE)
+
+
+def _file(token: str) -> str | None:
+    """Which register file a token names, or None when it names no register."""
+    match = _REGISTER_FILE.match(token.strip())
+    return match.group(1) if match else None
 
 
 def _parts(text: str) -> tuple[str, ...] | None:
@@ -75,11 +85,23 @@ def _parts(text: str) -> tuple[str, ...] | None:
         base, _, offset = inner.partition("+")
         return ("desc", m.group(1), base.strip(), offset.strip())
     if (m := _CONSTANT.search(text)) is not None:
-        inner = m.group(3)
+        inner = m.group(3).strip()
         if "+" in inner:
             base, _, offset = inner.partition("+")
             return ("const", m.group(2), base.strip(), offset.strip())
-        return ("const", m.group(2), "", inner.strip())
+        # `c[0x3][R0]` indexes by register, and calling that an offset made every
+        # bit of it fail the hex check and go unattributed, which is why 875
+        # register-indexed constant loads could not be assembled
+        if _HEX.match(inner):
+            return ("const", m.group(2), "", inner)
+        return ("const", m.group(2), inner, "")
+    # a plain address, as `STS [R3], R0` and `LDS.64 R4, [UR4+0x400]` have. the
+    # register and the displacement live in different bits of one wide field,
+    # and without splitting them the whole field reads as unattributable
+    if (m := _MEMORY.search(text)) is not None:
+        inner = m.group(1)
+        base, _, offset = inner.partition("+")
+        return ("mem", "", base.strip(), offset.strip())
     return None
 
 
@@ -138,20 +160,28 @@ def classify_bit(before: str, after: str) -> str:
     `before` and `after` are the operand text with the bit clear and set. When
     neither is a bracket expression the field is not composite and the bit is
     just part of the value.
+
+    The comparison is per operand rather than per instruction. `LDGSTS.E [R7],
+    desc[UR6][R2.64]` has two bracket expressions, and reading only the first
+    one in the text attributes the second one's bits against the wrong operand,
+    which is how every shared-memory address in the async copy came out
+    unattributable.
     """
     if (modifier := _modifier_change(before, after)) is not None:
         return modifier
-    left, right = _parts(before), _parts(after)
+
+    operands_before, operands_after = _operands(before), _operands(after)
+    if len(operands_before) != len(operands_after):
+        return SubRole.UNKNOWN
+    differing = [(a, b) for a, b in zip(operands_before, operands_after, strict=True) if a != b]
+    # exactly one operand moving is what "this bit belongs to that value" looks
+    # like; two or none is something this cannot read
+    if len(differing) != 1:
+        return SubRole.UNKNOWN
+
+    left, right = _parts(differing[0][0]), _parts(differing[0][1])
     if left is None and right is None:
-        # Exactly one operand moving is what "this bit is part of that value"
-        # looks like. A bit that moves two of them, or none, is doing something
-        # this cannot read, and reading it as the value would write a register
-        # number over whatever else it controls.
-        differing = sum(
-            1 for a, b in zip(_operands(before), _operands(after), strict=False) if a != b
-        )
-        same_count = len(_operands(before)) == len(_operands(after))
-        return SubRole.WHOLE if same_count and differing == 1 else SubRole.UNKNOWN
+        return SubRole.WHOLE
     if left is None or right is None or left[0] != right[0]:
         # the bracket appeared, vanished or changed kind, which is a structural
         # change rather than a field within one
@@ -171,10 +201,17 @@ def classify_bit(before: str, after: str) -> str:
     if len(changed) != 1:
         return SubRole.UNKNOWN
     role = changed[0]
-    # An absent displacement is a displacement of zero, not a different shape:
-    # `desc[UR4][R2.64]` and `desc[UR4][R2.64+0x8]` are the same operand with
-    # different offsets, and treating the first as having no offset field loses
-    # every offset bit on every descriptor load in the database.
+    # A bit that swaps the register file is a selector, not part of the number.
+    # `LDS.64 R8, [UR4]` has one at 91: flipping it prints `[R4]`, which reads as
+    # a different base, and folding it into the base bits meant assembling
+    # `[UR7]` wrote 7 across the selector as well and produced a general-register
+    # address that disassembles as though it were fine.
+    if role in (SubRole.BASE, SubRole.DESCRIPTOR):
+        pair = (base, r_base) if role is SubRole.BASE else (first, r_first)
+        if _file(pair[0]) != _file(pair[1]):
+            return SubRole.UNKNOWN
+    # an absent displacement is a displacement of zero, not a different shape,
+    # or every descriptor load loses its offset bits
     if role is SubRole.OFFSET:
         left_offset = offset or "0x0"
         right_offset = r_offset or "0x0"

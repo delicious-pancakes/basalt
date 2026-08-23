@@ -15,6 +15,7 @@ wrong.
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import pytest
@@ -178,8 +179,16 @@ class TestCompositeOperands:
         form = database.forms.get("LDC")
         if form is None or not any(o.subfields.get("offset") for o in form.operands):
             pytest.skip("no offset sub-field recorded for LDC")
-        got = assembler.assemble("LDC R2, c[0x0][0x37c]")
-        reference = assembler.assemble(f"LDC {form.operand_text}")
+        # the offset is changed in the recorded form's own text, so the register
+        # is whatever that form used. writing one here compares two differences
+        recorded = form.operand_text
+        offset = re.search(r"\]\[(0x[0-9a-fA-F]+)\]", recorded)
+        if offset is None:
+            pytest.skip(f"no constant offset in the recorded form: {recorded}")
+        moved_offset = int(offset.group(1), 16) ^ 0x4
+        text = recorded[: offset.start(1)] + hex(moved_offset) + recorded[offset.end(1) :]
+        got = assembler.assemble(f"LDC {text}")
+        reference = assembler.assemble(f"LDC {recorded}")
         assert got.value != reference.value
         # only the offset bits may move
         offset_bits = next(
