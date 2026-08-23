@@ -234,10 +234,16 @@ also moving is a reason to distrust the costing rather than to celebrate it.
 **Holding out the code the audit reports on.** The stall requirement is mined from what the
 compiler schedules, which means a table mined from a body of code cannot fail when checked
 against that same code: the tightest gap it left *is* the floor, by construction. That is not
-a hypothetical. basalt passed 1,323 kernels of positive control while carrying eight model
-errors, and every one surfaced the first time the checker read machine code from somewhere
-else. So the requirement is mined from one set of shipped libraries and the audit reports on
+a hypothetical. basalt passed 1,323 kernels of positive control while carrying thirteen model
+errors, and every one surfaced only once the checker read machine code from somewhere else.
+So the requirement is mined from one set of shipped libraries and the audit reports on
 another, and the split is the control rather than a tidiness.
+
+**Held out, and then held out wider.** Eight of those thirteen surfaced on one library, and
+the audit read zero errors afterwards. That was not evidence either, for the same reason:
+widening the held-out set to three libraries and 5.2 million instructions took it back to 940
+and produced the other five. A subset that passes says nothing about the subset that was not
+tried, so the reported figure is always the widest one run.
 
 **Alleging and emitting are different jobs.** A mined minimum is an upper bound on the
 requirement, so evidence from a wider body of code may lower what the checker is willing to

@@ -116,8 +116,10 @@ A tool can be ignored; a measurement cannot.
 3. **Unsafe control bits in shipped kernels.** *Answered, and the answer is about basalt.*
    2,473 sm_120 cubins out of CUDA 13.3.1, 844 MB of device code nobody here compiled. The
    first run reported 6,593 errors in 250 nvjpeg kernels and every one was a hole in basalt's
-   model, eight of them, each invisible on the corpus by construction. After the corrections:
-   zero, on libraries held out of every table the checker reads. Finding 32.
+   model, eight of them, each invisible on the corpus by construction. Widening the held-out
+   set to three libraries and 5.2 million instructions found five more. After all thirteen:
+   zero errors over 2,762 kernels and 10,218,030 dependencies, on libraries held out of every
+   table the checker reads. Finding 32.
 
 ## The control that keeps the audit honest
 

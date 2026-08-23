@@ -12,14 +12,14 @@ any release. The clean-room position in [`NOTICE`](NOTICE) will not.
 ### Added
 - Stage 10, the audit: the checker pointed at 2,473 sm_120 kernels NVIDIA ships
   in CUDA 13.3.1, 844 MB of device code basalt did not compile. The first run
-  reported 6,593 errors in 250 nvjpeg kernels and not one was real. Seven holes
-  in basalt's model were, each of them invisible on a corpus basalt generates
-  itself. Fixing those took it to zero, and zero over one library was not
-  evidence either: widening the held-out set to three libraries and 5.2 million
-  instructions took it back to 940 and produced five more corrections. Thirteen
-  in total, none of them NVIDIA's, and the held-out set now verifies with 0
-  errors over 2,762 kernels and 10,218,030 dependencies, all 2,762 fully
-  analysed and no instruction left undecoded. Finding 32.
+  reported 6,593 errors in 250 nvjpeg kernels and not one was real; eight holes
+  in basalt's model were, each invisible on a corpus basalt generates itself.
+  Fixing those took it to zero, and zero over one library was not evidence
+  either: widening the held-out set to three libraries and 5.2 million
+  instructions took it back to 940 and produced five more. Thirteen corrections,
+  none of them NVIDIA's, and the held-out set now verifies with 0 errors over
+  2,762 kernels and 10,218,030 dependencies, all 2,762 fully analysed and no
+  instruction left undecoded. Finding 32.
 - `scripts/mine_shipped.py`: the per-pair stall requirement mined from shipped
   kernels rather than from a generated corpus, holding out the libraries the
   audit then reports on, because a table measured on the code it is checked
