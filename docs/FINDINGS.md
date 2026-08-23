@@ -1602,6 +1602,34 @@ rebuilt each reaching definition with four of its six fields, so `yielded` and `
 every time. A kernel that waits on a scoreboard after a branch, which is most fp64 code, was
 being judged against a gap that is a minimum over paths rather than a distance.
 
+### All three tools, on code none of them produced
+
+The checker is the one this stage exists for, and the same libraries answer the same question
+about the other two. The assembler is handed each shipped kernel's disassembly and has to
+reproduce the vendor's exact 128 bits, and the scheduler is handed each shipped kernel with
+every control bit discarded and has to compute new ones.
+
+| Library | Instructions | Assembled exactly | Refused | Wrong |
+| :--- | ---: | ---: | ---: | ---: |
+| `nvjpeg` | 63,968 | 48,810 | 15,158 | **0** |
+| `curand` | 642,960 | 573,761 | 69,199 | **0** |
+| `cusolverMg` | 4,530,520 | 3,962,765 | 567,755 | **0** |
+| | **5,237,448** | **4,585,336 (87.5%)** | 652,112 | **0** |
+
+```bash
+python scripts/assembler_coverage.py --cubins <dir> --show-refusals
+python scripts/audit_shipped.py --cubins <dir> --exclude <the mined ones> --reschedule
+```
+
+Every refusal names the field it could not place, and the reasons are coverage rather than
+correctness: `LDG.E.U8`, `BSSY.RECONVERGENT`, `SEL.64` and `LDCU.128` are forms no kernel
+basalt generates has ever emitted, so the prober has never seen one. The count that is pinned
+at zero is the third column, and it stays at zero on 5.2 million instructions of machine code
+the assembler had never met. One defect turned up getting there and it was the right kind:
+`c[0x0][UR4]` indexes its offset by a register where the recorded form holds a number, and the
+encoder raised `ValueError` instead of refusing by name. A crash on foreign input is worse
+than a wrong verdict, because the caller gets neither.
+
 ### The result
 
 | | Kernels | Instructions | Dependencies | Errors | Warnings |

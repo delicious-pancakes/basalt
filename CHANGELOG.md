@@ -20,6 +20,12 @@ any release. The clean-room position in [`NOTICE`](NOTICE) will not.
   none of them NVIDIA's, and the held-out set now verifies with 0 errors over
   2,762 kernels and 10,218,030 dependencies, all 2,762 fully analysed and no
   instruction left undecoded. Finding 32.
+- `assembler_coverage.py --cubins` runs the byte comparison over shipped cubins
+  rather than the corpus, and `audit_shipped.py --reschedule` recomputes every
+  control bit and hands the result back to the checker. All three tools now have
+  a number on machine code none of them produced: 4,585,336 of 5,237,448
+  instructions assembled bit-identically with 0 wrong, and every kernel
+  rescheduled from scratch verifying clean.
 - `scripts/mine_shipped.py`: the per-pair stall requirement mined from shipped
   kernels rather than from a generated corpus, holding out the libraries the
   audit then reports on, because a table measured on the code it is checked
