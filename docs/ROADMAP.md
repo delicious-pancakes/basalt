@@ -6,8 +6,9 @@ stages land. Anything claimed here as done has a command that demonstrates it.
 
 ## The position
 
-basalt is a **checker** first and a code generator second, and the first of either for this
-architecture that is measured against the vendor's own output.
+basalt is a **checker** first and a code generator second. The code generators are not the
+first for this architecture; the checker is, and it is the only one of the three measured
+against machine code it did not produce.
 
 Tools that emit sm_120 machine code *assign* the scheduling control word from a latency model,
 and the ones that check themselves do it by running their own kernels and seeing that the
@@ -40,7 +41,15 @@ vendor compiler's own output, which is what makes it useful rather than self-ref
 | 9b | Cross-check | The ISA model derived twice, from two compiler releases | **done**, 0 operand fields differ |
 | 10 | Audit | Every sm_120 kernel NVIDIA ships, held out of every table | **done**, 0 errors, 8 model bugs |
 | 11 | Scheduler | Assign the control bits, not only check them | **done**, every field derived |
-| 12 | Assembler | SASS text to the instruction word | **working** |
+| 12 | Assembler | SASS text to the instruction word | **done**, 0 wrong, 67 refused by name |
+
+The audit is the stage that changed the others. Everything before it ran on kernels basalt
+compiled itself, which cannot fail: the requirement table is mined from the compiler's own
+scheduling, so the tightest gap it left *is* the floor, by construction, for exactly that
+code. Pointed at 250 kernels out of NVIDIA's JPEG decoder it reported 6,593 errors, and every
+one was basalt's. Eight model bugs came out of it, the requirement was re-mined from 24,311
+shipped kernels with the audited libraries held out, and the same 250 now verify with zero
+errors and 250 of 250 kernels fully analysed. Finding 32.
 
 The scheduler discards every control bit `ptxas` produced and computes its own, then hands the
 result back to the verifier and then to the GPU, for every kernel the corpus generates. All
