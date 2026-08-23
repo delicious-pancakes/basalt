@@ -44,7 +44,7 @@ vendor compiler's own output, which is what makes it useful rather than self-ref
 
 The scheduler discards every control bit `ptxas` produced and computes its own, then hands the
 result back to the verifier and then to the GPU, for every kernel the corpus generates.
-Every one of the 411 comparable ones comes out byte-identical to the vendor schedule, at all
+Every one of the 417 comparable ones comes out byte-identical to the vendor schedule, at all
 three optimisation levels. The rest are named in the findings rather than summarised, and
 that count is what the work is measured against: it was 246 when the control was first run,
 and every model correction since came out of watching it move.
@@ -56,7 +56,7 @@ treated the surrounding gaps as free to compress.
 
 The assembler encodes SASS text back into the instruction word, and its standard is the
 vendor's own bytes: assembling every corpus kernel as a whole program, with its labels
-resolved, reproduces 11,463 of 11,472 instructions bit-identically and none to anything else.
+resolved, reproduces 11,743 of 11,752 instructions bit-identically and none to anything else.
 That second number is a test pinned at zero.
 
 Whole programs rather than lone instructions because a branch cannot be assembled alone.
@@ -108,3 +108,22 @@ Stated so the boundary is deliberate rather than accidental.
   exists to catch.
 - **Anything requiring NVIDIA source, headers, or decompilation.** See
   [`NOTICE`](../NOTICE) and [`CONTRIBUTING.md`](../CONTRIBUTING.md).
+- **Asynchronous copies, for now.** `cp.async` lowers to `LDGSTS`, and the scheduler cannot
+  place one safely. This is a measured limit rather than an assumed one, and worth stating
+  exactly, because it is a third dependency mechanism beside the stall count and the
+  scoreboard:
+
+  ```
+  LDGSTS.E [R7], desc[UR4][R2.64]     no write barrier at all
+  LDGDEPBAR                           signals SB0
+  DEPBAR.LE SB0, 0x0                  waits for the outstanding copies to drain
+  BAR.SYNC.DEFER_BLOCKING 0x0
+  LDS R9, [R7]                        reads what the copy wrote
+  ```
+
+  The copy signals no scoreboard, so nothing basalt models connects it to the read. Give it
+  a fresh schedule and the round trip returns different bytes on the card, at every
+  optimisation level, which is how this was found rather than argued. Modelling `LDGDEPBAR`
+  and `DEPBAR.LE` is the work; until it is done the corpus does not emit `cp.async`, because
+  a corpus kernel the scheduler is known to get wrong would either break the round trip or
+  need an excuse carved into it, and neither is worth having.

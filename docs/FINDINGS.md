@@ -49,8 +49,8 @@ Its scheduling is the reference, so an error on any of them is basalt's fault.
 
 | | |
 | :--- | ---: |
-| Kernels compiled | 412 |
-| Dependencies checked | 7,168 |
+| Kernels compiled | 423 |
+| Dependencies checked | 7,325 |
 | Errors | **0** |
 | Kernels with warnings | 1 |
 
@@ -294,7 +294,7 @@ The staircase is the useful part. A single wrong answer could be anything; a val
 climbs monotonically toward the right one as the gap widens, and then stops changing, is a
 timing requirement being met.
 
-**Across the corpus.** Every dependent pair in the 412 kernel corpus, split by how the
+**Across the corpus.** Every dependent pair in the 423 kernel corpus, split by how the
 consumer reads the value, scoreboard-covered pairs excluded because there the stall says
 nothing:
 
@@ -350,7 +350,7 @@ with traffic on both sides, predicated writes, and long unbranched dependent cha
 
 | | |
 | :--- | ---: |
-| Kernels rescheduled and run | 425 |
+| Kernels rescheduled and run | 436 |
 | Comparable (the vendor runs here, deterministically, and reproducibly) | 314 |
 | **Byte-identical to the vendor schedule** | **314** |
 | Wrong | 0 |
@@ -525,7 +525,7 @@ label under this rule and none decodes wrongly.
 The rule is a measurement, and a measurement written down as a constant is exactly what goes
 quietly wrong when a compiler version changes, so it is re-derived from the corpus by a test
 rather than trusted. With it, assembling every corpus kernel as a whole program reproduces
-11,463 of 11,472 instructions bit-identically, and none to anything else.
+11,743 of 11,752 instructions bit-identically, and none to anything else.
 
 ## 12. What the correctness costs
 
@@ -536,9 +536,9 @@ schedules are correct on every comparable corpus kernel, and here is what they c
 | :--- | ---: |
 | `ptxas -O3` | 13,571 |
 | basalt | 12,168 |
-| | **0.89x** |
+| | **0.93x** |
 
-Slower on 34 of the 425 kernels and cheaper on the rest, with every comparable kernel still
+Slower on 44 of the 436 kernels and cheaper on the rest, with every comparable kernel still
 byte-identical on the GPU at all three optimisation levels.
 
 Cheaper than the vendor is believable rather than suspicious, for a specific reason: basalt
@@ -567,7 +567,7 @@ a consumer that is short and spends cycles in the window before it, and a cycle 
 one pair also separates every other pair spanning that point. So a later pair can be
 satisfied by stall placed for an earlier one, leaving the earlier placement larger than
 anything requires. Walking that back, one cycle at a time, judged by the same requirement
-function that placed them, took 1.29x to 0.89x. `LDC` alone was half the excess before it,
+function that placed them, took 1.29x to 0.93x. `LDC` alone was half the excess before it,
 almost all overshoot rather than requirement.
 
 **Not leaning on a wait a predicated instruction carries.** `ptxas` does lean on them and
@@ -782,11 +782,11 @@ computes a wrong answer, which is the entire failure this repository exists to p
 
 | | |
 | :--- | ---: |
-| Kernels, one dependency shortened in each | 212 |
+| Kernels, one dependency shortened in each | 223 |
 | Agreed broken | 73 |
-| Over-strict | 81 |
+| Over-strict | 85 |
 | **Missed** | **0** |
-| Unstable, excluded | 58 |
+| Unstable, excluded | 65 |
 
 Which kernels land in the excluded column moves between runs, because several read memory
 this harness never initialises and are therefore stable only until something else has used
@@ -934,7 +934,7 @@ than guess, which is the designed answer.
 `ptxas` rejecting a snippet is an ordinary result here. The corpus is deliberately broad and
 tries forms the architecture may not have, so a rejection is recorded as a negative rather
 than raised, and the harvest prints how many there were and carries on. That is the right
-design, and it hid eight separate bugs for as long as they had existed:
+design, and it hid ten separate gaps for as long as they had existed:
 
 | Kernels | What was wrong | What it cost |
 | :--- | :--- | :--- |
@@ -947,6 +947,8 @@ design, and it hid eight separate bugs for as long as they had existed:
 | 3 `ldmatrix.m16n16.b8` | one register per matrix, when a 16x16 tile of bytes is two, and `.x4` does not exist for the shape | `LDSM.8.MT1616` |
 | 3 sparse `mma.sp` | B sized for the dense shape rather than the full k, and `.kind::f8f6f4` carried over from the dense forms, which the sparse ones reject | `HMMA.SP`, `IMMA.SP` and `QMMA.SP` |
 | 1-bit `mma` | no `.and.popc` or `.xor.popc`, which the 1-bit form requires | see below |
+| shared atomics | `_atomic`'s `space` parameter was never passed anything but its default | every `ATOMS` |
+| reductions | `red`, an atomic that returns nothing, was never generated at all | `REDG` and `REDUX` |
 
 The half-precision case is the one worth dwelling on. The type table had carried `b16` as
 f16's container since it was written, in a column that nothing read; `_load` interpolated the
@@ -969,6 +971,27 @@ operation into `LOP3` masks, `MOVM.U4TO8.M832` and a chain of `IMMA.16832.U8.U8`
 capability is present at the PTX level and emulated underneath, which is only visible
 because the kernel now builds.
 
+**An async copy is a third dependency mechanism.** `cp.async` lowers to `LDGSTS`, and it
+signals no scoreboard at all. Completion is tracked by a separate pair, `LDGDEPBAR` marking
+the group and `DEPBAR.LE SB0, 0x0` waiting for the outstanding copies to drain, and only
+then is the shared read safe:
+
+```
+LDGSTS.E [R7], desc[UR4][R2.64]     no write barrier at all
+LDGDEPBAR                           signals SB0
+DEPBAR.LE SB0, 0x0                  waits for the copies to drain
+BAR.SYNC.DEFER_BLOCKING 0x0
+LDS R9, [R7]                        reads what the copy wrote
+```
+
+basalt models the stall count and the scoreboard, and neither connects the copy to the read.
+Given a fresh schedule those kernels return different bytes on the card at every optimisation
+level, which is how this was found rather than argued: the round trip went from every
+comparable kernel matching to three that did not, the moment the corpus first emitted one.
+The corpus no longer emits `cp.async` and the roadmap says why, because a kernel the
+scheduler is known to get wrong would either break that control or need an excuse carved
+into it.
+
 **Six rejections remain and all of them are real.** Five are the `mxf8f6f4` block-scaled
 family with a `ue4m3` scale, which is refused at every register count and scale vector while
 the same forms with `ue8m0` build; one is sparse `e2m1` at `m16n8k128`, which demands
@@ -978,7 +1001,7 @@ defects in the corpus.
 | | Mnemonics | Opcodes | Instructions reproduced |
 | :--- | ---: | ---: | ---: |
 | Before | 276 | 77 | 9,846 of 9,856 |
-| After | **319** | **82** | **11,463 of 11,472** |
+| After | **335** | **86** | **11,743 of 11,752** |
 
 ## 21. What is deliberately not claimed
 

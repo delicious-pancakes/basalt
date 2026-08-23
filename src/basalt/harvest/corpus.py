@@ -284,6 +284,48 @@ def _atomic(op: str, ptx_type: str, space: str = "global") -> Snippet:
     return Snippet(name, _kernel(name, body, ""), "atomic", f"atom.{op}", ptx_type, (space,))
 
 
+def _atomic_shared(op: str, ptx_type: str) -> Snippet:
+    """A shared-memory atomic, which is `ATOMS` rather than `ATOMG`.
+
+    `_atomic` has carried a `space` parameter since it was written and was never
+    passed anything but its default, so the shared opcode was never harvested.
+    """
+    a, d = _reg(ptx_type, 1), _reg(ptx_type, 3)
+    body = "\n".join(
+        [
+            _load(ptx_type, a, 0),
+            "    mov.u32 %r7, slot;",
+            f"    atom.shared.{op}.{ptx_type} {d}, [%r7], {a};",
+            _store(ptx_type, d),
+        ]
+    )
+    name = f"k_atom_shared_{op}_{ptx_type}"
+    decls = "    .shared .align 8 .b8 slot[16];"
+    return Snippet(name, _kernel(name, body, decls), "atomic", f"atom.{op}", ptx_type, ("shared",))
+
+
+def _reduce(op: str, ptx_type: str, space: str = "global") -> Snippet:
+    """`red` is an atomic that returns nothing, and a separate opcode for it."""
+    a = _reg(ptx_type, 1)
+    if space == "shared":
+        body = "\n".join(
+            [
+                _load(ptx_type, a, 0),
+                "    mov.u32 %r7, slot;",
+                f"    red.shared.{op}.{ptx_type} [%r7], {a};",
+                "    bar.sync 0;",
+                f"    ld.shared.{ptx_type} {a}, [%r7];",
+                _store(ptx_type, a),
+            ]
+        )
+        decls = "    .shared .align 8 .b8 slot[16];"
+    else:
+        body = "\n".join([_load(ptx_type, a, 0), f"    red.global.{op}.{ptx_type} [%out], {a};"])
+        decls = ""
+    name = f"k_red_{space}_{op}_{ptx_type}"
+    return Snippet(name, _kernel(name, body, decls), "atomic", f"red.{op}", ptx_type, (space,))
+
+
 def _memory(op: str, ptx_type: str, space: str, mods: tuple[str, ...] = ()) -> Snippet:
     """Exercise a load/store space and cache-modifier combination."""
     d = _reg(ptx_type, 1)
@@ -417,6 +459,17 @@ def generate() -> list[Snippet]:
             out.append(_atomic(op, t))
     out.append(_atomic("add", "f32"))
     out.append(_atomic("add", "f64"))
+    # the shared-space atomic is a different opcode from the global one
+    for op in ("add", "min", "max", "exch"):
+        out.append(_atomic_shared(op, "u32" if op != "exch" else "b32"))
+    # a reduction is an atomic that returns nothing, and is its own opcode again
+    for op in ("add", "min", "max", "and", "or", "xor"):
+        out.append(_reduce(op, "b32" if op in ("and", "or", "xor") else "u32"))
+    out.append(_reduce("add", "u32", "shared"))
+    # `cp.async` is deliberately absent: its completion is tracked by
+    # `LDGDEPBAR` and `DEPBAR` rather than by a scoreboard on the copy, which the
+    # scheduler has no model of, so rescheduling one computes a different answer
+    # on the card. The roadmap carries the evidence and the PTX to reproduce it.
 
     # warp-level and special registers, which have no arithmetic equivalent
     out += [
