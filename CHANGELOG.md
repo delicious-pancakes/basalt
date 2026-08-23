@@ -4,8 +4,9 @@ All notable changes to basalt are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-Until 1.0, the ISA database schema and the assembler's text syntax may change in
-any release. The clean-room position in [`NOTICE`](NOTICE) will not.
+From 1.0, the ISA database schema and the assembler's text syntax follow
+semantic versioning: a breaking change to either is a major release. The
+clean-room position in [`NOTICE`](NOTICE) does not change at any version.
 
 ## [Unreleased]
 

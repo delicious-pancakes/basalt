@@ -2,7 +2,9 @@
 
 ## Supported versions
 
-basalt is pre-1.0 and alpha. Only the latest commit on `main` is supported.
+The latest 1.x release and the latest commit on `main`. Older releases are not
+patched: cut a new one instead, which is what [`RELEASING.md`](RELEASING.md)
+says to do when a release turns out to be wrong.
 
 ## Release integrity
 
