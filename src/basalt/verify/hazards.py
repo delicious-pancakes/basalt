@@ -249,14 +249,21 @@ def _check_instruction(
                     observed,
                     guard=reg == access.guard,
                     bounded=not by_distance,
+                    uniform=str(reg).startswith("UP"),
                 )
                 if rd.elapsed >= required or not recording:
                     continue
+                if by_distance:
+                    # nothing bounds a variable-latency producer's requirement
+                    # from above, so the mined gap is all there is and it is an
+                    # upper bound: tighter than the vendor is not proof of wrong
+                    grounded = False
                 # grounded in hardware or in what the vendor schedules, either of
                 # which makes a shortfall an error rather than a suspicion
                 severity = (
                     Severity.ERROR
-                    if grounded or producer_record.confidence is Confidence.MEASURED
+                    if grounded
+                    or (producer_record.confidence is Confidence.MEASURED and not by_distance)
                     else Severity.WARNING
                 )
                 _add(
@@ -326,6 +333,12 @@ def _check_instruction(
                 if reg not in pending.registers:
                     continue
                 reader = program.instructions[pending.index]
+                # spacing covers this as a wait does, and the vendor leans on it
+                # 217,855 times in three libraries (finding 13)
+                if pending.elapsed >= anti_dependency_cycles(
+                    reader.mnemonic, instr.opcode, observed
+                ):
+                    continue
                 _add(
                     report,
                     seen,
@@ -364,7 +377,7 @@ def _check_instruction(
     state.advance(stall, yielded=yielded)
 
 
-def _check_anti_dependencies(program, block, report, seen, observed) -> None:
+def _check_anti_dependencies(program, block, model, report, seen, observed) -> None:
     """Overwriting a register something is still reading, without a barrier.
 
     The other direction of dependency (finding 23), and the half the scheduler
@@ -379,7 +392,7 @@ def _check_anti_dependencies(program, block, report, seen, observed) -> None:
     """
     if report is None or seen is None or observed is None:
         return
-    last_read: dict[RegRef, tuple[int, str]] = {}
+    last_read: dict[RegRef, tuple[int, str, bool]] = {}
     elapsed: dict[RegRef, int] = {}
     for index in range(block.start, block.end):
         instr = program.instructions[index]
@@ -387,11 +400,19 @@ def _check_anti_dependencies(program, block, report, seen, observed) -> None:
             continue
         access = operand_access(instr.mnemonic, instr.operands)
 
+        # a variable-latency result lands when the memory returns, not at issue,
+        # so the gap to it is never the distance that matters
+        defs_are_late = model.lookup(instr.opcode).kind is LatencyClass.VARIABLE
+
         for reg in access.real_defs:
             previous = last_read.get(reg)
-            if previous is None or previous[0] == index:
+            if previous is None or previous[0] == index or defs_are_late:
                 continue
-            reader_index, reader_mnemonic = previous
+            reader_index, reader_mnemonic, was_guard = previous
+            # a guard resolves before its instruction issues, so overwriting it
+            # afterwards cannot be early
+            if was_guard:
+                continue
             reader = program.instructions[reader_index]
             # a read barrier covers this, and its wait is not a cycle count
             if reader.word is None or reader.word.field("read_barrier") != NO_BARRIER:
@@ -432,7 +453,7 @@ def _check_anti_dependencies(program, block, report, seen, observed) -> None:
             last_read.pop(reg, None)
             elapsed.pop(reg, None)
         for reg in access.real_uses:
-            last_read[reg] = (index, instr.mnemonic)
+            last_read[reg] = (index, instr.mnemonic, reg == access.guard)
             elapsed[reg] = stall
 
 
@@ -449,7 +470,7 @@ def _run_block(
     block = cfg.blocks[block_index]
     for index in range(block.start, block.end):
         _check_instruction(cfg.program, index, state, model, report, seen, observed)
-    _check_anti_dependencies(cfg.program, block, report, seen, observed)
+    _check_anti_dependencies(cfg.program, block, model, report, seen, observed)
     return state
 
 
@@ -599,6 +620,7 @@ def _requirement(
     *,
     guard: bool = False,
     bounded: bool = True,
+    uniform: bool = False,
 ) -> tuple[int, str, bool]:
     """How many cycles this pairing needs, where that came from, and how firmly.
 
@@ -651,7 +673,9 @@ def _requirement(
             GUARD_CYCLES,
             f"a guard predicate needs {GUARD_CYCLES} cycles, measured "
             f"(see docs/FINDINGS.md); {producer} is fixed latency",
-            True,
+            # measured for a vector predicate; the uniform datapath is its own
+            # pairing and shipped code resolves one in 11
+            not uniform,
         )
     return (
         record.cycles,

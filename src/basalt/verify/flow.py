@@ -34,6 +34,8 @@ class PendingRead:
 
     index: int
     registers: frozenset[RegRef]
+    # distance since the read, because spacing covers this as a wait does
+    elapsed: int = 0
 
 
 @dataclass
@@ -170,6 +172,12 @@ class FlowState:
                 moved = rd.advanced(stall, yielded=yielded)
                 if moved is not rd:
                     by_index[i] = moved
+        if stall:
+            for reads in self.reads.values():
+                for i, pending in reads.items():
+                    reads[i] = PendingRead(
+                        pending.index, pending.registers, pending.elapsed + stall
+                    )
 
     def begin_read(self, barrier: int, index: int, registers: frozenset[RegRef]) -> None:
         if barrier == 7 or not registers:

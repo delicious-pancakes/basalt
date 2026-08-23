@@ -152,6 +152,9 @@ _ASSUMED: dict[str, tuple[int, LatencyClass, str]] = {
     "QMMA": (16, LatencyClass.FIXED, "tensor core, low precision, shape dependent"),
     "OMMA": (16, LatencyClass.FIXED, "tensor core, block scaled, shape dependent"),
     "BMMA": (16, LatencyClass.FIXED, "tensor core, shape dependent"),
+    # the fp64 member of the same family: scoreboarded in 128 shipped instances
+    # and emitted back to back in an accumulate chain, like every other MMA
+    "DMMA": (16, LatencyClass.FIXED, "fp64 tensor core, shape dependent"),
     # memory and anything else that completes out of order
     "LD": (0, LatencyClass.VARIABLE, ""),
     "LDG": (0, LatencyClass.VARIABLE, "global load"),
@@ -221,12 +224,17 @@ _ASSUMED: dict[str, tuple[int, LatencyClass, str]] = {
     "UFRND": (6, LatencyClass.FIXED, "uniform float round"),
     # never covered by spacing once, which is the same evidence that keeps LDG here
     "QSPC": (0, LatencyClass.VARIABLE, "query address space, 4,619 scoreboarded and no spacing"),
+    "R2P": (4, LatencyClass.FIXED, "register to predicate, the other direction of P2R"),
+    "UIMNMX": (4, LatencyClass.FIXED, "uniform integer min/max"),
     "B2R": (0, LatencyClass.VARIABLE, "barrier to register, 328 scoreboarded and no spacing"),
     "SYNCS": (0, LatencyClass.VARIABLE, "shared-memory barrier, 240 scoreboarded and no spacing"),
-    "DMMA": (0, LatencyClass.VARIABLE, "fp64 tensor core, scoreboarded like the rest of fp64"),
     # half spacing and half scoreboard, so the conservative class
     "BMOV": (0, LatencyClass.VARIABLE, "barrier register move, covered both ways"),
     "CGAERRBAR": (0, LatencyClass.CONTROL, "cluster error barrier, no register result"),
+    "ERRBAR": (0, LatencyClass.CONTROL, "error barrier, no register result"),
+    "CCTL": (0, LatencyClass.CONTROL, "cache control, no register result"),
+    "UCGABAR_ARV": (0, LatencyClass.CONTROL, "cluster barrier arrive, no register result"),
+    "UCGABAR_WAIT": (0, LatencyClass.CONTROL, "cluster barrier wait, no register result"),
     # control flow and synchronisation produce no register result to protect
     "BRA": (0, LatencyClass.CONTROL, ""),
     "BRX": (0, LatencyClass.CONTROL, ""),
