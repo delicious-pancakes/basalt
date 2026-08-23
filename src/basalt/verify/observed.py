@@ -125,6 +125,8 @@ class ObservedStalls:
     # than a dependency: nothing here is about registers (finding 13)
     by_issue: dict[tuple[str, str], StallEvidence] = field(default_factory=dict)
     kernels: int = 0
+    # lazily counted from `by_pair`, which the checker asks per dependency
+    _spacing: dict[str, int] | None = field(default=None, repr=False)
 
     def observe(self, producer: str, consumer: str, stall: int, sample: str) -> None:
         key = (producer, consumer)
@@ -321,12 +323,13 @@ class ObservedStalls:
         over millions of pairs, and 734,837 for `LDS`, which is the difference
         between a missing barrier being a hazard and being a choice.
         """
-        bare = opcode.split(".")[0]
-        return sum(
-            ev.observations
-            for (producer, _), ev in self.by_pair.items()
-            if producer.split(".")[0] == bare
-        )
+        if self._spacing is None:
+            counts: dict[str, int] = {}
+            for (producer, _), ev in self.by_pair.items():
+                bare = producer.split(".")[0]
+                counts[bare] = counts.get(bare, 0) + ev.observations
+            self._spacing = counts
+        return self._spacing.get(opcode.split(".")[0], 0)
 
     def summary(self) -> str:
         trusted = sum(1 for e in self.by_producer.values() if e.trusted)

@@ -231,7 +231,14 @@ def _check_instruction(
                 )
                 continue
 
-            if producer_record.kind is LatencyClass.FIXED:
+            # a variable-latency result the vendor is known to cover with
+            # spacing is checked against that distance, not merely noted
+            spacing = observed.covered_by_spacing(producer.opcode) if observed else 0
+            by_distance = (
+                producer_record.kind is LatencyClass.VARIABLE and spacing >= MIN_OBSERVATIONS
+            )
+
+            if producer_record.kind is LatencyClass.FIXED or by_distance:
                 required, source, grounded = _requirement(
                     producer.mnemonic,
                     instr.opcode,
@@ -267,17 +274,13 @@ def _check_instruction(
                 )
 
             elif producer_record.kind is LatencyClass.VARIABLE and recording:
-                # the vendor covers some of these with stalls alone, and where it
-                # has been seen to, the absence of a barrier is not proof of one
-                spacing = observed.covered_by_spacing(producer.opcode) if observed else 0
-                structural = Severity.ERROR if spacing < MIN_OBSERVATIONS else Severity.WARNING
                 if rd.barrier == NO_BARRIER:
                     _add(
                         report,
                         seen,
                         Hazard(
                             kind=HazardKind.NO_BARRIER_SET,
-                            severity=structural,
+                            severity=Severity.ERROR,
                             confidence=producer_record.confidence,
                             register=str(reg),
                             def_index=rd.index,
@@ -296,7 +299,7 @@ def _check_instruction(
                         seen,
                         Hazard(
                             kind=HazardKind.BARRIER_NOT_AWAITED,
-                            severity=structural,
+                            severity=Severity.ERROR,
                             confidence=producer_record.confidence,
                             register=str(reg),
                             def_index=rd.index,
@@ -547,27 +550,26 @@ def _check_scoreboarded_minimum(
         return
     consumer_key = ("@" if reg == guard else "") + instr.opcode
     evidence = observed.scoreboarded_minimum(producer.mnemonic, consumer_key)
-    if evidence is None or rd.elapsed >= evidence.minimum:
+    if evidence is None:
         return
-    # the residue is a pipeline constant, so a wider mined gap is spacing the
-    # compiler had work to fill rather than a distance the hardware needs
+    # the wait is what makes a scoreboarded pair safe, so the gap beside it
+    # carries no requirement: only the measured residue grounds a claim here
     required = min(evidence.minimum, SCOREBOARD_RESIDUE_CYCLES)
-    grounded = rd.elapsed < required
+    if rd.elapsed >= required:
+        return
     _add(
         report,
         seen,
         Hazard(
             kind=HazardKind.UNDERSTALLED,
-            # only the measured residue may allege the code is wrong; between it
-            # and the mined figure the code is merely tighter than the vendor
-            severity=Severity.ERROR if grounded and evidence.trusted else Severity.WARNING,
-            confidence=Confidence.MEASURED if grounded else Confidence.ASSUMED,
+            severity=Severity.ERROR,
+            confidence=Confidence.MEASURED,
             register=str(rd.register) if hasattr(rd, "register") else "",
             def_index=rd.index,
             use_index=index,
             def_text=f"{producer.mnemonic} {producer.operands}".strip(),
             use_text=f"{instr.mnemonic} {instr.operands}".strip(),
-            required=required if grounded else evidence.minimum,
+            required=required,
             actual=rd.elapsed,
             detail=(
                 f"{producer.mnemonic} signals a scoreboard and is waited on, but a "
@@ -623,14 +625,14 @@ def _requirement(
                     True,
                 )
             # after its own latency the result is written, whatever the vendor
-            # was seen to leave, so a mined figure above it is spacing too
-            ceiling = record.cycles if record.kind is LatencyClass.FIXED else evidence.minimum
+            # was seen to leave, so a mined figure above it is spacing too. That
+            # bound is what makes thin evidence harmless: four observations
+            # claiming 20 become the producer's 4, which the vendor already beats
             return (
-                min(evidence.minimum, ceiling),
+                min(evidence.minimum, record.cycles),
                 f"{evidence.producer} -> {evidence.consumer} is scheduled no tighter than "
                 f"{evidence.minimum} cycles across {evidence.observations} observations",
-                # thin evidence is a scheduling coincidence, not a requirement
-                evidence.trusted,
+                True,
             )
     if guard:
         return (
