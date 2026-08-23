@@ -51,6 +51,24 @@ class Step:
 
 PY = sys.executable
 
+# held out of the audit because the requirement was mined from them, and a table
+# checked against the code it came from cannot fail (finding 32)
+MINED_LIBRARIES = (
+    "cublas64_13",
+    "cublasLt64_13",
+    "cusolver64_12",
+    "cusparse64_12",
+    "nppial64_13",
+    "nppicc64_13",
+    "nppidei64_13",
+    "nppif64_13",
+    "nppig64_13",
+    "nppim64_13",
+    "nppist64_13",
+    "nppitc64_13",
+    "npps64_13",
+)
+
 STEPS: tuple[Step, ...] = (
     Step("lint", [PY, "-m", "ruff", "check", "."]),
     Step("format", [PY, "-m", "ruff", "format", "--check", "."], ("files already formatted",)),
@@ -109,11 +127,8 @@ STEPS: tuple[Step, ...] = (
             "scripts/audit_shipped.py",
             "--cubins",
             "third_party/cuda/13.3.1/cubins",
-            # the libraries the requirement was mined from, held out of the audit
             "--exclude",
-            "cublas64_13,cublasLt64_13,cusolver64_12,cusparse64_12,nppial64_13,"
-            "nppicc64_13,nppidei64_13,nppif64_13,nppig64_13,nppim64_13,"
-            "nppist64_13,nppitc64_13,npps64_13",
+            ",".join(MINED_LIBRARIES),
         ],
         ("errors:",),
         slow=True,

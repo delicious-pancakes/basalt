@@ -40,8 +40,6 @@ pytestmark = pytest.mark.gpu
 
 ARCH = "sm_120a"
 ROOT = Path(__file__).resolve().parent.parent
-LATENCIES = LATENCIES
-OBSERVED = OBSERVED_STALLS
 
 TEMPLATE = """.version 9.0
 .target sm_120a
@@ -170,7 +168,7 @@ def model() -> LatencyModel:
 
 @pytest.fixture(scope="module")
 def observed() -> ObservedStalls | None:
-    return ObservedStalls.read(OBSERVED) if OBSERVED.is_file() else None
+    return ObservedStalls.read(OBSERVED_STALLS) if OBSERVED_STALLS.is_file() else None
 
 
 def _run(dev: Device, cubin: bytes, payload: bytes, out_format: str, repeats: int) -> set:

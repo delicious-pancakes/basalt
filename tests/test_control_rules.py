@@ -36,8 +36,6 @@ from basalt.verify.operands import operand_access
 pytestmark = [pytest.mark.toolchain, pytest.mark.slow]
 
 ROOT = Path(__file__).resolve().parent.parent
-LATENCIES = LATENCIES
-OBSERVED = OBSERVED_STALLS
 
 # stores have no register result and so no latency class, but their data
 # register is still in flight after they issue
@@ -51,7 +49,7 @@ def model() -> LatencyModel:
 
 @pytest.fixture(scope="module")
 def observed() -> ObservedStalls | None:
-    return ObservedStalls.read(OBSERVED) if OBSERVED.is_file() else None
+    return ObservedStalls.read(OBSERVED_STALLS) if OBSERVED_STALLS.is_file() else None
 
 
 @pytest.fixture(scope="module")

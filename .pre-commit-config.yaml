@@ -15,19 +15,22 @@ repos:
     rev: v6.0.0
     hooks:
       - id: check-added-large-files
-        # a cubin belongs in a scratch directory, not in history
+        # a cubin belongs in a scratch directory, not in history. The mined
+        # requirement table is large by nature, 3,957 pairings with their
+        # evidence, and is the one thing here that has to be committed
         args: [--maxkb=1024]
+        exclude: ^src/basalt/data/
       - id: check-merge-conflict
       - id: check-json
       - id: check-toml
       - id: check-yaml
       - id: detect-private-key
       - id: end-of-file-fixer
-        exclude: ^data/
+        exclude: ^src/basalt/data/
       - id: mixed-line-ending
         args: [--fix=lf]
       - id: trailing-whitespace
-        exclude: ^data/
+        exclude: ^src/basalt/data/
       - id: forbid-submodules
 
   - repo: https://github.com/astral-sh/ruff-pre-commit

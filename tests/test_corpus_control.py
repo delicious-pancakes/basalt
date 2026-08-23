@@ -41,8 +41,6 @@ pytestmark = [pytest.mark.toolchain, pytest.mark.slow]
 
 ARCH = "sm_120a"
 ROOT = Path(__file__).resolve().parent.parent
-LATENCIES = LATENCIES
-OBSERVED = OBSERVED_STALLS
 
 
 # all three levels locally and nightly; CI narrows to -O3, which schedules
@@ -61,7 +59,7 @@ def model() -> LatencyModel:
 
 @pytest.fixture(scope="module")
 def observed() -> ObservedStalls | None:
-    return ObservedStalls.read(OBSERVED) if OBSERVED.is_file() else None
+    return ObservedStalls.read(OBSERVED_STALLS) if OBSERVED_STALLS.is_file() else None
 
 
 @pytest.fixture(scope="module")
