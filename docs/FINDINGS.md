@@ -217,12 +217,12 @@ correctness requires.
 
 The last row is the part worth keeping. A wait covers the long, variable part of
 the result and not the whole of it: the producer still owes a small stall of its
-own, and `ptxas` knows exactly how much. Across the corpus it never schedules a
-`DADD` or a `DSETP` below 2 cycles, or a `DFMA` or `DMUL` below 1, however the
-consumer waits. basalt mines that minimum per opcode alongside everything else
-and applies it wherever a scoreboard is signalled.
+own, and `ptxas` knows exactly how much. Across the corpus it never schedules any
+of `DADD`, `DSETP`, `DFMA` or `DMUL` below 2 cycles, however the consumer waits.
+basalt mines that minimum per opcode alongside everything else and applies it
+wherever a scoreboard is signalled.
 
-Every one of the 74 fp64 instructions in the corpus carries a write scoreboard
+Every one of the 219 fp64 instructions in the corpus carries a write scoreboard
 and none goes without, so fp64 is modelled as completing out of order rather than
 on a fixed schedule.
 
@@ -412,9 +412,10 @@ and both had resisted every reading of their dependencies. Neither was a depende
 problem.
 
 **The yield bit is not independent of the stall count.** Across the whole corpus `ptxas`
-emits a stall of zero with the bit clear 4205 times and set never, and a stall of one with
-it set 1123 times and clear never. basalt wrote the stall and left the bit as it found it,
-which produced pairs the vendor never emits.
+emits a stall of zero with the bit clear 18,292 times and set never, and a stall of one with
+it set 6,477 times and clear twice. basalt wrote the stall and left the bit as it found it,
+which produced pairs the vendor emits rarely or not at all. Finding 26 fits the relationship
+properly and measures what the bit is worth, which is nothing to the answer.
 
 `nvdisasm` refuses them outright, with `undefined value 0x10 for table TABLES_opex_0`. The
 GPU does not refuse them. It runs the kernel and returns an answer, which is the worse of

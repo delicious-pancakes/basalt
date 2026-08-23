@@ -134,7 +134,7 @@ any release. The clean-room position in [`NOTICE`](NOTICE) will not.
   shared atomics, the shared reduction and every `ldmatrix`, so the round trip's
   exclusions fell from 19 to 2. Both remaining ones read the clock or the grid id.
 - fp64 is modelled as completing out of order rather than on a fixed schedule.
-  All 41 fp64 instructions in the corpus carry a write scoreboard and none goes
+  All 219 fp64 instructions in the corpus carry a write scoreboard and none goes
   without. The 64 cycle figure stays as the cost of a dependent chain, which is
   a different question from what correctness requires.
 
@@ -170,9 +170,9 @@ any release. The clean-room position in [`NOTICE`](NOTICE) will not.
   now pinned on the pytest path as well.
 - The yield bit is written from the stall rather than inherited. The two are not
   independent: across the corpus `ptxas` emits a zero stall with the bit clear
-  4205 times and set never, and a stall of one with it set 1123 times and clear
-  never. Leaving it as found produced pairs the vendor never emits, which
-  `nvdisasm` refuses and the GPU runs anyway.
+  18,292 times and set never, and a stall of one with it set 6,477 times and
+  clear twice. Leaving it as found produced pairs the vendor emits rarely or not
+  at all, which `nvdisasm` refuses and the GPU runs anyway.
 - Two checks that reschedule a kernel and hand it back to the verifier now
   compare the instruction count first. A program `nvdisasm` will not read comes
   back empty, an empty program has no hazards, and both had been reporting clean
