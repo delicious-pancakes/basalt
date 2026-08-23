@@ -8,6 +8,33 @@ All figures below are from an **NVIDIA GeForce RTX 5070 Ti** (sm_120, 70 SMs) wi
 `ptxas` **V13.3.73**. Published characterisation of this architecture has used other parts,
 so a figure differing on a different SKU is interesting rather than contradictory.
 
+<details>
+<summary><b>The machine every number was measured on</b></summary>
+
+<br/>
+
+Stated in full because "a 5070 Ti" is not enough to reproduce a timing, and because the
+wall-clock figures quoted for the controls depend on the host as much as on the card.
+
+| | |
+| :--- | :--- |
+| GPU | Gigabyte GeForce RTX 5070 Ti EAGLE OC, sm_120a, 70 SMs, 16,303 MiB, 2,542 MHz boost |
+| Driver | 610.88 |
+| CPU | AMD Ryzen 7 9800X3D, 8 cores, 16 threads |
+| Memory | 32 GB |
+| Storage | PCIe 4.0 NVMe |
+| OS | Windows 11 Pro, build 26200 |
+| Python | 3.14.6 |
+| Toolchain | `ptxas` / `nvdisasm` / `cuobjdump` V13.3.73, from the pinned CUDA 13.3.1 redistributable |
+| Cross-check toolchain | CUDA 13.0.3, for finding 29 |
+| Audited libraries | cuBLAS 13.6.0.2, cuFFT 12.3.0.29, cuRAND 10.4.3.29, cuSOLVER 12.2.6.9, cuSPARSE 12.8.2.51, NPP 13.1.2.81, nvJPEG 13.2.1.68 |
+
+Nothing here needs this exact machine. Everything except the four GPU controls runs on any
+host with the fetched redistributable and no NVIDIA hardware at all, which is what makes the
+instruction database, the assembler and the checker reproducible in CI.
+
+</details>
+
 ---
 
 ## 1. A stall count of zero is a safe encoding, not zero cycles
