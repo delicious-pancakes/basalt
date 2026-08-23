@@ -1,0 +1,135 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 660" width="1200" height="660"
+     role="img" aria-label="How NVIDIA's compiler covers each variable-latency producer in shipped sm_120 code. LDG, LDC, LDL, S2R and LD are covered by a scoreboard in every one of 1,363,466, 532,295, 144,529, 135,333 and 99,975 dependent pairs, and never by spacing alone. LDS is covered by spacing alone in 27 percent of cases, SHFL in 21 percent and I2F in 16 percent.">
+  <title>Scoreboard or spacing</title>
+
+  <defs>
+    <pattern id="cols" width="112" height="130" patternUnits="userSpaceOnUse"
+             patternTransform="translate(-18 -34)">
+      <g fill="#151b23" stroke="#2b3542" stroke-width="1.4">
+        <path d="M56 2 L106 30.5 L106 87.5 L56 116 L6 87.5 L6 30.5 Z"/>
+        <path d="M0 67 L50 95.5 L50 152.5 L0 181 L-50 152.5 L-50 95.5 Z"/>
+        <path d="M112 67 L162 95.5 L162 152.5 L112 181 L62 152.5 L62 95.5 Z"/>
+      </g>
+    </pattern>
+    <linearGradient id="fade" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0.40" stop-color="#000000"/>
+      <stop offset="0.74" stop-color="#4c4c4c"/>
+      <stop offset="0.99" stop-color="#a8a8a8"/>
+    </linearGradient>
+    <mask id="fadeMask"><rect width="1200" height="150" fill="url(#fade)"/></mask>
+    <radialGradient id="glow" cx="0.14" cy="0.5" r="0.85">
+      <stop offset="0" stop-color="#1b2531" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#0d1117" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="ok" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a6e831"/><stop offset="1" stop-color="#76b900"/>
+    </linearGradient>
+
+    <style>
+      .sans { font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Inter, Helvetica, Arial, sans-serif; }
+      .mono { font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
+      .eyebrow { font-size: 12px; font-weight: 600; fill: #6e7781; letter-spacing: 2.2px; }
+      .title   { font-size: 29px; font-weight: 700; fill: #e6edf3; letter-spacing: -0.9px; }
+      .lede    { font-size: 15px; fill: #8b949e; }
+      .mark    { font-size: 19px; font-weight: 700; fill: #5c7086; letter-spacing: -0.6px; }
+      .colhead { font-size: 11px; font-weight: 600; letter-spacing: 1.4px; }
+      .op      { font-size: 15px; font-weight: 700; fill: #e6edf3; }
+      .num     { font-size: 13.5px; }
+      .pct     { font-size: 12.5px; font-weight: 700; fill: #0d1117; }
+      .lead    { font-size: 14.5px; font-weight: 600; fill: #e6edf3; }
+      .sub     { font-size: 13.5px; fill: #8b949e; }
+      .note    { font-size: 12.5px; fill: #6e7781; }
+    </style>
+  </defs>
+
+  <rect width="1200" height="660" fill="#0d1117"/>
+  <rect width="1200" height="150" fill="url(#glow)"/>
+  <rect width="1200" height="150" fill="url(#cols)" mask="url(#fadeMask)"/>
+  <rect x="0" y="0" width="5" height="660" fill="url(#ok)"/>
+
+  <text x="52" y="52" class="mono eyebrow">FINDING 32 &#183; 5,363,476 DEPENDENT PAIRS</text>
+  <text x="52" y="92" class="sans title">Whether a missing scoreboard is a hazard is measurable</text>
+  <text x="52" y="120" class="sans lede">How NVIDIA&#8217;s own compiler covers each variable-latency producer in shipped sm_120 code.</text>
+  <text x="1148" y="92" class="sans mark" text-anchor="end">basalt</text>
+  <line x1="0" y1="150" x2="1200" y2="150" stroke="#2b3542"/>
+
+  <text x="168" y="190" class="mono colhead" fill="#a6e831">COVERED BY A SCOREBOARD</text>
+  <text x="858" y="190" class="mono colhead" fill="#d29922" text-anchor="end">BY SPACING ALONE</text>
+  <text x="1004" y="190" class="mono colhead" fill="#6e7781" text-anchor="end">scoreboard</text>
+  <text x="1148" y="190" class="mono colhead" fill="#6e7781" text-anchor="end">spacing</text>
+
+  <g class="mono op" text-anchor="end">
+    <text x="140" y="229">LDG</text>
+    <text x="140" y="269">LDC</text>
+    <text x="140" y="309">LDL</text>
+    <text x="140" y="349">S2R</text>
+    <text x="140" y="389">LD</text>
+    <text x="140" y="429">LDS</text>
+    <text x="140" y="469">SHFL</text>
+    <text x="140" y="509">I2F</text>
+  </g>
+
+  <g fill="#151b23">
+    <rect x="168" y="212" width="690" height="24" rx="2"/>
+    <rect x="168" y="252" width="690" height="24" rx="2"/>
+    <rect x="168" y="292" width="690" height="24" rx="2"/>
+    <rect x="168" y="332" width="690" height="24" rx="2"/>
+    <rect x="168" y="372" width="690" height="24" rx="2"/>
+    <rect x="168" y="412" width="690" height="24" rx="2"/>
+    <rect x="168" y="452" width="690" height="24" rx="2"/>
+    <rect x="168" y="492" width="690" height="24" rx="2"/>
+  </g>
+
+  <g fill="#76b900">
+    <rect x="168" y="212" width="690" height="24" rx="2"/>
+    <rect x="168" y="252" width="690" height="24" rx="2"/>
+    <rect x="168" y="292" width="690" height="24" rx="2"/>
+    <rect x="168" y="332" width="690" height="24" rx="2"/>
+    <rect x="168" y="372" width="690" height="24" rx="2"/>
+    <rect x="168" y="412" width="502.7" height="24" rx="2"/>
+    <rect x="168" y="452" width="547.6" height="24" rx="2"/>
+    <rect x="168" y="492" width="577.3" height="24" rx="2"/>
+  </g>
+
+  <g fill="#d29922">
+    <rect x="670.7" y="412" width="187.3" height="24" rx="2"/>
+    <rect x="715.6" y="452" width="142.4" height="24" rx="2"/>
+    <rect x="745.3" y="492" width="112.7" height="24" rx="2"/>
+  </g>
+
+  <g class="mono pct" text-anchor="middle">
+    <text x="764.4" y="429">27%</text>
+    <text x="786.8" y="469">21%</text>
+    <text x="801.7" y="509">16%</text>
+  </g>
+
+  <g class="mono num" fill="#e6edf3" text-anchor="end">
+    <text x="1004" y="229">1,363,466</text>
+    <text x="1004" y="269">532,295</text>
+    <text x="1004" y="309">144,529</text>
+    <text x="1004" y="349">135,333</text>
+    <text x="1004" y="389">99,975</text>
+    <text x="1004" y="429">1,972,507</text>
+    <text x="1004" y="469">228,185</text>
+    <text x="1004" y="509">77,816</text>
+  </g>
+
+  <g class="mono num" text-anchor="end">
+    <text x="1148" y="229" fill="#6e7781">0</text>
+    <text x="1148" y="269" fill="#6e7781">0</text>
+    <text x="1148" y="309" fill="#6e7781">0</text>
+    <text x="1148" y="349" fill="#6e7781">0</text>
+    <text x="1148" y="389" fill="#6e7781">0</text>
+    <text x="1148" y="429" fill="#d29922" font-weight="700">734,837</text>
+    <text x="1148" y="469" fill="#d29922" font-weight="700">59,347</text>
+    <text x="1148" y="509" fill="#d29922" font-weight="700">15,186</text>
+  </g>
+
+  <line x1="52" y1="546" x2="1148" y2="546" stroke="#1c232c"/>
+  <text x="52" y="576" class="sans lead">A global load is never once covered without a barrier across 1.3 million pairs. A shared load is, one time in four.</text>
+  <text x="52" y="598" class="sans sub">Calling both an error alleges a race in code that demonstrably works, so severity follows the evidence rather than the class.</text>
+
+  <line x1="52" y1="616" x2="1148" y2="616" stroke="#1c232c"/>
+  <text x="52" y="640" class="mono note">python scripts/mine_shipped.py --exclude &lt;the audited ones&gt;</text>
+  <text x="1148" y="640" class="sans note" font-weight="700" text-anchor="end">measured, not assumed</text>
+</svg>

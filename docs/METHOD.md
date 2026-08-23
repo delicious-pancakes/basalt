@@ -65,6 +65,8 @@ python -m basalt.cli isa IMAD.WIDE.U32
 Each instruction carries 21 bits the hardware does not check, and the table below adds
 up to exactly that.
 
+<img src="assets/diagram-control-word.svg" alt="An sm_120 instruction is 128 bits, of which bits 105 to 125 are the scheduling control word: stall at 108:105, yield at 109, write_barrier at 112:110, read_barrier at 115:113, wait_mask at 121:116 and reuse at 125:122.">
+
 | Field | Bits | Meaning |
 | :--- | :--- | :--- |
 | `stall` | 108:105 | Cycles before the next instruction issues |
@@ -152,6 +154,13 @@ be checked directly.
 
 Analysis is per basic block. Tracking a definition across a branch needs a real
 control-flow graph, and inventing one from a linear listing produces confident nonsense.
+
+**What a rule is allowed to conclude depends on where its number came from.** A figure
+basalt measured on silicon may ground an error. A figure mined from what the vendor
+schedules is an upper bound on the requirement, so it may lower what basalt alleges and
+never raise it. A figure nobody has measured may only ever produce a warning.
+
+<img src="assets/diagram-evidence.svg" alt="Three kinds of evidence: measured on silicon by fault injection, which may allege an error; mined from shipped vendor schedules, which is an upper bound and may only lower a claim; and assumed, which may only ever produce a warning.">
 
 The scheduler answers the same four questions in the other direction, from the same model
 and, where a rule has a number in it, the same function. A checker and a scheduler that

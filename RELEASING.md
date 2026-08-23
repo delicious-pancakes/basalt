@@ -50,11 +50,13 @@ database format and is not the package version. Do not move it to match.
   bottom, repoint `[Unreleased]`
 - Commit: `chore(release): vX.Y.Z`, push `main`
 
-## 4. Enable Zenodo, once, before the first tag
+## 4. One-time setup, before the first tag
 
-Zenodo mints the DOI from a GitHub release, so the integration has to be on
-*before* the tag is pushed or that release gets no DOI. It is a one-time switch
-and only the repository owner can flip it.
+Both of these are switches only the repository owner can flip, and both have to
+be on *before* the tag is pushed.
+
+**Zenodo.** The DOI is minted from a GitHub release, so a tag pushed before the
+integration is enabled produces a release with no DOI at all.
 
 1. Sign in at [zenodo.org](https://zenodo.org) with GitHub
 2. Under **GitHub**, find `sunnypatell/basalt` and turn the toggle on
@@ -62,7 +64,24 @@ and only the repository owner can flip it.
 
 Zenodo issues two DOIs: one for the specific version and a **concept DOI** that
 always resolves to the newest. The concept DOI is the one to put in the README
-badge and in `CITATION.cff`, because it never has to change again.
+badge and in `CITATION.cff`, because it never has to change again. `.zenodo.json`
+is what stops the deposit defaulting to CC-BY-4.0, which would contradict both
+`LICENSE` and `NOTICE`.
+
+**PyPI.** Publishing uses Trusted Publishing, so there is no API token anywhere
+in this repository and no secret for one to leak. Register the publisher once at
+[pypi.org/manage/account/publishing](https://pypi.org/manage/account/publishing/):
+
+| Field | Value |
+| :--- | :--- |
+| PyPI project name | `basalt-sass` |
+| Owner | `sunnypatell` |
+| Repository name | `basalt` |
+| Workflow name | `publish-pypi.yml` |
+| Environment name | `pypi` |
+
+The environment name has to match, and it is what lets a required reviewer be
+added later under **Settings &rarr; Environments** without touching the workflow.
 
 ## 5. Write the release, then tag
 
@@ -105,18 +124,40 @@ gh attestation verify basalt_sass-X.Y.Z-py3-none-any.whl \
   --signer-workflow sunnypatell/basalt/.github/workflows/release-build.yml
 ```
 
-## 7. After the DOI exists
+## 7. Publish to PyPI
 
-Zenodo mints it within a minute of the release being published. Then, in one
-commit:
+Deliberately a separate, manually dispatched run rather than a step of
+`release.yml`. Nothing reaches an index until the release page has been looked
+at, and `publish-pypi.yml` builds nothing: it downloads the exact bytes attached
+to the tag, checks their Sigstore provenance names the trusted builder, checks
+the wheel's version against the tag, and only then uploads.
 
-- add the concept DOI badge to the README
+```bash
+gh workflow run publish-pypi.yml -f tag=vX.Y.Z
+```
+
+Bytes that fail the provenance check are not published, which is the entire
+reason the step is split out. Confirm afterwards from a machine that has never
+seen this checkout:
+
+```bash
+pip install basalt-sass==X.Y.Z
+python -m basalt.cli doctor
+```
+
+## 8. After the DOI and the package exist
+
+Zenodo mints the DOI within a minute of the release being published. Then, in
+one commit:
+
+- uncomment the DOI and PyPI badges in the README, filling in the concept DOI
+- add the `pip install basalt-sass` route to the quickstart
 - add `doi:` and an `identifiers:` block to `CITATION.cff`
 
-A post-release commit for this is normal and expected; the DOI cannot exist
-before the release it describes.
+A post-release commit for this is normal and expected: neither the DOI nor the
+package can exist before the release that produces them.
 
-## 8. If a release is wrong
+## 9. If a release is wrong
 
 Yank rather than rewrite. Tags are cheap and a moved tag breaks every checkout
 that already has it. Cut `X.Y.Z+1` with the fix and note in the changelog what

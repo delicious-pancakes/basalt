@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 510" width="1200" height="510"
+     role="img" aria-label="Three audit runs against NVIDIA shipped sm_120 libraries. The first run reported 6,593 errors over 250 kernels and 93,972 dependencies. Widening to three libraries, 2,762 kernels and 10,218,030 dependencies, reported 940. After thirteen corrections the same corpus reported 0. Every error was basalt's own.">
+  <title>What the audit cost</title>
+
+  <defs>
+    <pattern id="cols" width="112" height="130" patternUnits="userSpaceOnUse"
+             patternTransform="translate(-18 -34)">
+      <g fill="#151b23" stroke="#2b3542" stroke-width="1.4">
+        <path d="M56 2 L106 30.5 L106 87.5 L56 116 L6 87.5 L6 30.5 Z"/>
+        <path d="M0 67 L50 95.5 L50 152.5 L0 181 L-50 152.5 L-50 95.5 Z"/>
+        <path d="M112 67 L162 95.5 L162 152.5 L112 181 L62 152.5 L62 95.5 Z"/>
+      </g>
+    </pattern>
+    <linearGradient id="fade" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0.40" stop-color="#000000"/>
+      <stop offset="0.74" stop-color="#4c4c4c"/>
+      <stop offset="0.99" stop-color="#a8a8a8"/>
+    </linearGradient>
+    <mask id="fadeMask"><rect width="1200" height="150" fill="url(#fade)"/></mask>
+    <radialGradient id="glow" cx="0.14" cy="0.5" r="0.85">
+      <stop offset="0" stop-color="#1b2531" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#0d1117" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="ok" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a6e831"/><stop offset="1" stop-color="#76b900"/>
+    </linearGradient>
+    <!-- user space: a horizontal line has no bounding-box height to scale into -->
+    <linearGradient id="spine" gradientUnits="userSpaceOnUse" x1="76" y1="0" x2="1148" y2="0">
+      <stop offset="0.02" stop-color="#f85149"/>
+      <stop offset="0.35" stop-color="#d29922"/>
+      <stop offset="0.68" stop-color="#a6e831"/>
+      <stop offset="1" stop-color="#a6e831" stop-opacity="0.25"/>
+    </linearGradient>
+
+    <style>
+      .sans { font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Inter, Helvetica, Arial, sans-serif; }
+      .mono { font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
+      .eyebrow { font-size: 12px; font-weight: 600; fill: #6e7781; letter-spacing: 2.2px; }
+      .title   { font-size: 29px; font-weight: 700; fill: #e6edf3; letter-spacing: -0.9px; }
+      .lede    { font-size: 15px; fill: #8b949e; }
+      .mark    { font-size: 19px; font-weight: 700; fill: #5c7086; letter-spacing: -0.6px; }
+      .stage   { font-size: 11px; font-weight: 600; fill: #6e7781; letter-spacing: 1.8px; }
+      .count   { font-size: 56px; font-weight: 700; letter-spacing: -2.5px; }
+      .unit    { font-size: 13.5px; font-weight: 600; fill: #8b949e; letter-spacing: 1px; }
+      .stat    { font-size: 14px; font-weight: 600; fill: #e6edf3; }
+      .statdim { font-size: 14px; fill: #8b949e; }
+      .cap     { font-size: 12.5px; fill: #6e7781; }
+      .note    { font-size: 12.5px; fill: #6e7781; }
+    </style>
+  </defs>
+
+  <rect width="1200" height="510" fill="#0d1117"/>
+  <rect width="1200" height="150" fill="url(#glow)"/>
+  <rect width="1200" height="150" fill="url(#cols)" mask="url(#fadeMask)"/>
+  <rect x="0" y="0" width="5" height="510" fill="url(#ok)"/>
+
+  <text x="52" y="52" class="mono eyebrow">FINDING 32 &#183; HELD-OUT SHIPPED CODE</text>
+  <text x="52" y="92" class="sans title">Every error the audit found was basalt&#8217;s own</text>
+  <text x="52" y="120" class="sans lede">Pointed at sm_120 kernels NVIDIA ships, held out of every table the checker reads.</text>
+  <text x="1148" y="92" class="sans mark" text-anchor="end">basalt</text>
+  <line x1="0" y1="150" x2="1200" y2="150" stroke="#2b3542"/>
+
+  <line x1="76" y1="322" x2="1148" y2="322" stroke="url(#spine)" stroke-width="2"/>
+
+  <g>
+    <text x="100" y="204" class="mono stage">FIRST RUN &#183; ONE LIBRARY</text>
+    <text x="100" y="280" class="mono count" fill="#f85149">6,593</text>
+    <text x="100" y="304" class="mono unit">errors</text>
+    <line x1="100" y1="313" x2="100" y2="331" stroke="#f85149" stroke-width="2"/>
+    <text x="100" y="356" class="mono stat">250 kernels</text>
+    <text x="100" y="378" class="mono statdim">93,972 dependencies</text>
+    <text x="100" y="410" class="sans cap">twenty-six per kernel, in a JPEG decoder</text>
+    <text x="100" y="428" class="sans cap">that has never returned a wrong pixel</text>
+  </g>
+
+  <g>
+    <text x="452" y="204" class="mono stage">WIDENED &#183; THREE LIBRARIES</text>
+    <text x="452" y="280" class="mono count" fill="#d29922">940</text>
+    <text x="452" y="304" class="mono unit">errors</text>
+    <line x1="452" y1="313" x2="452" y2="331" stroke="#d29922" stroke-width="2"/>
+    <text x="452" y="356" class="mono stat">2,762 kernels</text>
+    <text x="452" y="378" class="mono statdim">10,218,030 dependencies</text>
+    <text x="452" y="410" class="sans cap">109 times the dependencies, and five more</text>
+    <text x="452" y="428" class="sans cap">model errors on top of the first eight</text>
+  </g>
+
+  <g>
+    <text x="804" y="204" class="mono stage">AFTER THIRTEEN CORRECTIONS</text>
+    <text x="804" y="280" class="mono count" fill="#a6e831">0</text>
+    <text x="804" y="304" class="mono unit">errors</text>
+    <line x1="804" y1="313" x2="804" y2="331" stroke="#a6e831" stroke-width="2"/>
+    <text x="804" y="356" class="mono stat">2,762 kernels</text>
+    <text x="804" y="378" class="mono statdim">10,218,030 dependencies</text>
+    <text x="804" y="410" class="sans cap">all 2,762 fully analysed, and 0 of</text>
+    <text x="804" y="428" class="sans cap">5,237,448 instructions left undecoded</text>
+  </g>
+
+  <line x1="52" y1="466" x2="1148" y2="466" stroke="#1c232c"/>
+  <text x="52" y="490" class="mono note">python scripts/audit_shipped.py --libs third_party/cuda/13.3.1/libs</text>
+  <text x="1148" y="490" class="sans note" font-weight="700" text-anchor="end">13 corrections &#183; none of them NVIDIA&#8217;s</text>
+</svg>

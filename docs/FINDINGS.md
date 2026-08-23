@@ -58,6 +58,8 @@ directly and comparing the answer against a reference:
 | 8 | 10.88 | correct |
 | 15 | 18.02 | correct |
 
+<img src="assets/chart-stall.svg" alt="Cycles per instruction for each stall encoding: 0 costs 36.85 and is correct, 1, 2 and 3 cost 4.88, 4.88 and 5.88 and are silently wrong, and 4, 8 and 15 cost 6.88, 10.88 and 18.02 and are correct.">
+
 So a zero stall costs roughly nine times a correctly scheduled instruction and is always
 safe, while 1 to 3 corrupt silently.
 
@@ -149,6 +151,11 @@ same question.
 python -m basalt.cli measure -o my-card.json   # chain timing
 python -m basalt.cli probe-stalls                             # fault injection
 ```
+
+Three of these contradict the model basalt shipped with before any of it was measured, and
+not by a little:
+
+<img src="assets/chart-latency.svg" alt="fp64 add was assumed 48 cycles and measured 64, POPC was assumed 4 and measured 18, and the I2FP plus F2I conversion round trip was assumed 12 and measured 24.">
 
 **On the fp64 rows.** The 64-cycle figure is corroborated twice over: `ptxas` covers a `DFMA`
 dependency by padding with NOPs at stall 15 and accumulating exactly 64 cycles, matching the
@@ -1602,6 +1609,8 @@ in one table and one that did not in another, so the question has an answer:
 | `SHFL` | 228,185 | **59,347** |
 | `I2F` | 77,816 | **15,186** |
 
+<img src="assets/chart-spacing.svg" alt="LDG, LDC, LDL, S2R and LD are covered by a scoreboard in every dependent pair and never by spacing alone. LDS is covered by spacing alone 27 percent of the time, SHFL 21 percent and I2F 16 percent.">
+
 A global load is never once covered without a barrier across 1.3 million dependent pairs, and
 a shared load is covered that way in one case in four. basalt's classification is exactly right
 for global, constant, local and special-register reads, and saying the same thing about a
@@ -1645,6 +1654,8 @@ every control bit discarded and has to compute new ones.
 | `cusolverMg` | 4,530,520 | 3,962,765 | 567,755 | **0** |
 | | **5,237,448** | **4,585,336 (87.5%)** | 652,112 | **0** |
 
+<img src="assets/chart-assembler.svg" alt="59,693 of 59,760 corpus instructions and 4,585,336 of 5,237,448 shipped instructions assembled to the vendor's exact bytes, the rest refused by name, and zero of all 5,297,208 assembled to the wrong bytes.">
+
 ```bash
 python scripts/assembler_coverage.py --cubins <dir> --show-refusals
 python scripts/audit_shipped.py --cubins <dir> --exclude <the mined ones> --reschedule
@@ -1666,6 +1677,8 @@ than a wrong verdict, because the caller gets neither.
 | First run, one library | 250 | 63,968 | 93,972 | 6,593 | 554 |
 | Widened to three | 2,762 | 5,237,448 | 10,218,030 | 940 | 217,855 |
 | **After thirteen corrections** | **2,762** | **5,237,448** | **10,218,030** | **0** | **395** |
+
+<img src="assets/chart-audit.svg" alt="The first run reported 6,593 errors over 250 kernels and 93,972 dependencies. Widened to three libraries, 2,762 kernels and 10,218,030 dependencies, it reported 940. After thirteen corrections the same corpus reported 0.">
 
 **2,762 of 2,762 kernels fully analysed**, no indirect branch leaving an edge the dataflow
 could not follow, and 0 of 5,237,448 instructions failing to decode. A checker that quietly

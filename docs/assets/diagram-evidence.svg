@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" width="1200" height="600"
+     role="img" aria-label="Three kinds of evidence sit behind every requirement. A number measured on silicon by fault injection may allege an error. A number mined from shipped vendor schedules is an upper bound and may only lower what basalt alleges, never raise it. An assumed number may only ever produce a warning.">
+  <title>What may allege an error</title>
+
+  <defs>
+    <pattern id="cols" width="112" height="130" patternUnits="userSpaceOnUse"
+             patternTransform="translate(-18 -34)">
+      <g fill="#151b23" stroke="#2b3542" stroke-width="1.4">
+        <path d="M56 2 L106 30.5 L106 87.5 L56 116 L6 87.5 L6 30.5 Z"/>
+        <path d="M0 67 L50 95.5 L50 152.5 L0 181 L-50 152.5 L-50 95.5 Z"/>
+        <path d="M112 67 L162 95.5 L162 152.5 L112 181 L62 152.5 L62 95.5 Z"/>
+      </g>
+    </pattern>
+    <linearGradient id="fade" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0.40" stop-color="#000000"/>
+      <stop offset="0.74" stop-color="#4c4c4c"/>
+      <stop offset="0.99" stop-color="#a8a8a8"/>
+    </linearGradient>
+    <mask id="fadeMask"><rect width="1200" height="150" fill="url(#fade)"/></mask>
+    <radialGradient id="glow" cx="0.14" cy="0.5" r="0.85">
+      <stop offset="0" stop-color="#1b2531" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#0d1117" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="ok" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a6e831"/><stop offset="1" stop-color="#76b900"/>
+    </linearGradient>
+    <!-- user space: a vertical line has no bounding-box width to scale into -->
+    <linearGradient id="rail" gradientUnits="userSpaceOnUse" x1="0" y1="195" x2="0" y2="452">
+      <stop offset="0" stop-color="#a6e831"/>
+      <stop offset="0.5" stop-color="#d29922"/>
+      <stop offset="1" stop-color="#5c7086"/>
+    </linearGradient>
+
+    <style>
+      .sans { font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Inter, Helvetica, Arial, sans-serif; }
+      .mono { font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
+      .eyebrow { font-size: 12px; font-weight: 600; fill: #6e7781; letter-spacing: 2.2px; }
+      .title   { font-size: 29px; font-weight: 700; fill: #e6edf3; letter-spacing: -0.9px; }
+      .lede    { font-size: 15px; fill: #8b949e; }
+      .mark    { font-size: 19px; font-weight: 700; fill: #5c7086; letter-spacing: -0.6px; }
+      .tier    { font-size: 15px; font-weight: 700; letter-spacing: 1.6px; }
+      .verdict { font-size: 12.5px; font-weight: 700; letter-spacing: 1.4px; }
+      .desc    { font-size: 14.5px; fill: #e6edf3; }
+      .detail  { font-size: 13px; fill: #8b949e; }
+      .lead    { font-size: 16px; font-weight: 700; fill: #e6edf3; }
+      .sub     { font-size: 13.5px; fill: #8b949e; }
+      .note    { font-size: 12.5px; fill: #6e7781; }
+    </style>
+  </defs>
+
+  <rect width="1200" height="600" fill="#0d1117"/>
+  <rect width="1200" height="150" fill="url(#glow)"/>
+  <rect width="1200" height="150" fill="url(#cols)" mask="url(#fadeMask)"/>
+  <rect x="0" y="0" width="5" height="600" fill="url(#ok)"/>
+
+  <text x="52" y="52" class="mono eyebrow">THE RULE THAT DECIDES WHAT MAY BE ALLEGED</text>
+  <text x="52" y="92" class="sans title">Only a hardware-grounded number may call something an error</text>
+  <text x="52" y="120" class="sans lede">Three kinds of evidence sit behind every requirement, and they are not interchangeable.</text>
+  <text x="1148" y="92" class="sans mark" text-anchor="end">basalt</text>
+  <line x1="0" y1="150" x2="1200" y2="150" stroke="#2b3542"/>
+
+  <line x1="100" y1="195" x2="100" y2="452" stroke="url(#rail)" stroke-width="3"/>
+
+  <circle cx="100" cy="201" r="6" fill="#a6e831"/>
+  <text x="136" y="206" class="mono tier" fill="#a6e831">MEASURED ON SILICON</text>
+  <text x="1148" y="206" class="mono verdict" fill="#a6e831" text-anchor="end">MAY ALLEGE AN ERROR</text>
+  <text x="136" y="230" class="sans desc">Fault injection: shorten a dependency until the answer changes.</text>
+  <text x="136" y="252" class="sans detail">13 cycles for a guard predicate, 3 for an anti-dependency, 2 for scoreboard residue.</text>
+
+  <circle cx="100" cy="295" r="6" fill="#d29922"/>
+  <text x="136" y="300" class="mono tier" fill="#d29922">MINED FROM SHIPPED SCHEDULES</text>
+  <text x="1148" y="300" class="mono verdict" fill="#d29922" text-anchor="end">MAY ONLY LOWER</text>
+  <text x="136" y="324" class="sans desc">The tightest gap ptxas was ever seen to leave for that exact pairing.</text>
+  <text x="136" y="346" class="sans detail">3,957 pairings from 24,311 kernels, each bounded above by the producer&#8217;s measured latency.</text>
+
+  <circle cx="100" cy="389" r="6" fill="#5c7086"/>
+  <text x="136" y="394" class="mono tier" fill="#8b949e">ASSUMED</text>
+  <text x="1148" y="394" class="mono verdict" fill="#8b949e" text-anchor="end">WARNING, NEVER AN ERROR</text>
+  <text x="136" y="418" class="sans desc">No measurement behind it, and the model says so on every line it touches.</text>
+  <text x="136" y="440" class="sans detail">Ten opcodes, none of them ever a producer in either body of code.</text>
+
+  <line x1="52" y1="478" x2="1148" y2="478" stroke="#1c232c"/>
+  <text x="52" y="506" class="sans lead">Evidence lowers what basalt alleges, and never what it emits.</text>
+  <text x="52" y="530" class="sans sub">The checker takes the tightest defensible number; the scheduler keeps the conservative floor. StallEvidence.minimum against StallEvidence.emit is that split.</text>
+
+  <line x1="52" y1="556" x2="1148" y2="556" stroke="#1c232c"/>
+  <text x="52" y="580" class="mono note">python -m basalt.cli mine-stalls  &#183;  python -m basalt.cli probe-stalls</text>
+  <text x="1148" y="580" class="sans note" font-weight="700" text-anchor="end">a mined minimum is an upper bound, so it may never raise a claim</text>
+</svg>

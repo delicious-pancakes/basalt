@@ -1,0 +1,116 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 580" width="1200" height="580"
+     role="img" aria-label="An sm_120 instruction is 128 bits. Bits 105 to 125, twenty-one of them, are the scheduling control word rather than the instruction. Within it: stall occupies bits 108 to 105, yield bit 109, write_barrier bits 112 to 110, read_barrier bits 115 to 113, wait_mask bits 121 to 116 and reuse bits 125 to 122.">
+  <title>The scheduling control word</title>
+
+  <defs>
+    <pattern id="cols" width="112" height="130" patternUnits="userSpaceOnUse"
+             patternTransform="translate(-18 -34)">
+      <g fill="#151b23" stroke="#2b3542" stroke-width="1.4">
+        <path d="M56 2 L106 30.5 L106 87.5 L56 116 L6 87.5 L6 30.5 Z"/>
+        <path d="M0 67 L50 95.5 L50 152.5 L0 181 L-50 152.5 L-50 95.5 Z"/>
+        <path d="M112 67 L162 95.5 L162 152.5 L112 181 L62 152.5 L62 95.5 Z"/>
+      </g>
+    </pattern>
+    <linearGradient id="fade" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0.40" stop-color="#000000"/>
+      <stop offset="0.74" stop-color="#4c4c4c"/>
+      <stop offset="0.99" stop-color="#a8a8a8"/>
+    </linearGradient>
+    <mask id="fadeMask"><rect width="1200" height="150" fill="url(#fade)"/></mask>
+    <radialGradient id="glow" cx="0.14" cy="0.5" r="0.85">
+      <stop offset="0" stop-color="#1b2531" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#0d1117" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="ok" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a6e831"/><stop offset="1" stop-color="#76b900"/>
+    </linearGradient>
+
+    <style>
+      .sans { font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Inter, Helvetica, Arial, sans-serif; }
+      .mono { font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
+      .eyebrow { font-size: 12px; font-weight: 600; fill: #6e7781; letter-spacing: 2.2px; }
+      .title   { font-size: 29px; font-weight: 700; fill: #e6edf3; letter-spacing: -0.9px; }
+      .lede    { font-size: 15px; fill: #8b949e; }
+      .mark    { font-size: 19px; font-weight: 700; fill: #5c7086; letter-spacing: -0.6px; }
+      .end     { font-size: 11.5px; fill: #6e7781; letter-spacing: 1.2px; }
+      .inword  { font-size: 14px; fill: #8b949e; }
+      .bits    { font-size: 12.5px; font-weight: 700; }
+      .fname   { font-size: 14.5px; font-weight: 700; fill: #e6edf3; }
+      .fwidth  { font-size: 11.5px; fill: #6e7781; }
+      .leg     { font-size: 12.5px; fill: #8b949e; }
+      .lead    { font-size: 15.5px; font-weight: 600; fill: #e6edf3; }
+      .note    { font-size: 12.5px; fill: #6e7781; }
+    </style>
+  </defs>
+
+  <rect width="1200" height="580" fill="#0d1117"/>
+  <rect width="1200" height="150" fill="url(#glow)"/>
+  <rect width="1200" height="150" fill="url(#cols)" mask="url(#fadeMask)"/>
+  <rect x="0" y="0" width="5" height="580" fill="url(#ok)"/>
+
+  <text x="52" y="52" class="mono eyebrow">THE OBJECT OF THE WHOLE PROJECT</text>
+  <text x="52" y="92" class="sans title">Twenty-one bits of every instruction are not the instruction</text>
+  <text x="52" y="120" class="sans lede">The scheduling control word, and which field of it is responsible for what.</text>
+  <text x="1148" y="92" class="sans mark" text-anchor="end">basalt</text>
+  <line x1="0" y1="150" x2="1200" y2="150" stroke="#2b3542"/>
+
+  <text x="52" y="186" class="mono end">BIT 0</text>
+  <text x="1041" y="186" class="mono end" fill="#a6e831" font-weight="700" text-anchor="middle">21 BITS</text>
+  <text x="1148" y="186" class="mono end" text-anchor="end">BIT 127</text>
+
+  <rect x="52" y="196" width="899.1" height="46" rx="2" fill="#151b23" stroke="#2b3542"/>
+  <rect x="951.1" y="196" width="179.8" height="46" rx="2" fill="url(#ok)"/>
+  <rect x="1130.9" y="196" width="17.1" height="46" rx="2" fill="#151b23" stroke="#2b3542"/>
+  <text x="70" y="224" class="sans inword">the instruction itself: opcode, operands, predicate guard</text>
+
+  <polygon points="951.1,242 1130.9,242 1148,322 52,322"
+           fill="#a6e831" fill-opacity="0.06" stroke="#a6e831" stroke-opacity="0.28"/>
+
+  <rect x="52.0"  y="322" width="208.8" height="54" rx="2" fill="#a6e831"/>
+  <rect x="260.8" y="322" width="52.2"  height="54" rx="2" fill="#48566b"/>
+  <rect x="313.0" y="322" width="156.5" height="54" rx="2" fill="#d29922"/>
+  <rect x="469.5" y="322" width="156.6" height="54" rx="2" fill="#a8791b"/>
+  <rect x="626.1" y="322" width="313.1" height="54" rx="2" fill="#76b900"/>
+  <rect x="939.2" y="322" width="208.8" height="54" rx="2" fill="#48566b"/>
+
+  <g class="mono bits" text-anchor="middle">
+    <text x="156.4"  y="354" fill="#0d1117">108:105</text>
+    <text x="286.9"  y="354" fill="#e6edf3">109</text>
+    <text x="391.2"  y="354" fill="#0d1117">112:110</text>
+    <text x="547.8"  y="354" fill="#0d1117">115:113</text>
+    <text x="782.7"  y="354" fill="#0d1117">121:116</text>
+    <text x="1043.6" y="354" fill="#e6edf3">125:122</text>
+  </g>
+
+  <g class="mono fname" text-anchor="middle">
+    <text x="156.4"  y="402">stall</text>
+    <text x="286.9"  y="402" font-size="13">yield</text>
+    <text x="391.2"  y="402">write_barrier</text>
+    <text x="547.8"  y="402">read_barrier</text>
+    <text x="782.7"  y="402">wait_mask</text>
+    <text x="1043.6" y="402">reuse</text>
+  </g>
+
+  <g class="mono fwidth" text-anchor="middle">
+    <text x="156.4"  y="424">4 bits</text>
+    <text x="286.9"  y="424">1</text>
+    <text x="391.2"  y="424">3 bits</text>
+    <text x="547.8"  y="424">3 bits</text>
+    <text x="782.7"  y="424">6 bits</text>
+    <text x="1043.6" y="424">4 bits</text>
+  </g>
+
+  <rect x="52" y="443" width="11" height="11" rx="2" fill="#a6e831"/>
+  <text x="71" y="453" class="sans leg">carries the dependency</text>
+  <rect x="232" y="443" width="11" height="11" rx="2" fill="#d29922"/>
+  <text x="251" y="453" class="sans leg">signals it</text>
+  <rect x="330" y="443" width="11" height="11" rx="2" fill="#48566b"/>
+  <text x="349" y="453" class="sans leg">a hint, and costs nothing if ignored</text>
+
+  <line x1="52" y1="478" x2="1148" y2="478" stroke="#1c232c"/>
+  <text x="52" y="506" class="sans lead">The hardware does not check any of it. There is no interlock on fixed-latency instructions, so the silicon executes whatever these 21 bits say.</text>
+
+  <line x1="52" y1="536" x2="1148" y2="536" stroke="#1c232c"/>
+  <text x="52" y="560" class="mono note">python -m basalt.cli isa --stats  &#183;  derived by differential bit probing, and again from a second compiler release</text>
+  <text x="1148" y="560" class="sans note" font-weight="700" text-anchor="end">measured, not read from a table</text>
+</svg>

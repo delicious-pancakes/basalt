@@ -4,12 +4,24 @@
 
 <br/>
 
+<!-- Uncomment both of these together, once v1.0.0 is on PyPI and Zenodo has minted the
+     archive. Until then they would render as "not found", and a badge that lies about
+     the thing being available is the one badge this repository cannot afford.
+     Use the *concept* DOI, which always resolves to the newest release:
+<a href="https://doi.org/10.5281/zenodo.XXXXXXX"><img alt="DOI" src="https://img.shields.io/badge/DOI-10.5281%2Fzenodo.XXXXXXX-1682D4?style=flat-square&logo=doi&logoColor=white&labelColor=0d1117"></a>
+<a href="https://pypi.org/project/basalt-sass/"><img alt="PyPI" src="https://img.shields.io/pypi/v/basalt-sass?style=flat-square&logo=pypi&logoColor=white&label=pypi&color=76B900&labelColor=0d1117"></a>
+-->
+<a href="https://orcid.org/0009-0005-3863-7642"><img alt="ORCID" src="https://img.shields.io/badge/ORCID-0009--0005--3863--7642-A6CE39?style=flat-square&logo=orcid&logoColor=white&labelColor=0d1117"></a>
 <img alt="Architecture" src="https://img.shields.io/badge/arch-sm__120%20%7C%20sm__120a-76B900?style=flat-square&labelColor=0d1117">
 <a href="https://github.com/sunnypatell/basalt/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/sunnypatell/basalt/ci.yml?branch=main&style=flat-square&logo=githubactions&logoColor=white&label=ci&labelColor=0d1117"></a>
 <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Apache--2.0-3178C6?style=flat-square&labelColor=0d1117"></a>
+
+<br/>
+
 <img alt="Python" src="https://img.shields.io/badge/python-3.11%2B-3776AB?style=flat-square&logo=python&logoColor=white&labelColor=0d1117">
 <img alt="Runtime dependencies" src="https://img.shields.io/badge/runtime%20deps-none-555?style=flat-square&labelColor=0d1117">
 <img alt="No GPU required" src="https://img.shields.io/badge/ISA%20build-no%20GPU%20required-555?style=flat-square&labelColor=0d1117">
+<a href="CITATION.cff"><img alt="Cite this repository" src="https://img.shields.io/badge/cite-CITATION.cff-555?style=flat-square&labelColor=0d1117"></a>
 
 <br/><br/>
 
@@ -26,6 +38,13 @@ An NVIDIA GPU instruction is 128 bits, and 21 of them are not the instruction at
 **The hardware does not check any of it.** On sm_120 there is no interlock on fixed-latency instructions. The silicon trusts whatever produced the control word. If a stall count is shorter than the latency of a value the next instruction consumes, nothing faults, nothing stalls, and no warning is emitted. The instruction reads a register that has not been written yet and computes on stale data, at full speed, every single time.
 
 That is a strange kind of bug. It does not crash. It does not appear in a debugger. It produces numbers that are merely wrong, which in a matrix multiply or an attention kernel means a model that trains slightly badly rather than one that visibly breaks.
+
+<img src="./docs/assets/chart-stall.svg" alt="Cycles per instruction for each stall encoding on sm_120: a stall of 0 costs 36.85 cycles and is correct, 1, 2 and 3 cost 4.88, 4.88 and 5.88 and silently return the wrong answer, and 4, 8 and 15 cost 6.88, 10.88 and 18.02 and are correct.">
+
+The three cheapest encodings are the broken ones, and nothing anywhere reports it. Note also
+what the left-hand bar is doing: a stall of **zero** is not zero cycles, it is a distinct safe
+encoding that waits for outstanding results and costs about nine times a scheduled
+instruction. A checker that read it as zero would call correct programs broken.
 
 Tools that generate machine code for this architecture *assign* those control bits from a latency model. basalt is the thing that checks the answer.
 
@@ -94,6 +113,8 @@ schedules spend **1.05x** the vendor's issue cycles, slower on 111 of the 1,323 
 optimisation-level pairs and cheaper on 842, with every comparable kernel still
 byte-identical on the GPU.
 
+<img src="./docs/assets/chart-audit.svg" alt="Three audit runs against NVIDIA shipped sm_120 libraries: 6,593 errors over 250 kernels, then 940 after widening to 2,762 kernels and 10,218,030 dependencies, then 0 after thirteen corrections. Every error was basalt's own.">
+
 The third row is the one that changed the other three. A checker calibrated on a corpus
 cannot fail on that corpus: the tightest gap the compiler was seen to leave *is* the floor,
 by construction, for exactly the code it was measured on. The first time this one saw code
@@ -127,7 +148,11 @@ predicate the operand model had been reading as a source since the beginning. It
 survived every control up to that point, including the round trip itself.
 
 The same discipline decides what the assembler is allowed to do, and it is worth separating
-the two numbers it has. **Coverage is 99.9% of the corpus and 87.5% of shipped library code.
+the two numbers it has.
+
+<img src="./docs/assets/chart-assembler.svg" alt="basalt's assembler reproduces 59,693 of 59,760 corpus instructions and 4,585,336 of 5,237,448 shipped library instructions exactly, refusing the rest by name, and has assembled zero of all 5,297,208 to the wrong bytes.">
+
+**Coverage is 99.9% of the corpus and 87.5% of shipped library code.
 Correctness is 100%, and that is the number pinned by a test.** The gap between them is
 instructions basalt *refuses*, each naming the field it could not place, because a tool that
 guessed would reach full coverage by emitting words that disassemble to the right text and
@@ -286,6 +311,8 @@ Eight-bit register fields and a 32-bit immediate, arrived at by experiment rathe
 | `wait_mask` | 121:116 | Scoreboards that must be clear before issuing |
 | `reuse` | 125:122 | Operand reuse-cache flags, one per source slot |
 
+<img src="./docs/assets/diagram-control-word.svg" alt="An sm_120 instruction is 128 bits, of which bits 105 to 125 are the scheduling control word: stall at 108:105, yield at 109, write_barrier at 112:110, read_barrier at 115:113, wait_mask at 121:116 and reuse at 125:122.">
+
 The layout validates itself on contact. In a trivial kernel, `S2R` sets `write_barrier=0` and the `IMAD` consuming its result carries `wait_mask=0x01`; `LDCU.64` sets `write_barrier=1` and the dependent `STG.E` carries `wait_mask=0x02`. Every producer and consumer pair lines up, and instructions that `nvdisasm` annotates `.reuse` have the matching reuse bit set.
 
 ## Quickstart
@@ -413,7 +440,11 @@ Tensor coverage is where the low-precision hardware lives: `HMMA` and `IMMA`, `Q
 | `MUFU` | 44 |
 | `DADD` `DFMA` | 64 |
 
-Three of those contradict the assumed model basalt shipped with: `DADD` was assumed 48, `POPC` was assumed 4, and each conversion was assumed 6 against 24 measured for the round trip. An assumed latency model is not a small approximation of a measured one, which is the entire argument for measuring.
+Three of those contradict the assumed model basalt shipped with: `DADD` was assumed 48, `POPC` was assumed 4, and each conversion was assumed 6 against 24 measured for the round trip.
+
+<img src="./docs/assets/chart-latency.svg" alt="Three latencies basalt assumed before measuring them against what the silicon reported: fp64 add assumed 48 and measured 64, POPC assumed 4 and measured 18, and the I2FP plus F2I conversion round trip assumed 12 and measured 24.">
+
+An assumed latency model is not a small approximation of a measured one, which is the entire argument for measuring.
 
 **And a stall of zero is not zero cycles.** It is a distinct safe encoding that waits for outstanding results, costing about 37 cycles where a scheduled instruction costs 4. That is why `ptxas -O0` emits an entirely zeroed control word and the code still computes correctly, roughly nine times slower.
 
@@ -487,6 +518,37 @@ Licensed under [Apache-2.0](LICENSE). Apache rather than something restrictive o
 The highest-value contribution is an encoding basalt gets wrong. See [`CONTRIBUTING.md`](CONTRIBUTING.md) and the [ISA gap template](.github/ISSUE_TEMPLATE/isa_gap.yml), which collects enough to reproduce without your machine.
 
 [`SUPPORT.md`](SUPPORT.md) says where a question goes, [`GOVERNANCE.md`](GOVERNANCE.md) what a change has to clear, [`RELEASING.md`](RELEASING.md) how a release is cut and verified, and [`SECURITY.md`](SECURITY.md) how to report privately.
+
+## Citing basalt
+
+If basalt informs a paper, a tool, a model or a bug report, please cite it. GitHub reads
+[`CITATION.cff`](CITATION.cff) natively, so **Cite this repository** in the sidebar gives you
+APA and BibTeX with no transcription. The same file is what Zenodo and citation managers
+parse, and it is the authoritative record of authorship.
+
+```bibtex
+@software{patel_basalt_2026,
+  author    = {Patel, Sunny},
+  title     = {{basalt}: a hazard checker, assembler and scheduler for NVIDIA
+               consumer Blackwell (sm\_120)},
+  year      = {2026},
+  version   = {1.0.0},
+  url       = {https://github.com/sunnypatell/basalt},
+  note      = {ORCID 0009-0005-3863-7642}
+}
+```
+
+Once the archive is minted, cite the **concept DOI** rather than this URL or a version DOI.
+It resolves to the newest release, so it stays correct without ever being edited again.
+
+If you reuse the measured tables (`src/basalt/data/`) or reproduce a figure, cite the release
+they came from rather than `main`: the numbers are regenerated by `scripts/verify_all.py` at
+a specific commit, and a tag is what makes that reproducible.
+
+**Attribution is a licence term, not a courtesy.** Apache-2.0 &sect;4 requires that
+[`LICENSE`](LICENSE) and [`NOTICE`](NOTICE) travel with any redistribution or derivative work,
+and `NOTICE` carries the authorship and the clean-room statement. Forks, vendored copies and
+repackaged wheels all keep both files.
 
 ## Author
 
