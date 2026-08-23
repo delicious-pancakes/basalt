@@ -1436,6 +1436,16 @@ Stated so the boundary of the evidence is visible.
   definitions carry a `crossed` flag for exactly this, and every other rule still applies
   to them. It is a gap in the checker's coverage, not a wrong answer, and the round trip
   covers the same ground from the other side.
+- **Five instructions per kernel set will not assemble, and the reason is the prober rather
+  than the assembler.** `RET.REL.NODEC R4`, `WARPSYNC.COLLECTIVE R12` and a `BRA` on `!P2` all
+  need a register or a predicate field the differential probe never isolated, because flipping
+  a bit of those forms moves the printed branch target as well as the register and two operands
+  moving at once is not a reading. The obvious fix is to decode the base word at the same
+  address as each mutant, since the batch decodes as one blob and `nvdisasm` prints an absolute
+  target; that was tried, and the two still differ by a constant, so a `RET`'s printed operand
+  is not a plain field read and the probe is not measuring what it looks like it is measuring.
+  Reverted rather than kept, because it changed no outcome: 345 forms either way, and the same
+  22,714 of 22,752 at `-O0`. The refusals stand and name the field they could not place.
 - **Eight opcodes have no evidence behind their latency**, out of the 87 the database holds.
   The other 79 split into 11 measured on silicon, 56 mined from what the vendor schedules, and
   12 with no register result at all, whose number is never consulted because an instruction
