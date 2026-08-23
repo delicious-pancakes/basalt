@@ -75,6 +75,17 @@ git tag -a vX.Y.Z -m "vX.Y.Z"
 git push origin vX.Y.Z
 ```
 
+Draft first is deliberate. The release stays invisible until the artefacts are
+attached, and the tag is validated against a semver allowlist before a build
+minute is spent, so a typo fails in five seconds rather than after the matrix.
+Before anything is uploaded the pipeline checks that there is exactly one wheel
+and one sdist, that `SHA256SUMS` and the SBOM are present, that neither
+distribution is small enough to have lost its data, and that the wheel actually
+contains the three measured tables. That last check exists because a wheel once
+shipped without them: it passed every test and was useless, because installed
+anywhere but a checkout it fell back to assumed latencies and then reported
+hazards it could not ground.
+
 The tag triggers `.github/workflows/release.yml`, which calls the reusable
 `release-build.yml` to build the sdist and wheel, run the GPU-free suite,
 generate the SBOM and sign all three through Sigstore, then publishes what came

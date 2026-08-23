@@ -35,12 +35,40 @@ on:
         description: "tag or commit to build"
         required: true
 
-permissions:
-  contents: read
+# per tag, so two releases can run at once and a re-dispatch of the same one
+# queues behind itself rather than racing it
+concurrency:
+  group: release-${{ github.event.inputs.ref || github.ref }}
+  cancel-in-progress: false
+
+permissions: {}
 
 jobs:
+  validate:
+    name: Validate the ref
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: A tag has to look like a tag
+        env:
+          REF: ${{ github.event.inputs.ref || github.ref_name }}
+        run: |
+          # checked before any build minutes are spent, and before the string
+          # reaches git or the gh CLI, which rules out option-injection shapes
+          # like `-foo`. A dispatch may name a commit; a push must be semver.
+          if [[ "$REF" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9][a-zA-Z0-9.-]*)?$ ]]; then
+            exit 0
+          fi
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [[ "$REF" =~ ^[0-9a-f]{7,40}$ ]]; then
+            exit 0
+          fi
+          echo "refusing '$REF': expected vX.Y.Z[-prerelease], or a commit sha on a manual run"
+          exit 1
+
   build:
     name: Build and attest
+    needs: validate
     uses: ./.github/workflows/release-build.yml
     permissions:
       contents: read
@@ -61,11 +89,56 @@ jobs:
     permissions:
       contents: write # the only place in this pipeline that can write a release
     steps:
+      - name: Harden runner (egress audit)
+        uses: step-security/harden-runner@05e31511f85b41b11d1cf0ef85d0992719546e2c # v2.21.0
+        with:
+          egress-policy: audit
+
       - name: Collect what the builder produced
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: distributions
           path: dist
+
+      # the wheel that shipped without the measured tables passed every test
+      # and was useless: installed anywhere but a checkout it fell back to
+      # assumed latencies and reported hazards it could not ground
+      - name: Check what is about to be uploaded
+        run: |
+          set -euo pipefail
+          fail=0
+          wheels=$(find dist -name "*.whl" | wc -l)
+          sdists=$(find dist -name "*.tar.gz" | wc -l)
+          [ "$wheels" -eq 1 ] || { echo "expected one wheel, found $wheels"; fail=1; }
+          [ "$sdists" -eq 1 ] || { echo "expected one sdist, found $sdists"; fail=1; }
+          for required in SHA256SUMS basalt-sbom.cdx.json; do
+            [ -f "dist/$required" ] || { echo "missing $required"; fail=1; }
+          done
+          for f in dist/*.whl dist/*.tar.gz; do
+            size=$(stat -c %s "$f")
+            # the mined requirement table alone is 7.3 MB uncompressed, so a
+            # distribution this small is one that lost its data
+            if [ "$size" -lt 524288 ]; then
+              echo "too small: $f is $((size / 1024)) KB, which means the tables are missing"
+              fail=1
+            fi
+          done
+          python - <<'EOF'
+          import glob, sys, zipfile
+          wheel = glob.glob("dist/*.whl")[0]
+          names = zipfile.ZipFile(wheel).namelist()
+          for needed in (
+              "basalt/data/isa/sm_120a.json",
+              "basalt/data/latency/rtx-5070-ti.json",
+              "basalt/data/latency/observed-stalls-sm120a.json",
+          ):
+              if needed not in names:
+                  print(f"wheel is missing {needed}")
+                  sys.exit(1)
+          print(f"wheel carries every measured table ({len(names)} entries)")
+          EOF
+          [ "$fail" -eq 0 ] || { echo "pre-upload check FAILED"; exit 1; }
+          echo "all artefacts present"
 
       # created here only if the tag was pushed without one, so the pipeline
       # cannot fail at the last step for a reason nobody would guess. A real
