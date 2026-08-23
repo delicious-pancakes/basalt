@@ -64,6 +64,10 @@ class Tally:
     # verdict on that kernel is partial and saying "clean" without it overstates
     incomplete: int = 0
     undecoded: int = 0
+    # --reschedule: basalt throws the vendor's control bits away and recomputes
+    rescheduled: int = 0
+    reschedule_clean: int = 0
+    reschedule_short: int = 0
     errors: int = 0
     warnings: int = 0
     unknown: Counter = field(default_factory=Counter)
@@ -79,6 +83,9 @@ class Tally:
         self.pairs += other.pairs
         self.incomplete += other.incomplete
         self.undecoded += other.undecoded
+        self.rescheduled += other.rescheduled
+        self.reschedule_clean += other.reschedule_clean
+        self.reschedule_short += other.reschedule_short
         self.errors += other.errors
         self.warnings += other.warnings
         self.unknown.update(other.unknown)
@@ -113,7 +120,36 @@ def _setup() -> None:
     )
 
 
-def _audit(job: tuple[Path, int, int]) -> Tally:
+def _reschedule(program, tally: Tally) -> None:
+    """Recompute every control bit and hand the result back to the checker.
+
+    Consistency rather than proof, since the two share a latency model, but a
+    scheduler that cannot complete on code from outside its own corpus, or whose
+    output its own checker rejects, is not a scheduler anyone can use.
+    """
+    import dataclasses
+
+    from basalt.sched.scheduler import schedule_program
+    from basalt.verify.hazards import Severity, verify_program
+
+    result = schedule_program(program, _STATE["model"], observed=_STATE["observed"])
+    tally.rescheduled += 1
+    if result.out_of_scoreboards:
+        tally.reschedule_short += 1
+    instructions = [
+        dataclasses.replace(i, word=w)
+        for i, w in zip(program.instructions, result.words, strict=True)
+    ]
+    report = verify_program(
+        dataclasses.replace(program, instructions=instructions),
+        _STATE["model"],
+        observed=_STATE["observed"],
+    )
+    if not any(h.severity is Severity.ERROR for h in report.hazards):
+        tally.reschedule_clean += 1
+
+
+def _audit(job: tuple[Path, int, int, bool]) -> Tally:
     """Audit one cubin, or every `stride`-th kernel of it starting at `offset`.
 
     A shipped library is not evenly sized: cuSOLVER-Mg carries a 29 MB ELF beside
@@ -127,7 +163,7 @@ def _audit(job: tuple[Path, int, int]) -> Tally:
     if not _STATE:
         _setup()
 
-    path, stride, offset = job
+    path, stride, offset, reschedule = job
     tally = Tally(cubins=1 if offset == 0 else 0)
     kernels = sorted(disassemble_kernels(_STATE["tc"], path).items())
     for name, program in kernels[offset::stride]:
@@ -138,6 +174,8 @@ def _audit(job: tuple[Path, int, int]) -> Tally:
         tally.incomplete += report.incomplete_graph
         tally.undecoded += sum(1 for i in program.instructions if i.word is None)
         tally.unknown.update(report.unknown_opcodes)
+        if reschedule:
+            _reschedule(program, tally)
         for hazard in report.hazards:
             if hazard.severity is Severity.ERROR:
                 tally.errors += 1
@@ -210,6 +248,11 @@ def main() -> int:
         default="",
         help="comma separated library directories to skip, normally the mined ones",
     )
+    parser.add_argument(
+        "--reschedule",
+        action="store_true",
+        help="also recompute every control bit and re-check the result",
+    )
     parser.add_argument("--limit", type=int, default=0, help="stop after this many cubins")
     parser.add_argument("--workers", type=int, default=0, help="processes, default one per core")
     args = parser.parse_args()
@@ -232,10 +275,10 @@ def main() -> int:
     # milliseconds, so a fixed chunk leaves fifteen cores idle behind a straggler
     targets.sort(key=lambda p: p.stat().st_size, reverse=True)
     workers = args.workers or os.cpu_count() or 8
-    jobs: list[tuple[Path, int, int]] = []
+    jobs: list[tuple[Path, int, int, bool]] = []
     for path in targets:
         shards = min(workers, max(1, path.stat().st_size // SHARD_BYTES))
-        jobs.extend((path, shards, offset) for offset in range(shards))
+        jobs.extend((path, shards, offset, args.reschedule) for offset in range(shards))
 
     print(f"{_repo.provenance()}\n")
     print(f"auditing {len(targets)} cubins from {len({t.parent.name for t in targets})} libraries")
@@ -261,6 +304,11 @@ def main() -> int:
     print(f"errors: {total.errors}")
     print(f"warnings: {total.warnings}")
     complete = total.kernels - total.incomplete
+    if total.rescheduled:
+        print(
+            f"rescheduled from scratch: {total.reschedule_clean} of {total.rescheduled} "
+            f"verify clean, {total.reschedule_short} ran out of scoreboards"
+        )
     print(
         f"fully analysed: {complete} of {total.kernels} kernels "
         f"({total.incomplete} carry an indirect branch the analysis cannot follow, "
