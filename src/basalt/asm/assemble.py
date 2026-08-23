@@ -30,6 +30,7 @@ timing has no way to be wrong out loud.
 from __future__ import annotations
 
 import dataclasses
+import math
 import re
 import struct
 from dataclasses import dataclass, field
@@ -278,7 +279,8 @@ def _float_bits(text: str, layout: str, shift: int) -> int | None:
         value = float(text.strip())
     except ValueError:
         return None
-    if value != value:
+    # a NaN immediate is not a value this can encode from text
+    if math.isnan(value):
         return None
     try:
         packed = int.from_bytes(struct.pack(layout, value), "little")

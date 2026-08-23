@@ -34,7 +34,6 @@ __all__ = ["BitObservation", "BitRole", "FieldMap", "infer_fields", "probe_word"
 _CONTROL_BITS = {b for f in CONTROL_FIELDS for b in range(f.lo, f.lo + f.width)}
 
 # operand tokens we care about telling apart
-_REG = re.compile(r"\b(?:UR|R|P|UP|SR_|SB)\w*", re.IGNORECASE)
 _IMM = re.compile(r"\b0x[0-9a-fA-F]+\b")
 # a guard is printed ahead of the first operand rather than beside it
 _GUARD_PREFIX = re.compile(r"^@!?U?P(?:\d+|T)\s+")

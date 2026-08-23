@@ -341,9 +341,7 @@ def schedule_program(
 
             record = model.lookup(instr.opcode)
             if record.kind is LatencyClass.VARIABLE and access.real_defs:
-                # lowest free index, so a kernel's scoreboards read in issue order.
-                # inherited read barriers are not reserved: sharing a counter only
-                # ever makes a wait cover more
+                # lowest free index, so a kernel's scoreboards read in issue order
                 free = next((sb for sb in range(SCOREBOARDS) if sb not in protects), None)
                 if free is not None:
                     protects[free] = set(access.real_defs)

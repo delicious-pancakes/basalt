@@ -46,7 +46,6 @@ _TYPES: dict[str, tuple[str, int, str]] = {
 _INT = ("s16", "u16", "s32", "u32", "s64", "u64")
 _INT32 = ("s32", "u32")
 _FLOAT = ("f32", "f64")
-_FLOATH = ("f16", "f32", "f64")
 _BITS = ("b16", "b32", "b64")
 
 

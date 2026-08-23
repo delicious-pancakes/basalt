@@ -148,7 +148,6 @@ _NO_DEF_OPCODES = frozenset(
 
 # Atomics and loads-with-return define their first operand and also read memory,
 # so they follow the default rule; they are named here only for documentation.
-_RMW_OPCODES = frozenset({"ATOM", "ATOMG", "ATOMS", "ATOMSD", "LDSLK", "LD", "LDG", "LDS", "LDL"})
 
 # Suffix -> how many consecutive registers the named base actually covers.
 WIDTH_SUFFIXES: dict[str, int] = {
@@ -209,7 +208,6 @@ _PREDICATES_THEN_REGISTER = frozenset({"IMNMX", "FMNMX", "DMNMX", "HMNMX", "HMNM
 
 # in `IMAD.WIDE dst, a, b, c` the destination and addend are register pairs and
 # the factors are not; `.U32` describes the factors, so the suffix rule misreads it
-_WIDE_PAIR_SLOTS = (0, -1)
 
 
 def _width_from(mnemonic: str, tail: str) -> int:

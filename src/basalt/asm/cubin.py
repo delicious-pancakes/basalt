@@ -36,7 +36,6 @@ class CubinError(RuntimeError):
     """Raised when a file is not a cubin we can work with."""
 
 
-_EI_NIDENT = 16
 _ELFCLASS64 = 2
 _ELFDATA2LSB = 1
 

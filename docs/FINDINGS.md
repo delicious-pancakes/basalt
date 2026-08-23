@@ -1112,13 +1112,11 @@ became visible as a wrong answer. Three cycles is the first measurement of that 
 
 ## 24. A scoreboard the scheduler allocates and never waits on
 
-`s_tile_matmul` at `-O2` and `-O3` still does not round-trip, and it is worth stating
-precisely rather than rounding off, because it is a defect in machinery basalt believes it
-has working rather than a mechanism it has never modelled.
+`s_tile_matmul` does not round-trip at `-O2` or `-O3`. It is one kernel of 441 and it is
+stated rather than rounded off, because it is a defect in machinery basalt believes it has
+working rather than a mechanism it has never modelled.
 
-Substituting one half of the control word at a time isolates it. basalt's stalls alone
-compute the vendor's answer; basalt's `reuse` alone does too; basalt's scoreboards alone
-reproduce the wrong one, so the fault is in the allocation and not the spacing:
+Substituting one half of the control word at a time says where to look:
 
 | Substituted into the vendor's schedule | Result |
 | :--- | :--- |
@@ -1126,20 +1124,34 @@ reproduce the wrong one, so the fault is in the allocation and not the spacing:
 | basalt's reuse flags | correct |
 | **basalt's write barriers and wait masks** | **wrong** |
 
-Forcing one instruction to wait on everything narrows it to a single missing bit. `#45 STS
-[R6], R7` waits on nothing; adding scoreboard 1 to its mask, and nothing else, restores the
-vendor's answer exactly. So the scheduler allocates that scoreboard and then stores through
-a register it covers without waiting for it.
+Forcing one instruction to wait on everything narrows it to a single bit. `STS [R0], R9`
+waits on nothing, and the register it stores was loaded by an `LDG` that basalt put on
+scoreboard 1. The same kernel loads `R9` twice and only the first is waited for:
 
-Single-word substitution is not available as a technique here and the reason is worth
-recording: scoreboard numbers are global, so lifting one instruction out of a renumbered
-schedule leaves its consumer waiting on a barrier that nobody in the new numbering signals.
-Every apparent culprit found that way is an artefact. Only whole-field substitutions stay
-coherent, which is what the table above is.
+```
+#5   LDG.E R9  ->  basalt scoreboard 2 ;  #16 STS R9  waits on 2   correct
+#38  LDG.E R9  ->  basalt scoreboard 1 ;  #46 STS R9  waits on nothing
+```
 
-It is not fixed. A scoreboard allocator is where a silent hazard would come from if it were
-patched by guesswork, and the round-trip count is reported with this kernel counted against
-it rather than excluded from it.
+**A structural screen clears it, which is the informative part.** Walking every dependency
+the vendor's schedule covers with a scoreboard, and asking whether basalt's schedule still
+covers it, flags four kernels across the corpus and this is not one of them. By def-use
+reasoning basalt's schedule is sound here. So whatever is missing is not a register
+dependency basalt failed to notice, which is where the search had been pointed.
+
+**basalt's own bookkeeping thinks it is right.** An instruction between the two waits on
+scoreboard 1 for an unrelated register, and waiting on a scoreboard drains its counter, so
+every producer on it has landed and the barrier is cleared from every register that was
+waiting behind it. By that reasoning `R9` is available at `#46` and no wait is needed. The
+silicon disagrees, so the reasoning has a hole in it, and the hole is not yet found.
+
+**What it is not.** The two kinds of barrier share one six-bit space and only write barriers
+are renumbered, so an obvious theory is that basalt allocates a write barrier onto a number
+the vendor is using for a read barrier. Reserving the inherited numbers does fix this kernel.
+It also costs three of the six scoreboards, which starved the two emulated 1-bit `MMA`
+kernels into failing, so the change was measured, found to be a net loss, and reverted. A
+fix that trades one kernel for two is not a fix, and a scoreboard allocator is exactly where
+guesswork turns into a silent wrong answer.
 
 ## 25. What is deliberately not claimed
 

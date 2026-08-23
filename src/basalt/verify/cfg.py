@@ -39,7 +39,6 @@ STALL_SATURATION = 512
 
 _TERMINATORS = frozenset({"EXIT", "RET", "RTT", "BPT"})
 _UNCONDITIONAL_BRANCH = frozenset({"BRA", "JMP", "BRX", "JMX"})
-_CALLS = frozenset({"CALL", "CALL.ABS.NOINC", "RET"})
 # Branches whose destination is computed rather than named. Their successors
 # cannot be recovered from the listing, and pretending otherwise would make the
 # analysis quietly unsound rather than visibly incomplete.
