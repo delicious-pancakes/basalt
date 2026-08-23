@@ -39,17 +39,19 @@ vendor compiler's own output, which is what makes it useful rather than self-ref
 | 8b | Fault injection | Required stall measured by breaking programs on hardware | **done** |
 | 9 | Field validation | Prove the measured fields can be written through | **done** |
 | 9b | Cross-check | The ISA model derived twice, from two compiler releases | **done**, 0 operand fields differ |
-| 10 | Audit | Every sm_120 kernel NVIDIA ships, held out of every table | **done**, 0 errors, 8 model bugs |
+| 10 | Audit | Every sm_120 kernel NVIDIA ships, held out of every table | **done**, 0 errors, 13 model bugs |
 | 11 | Scheduler | Assign the control bits, not only check them | **done**, every field derived |
 | 12 | Assembler | SASS text to the instruction word | **done**, 0 wrong, 67 refused by name |
 
 The audit is the stage that changed the others. Everything before it ran on kernels basalt
 compiled itself, which cannot fail: the requirement table is mined from the compiler's own
 scheduling, so the tightest gap it left *is* the floor, by construction, for exactly that
-code. Pointed at 250 kernels out of NVIDIA's JPEG decoder it reported 6,593 errors, and every
-one was basalt's. Eight model bugs came out of it, the requirement was re-mined from 24,311
-shipped kernels with the audited libraries held out, and the same 250 now verify with zero
-errors and 250 of 250 kernels fully analysed. Finding 32.
+code. Pointed at 250 kernels out of NVIDIA's JPEG decoder it reported 6,593 errors and every
+one was basalt's. Eight corrections took that to zero, and zero over one library was not
+evidence either: widening to three libraries and 5.2 million instructions took it back to 940
+and produced five more. Thirteen in total, none of them NVIDIA's, and the held-out set now
+verifies with 0 errors over 2,762 kernels and 10,218,030 dependencies, all 2,762 fully
+analysed. Finding 32.
 
 The scheduler discards every control bit `ptxas` produced and computes its own, then hands the
 result back to the verifier and then to the GPU, for every kernel the corpus generates. All

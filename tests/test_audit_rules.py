@@ -23,6 +23,7 @@ from basalt.verify.latency import (
     ANTI_DEPENDENCY_CYCLES,
     DEFAULT_MODEL,
     GUARD_CYCLES,
+    MEASURED_ANTI_PAIRS,
     SCOREBOARD_RESIDUE_CYCLES,
     LatencyClass,
 )
@@ -55,6 +56,12 @@ class TestClassification:
         # ptxas signals no barrier on R2UR in 3,098 corpus instances, which is
         # the argument that reclassified VOTEU before it
         for opcode in ("R2UR", "VOTEU"):
+            assert DEFAULT_MODEL.lookup(opcode).kind is LatencyClass.FIXED
+
+    def test_every_tensor_core_instruction_is_one_family(self) -> None:
+        # DMMA variable where the rest are fixed alleged 892 missing waits in
+        # one cuSOLVER-Mg accumulate chain
+        for opcode in ("HMMA", "IMMA", "QMMA", "OMMA", "BMMA", "DMMA"):
             assert DEFAULT_MODEL.lookup(opcode).kind is LatencyClass.FIXED
 
 
@@ -137,6 +144,41 @@ class TestSpacing:
             op for op in producers if DEFAULT_MODEL.lookup(op).note.startswith("opcode not in")
         }
         assert not unknown, sorted(unknown)
+
+
+class TestAntiDependency:
+    """Three cycles is one pairing's measurement, not a rule."""
+
+    def test_only_the_measured_pairing_grounds_an_error(self) -> None:
+        assert frozenset({("ULEA", "UMOV")}) == MEASURED_ANTI_PAIRS
+
+    def test_the_vendor_goes_below_the_constant_constantly(self, observed) -> None:
+        # 2,591 trusted pairings, which is why charging it everywhere alleged 41
+        # errors against three shipped libraries
+        below = sum(
+            1 for e in observed.by_anti.values() if e.trusted and e.minimum < ANTI_DEPENDENCY_CYCLES
+        )
+        assert below > 1000
+
+
+class TestReachingDefinitions:
+    """A wait must not forget how a definition got here."""
+
+    def test_a_wait_preserves_yielded_and_crossed(self) -> None:
+        from basalt.verify.flow import FlowState
+        from basalt.verify.operands import RegKind, RegRef
+
+        reg = RegRef(RegKind.GENERAL, 4)
+        state = FlowState()
+        state.define(reg, 0, barrier=1)
+        state.advance(1, yielded=True)
+        crossed = state.crossing()
+        crossed.satisfy(0b10)
+
+        landed = crossed.reaching(reg)[0]
+        assert landed.satisfied
+        assert landed.yielded, "a wait dropped the safe-encoding flag"
+        assert landed.crossed, "a wait dropped the edge it came across"
 
 
 class TestExclusiveGuards:

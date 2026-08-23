@@ -66,7 +66,7 @@ One standard for all of it: **agree with the vendor exactly, or say why not.**
 | :--- | :--- | :--- | ---: |
 | **Assembler** | SASS text to the 128-bit word | Reassemble every instruction `ptxas` emitted and compare bytes | 59,693 of 59,760 exact across four optimisation levels, **0 wrong** |
 | **Checker** | Reads a schedule, reports hazards | The vendor's own output must verify clean, and a deliberately shortened stall must be caught | 0 errors over 1,323 vendor kernel and optimisation-level pairs, **0 missed** on 233 broken ones |
-| **Audit** | The same checker, on shipped libraries | Run it over production sm_120 kernels held out of every table it reads | **0 errors** in 250 kernels, 250 of them fully analysed, after the run that found 6,593 and traced every one to basalt |
+| **Audit** | The same checker, on shipped libraries | Run it over production sm_120 kernels held out of every table it reads | **0 errors** over 2,762 kernels and 10,218,030 dependencies, all 2,762 fully analysed |
 | **Scheduler** | Assigns every control bit from scratch | Discard the vendor's, compute new ones, run both on the GPU against eight inputs, compare output bytes | **439 of 439 comparable kernels** byte-identical, at all three optimisation levels |
 
 And the part a scheduler is usually quiet about: what the correctness costs. basalt's
@@ -77,13 +77,14 @@ byte-identical on the GPU.
 The third row is the one that changed the other three. A checker calibrated on a corpus
 cannot fail on that corpus: the tightest gap the compiler was seen to leave *is* the floor,
 by construction, for exactly the code it was measured on. The first time this one saw code
-from somewhere else it reported twenty-six hazards per kernel in a JPEG decoder that has
-never returned a wrong pixel, and all 6,593 were basalt's: an instruction the corpus never
-emits, a requirement mined from four observations, a shared-memory load whose barrier the
-vendor legitimately omits 734,837 times, and a definition under `@P0` that never reaches a
-use under `@!P0`. Re-mining the requirement from 24,311 shipped kernels then put a guard
-predicate at 13 cycles across 229,567 observations, which is the number fault injection had
-measured on this card by breaking a program on purpose. See [finding 32](docs/FINDINGS.md).
+from somewhere else it reported twenty-six hazards per kernel in a JPEG decoder that has never
+returned a wrong pixel, and all 6,593 were basalt's. Fixing those took it to zero, and zero
+over one library was not evidence either: widening the held-out set to three libraries and 5.2
+million instructions took it straight back to 940, and found five more model errors on top of
+the first eight. Thirteen corrections, none of them NVIDIA's, and the requirement re-mined from
+24,311 shipped kernels put a guard predicate at 13 cycles across 229,567 observations, which is
+the number fault injection had measured on this card by breaking a program on purpose. See
+[finding 32](docs/FINDINGS.md).
 
 Cheaper than the vendor is not a claim to be smug about. basalt schedules every dependency
 at the tightest gap `ptxas` was ever seen to leave for that exact pairing, and `ptxas` is

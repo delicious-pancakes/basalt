@@ -1495,9 +1495,9 @@ agrees with `ptxas` on `ptxas` output, which is necessary and is not the questio
 holding a cubin actually has. Stage 10 asks the real one.
 
 The subject is every sm_120 kernel NVIDIA ships in CUDA 13.3.1: `cublas`, `cublasLt`,
-`cusolver`, `cusparse`, `npp`, `curand` and `nvjpeg`, 2,473 cubins and 844 MB of device code,
-scheduled by a compiler basalt has never seen the output of, at instruction mixes the corpus
-does not reach.
+`cusolver`, `cusolverMg`, `cusparse`, `npp`, `curand` and `nvjpeg`, 2,473 cubins and 844 MB of
+device code, scheduled by a compiler basalt has never seen the output of, at instruction mixes
+the corpus does not reach.
 
 ```bash
 python scripts/fetch_toolchain.py --libs
@@ -1506,8 +1506,8 @@ python scripts/audit_shipped.py --libs third_party/cuda/13.3.1/libs --report aud
 
 **The first run reported 6,593 errors in 250 nvjpeg kernels.** Twenty-six per kernel, in
 production code that decodes JPEGs correctly on every Blackwell card sold. Nothing in
-NVIDIA's code was wrong. Eight separate things in basalt's model were, and no other control
-could have found any of them, because every one is invisible on the corpus.
+NVIDIA's code was wrong. Eight things in basalt's model were, and no other control could have
+found any of them, because every one is invisible on a corpus basalt generates itself.
 
 | # | What was wrong | Why the corpus could not show it |
 | :-- | :--- | :--- |
@@ -1521,11 +1521,11 @@ could have found any of them, because every one is invisible on the corpus.
 | 8 | `@P0` was treated as reaching `@!P0` | a generated corpus almost never writes complementary guards |
 
 **The corpus-mined requirement table cannot fail on the corpus it came from.** That is the
-structural point, and it is why 1,323 kernels of positive control kept passing while the
-model carried all seven. The tightest gap `ptxas` was seen to leave *is* the floor, by
-construction, for exactly the code it was measured on. Finding 21 caught the narrow version
-of this: `FADD` read 5 from a thin corpus and 4 from a wider one, and 4 was what fault
-injection said. Stage 10 is the same finding three orders of magnitude out.
+structural point, and it is why 1,323 kernels of positive control kept passing while the model
+carried all eight. The tightest gap `ptxas` was seen to leave *is* the floor, by construction,
+for exactly the code it was measured on. Finding 21 caught the narrow version of this: `FADD`
+read 5 from a thin corpus and 4 from a wider one, and 4 was what fault injection said. Stage
+10 is the same finding three orders of magnitude out.
 
 ### The requirement, re-mined from a corpus a thousand times larger
 
@@ -1541,9 +1541,9 @@ against is the flaw being fixed rather than a fix for it. 909 cubins, 24,311 ker
 | anti-dependency | 256 | **6,177** | 5,921 | 73 |
 | issue rate | 1,146 | **30,735** | 29,589 | 337 |
 
-The corroboration is the part worth reading. Where the wider corpus disagrees with the
-narrow one, it lands on the number basalt had already measured on silicon by an entirely
-different method:
+The corroboration is the part worth reading. Where the wider corpus disagrees with the narrow
+one, it lands on the number basalt had already measured on silicon by an entirely different
+method:
 
 | Pairing | Corpus | Shipped | Independently |
 | :--- | ---: | ---: | :--- |
@@ -1558,9 +1558,9 @@ floor at the same thirteen.
 
 ### Whether a missing scoreboard is a hazard is measurable
 
-The checker used to treat any variable-latency producer without a `write_barrier` as an
-error. Mining separates the two cases cleanly, since a producer that signalled a barrier is
-recorded in one table and one that did not in another, so the question has an answer:
+The checker used to treat any variable-latency producer without a `write_barrier` as an error.
+Mining separates the two cases cleanly, since a producer that signalled a barrier is recorded
+in one table and one that did not in another, so the question has an answer:
 
 | Producer | Covered by a scoreboard | Covered by spacing alone |
 | :--- | ---: | ---: |
@@ -1574,61 +1574,61 @@ recorded in one table and one that did not in another, so the question has an an
 | `I2F` | 77,816 | **15,186** |
 
 A global load is never once covered without a barrier across 1.3 million dependent pairs, and
-a shared load is covered that way in one case in four. basalt's classification is exactly
-right for global, constant, local and special-register reads, and saying the same thing about
-a shared load is alleging a race in code that demonstrably works. Severity now follows the
-evidence rather than the class.
+a shared load is covered that way in one case in four. basalt's classification is exactly right
+for global, constant, local and special-register reads, and saying the same thing about a
+shared load is alleging a race in code that demonstrably works. Severity now follows the
+evidence rather than the class, and where the vendor does cover a result with spacing the
+distance is checked rather than merely noted.
 
-### What it costs, and the line it draws
+### Then the same mistake, one order of magnitude up
 
-Re-mining is not free, and the control said so immediately. Scheduling to the tightest gap in
-the new table broke **8 corpus kernels on the card**, and the reason is precise: collapsed
-over consumers, the figure puts `IMAD` at 2 cycles across 733,217 observations, which is true
-of `IMAD -> IMAD` and of nothing else.
+At that point the audit read: zero errors over 250 kernels. It was not evidence, for exactly
+the reason the whole finding is about. Widening the held-out set from one library to three,
+from 250 kernels to **2,762**, and from 64 thousand instructions to **5.2 million**, took the
+error count from 0 to **940**.
 
-That is not a reason to discard the evidence. It is the difference between two jobs that had
-been sharing one number:
+Five more corrections came out of it, and again none of them was NVIDIA's:
 
-> Evidence may lower what basalt **alleges** and never what it **emits**.
+| What was wrong | The evidence |
+| :--- | :--- |
+| `DMMA` was variable where every other MMA is fixed | 892 alleged missing waits in one accumulate chain |
+| a distance-covered producer was grounded by its own measured latency | the latency is not the pairing, and nothing bounds the pairing from above |
+| the guard's 13 cycles were applied to a uniform predicate | measured for a vector predicate; shipped code resolves a uniform one in 11 |
+| a load's destination was treated as overwritten at issue | it lands when the memory returns, so the gap to it is not the distance |
+| the anti-dependency constant was charged on every pairing | 3 was measured on `ULEA ~> UMOV` alone, and 2,591 trusted pairings go below it |
 
-Every entry now carries both: the tightest gap anyone has been seen to use, which is what the
-checker may call an error, and the floor a scheduler must respect, which a wider body of code
-may raise and never lower. Finding 23 drew this line for the anti-dependency rule; this draws
-it everywhere else. With it the round trip is back to 439 of 439 and the audit keeps every
-number it gained.
+One latent defect fell out on the way, and it had nothing to do with shipped code: a wait
+rebuilt each reaching definition with four of its six fields, so `yielded` and `crossed` reset
+every time. A kernel that waits on a scoreboard after a branch, which is most fp64 code, was
+being judged against a gap that is a minimum over paths rather than a distance.
 
 ### The result
 
-| | Errors | Warnings | Dependencies |
-| :--- | ---: | ---: | ---: |
-| First run | 6,593 | 554 | 93,972 |
-| After the corrections | **0** | 201 | 93,489 |
+| | Kernels | Instructions | Dependencies | Errors | Warnings |
+| :--- | ---: | ---: | ---: | ---: | ---: |
+| First run, one library | 250 | 63,968 | 93,972 | 6,593 | 554 |
+| Widened to three | 2,762 | 5,237,448 | 10,218,030 | 940 | 217,855 |
+| **After thirteen corrections** | **2,762** | **5,237,448** | **10,218,030** | **0** | **395** |
 
-Zero hazards in 250 shipped kernels held out of every table the checker reads, and 201
-warnings, which is where the model has an assumed number and says so.
-
-The count that keeps the zero honest is beside it: **250 of 250 kernels fully analysed**, no
-indirect branch leaving an edge the dataflow could not follow, and 0 of 63,968 instructions
-failing to decode. A checker that quietly skipped a tenth of the code could report the same
-zero, so the audit prints how much of each library it actually reached.
-
-One of the eight was over-corrected on the way, and the negative control is what said so.
-Thin evidence had been demoted to a warning as well as bounded, and that let two deliberately
-broken kernels through: `VIADD.S32.ISAT -> STG` has three observations and is right about
-them. The bound in correction 3 was already doing the work, so the trust gate beside it was
-redundant and harmful, and removing it put the missed column back to zero.
-
-The other thing the audit changed is what basalt declines to say. 945 of the first 1,149
-warnings were the gap beside a waited-on scoreboard, which carries no requirement at all
-because the wait is the mechanism. A tool that cannot ground a claim should not make it.
+**2,762 of 2,762 kernels fully analysed**, no indirect branch leaving an edge the dataflow
+could not follow, and 0 of 5,237,448 instructions failing to decode. A checker that quietly
+skipped a tenth of the code could report the same zero, so the audit prints how much of each
+library it actually reached.
 
 **What that is and is not.** It is not a clean bill of health for NVIDIA's code and is not
 meant to be. The finding is that a checker built and calibrated entirely on one body of code
-reported twenty-six hazards per kernel the first time it saw another, and that every one of
-them was its own. Anyone auditing machine code against a model tuned on a corpus should
-expect the same, and this is the measurement of how much. The warnings are not noise either:
-they are the places shipped code schedules tighter than the vendor's habit elsewhere, which
-is the honest thing for a tool to say where it cannot ground a claim.
+reported twenty-six hazards per kernel the first time it saw another, that widening the second
+body by a factor of eighty found five more model errors after the first eight were fixed, and
+that every single one of the thirteen was its own. Anyone auditing machine code against a model
+tuned on a corpus should expect the same, and this is the measurement of how much.
+
+The 395 warnings are not noise either. They are the places where the model has an assumed
+number and says so, or where shipped code schedules tighter than the vendor's own habit
+elsewhere, which is the honest thing for a tool to say where it cannot ground a claim. What
+basalt declines to say is part of the result: 945 of the first run's warnings were the gap
+beside a waited-on scoreboard, which carries no requirement at all because the wait is the
+mechanism, and 217,855 of the wide run's were a read barrier the vendor covers with spacing
+instead. Both are gone, because a tool that cannot ground a claim should not make it.
 
 ## 30. What is deliberately not claimed
 
