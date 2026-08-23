@@ -630,11 +630,31 @@ schedule whole and changes only stalls, which is always safe:
 That separates the two hypotheses in one run. The bug is a stall, not a barrier, and a
 second bisection over which stalls have to be raised lands on the run of loads.
 
-**The rule basalt adopted.** It has no measured figure for how long an operand read takes,
-so it cannot compute a safe gap here. What it can do is decline to make the window tighter
-than `ptxas` made it, and that is what it does: inside the window a read barrier covers, the
-vendor's stalls are a floor. Where the *barrier* goes is a separate question, and finding 25
-answers that one from measurement.
+**The rule basalt adopted, and the better one that replaced it.** The first rule was to
+decline to make the window tighter than `ptxas` made it: inside the window, the vendor's own
+stalls were a floor. That worked, and it was the last thing in the scheduler copied rather
+than derived, which meant it did nothing at all for a program the vendor never compiled.
+
+What actually holds the window open is the rate the unit accepts work. Mine the smallest
+stall `ptxas` ever leaves between each *consecutive pairing* and it comes out as a table:
+
+| Pairing | Cycles the vendor never goes below | Observations |
+| :--- | ---: | ---: |
+| `LDG` after `LDG` | 4 | 1,953 |
+| `STS` after `STS` | 4 | 161 |
+| `IMAD` after `IMAD` | 2 | 95 |
+| `LDS` after `LDS` | 1 | 33 |
+| `FFMA` after `FFMA` | 1 | 159 |
+
+Four loads under one barrier therefore take at least 4 cycles between them however little the
+dependencies ask for, which is exactly the gap this finding is about, and it is now a number
+basalt derived rather than one it read off the schedule it was replacing. The round trip is
+unchanged at 439 of 439 across all three levels.
+
+The floor applies only inside a read-barrier window. Outside one the ordinary dependency
+rules cover everything, and applying an issue rate everywhere would charge `NOP` after `NOP`
+15 cycles, which is padding rather than a rate. Where the *barrier* goes is a separate
+question, and finding 25 answers that one from measurement too.
 
 The window is bounded by the previous read barrier and by the enclosing basic block, and
 the block bound is not a convenience. `s_loop_double` at `-O1` has a read barrier on a
@@ -668,9 +688,9 @@ answer in finding 7. The rule stays "do not make the window tighter than the ven
 it", and the number above records what it costs rather than justifying a shortcut.
 
 > [!NOTE]
-> The barriers themselves are no longer inherited. This finding is what established that a
-> read barrier stands in for its neighbours; finding 25 turns that into the rule basalt now
-> places them by, and the stall floor above still applies inside each window.
+> Nothing in this finding is inherited any more. It established that a read barrier stands in
+> for its neighbours; finding 25 turns that into the rule basalt places them by, and the
+> issue rate above replaced the last thing the scheduler copied from the vendor's word.
 
 ## 14. A modifier is one bit, and it is nowhere near its operand
 

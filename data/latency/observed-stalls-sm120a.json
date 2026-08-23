@@ -2426,6 +2426,5738 @@
       "trusted": false
     }
   },
+  "by_issue": {
+    "ATOMG.E.ADD.64.STRONG.GPU|S2R": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "ATOMG.E.ADD.F32.FTZ.RN.STRONG.GPU|STG.E": {
+      "min_stall": 4,
+      "observations": 3,
+      "trusted": false
+    },
+    "ATOMG.E.ADD.F64.RN.STRONG.GPU|STG.E.64": {
+      "min_stall": 4,
+      "observations": 3,
+      "trusted": false
+    },
+    "ATOMG.E.ADD.S32.STRONG.GPU|S2R": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "ATOMG.E.ADD.STRONG.GPU|S2R": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "ATOMG.E.AND.64.STRONG.GPU|STG.E.64": {
+      "min_stall": 4,
+      "observations": 3,
+      "trusted": false
+    },
+    "ATOMG.E.AND.STRONG.GPU|STG.E": {
+      "min_stall": 4,
+      "observations": 3,
+      "trusted": false
+    },
+    "ATOMG.E.EXCH.64.STRONG.GPU|STG.E.64": {
+      "min_stall": 4,
+      "observations": 3,
+      "trusted": false
+    },
+    "ATOMG.E.EXCH.STRONG.GPU|STG.E": {
+      "min_stall": 4,
+      "observations": 3,
+      "trusted": false
+    },
+    "ATOMG.E.MAX.64.STRONG.GPU|STG.E.64": {
+      "min_stall": 4,
+      "observations": 3,
+      "trusted": false
+    },
+    "ATOMG.E.MAX.S32.STRONG.GPU|STG.E": {
+      "min_stall": 4,
+      "observations": 3,
+      "trusted": false
+    },
+    "ATOMG.E.MAX.STRONG.GPU|STG.E": {
+      "min_stall": 4,
+      "observations": 3,
+      "trusted": false
+    },
+    "ATOMG.E.MIN.64.STRONG.GPU|STG.E.64": {
+      "min_stall": 4,
+      "observations": 3,
+      "trusted": false
+    },
+    "ATOMG.E.MIN.S32.STRONG.GPU|STG.E": {
+      "min_stall": 4,
+      "observations": 3,
+      "trusted": false
+    },
+    "ATOMG.E.MIN.STRONG.GPU|STG.E": {
+      "min_stall": 4,
+      "observations": 3,
+      "trusted": false
+    },
+    "ATOMG.E.OR.64.STRONG.GPU|STG.E.64": {
+      "min_stall": 4,
+      "observations": 3,
+      "trusted": false
+    },
+    "ATOMG.E.OR.STRONG.GPU|STG.E": {
+      "min_stall": 4,
+      "observations": 3,
+      "trusted": false
+    },
+    "ATOMG.E.XOR.64.STRONG.GPU|STG.E.64": {
+      "min_stall": 4,
+      "observations": 3,
+      "trusted": false
+    },
+    "ATOMG.E.XOR.STRONG.GPU|STG.E": {
+      "min_stall": 4,
+      "observations": 3,
+      "trusted": false
+    },
+    "ATOMS.ADD|BAR.SYNC.DEFER_BLOCKING": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "ATOMS.ADD|STG.E": {
+      "min_stall": 4,
+      "observations": 3,
+      "trusted": false
+    },
+    "ATOMS.EXCH|STG.E": {
+      "min_stall": 4,
+      "observations": 3,
+      "trusted": false
+    },
+    "ATOMS.MAX|STG.E": {
+      "min_stall": 4,
+      "observations": 3,
+      "trusted": false
+    },
+    "ATOMS.MIN|STG.E": {
+      "min_stall": 4,
+      "observations": 3,
+      "trusted": false
+    },
+    "BAR.SYNC.DEFER_BLOCKING|ATOMS.ADD": {
+      "min_stall": 6,
+      "observations": 3,
+      "trusted": false
+    },
+    "BAR.SYNC.DEFER_BLOCKING|ATOMS.EXCH": {
+      "min_stall": 6,
+      "observations": 3,
+      "trusted": false
+    },
+    "BAR.SYNC.DEFER_BLOCKING|ATOMS.MAX": {
+      "min_stall": 6,
+      "observations": 3,
+      "trusted": false
+    },
+    "BAR.SYNC.DEFER_BLOCKING|ATOMS.MIN": {
+      "min_stall": 6,
+      "observations": 3,
+      "trusted": false
+    },
+    "BAR.SYNC.DEFER_BLOCKING|BRA.U": {
+      "min_stall": 6,
+      "observations": 1,
+      "trusted": false
+    },
+    "BAR.SYNC.DEFER_BLOCKING|ISETP.EQ.U32.AND": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "BAR.SYNC.DEFER_BLOCKING|LDG.E": {
+      "min_stall": 6,
+      "observations": 6,
+      "trusted": false
+    },
+    "BAR.SYNC.DEFER_BLOCKING|LDS": {
+      "min_stall": 6,
+      "observations": 21,
+      "trusted": true
+    },
+    "BAR.SYNC.DEFER_BLOCKING|LDS.64": {
+      "min_stall": 6,
+      "observations": 15,
+      "trusted": true
+    },
+    "BAR.SYNC.DEFER_BLOCKING|LDS.U16": {
+      "min_stall": 6,
+      "observations": 3,
+      "trusted": false
+    },
+    "BAR.SYNC.DEFER_BLOCKING|LDSM.16.M88": {
+      "min_stall": 6,
+      "observations": 3,
+      "trusted": false
+    },
+    "BAR.SYNC.DEFER_BLOCKING|LDSM.16.M88.2": {
+      "min_stall": 6,
+      "observations": 3,
+      "trusted": false
+    },
+    "BAR.SYNC.DEFER_BLOCKING|LDSM.16.M88.4": {
+      "min_stall": 6,
+      "observations": 3,
+      "trusted": false
+    },
+    "BAR.SYNC.DEFER_BLOCKING|LDSM.16.MT88": {
+      "min_stall": 6,
+      "observations": 3,
+      "trusted": false
+    },
+    "BAR.SYNC.DEFER_BLOCKING|LDSM.16.MT88.2": {
+      "min_stall": 6,
+      "observations": 3,
+      "trusted": false
+    },
+    "BAR.SYNC.DEFER_BLOCKING|LDSM.16.MT88.4": {
+      "min_stall": 6,
+      "observations": 3,
+      "trusted": false
+    },
+    "BAR.SYNC.DEFER_BLOCKING|LDSM.8.MT1616": {
+      "min_stall": 6,
+      "observations": 3,
+      "trusted": false
+    },
+    "BAR.SYNC.DEFER_BLOCKING|LDSM.8.MT1616.2": {
+      "min_stall": 6,
+      "observations": 3,
+      "trusted": false
+    },
+    "BAR.SYNC.DEFER_BLOCKING|STG.E": {
+      "min_stall": 6,
+      "observations": 5,
+      "trusted": false
+    },
+    "BMSK.W|IADD": {
+      "min_stall": 5,
+      "observations": 1,
+      "trusted": false
+    },
+    "BMSK.W|LDC.64": {
+      "min_stall": 2,
+      "observations": 2,
+      "trusted": false
+    },
+    "BMSK|BMSK.W": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "BREV|BREV": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "BREV|STG.E": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "BREV|STG.E.64": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "CALL.REL.NOINC|BRA": {
+      "min_stall": 5,
+      "observations": 3,
+      "trusted": false
+    },
+    "CALL.REL.NOINC|HMMA.SP.16832.F32": {
+      "min_stall": 5,
+      "observations": 3,
+      "trusted": false
+    },
+    "CALL.REL.NOINC|IMMA.SP.16864.S8.S8": {
+      "min_stall": 5,
+      "observations": 3,
+      "trusted": false
+    },
+    "CALL.REL.NOINC|LDC.64": {
+      "min_stall": 5,
+      "observations": 12,
+      "trusted": true
+    },
+    "CALL.REL.NOINC|MOV": {
+      "min_stall": 5,
+      "observations": 9,
+      "trusted": true
+    },
+    "CCTL.IVALL|LDC.64": {
+      "min_stall": 2,
+      "observations": 1,
+      "trusted": false
+    },
+    "CCTL.IVALL|STG.E": {
+      "min_stall": 4,
+      "observations": 2,
+      "trusted": false
+    },
+    "CGAERRBAR|CCTL.IVALL": {
+      "min_stall": 6,
+      "observations": 3,
+      "trusted": false
+    },
+    "CS2R.32|LDC.64": {
+      "min_stall": 5,
+      "observations": 3,
+      "trusted": false
+    },
+    "CS2R|CS2R": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "CS2R|IMMA.16816.S8.S8": {
+      "min_stall": 7,
+      "observations": 3,
+      "trusted": false
+    },
+    "CS2R|LOP3.LUT": {
+      "min_stall": 1,
+      "observations": 1,
+      "trusted": false
+    },
+    "CS2R|MOV": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "DADD|LDC.64": {
+      "min_stall": 2,
+      "observations": 2,
+      "trusted": false
+    },
+    "DADD|STG.E.64": {
+      "min_stall": 2,
+      "observations": 16,
+      "trusted": true
+    },
+    "DEPBAR.LE|BAR.SYNC.DEFER_BLOCKING": {
+      "min_stall": 4,
+      "observations": 12,
+      "trusted": true
+    },
+    "DFMA|BRA": {
+      "min_stall": 1,
+      "observations": 8,
+      "trusted": true
+    },
+    "DFMA|FFMA": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "DFMA|IADD": {
+      "min_stall": 2,
+      "observations": 4,
+      "trusted": false
+    },
+    "DFMA|LDC.64": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "DFMA|LOP3.LUT": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "DFMA|MOV": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "DFMA|NOP": {
+      "min_stall": 15,
+      "observations": 86,
+      "trusted": true
+    },
+    "DFMA|SEL": {
+      "min_stall": 2,
+      "observations": 2,
+      "trusted": false
+    },
+    "DFMA|STG.E.64": {
+      "min_stall": 2,
+      "observations": 4,
+      "trusted": false
+    },
+    "DFMA|UISETP.GE.AND": {
+      "min_stall": 3,
+      "observations": 1,
+      "trusted": false
+    },
+    "DMUL.RP|LOP3.LUT": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "DMUL|BRA": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "DMUL|FSETP.GTU.AND": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "DMUL|IADD": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "DMUL|ISETP.GE.U32.AND": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "DMUL|LDC.64": {
+      "min_stall": 2,
+      "observations": 1,
+      "trusted": false
+    },
+    "DMUL|MOV": {
+      "min_stall": 1,
+      "observations": 4,
+      "trusted": false
+    },
+    "DMUL|NOP": {
+      "min_stall": 15,
+      "observations": 7,
+      "trusted": false
+    },
+    "DMUL|STG.E.64": {
+      "min_stall": 2,
+      "observations": 5,
+      "trusted": false
+    },
+    "DSETP.GE.AND|LDC.64": {
+      "min_stall": 2,
+      "observations": 6,
+      "trusted": false
+    },
+    "DSETP.GEU.AND|LDC.64": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "DSETP.GT.AND|LDC.64": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "DSETP.GTU.AND|BRA": {
+      "min_stall": 2,
+      "observations": 2,
+      "trusted": false
+    },
+    "DSETP.GTU.AND|LDC.64": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "DSETP.GTU.AND|LOP3.LUT": {
+      "min_stall": 1,
+      "observations": 1,
+      "trusted": false
+    },
+    "DSETP.MAX.AND|FSEL": {
+      "min_stall": 3,
+      "observations": 1,
+      "trusted": false
+    },
+    "DSETP.MAX.AND|MOV": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "DSETP.MAX.AND|SEL": {
+      "min_stall": 2,
+      "observations": 2,
+      "trusted": false
+    },
+    "DSETP.MIN.AND|FSEL": {
+      "min_stall": 3,
+      "observations": 1,
+      "trusted": false
+    },
+    "DSETP.MIN.AND|MOV": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "DSETP.MIN.AND|SEL": {
+      "min_stall": 2,
+      "observations": 2,
+      "trusted": false
+    },
+    "DSETP.NAN.AND|BRA": {
+      "min_stall": 2,
+      "observations": 6,
+      "trusted": false
+    },
+    "DSETP.NAN.AND|LDC.64": {
+      "min_stall": 2,
+      "observations": 6,
+      "trusted": false
+    },
+    "DSETP.NE.AND|LDC.64": {
+      "min_stall": 2,
+      "observations": 6,
+      "trusted": false
+    },
+    "DSETP.NEU.AND|LDC.64": {
+      "min_stall": 2,
+      "observations": 6,
+      "trusted": false
+    },
+    "F2F.F16.F64|STG.E.U16": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "F2F.F32.F64|STG.E": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "F2F.F64.F16|STG.E.64": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "F2F.F64.F32|STG.E.64": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "F2FP.F16.F32.PACK_AB|STG.E.U16": {
+      "min_stall": 5,
+      "observations": 3,
+      "trusted": false
+    },
+    "F2I.F16.NTZ|STG.E": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "F2I.F64|STG.E": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "F2I.FTZ.U32.TRUNC.NTZ|HFMA2": {
+      "min_stall": 2,
+      "observations": 10,
+      "trusted": true
+    },
+    "F2I.FTZ.U32.TRUNC.NTZ|IABS": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "F2I.NTZ|STG.E": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "F2I.S16.F16.NTZ|STG.E.S16": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "F2I.S16.F64|STG.E.S16": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "F2I.S16.NTZ|STG.E.S16": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "F2I.S64.F16|STG.E.64": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "F2I.S64.F64|STG.E.64": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "F2I.S64|STG.E.64": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "F2I.U16.F16.NTZ|STG.E.U16": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "F2I.U16.F64|STG.E.U16": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "F2I.U16.NTZ|STG.E.U16": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "F2I.U32.F16.NTZ|STG.E": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "F2I.U32.F64|STG.E": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "F2I.U32.NTZ|STG.E": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "F2I.U64.F16|STG.E.64": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "F2I.U64.F64|STG.E.64": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "F2I.U64|STG.E.64": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "FADD.FTZ|BRA": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "FADD.FTZ|FFMA": {
+      "min_stall": 4,
+      "observations": 5,
+      "trusted": false
+    },
+    "FADD.FTZ|IADD": {
+      "min_stall": 2,
+      "observations": 1,
+      "trusted": false
+    },
+    "FADD.FTZ|LDC.64": {
+      "min_stall": 2,
+      "observations": 1,
+      "trusted": false
+    },
+    "FADD.FTZ|STG.E": {
+      "min_stall": 5,
+      "observations": 5,
+      "trusted": false
+    },
+    "FADD.RM|LDC.64": {
+      "min_stall": 2,
+      "observations": 1,
+      "trusted": false
+    },
+    "FADD.RM|STG.E": {
+      "min_stall": 5,
+      "observations": 2,
+      "trusted": false
+    },
+    "FADD.RP|LDC.64": {
+      "min_stall": 2,
+      "observations": 1,
+      "trusted": false
+    },
+    "FADD.RP|STG.E": {
+      "min_stall": 5,
+      "observations": 2,
+      "trusted": false
+    },
+    "FADD.RZ|LDC.64": {
+      "min_stall": 2,
+      "observations": 1,
+      "trusted": false
+    },
+    "FADD.RZ|STG.E": {
+      "min_stall": 5,
+      "observations": 2,
+      "trusted": false
+    },
+    "FADD|BAR.SYNC.DEFER_BLOCKING": {
+      "min_stall": 6,
+      "observations": 2,
+      "trusted": false
+    },
+    "FADD|FADD": {
+      "min_stall": 1,
+      "observations": 27,
+      "trusted": true
+    },
+    "FADD|FMUL": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "FADD|FSETP.GEU.AND": {
+      "min_stall": 2,
+      "observations": 6,
+      "trusted": false
+    },
+    "FADD|LDC.64": {
+      "min_stall": 1,
+      "observations": 6,
+      "trusted": false
+    },
+    "FADD|STG.E": {
+      "min_stall": 5,
+      "observations": 28,
+      "trusted": true
+    },
+    "FCHK|FFMA": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "FFMA.RM|ISETP.NE.AND": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "FFMA.RP|FFMA.RM": {
+      "min_stall": 1,
+      "observations": 1,
+      "trusted": false
+    },
+    "FFMA.RP|SHF.L.U32": {
+      "min_stall": 3,
+      "observations": 2,
+      "trusted": false
+    },
+    "FFMA.RZ|IADD": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "FFMA|BAR.SYNC.DEFER_BLOCKING": {
+      "min_stall": 1,
+      "observations": 1,
+      "trusted": false
+    },
+    "FFMA|BRA": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "FFMA|BRA.U": {
+      "min_stall": 4,
+      "observations": 1,
+      "trusted": false
+    },
+    "FFMA|FADD": {
+      "min_stall": 4,
+      "observations": 2,
+      "trusted": false
+    },
+    "FFMA|FFMA": {
+      "min_stall": 1,
+      "observations": 158,
+      "trusted": true
+    },
+    "FFMA|FMUL.FTZ": {
+      "min_stall": 4,
+      "observations": 3,
+      "trusted": false
+    },
+    "FFMA|FSETP.GT.AND": {
+      "min_stall": 5,
+      "observations": 3,
+      "trusted": false
+    },
+    "FFMA|IADD": {
+      "min_stall": 2,
+      "observations": 5,
+      "trusted": false
+    },
+    "FFMA|IADD3": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "FFMA|LDC.64": {
+      "min_stall": 2,
+      "observations": 7,
+      "trusted": false
+    },
+    "FFMA|MUFU.RSQ": {
+      "min_stall": 4,
+      "observations": 3,
+      "trusted": false
+    },
+    "FFMA|SHF.R.U32.HI": {
+      "min_stall": 5,
+      "observations": 3,
+      "trusted": false
+    },
+    "FFMA|STG.E": {
+      "min_stall": 5,
+      "observations": 8,
+      "trusted": true
+    },
+    "FFMA|STS": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "FFMA|UISETP.GE.AND": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "FLO.U32|IADD": {
+      "min_stall": 2,
+      "observations": 6,
+      "trusted": false
+    },
+    "FLO.U32|S2R": {
+      "min_stall": 1,
+      "observations": 7,
+      "trusted": false
+    },
+    "FLO.U32|UPOPC": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "FMNMX|FADD": {
+      "min_stall": 5,
+      "observations": 3,
+      "trusted": false
+    },
+    "FMNMX|FMNMX": {
+      "min_stall": 1,
+      "observations": 6,
+      "trusted": false
+    },
+    "FMNMX|LDC.64": {
+      "min_stall": 2,
+      "observations": 2,
+      "trusted": false
+    },
+    "FMNMX|STG.E": {
+      "min_stall": 5,
+      "observations": 10,
+      "trusted": true
+    },
+    "FMUL.FTZ|FADD.FTZ": {
+      "min_stall": 3,
+      "observations": 3,
+      "trusted": false
+    },
+    "FMUL.FTZ|FFMA": {
+      "min_stall": 3,
+      "observations": 3,
+      "trusted": false
+    },
+    "FMUL.FTZ|FMUL.FTZ": {
+      "min_stall": 1,
+      "observations": 6,
+      "trusted": false
+    },
+    "FMUL.RZ|MUFU.COS": {
+      "min_stall": 6,
+      "observations": 3,
+      "trusted": false
+    },
+    "FMUL.RZ|MUFU.SIN": {
+      "min_stall": 6,
+      "observations": 3,
+      "trusted": false
+    },
+    "FMUL.SAT|LDC.64": {
+      "min_stall": 2,
+      "observations": 1,
+      "trusted": false
+    },
+    "FMUL.SAT|STG.E": {
+      "min_stall": 5,
+      "observations": 2,
+      "trusted": false
+    },
+    "FMUL|FADD": {
+      "min_stall": 4,
+      "observations": 5,
+      "trusted": false
+    },
+    "FMUL|FFMA": {
+      "min_stall": 4,
+      "observations": 1,
+      "trusted": false
+    },
+    "FMUL|FMUL": {
+      "min_stall": 1,
+      "observations": 13,
+      "trusted": true
+    },
+    "FMUL|FSETP.GEU.AND": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "FMUL|LDC.64": {
+      "min_stall": 2,
+      "observations": 4,
+      "trusted": false
+    },
+    "FMUL|MUFU.EX2": {
+      "min_stall": 1,
+      "observations": 10,
+      "trusted": true
+    },
+    "FMUL|MUFU.LG2": {
+      "min_stall": 4,
+      "observations": 3,
+      "trusted": false
+    },
+    "FMUL|MUFU.RCP": {
+      "min_stall": 6,
+      "observations": 6,
+      "trusted": false
+    },
+    "FMUL|MUFU.RSQ": {
+      "min_stall": 4,
+      "observations": 3,
+      "trusted": false
+    },
+    "FMUL|MUFU.SQRT": {
+      "min_stall": 4,
+      "observations": 3,
+      "trusted": false
+    },
+    "FMUL|STG.E": {
+      "min_stall": 5,
+      "observations": 16,
+      "trusted": true
+    },
+    "FSEL|BRA": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "FSEL|FMUL": {
+      "min_stall": 5,
+      "observations": 6,
+      "trusted": false
+    },
+    "FSEL|FSEL": {
+      "min_stall": 1,
+      "observations": 9,
+      "trusted": true
+    },
+    "FSEL|LOP3.LUT": {
+      "min_stall": 1,
+      "observations": 10,
+      "trusted": true
+    },
+    "FSEL|SEL": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "FSETP.GE.AND|LDC.64": {
+      "min_stall": 2,
+      "observations": 6,
+      "trusted": false
+    },
+    "FSETP.GEU.AND|DFMA": {
+      "min_stall": 1,
+      "observations": 6,
+      "trusted": false
+    },
+    "FSETP.GEU.AND|DMUL": {
+      "min_stall": 1,
+      "observations": 1,
+      "trusted": false
+    },
+    "FSETP.GEU.AND|FADD": {
+      "min_stall": 3,
+      "observations": 1,
+      "trusted": false
+    },
+    "FSETP.GEU.AND|FMUL": {
+      "min_stall": 1,
+      "observations": 16,
+      "trusted": true
+    },
+    "FSETP.GEU.AND|FSETP.GEU.AND": {
+      "min_stall": 1,
+      "observations": 7,
+      "trusted": false
+    },
+    "FSETP.GEU.AND|FSETP.GT.AND": {
+      "min_stall": 1,
+      "observations": 6,
+      "trusted": false
+    },
+    "FSETP.GEU.AND|LDC.64": {
+      "min_stall": 2,
+      "observations": 9,
+      "trusted": true
+    },
+    "FSETP.GEU.AND|LOP3.LUT": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "FSETP.GEU.AND|MOV": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "FSETP.GEU.FTZ.AND|MOV": {
+      "min_stall": 13,
+      "observations": 3,
+      "trusted": false
+    },
+    "FSETP.GT.AND|BRA": {
+      "min_stall": 13,
+      "observations": 3,
+      "trusted": false
+    },
+    "FSETP.GT.AND|FSEL": {
+      "min_stall": 4,
+      "observations": 6,
+      "trusted": false
+    },
+    "FSETP.GT.AND|LDC.64": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "FSETP.GTU.AND|BRA": {
+      "min_stall": 13,
+      "observations": 3,
+      "trusted": false
+    },
+    "FSETP.GTU.AND|LDC.64": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "FSETP.GTU.FTZ.AND|FADD.FTZ": {
+      "min_stall": 13,
+      "observations": 3,
+      "trusted": false
+    },
+    "FSETP.GTU.FTZ.AND|FSETP.GTU.FTZ.AND": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "FSETP.GTU.FTZ.AND|MOV": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "FSETP.GTU.FTZ.AND|PLOP3.LUT": {
+      "min_stall": 5,
+      "observations": 1,
+      "trusted": false
+    },
+    "FSETP.NAN.AND|LDC.64": {
+      "min_stall": 2,
+      "observations": 6,
+      "trusted": false
+    },
+    "FSETP.NE.AND|LDC.64": {
+      "min_stall": 2,
+      "observations": 6,
+      "trusted": false
+    },
+    "FSETP.NEU.AND|FSEL": {
+      "min_stall": 5,
+      "observations": 3,
+      "trusted": false
+    },
+    "FSETP.NEU.AND|LDC.64": {
+      "min_stall": 2,
+      "observations": 6,
+      "trusted": false
+    },
+    "FSETP.NEU.AND|LOP3.LUT": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "FSETP.NEU.FTZ.AND|BRA": {
+      "min_stall": 12,
+      "observations": 3,
+      "trusted": false
+    },
+    "FSETP.NEU.FTZ.AND|FFMA.RZ": {
+      "min_stall": 1,
+      "observations": 1,
+      "trusted": false
+    },
+    "FSETP.NEU.FTZ.AND|FSETP.NEU.FTZ.AND": {
+      "min_stall": 1,
+      "observations": 6,
+      "trusted": false
+    },
+    "FSETP.NEU.FTZ.AND|MOV": {
+      "min_stall": 13,
+      "observations": 3,
+      "trusted": false
+    },
+    "FSETP.NEU.FTZ.AND|SEL": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "HADD2.F32|STG.E": {
+      "min_stall": 5,
+      "observations": 3,
+      "trusted": false
+    },
+    "HADD2|LDC.64": {
+      "min_stall": 2,
+      "observations": 6,
+      "trusted": false
+    },
+    "HFMA2|FMUL": {
+      "min_stall": 2,
+      "observations": 1,
+      "trusted": false
+    },
+    "HFMA2|FSETP.GEU.AND": {
+      "min_stall": 1,
+      "observations": 1,
+      "trusted": false
+    },
+    "HFMA2|IADD": {
+      "min_stall": 1,
+      "observations": 6,
+      "trusted": false
+    },
+    "HFMA2|IMAD": {
+      "min_stall": 2,
+      "observations": 6,
+      "trusted": false
+    },
+    "HFMA2|IMAD.HI": {
+      "min_stall": 5,
+      "observations": 1,
+      "trusted": false
+    },
+    "HFMA2|IMAD.HI.U32": {
+      "min_stall": 5,
+      "observations": 1,
+      "trusted": false
+    },
+    "HFMA2|LDC.64": {
+      "min_stall": 1,
+      "observations": 15,
+      "trusted": true
+    },
+    "HFMA2|LOP3.LUT": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "HFMA2|MOV": {
+      "min_stall": 1,
+      "observations": 4,
+      "trusted": false
+    },
+    "HFMA2|MUFU.EX2": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "HFMA2|MUFU.RCP64H": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "HFMA2|PLOP3.LUT": {
+      "min_stall": 1,
+      "observations": 8,
+      "trusted": true
+    },
+    "HFMA2|RET.REL.NODEC": {
+      "min_stall": 4,
+      "observations": 6,
+      "trusted": false
+    },
+    "HFMA2|STG.E.64": {
+      "min_stall": 5,
+      "observations": 12,
+      "trusted": true
+    },
+    "HFMA2|UIADD3": {
+      "min_stall": 1,
+      "observations": 1,
+      "trusted": false
+    },
+    "HFMA2|UMOV": {
+      "min_stall": 1,
+      "observations": 6,
+      "trusted": false
+    },
+    "HMMA.16816.F16|LDC.64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "HMMA.16816.F32.BF16|LDC.64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "HMMA.16816.F32|LDC.64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "HMMA.1684.F32.TF32|LDC.64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "HMMA.1688.F32.BF16|LDC.64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "HMMA.1688.F32.TF32|LDC.64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "HMMA.1688.F32|LDC.64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "HMMA.SP.16832.F32|LDC.64": {
+      "min_stall": 1,
+      "observations": 6,
+      "trusted": false
+    },
+    "HMNMX2|LDC.64": {
+      "min_stall": 2,
+      "observations": 6,
+      "trusted": false
+    },
+    "HMUL2|LDC.64": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "I2F.F16.S16|STG.E.U16": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "I2F.F16.S64|STG.E.U16": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "I2F.F16.U16|STG.E.U16": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "I2F.F16.U32|STG.E.U16": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "I2F.F16.U64|STG.E.U16": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "I2F.F16|STG.E.U16": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "I2F.F64.S16|STG.E.64": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "I2F.F64.S64|STG.E.64": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "I2F.F64.U16|STG.E.64": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "I2F.F64.U32|STG.E.64": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "I2F.F64.U64|STG.E.64": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "I2F.F64|STG.E.64": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "I2F.RP|IABS": {
+      "min_stall": 1,
+      "observations": 4,
+      "trusted": false
+    },
+    "I2F.RP|MUFU.RCP": {
+      "min_stall": 2,
+      "observations": 2,
+      "trusted": false
+    },
+    "I2F.S16|STG.E": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "I2F.S64|STG.E": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "I2F.U32.RP|IADD": {
+      "min_stall": 1,
+      "observations": 4,
+      "trusted": false
+    },
+    "I2F.U32.RP|MUFU.RCP": {
+      "min_stall": 2,
+      "observations": 2,
+      "trusted": false
+    },
+    "I2F.U64|STG.E": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "I2FP.F32.S32|STG.E": {
+      "min_stall": 5,
+      "observations": 3,
+      "trusted": false
+    },
+    "I2FP.F32.U32|STG.E": {
+      "min_stall": 5,
+      "observations": 6,
+      "trusted": false
+    },
+    "IABS|HFMA2": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "IABS|I2F.RP": {
+      "min_stall": 2,
+      "observations": 6,
+      "trusted": false
+    },
+    "IABS|IABS": {
+      "min_stall": 2,
+      "observations": 6,
+      "trusted": false
+    },
+    "IABS|IADD": {
+      "min_stall": 2,
+      "observations": 4,
+      "trusted": false
+    },
+    "IADD.64|LDC.64": {
+      "min_stall": 2,
+      "observations": 4,
+      "trusted": false
+    },
+    "IADD.64|LDG.E": {
+      "min_stall": 6,
+      "observations": 1,
+      "trusted": false
+    },
+    "IADD.64|STG.E.64": {
+      "min_stall": 6,
+      "observations": 20,
+      "trusted": true
+    },
+    "IADD.X|MOV": {
+      "min_stall": 1,
+      "observations": 6,
+      "trusted": false
+    },
+    "IADD.X|SEL": {
+      "min_stall": 1,
+      "observations": 6,
+      "trusted": false
+    },
+    "IADD3|BRA": {
+      "min_stall": 3,
+      "observations": 2,
+      "trusted": false
+    },
+    "IADD3|FFMA": {
+      "min_stall": 3,
+      "observations": 2,
+      "trusted": false
+    },
+    "IADD3|IADD": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "IADD3|IADD3": {
+      "min_stall": 4,
+      "observations": 4,
+      "trusted": false
+    },
+    "IADD3|IMAD": {
+      "min_stall": 3,
+      "observations": 4,
+      "trusted": false
+    },
+    "IADD3|LDC.64": {
+      "min_stall": 2,
+      "observations": 2,
+      "trusted": false
+    },
+    "IADD3|MOV": {
+      "min_stall": 1,
+      "observations": 4,
+      "trusted": false
+    },
+    "IADD3|MUFU.RCP": {
+      "min_stall": 2,
+      "observations": 1,
+      "trusted": false
+    },
+    "IADD3|RET.REL.NODEC": {
+      "min_stall": 1,
+      "observations": 6,
+      "trusted": false
+    },
+    "IADD3|STG.E.64": {
+      "min_stall": 5,
+      "observations": 2,
+      "trusted": false
+    },
+    "IADD|ATOMG.E.ADD.64.STRONG.GPU": {
+      "min_stall": 6,
+      "observations": 2,
+      "trusted": false
+    },
+    "IADD|BRA": {
+      "min_stall": 8,
+      "observations": 2,
+      "trusted": false
+    },
+    "IADD|DMUL": {
+      "min_stall": 6,
+      "observations": 3,
+      "trusted": false
+    },
+    "IADD|F2I.FTZ.U32.TRUNC.NTZ": {
+      "min_stall": 4,
+      "observations": 12,
+      "trusted": true
+    },
+    "IADD|FFMA": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "IADD|FFMA.RM": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "IADD|FSETP.GEU.AND": {
+      "min_stall": 5,
+      "observations": 3,
+      "trusted": false
+    },
+    "IADD|FSETP.NEU.AND": {
+      "min_stall": 5,
+      "observations": 3,
+      "trusted": false
+    },
+    "IADD|FSETP.NEU.FTZ.AND": {
+      "min_stall": 3,
+      "observations": 1,
+      "trusted": false
+    },
+    "IADD|IADD": {
+      "min_stall": 1,
+      "observations": 49,
+      "trusted": true
+    },
+    "IADD|IADD.X": {
+      "min_stall": 5,
+      "observations": 6,
+      "trusted": false
+    },
+    "IADD|IADD3": {
+      "min_stall": 5,
+      "observations": 2,
+      "trusted": false
+    },
+    "IADD|IMAD": {
+      "min_stall": 1,
+      "observations": 37,
+      "trusted": true
+    },
+    "IADD|IMAD.HI.U32": {
+      "min_stall": 5,
+      "observations": 2,
+      "trusted": false
+    },
+    "IADD|IMAD.WIDE.U32.X": {
+      "min_stall": 5,
+      "observations": 4,
+      "trusted": false
+    },
+    "IADD|ISETP.GE.AND": {
+      "min_stall": 1,
+      "observations": 10,
+      "trusted": true
+    },
+    "IADD|ISETP.GE.U32.AND": {
+      "min_stall": 1,
+      "observations": 16,
+      "trusted": true
+    },
+    "IADD|ISETP.GT.AND": {
+      "min_stall": 5,
+      "observations": 15,
+      "trusted": true
+    },
+    "IADD|ISETP.GT.OR": {
+      "min_stall": 5,
+      "observations": 2,
+      "trusted": false
+    },
+    "IADD|ISETP.GT.U32.AND": {
+      "min_stall": 2,
+      "observations": 7,
+      "trusted": false
+    },
+    "IADD|ISETP.LE.AND": {
+      "min_stall": 1,
+      "observations": 1,
+      "trusted": false
+    },
+    "IADD|ISETP.NE.AND": {
+      "min_stall": 1,
+      "observations": 6,
+      "trusted": false
+    },
+    "IADD|ISETP.NE.U32.AND": {
+      "min_stall": 1,
+      "observations": 4,
+      "trusted": false
+    },
+    "IADD|LDC.64": {
+      "min_stall": 1,
+      "observations": 17,
+      "trusted": true
+    },
+    "IADD|LDG.E": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "IADD|LDG.E.64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "IADD|LDG.E.U16": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "IADD|LOP3.LUT": {
+      "min_stall": 1,
+      "observations": 27,
+      "trusted": true
+    },
+    "IADD|MOV": {
+      "min_stall": 1,
+      "observations": 15,
+      "trusted": true
+    },
+    "IADD|MUFU.RCP": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "IADD|MUFU.RSQ": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "IADD|PLOP3.LUT": {
+      "min_stall": 1,
+      "observations": 10,
+      "trusted": true
+    },
+    "IADD|PRMT": {
+      "min_stall": 5,
+      "observations": 6,
+      "trusted": false
+    },
+    "IADD|SEL": {
+      "min_stall": 1,
+      "observations": 1,
+      "trusted": false
+    },
+    "IADD|SHFL.UP": {
+      "min_stall": 5,
+      "observations": 12,
+      "trusted": true
+    },
+    "IADD|STG.E": {
+      "min_stall": 5,
+      "observations": 40,
+      "trusted": true
+    },
+    "IADD|STG.E.64": {
+      "min_stall": 5,
+      "observations": 6,
+      "trusted": false
+    },
+    "IADD|STG.E.S16": {
+      "min_stall": 5,
+      "observations": 11,
+      "trusted": true
+    },
+    "IADD|STG.E.U16": {
+      "min_stall": 5,
+      "observations": 11,
+      "trusted": true
+    },
+    "IADD|UIADD3": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "IDP.4A.S8.S8|LDC.64": {
+      "min_stall": 2,
+      "observations": 1,
+      "trusted": false
+    },
+    "IDP.4A.S8.S8|STG.E": {
+      "min_stall": 5,
+      "observations": 2,
+      "trusted": false
+    },
+    "IMAD.HI.U32|IADD": {
+      "min_stall": 1,
+      "observations": 8,
+      "trusted": true
+    },
+    "IMAD.HI.U32|IMAD": {
+      "min_stall": 4,
+      "observations": 6,
+      "trusted": false
+    },
+    "IMAD.HI.U32|IMAD.HI.U32": {
+      "min_stall": 6,
+      "observations": 6,
+      "trusted": false
+    },
+    "IMAD.HI.U32|LDC.64": {
+      "min_stall": 2,
+      "observations": 2,
+      "trusted": false
+    },
+    "IMAD.HI.U32|MOV": {
+      "min_stall": 1,
+      "observations": 4,
+      "trusted": false
+    },
+    "IMAD.HI.U32|STG.E": {
+      "min_stall": 5,
+      "observations": 4,
+      "trusted": false
+    },
+    "IMAD.HI|LDC.64": {
+      "min_stall": 2,
+      "observations": 2,
+      "trusted": false
+    },
+    "IMAD.HI|STG.E": {
+      "min_stall": 5,
+      "observations": 4,
+      "trusted": false
+    },
+    "IMAD.SHL.U32|IMAD.SHL.U32": {
+      "min_stall": 2,
+      "observations": 5,
+      "trusted": false
+    },
+    "IMAD.SHL.U32|IMAD.U32": {
+      "min_stall": 2,
+      "observations": 5,
+      "trusted": false
+    },
+    "IMAD.SHL.U32|LOP3.LUT": {
+      "min_stall": 1,
+      "observations": 109,
+      "trusted": true
+    },
+    "IMAD.SHL.U32|PRMT": {
+      "min_stall": 1,
+      "observations": 6,
+      "trusted": false
+    },
+    "IMAD.SHL.U32|SHF.R.S32.HI": {
+      "min_stall": 1,
+      "observations": 69,
+      "trusted": true
+    },
+    "IMAD.SHL.U32|SHF.R.U32.HI": {
+      "min_stall": 1,
+      "observations": 7,
+      "trusted": false
+    },
+    "IMAD.U32|IMAD.SHL.U32": {
+      "min_stall": 2,
+      "observations": 5,
+      "trusted": false
+    },
+    "IMAD.U32|LOP3.LUT": {
+      "min_stall": 1,
+      "observations": 11,
+      "trusted": true
+    },
+    "IMAD.U32|PRMT": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "IMAD.U32|SHF.R.S32.HI": {
+      "min_stall": 1,
+      "observations": 15,
+      "trusted": true
+    },
+    "IMAD.WIDE.U32.X|IADD": {
+      "min_stall": 3,
+      "observations": 3,
+      "trusted": false
+    },
+    "IMAD.WIDE.U32.X|LDC.64": {
+      "min_stall": 2,
+      "observations": 1,
+      "trusted": false
+    },
+    "IMAD.WIDE.U32.X|STG.E.64": {
+      "min_stall": 5,
+      "observations": 2,
+      "trusted": false
+    },
+    "IMAD.WIDE.U32|IADD": {
+      "min_stall": 5,
+      "observations": 6,
+      "trusted": false
+    },
+    "IMAD.WIDE.U32|IADD.X": {
+      "min_stall": 1,
+      "observations": 6,
+      "trusted": false
+    },
+    "IMAD.WIDE.U32|IADD3": {
+      "min_stall": 5,
+      "observations": 3,
+      "trusted": false
+    },
+    "IMAD.WIDE.U32|IMAD": {
+      "min_stall": 4,
+      "observations": 9,
+      "trusted": true
+    },
+    "IMAD.WIDE.U32|IMAD.WIDE.U32": {
+      "min_stall": 4,
+      "observations": 9,
+      "trusted": true
+    },
+    "IMAD.WIDE.U32|ISETP.LT.AND": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "IMAD.WIDE.U32|STG.E.64": {
+      "min_stall": 5,
+      "observations": 3,
+      "trusted": false
+    },
+    "IMAD.WIDE|STG.E.64": {
+      "min_stall": 5,
+      "observations": 3,
+      "trusted": false
+    },
+    "IMAD|ATOMG.E.ADD.S32.STRONG.GPU": {
+      "min_stall": 8,
+      "observations": 3,
+      "trusted": false
+    },
+    "IMAD|ATOMG.E.ADD.STRONG.GPU": {
+      "min_stall": 8,
+      "observations": 3,
+      "trusted": false
+    },
+    "IMAD|BRA": {
+      "min_stall": 1,
+      "observations": 9,
+      "trusted": true
+    },
+    "IMAD|IADD": {
+      "min_stall": 1,
+      "observations": 39,
+      "trusted": true
+    },
+    "IMAD|IADD3": {
+      "min_stall": 1,
+      "observations": 5,
+      "trusted": false
+    },
+    "IMAD|IMAD": {
+      "min_stall": 4,
+      "observations": 23,
+      "trusted": true
+    },
+    "IMAD|IMAD.HI.U32": {
+      "min_stall": 4,
+      "observations": 12,
+      "trusted": true
+    },
+    "IMAD|IMAD.WIDE.U32": {
+      "min_stall": 2,
+      "observations": 15,
+      "trusted": true
+    },
+    "IMAD|ISETP.GE.AND": {
+      "min_stall": 3,
+      "observations": 6,
+      "trusted": false
+    },
+    "IMAD|ISETP.GE.U32.AND": {
+      "min_stall": 5,
+      "observations": 4,
+      "trusted": false
+    },
+    "IMAD|ISETP.GT.U32.AND": {
+      "min_stall": 5,
+      "observations": 4,
+      "trusted": false
+    },
+    "IMAD|ISETP.LT.OR": {
+      "min_stall": 2,
+      "observations": 2,
+      "trusted": false
+    },
+    "IMAD|LDC.64": {
+      "min_stall": 2,
+      "observations": 34,
+      "trusted": true
+    },
+    "IMAD|MUFU.RCP": {
+      "min_stall": 3,
+      "observations": 2,
+      "trusted": false
+    },
+    "IMAD|REDG.E.ADD.STRONG.GPU": {
+      "min_stall": 12,
+      "observations": 3,
+      "trusted": false
+    },
+    "IMAD|STG.E": {
+      "min_stall": 1,
+      "observations": 43,
+      "trusted": true
+    },
+    "IMAD|STG.E.64": {
+      "min_stall": 1,
+      "observations": 5,
+      "trusted": false
+    },
+    "IMAD|STG.E.S16": {
+      "min_stall": 5,
+      "observations": 5,
+      "trusted": false
+    },
+    "IMAD|STG.E.U16": {
+      "min_stall": 1,
+      "observations": 7,
+      "trusted": false
+    },
+    "IMAD|STL": {
+      "min_stall": 5,
+      "observations": 1,
+      "trusted": false
+    },
+    "IMAD|STL.64": {
+      "min_stall": 5,
+      "observations": 1,
+      "trusted": false
+    },
+    "IMAD|STL.U16": {
+      "min_stall": 5,
+      "observations": 1,
+      "trusted": false
+    },
+    "IMMA.16816.S8.S8|IMAD.SHL.U32": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "IMMA.16816.S8.S8|IMMA.16816.S8.S8": {
+      "min_stall": 11,
+      "observations": 1,
+      "trusted": false
+    },
+    "IMMA.16816.S8.S8|LDC.64": {
+      "min_stall": 1,
+      "observations": 6,
+      "trusted": false
+    },
+    "IMMA.16816.S8.S8|MOV": {
+      "min_stall": 8,
+      "observations": 1,
+      "trusted": false
+    },
+    "IMMA.16816.S8.S8|UIADD3": {
+      "min_stall": 11,
+      "observations": 2,
+      "trusted": false
+    },
+    "IMMA.16832.S8.S8|IMAD.SHL.U32": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "IMMA.16832.S8.S8|IMMA.16832.S8.S8": {
+      "min_stall": 11,
+      "observations": 1,
+      "trusted": false
+    },
+    "IMMA.16832.S8.S8|LDC.64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "IMMA.16832.S8.S8|MOV": {
+      "min_stall": 8,
+      "observations": 2,
+      "trusted": false
+    },
+    "IMMA.16832.S8.S8|UIADD3": {
+      "min_stall": 11,
+      "observations": 1,
+      "trusted": false
+    },
+    "IMMA.16832.S8.U8|LDC.64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "IMMA.16832.U8.U8|LDC.64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "IMMA.16832.U8.U8|LOP3.LUT": {
+      "min_stall": 1,
+      "observations": 14,
+      "trusted": true
+    },
+    "IMMA.16832.U8.U8|MOV": {
+      "min_stall": 8,
+      "observations": 5,
+      "trusted": false
+    },
+    "IMMA.16832.U8.U8|MOVM.U4TO8.M832": {
+      "min_stall": 1,
+      "observations": 26,
+      "trusted": true
+    },
+    "IMMA.16832.U8.U8|UIADD3": {
+      "min_stall": 11,
+      "observations": 3,
+      "trusted": false
+    },
+    "IMMA.SP.16864.S8.S8|LDC.64": {
+      "min_stall": 1,
+      "observations": 6,
+      "trusted": false
+    },
+    "IMNMX.S64|LDC.64": {
+      "min_stall": 2,
+      "observations": 2,
+      "trusted": false
+    },
+    "IMNMX.S64|STG.E.64": {
+      "min_stall": 6,
+      "observations": 10,
+      "trusted": true
+    },
+    "IMNMX.U64|LDC.64": {
+      "min_stall": 2,
+      "observations": 2,
+      "trusted": false
+    },
+    "IMNMX.U64|STG.E.64": {
+      "min_stall": 6,
+      "observations": 10,
+      "trusted": true
+    },
+    "ISETP.EQ.OR|LOP3.LUT": {
+      "min_stall": 13,
+      "observations": 3,
+      "trusted": false
+    },
+    "ISETP.EQ.U32.AND|IMAD": {
+      "min_stall": 1,
+      "observations": 9,
+      "trusted": true
+    },
+    "ISETP.EQ.U32.AND|LDC.64": {
+      "min_stall": 2,
+      "observations": 6,
+      "trusted": false
+    },
+    "ISETP.EQ.U32.AND|REDUX": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "ISETP.EQ.U32.AND|REDUX.MAX": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "ISETP.EQ.U32.AND|REDUX.MIN": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "ISETP.EQ.U32.AND|REDUX.OR": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "ISETP.EQ.U32.AND|REDUX.XOR": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "ISETP.GE.AND|BRA": {
+      "min_stall": 13,
+      "observations": 6,
+      "trusted": false
+    },
+    "ISETP.GE.AND|IADD": {
+      "min_stall": 7,
+      "observations": 2,
+      "trusted": false
+    },
+    "ISETP.GE.AND|IMAD": {
+      "min_stall": 1,
+      "observations": 8,
+      "trusted": true
+    },
+    "ISETP.GE.AND|ISETP.GE.AND": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "ISETP.GE.AND|ISETP.GE.U32.AND": {
+      "min_stall": 3,
+      "observations": 2,
+      "trusted": false
+    },
+    "ISETP.GE.AND|ISETP.GT.U32.AND": {
+      "min_stall": 4,
+      "observations": 2,
+      "trusted": false
+    },
+    "ISETP.GE.AND|LDC.64": {
+      "min_stall": 2,
+      "observations": 6,
+      "trusted": false
+    },
+    "ISETP.GE.AND|LOP3.LUT": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "ISETP.GE.AND|MOV": {
+      "min_stall": 12,
+      "observations": 3,
+      "trusted": false
+    },
+    "ISETP.GE.S64.AND|LDC.64": {
+      "min_stall": 2,
+      "observations": 6,
+      "trusted": false
+    },
+    "ISETP.GE.U32.AND|BRA": {
+      "min_stall": 13,
+      "observations": 6,
+      "trusted": false
+    },
+    "ISETP.GE.U32.AND|IADD": {
+      "min_stall": 1,
+      "observations": 10,
+      "trusted": true
+    },
+    "ISETP.GE.U32.AND|IMAD": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "ISETP.GE.U32.AND|ISETP.NE.U32.AND": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "ISETP.GE.U32.AND|LDC.64": {
+      "min_stall": 2,
+      "observations": 8,
+      "trusted": true
+    },
+    "ISETP.GE.U32.AND|LOP3.LUT": {
+      "min_stall": 1,
+      "observations": 4,
+      "trusted": false
+    },
+    "ISETP.GE.U32.AND|MOV": {
+      "min_stall": 1,
+      "observations": 4,
+      "trusted": false
+    },
+    "ISETP.GE.U32.AND|MUFU.RCP64H": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "ISETP.GE.U32.AND|SEL": {
+      "min_stall": 5,
+      "observations": 1,
+      "trusted": false
+    },
+    "ISETP.GE.U32.AND|VIMNMX.S32": {
+      "min_stall": 4,
+      "observations": 2,
+      "trusted": false
+    },
+    "ISETP.GT.AND|BRA": {
+      "min_stall": 13,
+      "observations": 16,
+      "trusted": true
+    },
+    "ISETP.GT.AND|IADD": {
+      "min_stall": 13,
+      "observations": 5,
+      "trusted": false
+    },
+    "ISETP.GT.AND|IMAD": {
+      "min_stall": 13,
+      "observations": 4,
+      "trusted": false
+    },
+    "ISETP.GT.AND|ISETP.LE.AND": {
+      "min_stall": 2,
+      "observations": 2,
+      "trusted": false
+    },
+    "ISETP.GT.AND|LDC.64": {
+      "min_stall": 2,
+      "observations": 6,
+      "trusted": false
+    },
+    "ISETP.GT.AND|PLOP3.LUT": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "ISETP.GT.AND|VOTE.ANY": {
+      "min_stall": 13,
+      "observations": 3,
+      "trusted": false
+    },
+    "ISETP.GT.OR|IADD": {
+      "min_stall": 13,
+      "observations": 2,
+      "trusted": false
+    },
+    "ISETP.GT.S64.AND|LDC.64": {
+      "min_stall": 2,
+      "observations": 6,
+      "trusted": false
+    },
+    "ISETP.GT.U32.AND|BRA": {
+      "min_stall": 13,
+      "observations": 3,
+      "trusted": false
+    },
+    "ISETP.GT.U32.AND|IADD": {
+      "min_stall": 13,
+      "observations": 8,
+      "trusted": true
+    },
+    "ISETP.GT.U32.AND|IMAD": {
+      "min_stall": 13,
+      "observations": 3,
+      "trusted": false
+    },
+    "ISETP.GT.U32.AND|ISETP.GE.AND": {
+      "min_stall": 1,
+      "observations": 1,
+      "trusted": false
+    },
+    "ISETP.GT.U32.AND|ISETP.GE.U32.AND": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "ISETP.GT.U32.AND|ISETP.GT.U32.OR": {
+      "min_stall": 5,
+      "observations": 6,
+      "trusted": false
+    },
+    "ISETP.GT.U32.AND|LDC.64": {
+      "min_stall": 2,
+      "observations": 6,
+      "trusted": false
+    },
+    "ISETP.GT.U32.OR|BRA": {
+      "min_stall": 13,
+      "observations": 1,
+      "trusted": false
+    },
+    "ISETP.GT.U32.OR|MOV": {
+      "min_stall": 13,
+      "observations": 3,
+      "trusted": false
+    },
+    "ISETP.GT.U32.OR|NOP": {
+      "min_stall": 15,
+      "observations": 2,
+      "trusted": false
+    },
+    "ISETP.LE.AND|BRA": {
+      "min_stall": 13,
+      "observations": 1,
+      "trusted": false
+    },
+    "ISETP.LE.AND|IMAD": {
+      "min_stall": 11,
+      "observations": 2,
+      "trusted": false
+    },
+    "ISETP.LT.AND|IADD": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "ISETP.LT.AND|IMAD.WIDE.U32": {
+      "min_stall": 3,
+      "observations": 3,
+      "trusted": false
+    },
+    "ISETP.LT.OR|IADD3": {
+      "min_stall": 2,
+      "observations": 2,
+      "trusted": false
+    },
+    "ISETP.LT.OR|IMAD": {
+      "min_stall": 13,
+      "observations": 4,
+      "trusted": false
+    },
+    "ISETP.LT.OR|LDC.64": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "ISETP.NE.AND|IADD": {
+      "min_stall": 1,
+      "observations": 5,
+      "trusted": false
+    },
+    "ISETP.NE.AND|ISETP.NE.AND": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "ISETP.NE.AND|LDC.64": {
+      "min_stall": 1,
+      "observations": 8,
+      "trusted": true
+    },
+    "ISETP.NE.AND|LOP3.LUT": {
+      "min_stall": 1,
+      "observations": 6,
+      "trusted": false
+    },
+    "ISETP.NE.AND|MOV.64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "ISETP.NE.AND|SHF.R.U32.HI": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "ISETP.NE.S64.AND|LDC.64": {
+      "min_stall": 2,
+      "observations": 6,
+      "trusted": false
+    },
+    "ISETP.NE.U32.AND|IADD": {
+      "min_stall": 12,
+      "observations": 2,
+      "trusted": false
+    },
+    "ISETP.NE.U32.AND|LDC.64": {
+      "min_stall": 2,
+      "observations": 6,
+      "trusted": false
+    },
+    "ISETP.NE.U32.AND|MUFU.RCP": {
+      "min_stall": 1,
+      "observations": 4,
+      "trusted": false
+    },
+    "ISETP.NE.U32.AND|SEL": {
+      "min_stall": 5,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|ATOMG.E.ADD.64.STRONG.GPU": {
+      "min_stall": 4,
+      "observations": 1,
+      "trusted": false
+    },
+    "LDC.64|ATOMG.E.ADD.F32.FTZ.RN.STRONG.GPU": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|ATOMG.E.ADD.F64.RN.STRONG.GPU": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|ATOMG.E.AND.64.STRONG.GPU": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|ATOMG.E.AND.STRONG.GPU": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|ATOMG.E.EXCH.64.STRONG.GPU": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|ATOMG.E.EXCH.STRONG.GPU": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|ATOMG.E.MAX.64.STRONG.GPU": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|ATOMG.E.MAX.S32.STRONG.GPU": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|ATOMG.E.MAX.STRONG.GPU": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|ATOMG.E.MIN.64.STRONG.GPU": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|ATOMG.E.MIN.S32.STRONG.GPU": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|ATOMG.E.MIN.STRONG.GPU": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|ATOMG.E.OR.64.STRONG.GPU": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|ATOMG.E.OR.STRONG.GPU": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|ATOMG.E.XOR.64.STRONG.GPU": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|ATOMG.E.XOR.STRONG.GPU": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|ATOMS.ADD": {
+      "min_stall": 6,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|BAR.SYNC.DEFER_BLOCKING": {
+      "min_stall": 8,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|BRA": {
+      "min_stall": 12,
+      "observations": 2,
+      "trusted": false
+    },
+    "LDC.64|BREV": {
+      "min_stall": 1,
+      "observations": 6,
+      "trusted": false
+    },
+    "LDC.64|DADD": {
+      "min_stall": 1,
+      "observations": 16,
+      "trusted": true
+    },
+    "LDC.64|DFMA": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "LDC.64|DMUL": {
+      "min_stall": 1,
+      "observations": 5,
+      "trusted": false
+    },
+    "LDC.64|F2F.F16.F64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|F2F.F32.F64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|F2F.F64.F16": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|F2F.F64.F32": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|F2FP.F16.F32.PACK_AB": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|F2I.F16.NTZ": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|F2I.F64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|F2I.NTZ": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|F2I.S16.F16.NTZ": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|F2I.S16.F64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|F2I.S16.NTZ": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|F2I.S64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|F2I.S64.F16": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|F2I.S64.F64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|F2I.U16.F16.NTZ": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|F2I.U16.F64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|F2I.U16.NTZ": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|F2I.U32.F16.NTZ": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|F2I.U32.F64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|F2I.U32.NTZ": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|F2I.U64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|F2I.U64.F16": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|F2I.U64.F64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|FADD": {
+      "min_stall": 1,
+      "observations": 27,
+      "trusted": true
+    },
+    "LDC.64|FADD.FTZ": {
+      "min_stall": 1,
+      "observations": 5,
+      "trusted": false
+    },
+    "LDC.64|FADD.RM": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "LDC.64|FADD.RP": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "LDC.64|FADD.RZ": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "LDC.64|FFMA": {
+      "min_stall": 1,
+      "observations": 8,
+      "trusted": true
+    },
+    "LDC.64|FLO.U32": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|FMNMX": {
+      "min_stall": 1,
+      "observations": 10,
+      "trusted": true
+    },
+    "LDC.64|FMUL": {
+      "min_stall": 1,
+      "observations": 5,
+      "trusted": false
+    },
+    "LDC.64|FMUL.RZ": {
+      "min_stall": 1,
+      "observations": 6,
+      "trusted": false
+    },
+    "LDC.64|FMUL.SAT": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "LDC.64|FSEL": {
+      "min_stall": 1,
+      "observations": 4,
+      "trusted": false
+    },
+    "LDC.64|FSETP.GEU.AND": {
+      "min_stall": 1,
+      "observations": 14,
+      "trusted": true
+    },
+    "LDC.64|HADD2.F32": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|HFMA2": {
+      "min_stall": 1,
+      "observations": 12,
+      "trusted": true
+    },
+    "LDC.64|I2F.F16": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|I2F.F16.S16": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|I2F.F16.S64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|I2F.F16.U16": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|I2F.F16.U32": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|I2F.F16.U64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|I2F.F64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|I2F.F64.S16": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|I2F.F64.S64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|I2F.F64.U16": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|I2F.F64.U32": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|I2F.F64.U64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|I2F.S16": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|I2F.S64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|I2F.U32.RP": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|I2F.U64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|I2FP.F32.S32": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|I2FP.F32.U32": {
+      "min_stall": 1,
+      "observations": 6,
+      "trusted": false
+    },
+    "LDC.64|IADD": {
+      "min_stall": 1,
+      "observations": 65,
+      "trusted": true
+    },
+    "LDC.64|IADD.64": {
+      "min_stall": 1,
+      "observations": 20,
+      "trusted": true
+    },
+    "LDC.64|IDP.4A.S8.S8": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "LDC.64|IMAD": {
+      "min_stall": 1,
+      "observations": 46,
+      "trusted": true
+    },
+    "LDC.64|IMAD.HI": {
+      "min_stall": 1,
+      "observations": 4,
+      "trusted": false
+    },
+    "LDC.64|IMAD.HI.U32": {
+      "min_stall": 1,
+      "observations": 4,
+      "trusted": false
+    },
+    "LDC.64|IMAD.SHL.U32": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "LDC.64|IMAD.WIDE": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|IMAD.WIDE.U32": {
+      "min_stall": 1,
+      "observations": 6,
+      "trusted": false
+    },
+    "LDC.64|IMAD.WIDE.U32.X": {
+      "min_stall": 3,
+      "observations": 2,
+      "trusted": false
+    },
+    "LDC.64|IMNMX.S64": {
+      "min_stall": 1,
+      "observations": 10,
+      "trusted": true
+    },
+    "LDC.64|IMNMX.U64": {
+      "min_stall": 1,
+      "observations": 10,
+      "trusted": true
+    },
+    "LDC.64|ISETP.GE.U32.AND": {
+      "min_stall": 3,
+      "observations": 2,
+      "trusted": false
+    },
+    "LDC.64|ISETP.GT.AND": {
+      "min_stall": 1,
+      "observations": 6,
+      "trusted": false
+    },
+    "LDC.64|ISETP.GT.U32.AND": {
+      "min_stall": 1,
+      "observations": 4,
+      "trusted": false
+    },
+    "LDC.64|ISETP.LT.OR": {
+      "min_stall": 1,
+      "observations": 4,
+      "trusted": false
+    },
+    "LDC.64|ISETP.NE.U32.AND": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "LDC.64|LDC": {
+      "min_stall": 8,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|LDC.64": {
+      "min_stall": 8,
+      "observations": 17,
+      "trusted": true
+    },
+    "LDC.64|LDC.U16": {
+      "min_stall": 8,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|LDCU.64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|LDG.E": {
+      "min_stall": 1,
+      "observations": 746,
+      "trusted": true
+    },
+    "LDC.64|LDG.E.128": {
+      "min_stall": 2,
+      "observations": 24,
+      "trusted": true
+    },
+    "LDC.64|LDG.E.64": {
+      "min_stall": 2,
+      "observations": 276,
+      "trusted": true
+    },
+    "LDC.64|LDG.E.64.CONSTANT": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|LDG.E.CONSTANT": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|LDG.E.EF": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|LDG.E.LU": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|LDG.E.S16": {
+      "min_stall": 2,
+      "observations": 60,
+      "trusted": true
+    },
+    "LDC.64|LDG.E.STRONG.GPU": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|LDG.E.STRONG.SM": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|LDG.E.STRONG.SYS": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|LDG.E.U16": {
+      "min_stall": 2,
+      "observations": 144,
+      "trusted": true
+    },
+    "LDC.64|LOP3.LUT": {
+      "min_stall": 1,
+      "observations": 54,
+      "trusted": true
+    },
+    "LDC.64|MATCH.ANY": {
+      "min_stall": 8,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|MEMBAR.SC.GPU": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "LDC.64|MOV": {
+      "min_stall": 1,
+      "observations": 6,
+      "trusted": false
+    },
+    "LDC.64|MOVM.16.MT88": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|NOP": {
+      "min_stall": 15,
+      "observations": 2,
+      "trusted": false
+    },
+    "LDC.64|POPC": {
+      "min_stall": 1,
+      "observations": 5,
+      "trusted": false
+    },
+    "LDC.64|PRMT": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "LDC.64|S2R": {
+      "min_stall": 1,
+      "observations": 78,
+      "trusted": true
+    },
+    "LDC.64|SEL": {
+      "min_stall": 1,
+      "observations": 128,
+      "trusted": true
+    },
+    "LDC.64|SHF.L.U32": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "LDC.64|SHF.L.U64.HI": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "LDC.64|SHF.L.W.U32.HI": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "LDC.64|SHF.R.S32.HI": {
+      "min_stall": 1,
+      "observations": 15,
+      "trusted": true
+    },
+    "LDC.64|SHF.R.U32.HI": {
+      "min_stall": 1,
+      "observations": 8,
+      "trusted": true
+    },
+    "LDC.64|SHF.R.U64": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "LDC.64|SHFL.UP": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|STG.E": {
+      "min_stall": 2,
+      "observations": 159,
+      "trusted": true
+    },
+    "LDC.64|STG.E.64": {
+      "min_stall": 2,
+      "observations": 50,
+      "trusted": true
+    },
+    "LDC.64|STG.E.EF": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|STG.E.S16": {
+      "min_stall": 2,
+      "observations": 23,
+      "trusted": true
+    },
+    "LDC.64|STG.E.STRONG.GPU": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|STG.E.STRONG.SM": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|STG.E.STRONG.SYS": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.64|STG.E.U16": {
+      "min_stall": 2,
+      "observations": 50,
+      "trusted": true
+    },
+    "LDC.64|STSM.16.M88": {
+      "min_stall": 3,
+      "observations": 1,
+      "trusted": false
+    },
+    "LDC.64|STSM.16.MT88": {
+      "min_stall": 3,
+      "observations": 1,
+      "trusted": false
+    },
+    "LDC.64|UIADD3": {
+      "min_stall": 11,
+      "observations": 150,
+      "trusted": true
+    },
+    "LDC.64|ULEA": {
+      "min_stall": 1,
+      "observations": 6,
+      "trusted": false
+    },
+    "LDC.64|UMOV": {
+      "min_stall": 1,
+      "observations": 12,
+      "trusted": true
+    },
+    "LDC.64|VIADD.S32.ISAT": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "LDC.64|VIMNMX.S16x2": {
+      "min_stall": 1,
+      "observations": 6,
+      "trusted": false
+    },
+    "LDC.64|VIMNMX.S32": {
+      "min_stall": 1,
+      "observations": 10,
+      "trusted": true
+    },
+    "LDC.64|VIMNMX.U16x2": {
+      "min_stall": 1,
+      "observations": 6,
+      "trusted": false
+    },
+    "LDC.64|VIMNMX.U32": {
+      "min_stall": 1,
+      "observations": 10,
+      "trusted": true
+    },
+    "LDC.64|VOTE.ANY": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC.U16|STG.E.U16": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDCU.64|LDC.64": {
+      "min_stall": 3,
+      "observations": 1320,
+      "trusted": true
+    },
+    "LDCU.64|NOP": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC|LDC": {
+      "min_stall": 8,
+      "observations": 9,
+      "trusted": true
+    },
+    "LDC|LDC.64": {
+      "min_stall": 8,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDC|LDCU.64": {
+      "min_stall": 1,
+      "observations": 1295,
+      "trusted": true
+    },
+    "LDC|S2R": {
+      "min_stall": 1,
+      "observations": 25,
+      "trusted": true
+    },
+    "LDC|STG.E": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E.128|S2UR": {
+      "min_stall": 6,
+      "observations": 24,
+      "trusted": true
+    },
+    "LDG.E.64.CONSTANT|LDC.64": {
+      "min_stall": 6,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E.64|DADD": {
+      "min_stall": 2,
+      "observations": 2,
+      "trusted": false
+    },
+    "LDG.E.64|DFMA": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E.64|DMUL": {
+      "min_stall": 2,
+      "observations": 1,
+      "trusted": false
+    },
+    "LDG.E.64|DSETP.GE.AND": {
+      "min_stall": 2,
+      "observations": 6,
+      "trusted": false
+    },
+    "LDG.E.64|DSETP.GEU.AND": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E.64|DSETP.GT.AND": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E.64|DSETP.GTU.AND": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E.64|DSETP.NAN.AND": {
+      "min_stall": 2,
+      "observations": 6,
+      "trusted": false
+    },
+    "LDG.E.64|DSETP.NE.AND": {
+      "min_stall": 2,
+      "observations": 6,
+      "trusted": false
+    },
+    "LDG.E.64|DSETP.NEU.AND": {
+      "min_stall": 2,
+      "observations": 6,
+      "trusted": false
+    },
+    "LDG.E.64|HFMA2": {
+      "min_stall": 1,
+      "observations": 9,
+      "trusted": true
+    },
+    "LDG.E.64|IADD.64": {
+      "min_stall": 2,
+      "observations": 4,
+      "trusted": false
+    },
+    "LDG.E.64|IMAD": {
+      "min_stall": 2,
+      "observations": 8,
+      "trusted": true
+    },
+    "LDG.E.64|IMAD.WIDE.U32": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E.64|IMNMX.S64": {
+      "min_stall": 2,
+      "observations": 2,
+      "trusted": false
+    },
+    "LDG.E.64|IMNMX.U64": {
+      "min_stall": 2,
+      "observations": 2,
+      "trusted": false
+    },
+    "LDG.E.64|ISETP.GE.S64.AND": {
+      "min_stall": 2,
+      "observations": 6,
+      "trusted": false
+    },
+    "LDG.E.64|ISETP.GT.S64.AND": {
+      "min_stall": 2,
+      "observations": 6,
+      "trusted": false
+    },
+    "LDG.E.64|ISETP.NE.S64.AND": {
+      "min_stall": 2,
+      "observations": 6,
+      "trusted": false
+    },
+    "LDG.E.64|ISETP.NE.U32.AND": {
+      "min_stall": 2,
+      "observations": 1,
+      "trusted": false
+    },
+    "LDG.E.64|LDC.64": {
+      "min_stall": 1,
+      "observations": 177,
+      "trusted": true
+    },
+    "LDG.E.64|LDG.E.64": {
+      "min_stall": 4,
+      "observations": 123,
+      "trusted": true
+    },
+    "LDG.E.64|LOP3.LUT": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E.64|MOV": {
+      "min_stall": 1,
+      "observations": 6,
+      "trusted": false
+    },
+    "LDG.E.64|MOV.64": {
+      "min_stall": 1,
+      "observations": 1,
+      "trusted": false
+    },
+    "LDG.E.64|MUFU.RCP64H": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E.64|POPC": {
+      "min_stall": 2,
+      "observations": 1,
+      "trusted": false
+    },
+    "LDG.E.64|S2UR": {
+      "min_stall": 6,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E.64|SHF.L.U64.HI": {
+      "min_stall": 2,
+      "observations": 1,
+      "trusted": false
+    },
+    "LDG.E.64|SHF.R.U64": {
+      "min_stall": 2,
+      "observations": 1,
+      "trusted": false
+    },
+    "LDG.E.64|VOTEU.ANY": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E.CONSTANT|LDC.64": {
+      "min_stall": 6,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E.EF|LDC.64": {
+      "min_stall": 6,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E.LU|LDC.64": {
+      "min_stall": 6,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E.S16|IADD": {
+      "min_stall": 1,
+      "observations": 4,
+      "trusted": false
+    },
+    "LDG.E.S16|IMAD": {
+      "min_stall": 2,
+      "observations": 5,
+      "trusted": false
+    },
+    "LDG.E.S16|LDC.64": {
+      "min_stall": 2,
+      "observations": 45,
+      "trusted": true
+    },
+    "LDG.E.S16|LDG.E.S16": {
+      "min_stall": 4,
+      "observations": 21,
+      "trusted": true
+    },
+    "LDG.E.S16|VIMNMX.S16x2": {
+      "min_stall": 2,
+      "observations": 6,
+      "trusted": false
+    },
+    "LDG.E.STRONG.GPU|LDC.64": {
+      "min_stall": 6,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E.STRONG.SM|LDC.64": {
+      "min_stall": 6,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E.STRONG.SYS|LDC.64": {
+      "min_stall": 6,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E.U16|HADD2": {
+      "min_stall": 2,
+      "observations": 6,
+      "trusted": false
+    },
+    "LDG.E.U16|HFMA2": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E.U16|HMNMX2": {
+      "min_stall": 2,
+      "observations": 6,
+      "trusted": false
+    },
+    "LDG.E.U16|HMUL2": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E.U16|IADD": {
+      "min_stall": 1,
+      "observations": 4,
+      "trusted": false
+    },
+    "LDG.E.U16|IMAD": {
+      "min_stall": 2,
+      "observations": 5,
+      "trusted": false
+    },
+    "LDG.E.U16|LDC.64": {
+      "min_stall": 2,
+      "observations": 108,
+      "trusted": true
+    },
+    "LDG.E.U16|LDG.E.U16": {
+      "min_stall": 4,
+      "observations": 51,
+      "trusted": true
+    },
+    "LDG.E.U16|LOP3.LUT": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E.U16|S2UR": {
+      "min_stall": 6,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E.U16|VIMNMX.U16x2": {
+      "min_stall": 2,
+      "observations": 6,
+      "trusted": false
+    },
+    "LDG.E|BMSK": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E|CS2R": {
+      "min_stall": 1,
+      "observations": 1,
+      "trusted": false
+    },
+    "LDG.E|FADD": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E|FADD.FTZ": {
+      "min_stall": 2,
+      "observations": 1,
+      "trusted": false
+    },
+    "LDG.E|FADD.RM": {
+      "min_stall": 2,
+      "observations": 1,
+      "trusted": false
+    },
+    "LDG.E|FADD.RP": {
+      "min_stall": 2,
+      "observations": 1,
+      "trusted": false
+    },
+    "LDG.E|FADD.RZ": {
+      "min_stall": 2,
+      "observations": 1,
+      "trusted": false
+    },
+    "LDG.E|FFMA": {
+      "min_stall": 1,
+      "observations": 8,
+      "trusted": true
+    },
+    "LDG.E|FMNMX": {
+      "min_stall": 1,
+      "observations": 5,
+      "trusted": false
+    },
+    "LDG.E|FMUL": {
+      "min_stall": 2,
+      "observations": 1,
+      "trusted": false
+    },
+    "LDG.E|FMUL.SAT": {
+      "min_stall": 2,
+      "observations": 1,
+      "trusted": false
+    },
+    "LDG.E|FSETP.GE.AND": {
+      "min_stall": 2,
+      "observations": 6,
+      "trusted": false
+    },
+    "LDG.E|FSETP.GEU.AND": {
+      "min_stall": 2,
+      "observations": 9,
+      "trusted": true
+    },
+    "LDG.E|FSETP.GT.AND": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E|FSETP.GTU.AND": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E|FSETP.NAN.AND": {
+      "min_stall": 2,
+      "observations": 6,
+      "trusted": false
+    },
+    "LDG.E|FSETP.NE.AND": {
+      "min_stall": 2,
+      "observations": 6,
+      "trusted": false
+    },
+    "LDG.E|FSETP.NEU.AND": {
+      "min_stall": 2,
+      "observations": 6,
+      "trusted": false
+    },
+    "LDG.E|HFMA2": {
+      "min_stall": 1,
+      "observations": 25,
+      "trusted": true
+    },
+    "LDG.E|HMMA.16816.F16": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E|HMMA.16816.F32": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E|HMMA.16816.F32.BF16": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E|HMMA.1684.F32.TF32": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E|HMMA.1688.F32": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E|HMMA.1688.F32.BF16": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E|HMMA.1688.F32.TF32": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E|HMMA.SP.16832.F32": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E|I2F.U32.RP": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E|IABS": {
+      "min_stall": 1,
+      "observations": 6,
+      "trusted": false
+    },
+    "LDG.E|IADD": {
+      "min_stall": 2,
+      "observations": 7,
+      "trusted": false
+    },
+    "LDG.E|IDP.4A.S8.S8": {
+      "min_stall": 2,
+      "observations": 1,
+      "trusted": false
+    },
+    "LDG.E|IMAD": {
+      "min_stall": 2,
+      "observations": 7,
+      "trusted": false
+    },
+    "LDG.E|IMAD.HI": {
+      "min_stall": 2,
+      "observations": 1,
+      "trusted": false
+    },
+    "LDG.E|IMAD.HI.U32": {
+      "min_stall": 2,
+      "observations": 1,
+      "trusted": false
+    },
+    "LDG.E|IMAD.SHL.U32": {
+      "min_stall": 1,
+      "observations": 1,
+      "trusted": false
+    },
+    "LDG.E|IMMA.16816.S8.S8": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E|IMMA.16832.S8.S8": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E|IMMA.16832.S8.U8": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E|IMMA.16832.U8.U8": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E|IMMA.SP.16864.S8.S8": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E|ISETP.GE.AND": {
+      "min_stall": 2,
+      "observations": 6,
+      "trusted": false
+    },
+    "LDG.E|ISETP.GE.U32.AND": {
+      "min_stall": 2,
+      "observations": 6,
+      "trusted": false
+    },
+    "LDG.E|ISETP.GT.AND": {
+      "min_stall": 2,
+      "observations": 6,
+      "trusted": false
+    },
+    "LDG.E|ISETP.GT.U32.AND": {
+      "min_stall": 2,
+      "observations": 10,
+      "trusted": true
+    },
+    "LDG.E|ISETP.NE.AND": {
+      "min_stall": 2,
+      "observations": 6,
+      "trusted": false
+    },
+    "LDG.E|ISETP.NE.U32.AND": {
+      "min_stall": 2,
+      "observations": 6,
+      "trusted": false
+    },
+    "LDG.E|LDC.64": {
+      "min_stall": 1,
+      "observations": 342,
+      "trusted": true
+    },
+    "LDG.E|LDG.E": {
+      "min_stall": 4,
+      "observations": 1752,
+      "trusted": true
+    },
+    "LDG.E|LDG.E.64": {
+      "min_stall": 4,
+      "observations": 6,
+      "trusted": false
+    },
+    "LDG.E|LOP3.LUT": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E|MEMBAR.SC.GPU": {
+      "min_stall": 1,
+      "observations": 1,
+      "trusted": false
+    },
+    "LDG.E|MOV": {
+      "min_stall": 1,
+      "observations": 39,
+      "trusted": true
+    },
+    "LDG.E|MUFU.RCP": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E|OMMA.SF.16864.F32.E2M1.E2M1.E8": {
+      "min_stall": 2,
+      "observations": 6,
+      "trusted": false
+    },
+    "LDG.E|OMMA.SF.16864.F32.E2M1.E2M1.UE4M3.4X": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E|PRMT": {
+      "min_stall": 2,
+      "observations": 1,
+      "trusted": false
+    },
+    "LDG.E|QMMA.16832.F32.E2M1.E2M1": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E|QMMA.16832.F32.E2M1.E2M3": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E|QMMA.16832.F32.E2M1.E3M2": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E|QMMA.16832.F32.E2M1.E4M3": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E|QMMA.16832.F32.E2M1.E5M2": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E|QMMA.16832.F32.E2M3.E2M1": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E|QMMA.16832.F32.E2M3.E2M3": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E|QMMA.16832.F32.E2M3.E3M2": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E|QMMA.16832.F32.E2M3.E4M3": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E|QMMA.16832.F32.E2M3.E5M2": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E|QMMA.16832.F32.E3M2.E2M1": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E|QMMA.16832.F32.E3M2.E2M3": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E|QMMA.16832.F32.E3M2.E3M2": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E|QMMA.16832.F32.E3M2.E4M3": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E|QMMA.16832.F32.E3M2.E5M2": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E|QMMA.16832.F32.E4M3.E2M1": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E|QMMA.16832.F32.E4M3.E2M3": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E|QMMA.16832.F32.E4M3.E3M2": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E|QMMA.16832.F32.E4M3.E4M3": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E|QMMA.16832.F32.E4M3.E5M2": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E|QMMA.16832.F32.E5M2.E2M1": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E|QMMA.16832.F32.E5M2.E2M3": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E|QMMA.16832.F32.E5M2.E3M2": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E|QMMA.16832.F32.E5M2.E4M3": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E|QMMA.16832.F32.E5M2.E5M2": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E|QMMA.SF.16832.F32.E2M1.E2M1.E8": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E|QMMA.SF.16832.F32.E2M3.E2M3.E8": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E|QMMA.SF.16832.F32.E3M2.E3M2.E8": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E|QMMA.SF.16832.F32.E4M3.E4M3.E8": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E|QMMA.SF.16832.F32.E5M2.E5M2.E8": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E|QMMA.SP.16864.F32.E4M3.E4M3": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDG.E|S2UR": {
+      "min_stall": 2,
+      "observations": 26,
+      "trusted": true
+    },
+    "LDG.E|SHF.L.U32": {
+      "min_stall": 2,
+      "observations": 1,
+      "trusted": false
+    },
+    "LDG.E|SHF.L.W.U32.HI": {
+      "min_stall": 2,
+      "observations": 1,
+      "trusted": false
+    },
+    "LDG.E|SHF.R.U32.HI": {
+      "min_stall": 2,
+      "observations": 1,
+      "trusted": false
+    },
+    "LDG.E|STS": {
+      "min_stall": 4,
+      "observations": 4,
+      "trusted": false
+    },
+    "LDG.E|ULEA": {
+      "min_stall": 1,
+      "observations": 1,
+      "trusted": false
+    },
+    "LDG.E|VIADD.S32.ISAT": {
+      "min_stall": 2,
+      "observations": 1,
+      "trusted": false
+    },
+    "LDG.E|VIMNMX.S32": {
+      "min_stall": 2,
+      "observations": 2,
+      "trusted": false
+    },
+    "LDG.E|VIMNMX.U32": {
+      "min_stall": 2,
+      "observations": 2,
+      "trusted": false
+    },
+    "LDG.E|VOTEU.ANY": {
+      "min_stall": 1,
+      "observations": 24,
+      "trusted": true
+    },
+    "LDGDEPBAR|DEPBAR.LE": {
+      "min_stall": 1,
+      "observations": 12,
+      "trusted": true
+    },
+    "LDGSTS.E.128|LDGDEPBAR": {
+      "min_stall": 4,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDGSTS.E.64|LDGDEPBAR": {
+      "min_stall": 4,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDGSTS.E.BYPASS.128|LDGDEPBAR": {
+      "min_stall": 4,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDGSTS.E|LDGDEPBAR": {
+      "min_stall": 4,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDS.64|BAR.SYNC.DEFER_BLOCKING": {
+      "min_stall": 1,
+      "observations": 6,
+      "trusted": false
+    },
+    "LDS.64|FFMA": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDS.64|IADD": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDS.64|LDS.64": {
+      "min_stall": 4,
+      "observations": 9,
+      "trusted": true
+    },
+    "LDS.64|STG.E.64": {
+      "min_stall": 4,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDS.U16|STG.E.U16": {
+      "min_stall": 4,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDSM.16.M88.2|STG.E": {
+      "min_stall": 4,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDSM.16.M88.4|STG.E": {
+      "min_stall": 4,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDSM.16.M88|STG.E": {
+      "min_stall": 4,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDSM.16.MT88.2|STG.E": {
+      "min_stall": 4,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDSM.16.MT88.4|STG.E": {
+      "min_stall": 4,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDSM.16.MT88|STG.E": {
+      "min_stall": 4,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDSM.8.MT1616.2|STG.E": {
+      "min_stall": 4,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDSM.8.MT1616|STG.E": {
+      "min_stall": 4,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDS|IMAD": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDS|LDGSTS.E": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDS|LDGSTS.E.128": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDS|LDGSTS.E.64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDS|LDGSTS.E.BYPASS.128": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "LDS|LDS": {
+      "min_stall": 1,
+      "observations": 24,
+      "trusted": true
+    },
+    "LDS|STG.E": {
+      "min_stall": 4,
+      "observations": 18,
+      "trusted": true
+    },
+    "LEA|IADD": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "LEA|LDC.64": {
+      "min_stall": 2,
+      "observations": 14,
+      "trusted": true
+    },
+    "LEA|LDS": {
+      "min_stall": 5,
+      "observations": 12,
+      "trusted": true
+    },
+    "LEA|LEA": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "LEA|MOV": {
+      "min_stall": 1,
+      "observations": 24,
+      "trusted": true
+    },
+    "LEA|STG.E": {
+      "min_stall": 1,
+      "observations": 4,
+      "trusted": false
+    },
+    "LEA|STS": {
+      "min_stall": 3,
+      "observations": 17,
+      "trusted": true
+    },
+    "LEA|STS.64": {
+      "min_stall": 5,
+      "observations": 3,
+      "trusted": false
+    },
+    "LEA|STS.U16": {
+      "min_stall": 5,
+      "observations": 3,
+      "trusted": false
+    },
+    "LOP3.LUT|BRA": {
+      "min_stall": 1,
+      "observations": 25,
+      "trusted": true
+    },
+    "LOP3.LUT|DFMA": {
+      "min_stall": 6,
+      "observations": 3,
+      "trusted": false
+    },
+    "LOP3.LUT|DMUL": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "LOP3.LUT|FFMA.RP": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "LOP3.LUT|HFMA2": {
+      "min_stall": 1,
+      "observations": 1,
+      "trusted": false
+    },
+    "LOP3.LUT|IADD": {
+      "min_stall": 1,
+      "observations": 35,
+      "trusted": true
+    },
+    "LOP3.LUT|IMAD": {
+      "min_stall": 7,
+      "observations": 8,
+      "trusted": true
+    },
+    "LOP3.LUT|IMAD.SHL.U32": {
+      "min_stall": 1,
+      "observations": 95,
+      "trusted": true
+    },
+    "LOP3.LUT|IMAD.U32": {
+      "min_stall": 1,
+      "observations": 16,
+      "trusted": true
+    },
+    "LOP3.LUT|IMMA.16816.S8.S8": {
+      "min_stall": 2,
+      "observations": 5,
+      "trusted": false
+    },
+    "LOP3.LUT|IMMA.16832.S8.S8": {
+      "min_stall": 1,
+      "observations": 5,
+      "trusted": false
+    },
+    "LOP3.LUT|IMMA.16832.U8.U8": {
+      "min_stall": 4,
+      "observations": 4,
+      "trusted": false
+    },
+    "LOP3.LUT|ISETP.EQ.OR": {
+      "min_stall": 4,
+      "observations": 3,
+      "trusted": false
+    },
+    "LOP3.LUT|ISETP.GE.U32.AND": {
+      "min_stall": 5,
+      "observations": 2,
+      "trusted": false
+    },
+    "LOP3.LUT|ISETP.GT.AND": {
+      "min_stall": 5,
+      "observations": 2,
+      "trusted": false
+    },
+    "LOP3.LUT|LDC.64": {
+      "min_stall": 2,
+      "observations": 12,
+      "trusted": true
+    },
+    "LOP3.LUT|LEA": {
+      "min_stall": 4,
+      "observations": 3,
+      "trusted": false
+    },
+    "LOP3.LUT|LOP3.LUT": {
+      "min_stall": 2,
+      "observations": 352,
+      "trusted": true
+    },
+    "LOP3.LUT|MOV": {
+      "min_stall": 1,
+      "observations": 52,
+      "trusted": true
+    },
+    "LOP3.LUT|MOVM.U4TO8.M832": {
+      "min_stall": 1,
+      "observations": 37,
+      "trusted": true
+    },
+    "LOP3.LUT|MUFU.RCP": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "LOP3.LUT|NOP": {
+      "min_stall": 15,
+      "observations": 3,
+      "trusted": false
+    },
+    "LOP3.LUT|PLOP3.LUT": {
+      "min_stall": 4,
+      "observations": 6,
+      "trusted": false
+    },
+    "LOP3.LUT|POPC": {
+      "min_stall": 4,
+      "observations": 9,
+      "trusted": true
+    },
+    "LOP3.LUT|PRMT": {
+      "min_stall": 2,
+      "observations": 8,
+      "trusted": true
+    },
+    "LOP3.LUT|SEL": {
+      "min_stall": 1,
+      "observations": 49,
+      "trusted": true
+    },
+    "LOP3.LUT|SHF.L.U32": {
+      "min_stall": 4,
+      "observations": 1,
+      "trusted": false
+    },
+    "LOP3.LUT|SHF.R.S32.HI": {
+      "min_stall": 2,
+      "observations": 86,
+      "trusted": true
+    },
+    "LOP3.LUT|SHF.R.U32.HI": {
+      "min_stall": 2,
+      "observations": 61,
+      "trusted": true
+    },
+    "LOP3.LUT|STG.E": {
+      "min_stall": 5,
+      "observations": 32,
+      "trusted": true
+    },
+    "LOP3.LUT|STG.E.64": {
+      "min_stall": 5,
+      "observations": 24,
+      "trusted": true
+    },
+    "LOP3.LUT|STG.E.U16": {
+      "min_stall": 5,
+      "observations": 18,
+      "trusted": true
+    },
+    "LOP3.LUT|UIADD3": {
+      "min_stall": 11,
+      "observations": 2,
+      "trusted": false
+    },
+    "MATCH.ANY|STG.E": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "MEMBAR.SC.GPU|ERRBAR": {
+      "min_stall": 6,
+      "observations": 3,
+      "trusted": false
+    },
+    "MOV.64|BRA": {
+      "min_stall": 12,
+      "observations": 3,
+      "trusted": false
+    },
+    "MOV.64|UMOV": {
+      "min_stall": 2,
+      "observations": 1,
+      "trusted": false
+    },
+    "MOVM.16.MT88|STG.E": {
+      "min_stall": 4,
+      "observations": 3,
+      "trusted": false
+    },
+    "MOVM.U4TO8.M832|IMMA.16832.U8.U8": {
+      "min_stall": 1,
+      "observations": 21,
+      "trusted": true
+    },
+    "MOVM.U4TO8.M832|LOP3.LUT": {
+      "min_stall": 1,
+      "observations": 31,
+      "trusted": true
+    },
+    "MOVM.U4TO8.M832|MOV": {
+      "min_stall": 1,
+      "observations": 39,
+      "trusted": true
+    },
+    "MOVM.U4TO8.M832|MOVM.U4TO8.M832": {
+      "min_stall": 4,
+      "observations": 23,
+      "trusted": true
+    },
+    "MOVM.U4TO8.M832|SHF.R.U32.HI": {
+      "min_stall": 1,
+      "observations": 27,
+      "trusted": true
+    },
+    "MOVM.U4TO8.M832|UIADD3": {
+      "min_stall": 11,
+      "observations": 3,
+      "trusted": false
+    },
+    "MOV|BRA": {
+      "min_stall": 1,
+      "observations": 23,
+      "trusted": true
+    },
+    "MOV|CALL.REL.NOINC": {
+      "min_stall": 7,
+      "observations": 36,
+      "trusted": true
+    },
+    "MOV|CS2R": {
+      "min_stall": 1,
+      "observations": 6,
+      "trusted": false
+    },
+    "MOV|DFMA": {
+      "min_stall": 6,
+      "observations": 2,
+      "trusted": false
+    },
+    "MOV|DMUL": {
+      "min_stall": 5,
+      "observations": 2,
+      "trusted": false
+    },
+    "MOV|DMUL.RP": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "MOV|DSETP.MAX.AND": {
+      "min_stall": 1,
+      "observations": 6,
+      "trusted": false
+    },
+    "MOV|DSETP.MIN.AND": {
+      "min_stall": 1,
+      "observations": 6,
+      "trusted": false
+    },
+    "MOV|FFMA": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "MOV|FSEL": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "MOV|FSETP.GEU.AND": {
+      "min_stall": 1,
+      "observations": 1,
+      "trusted": false
+    },
+    "MOV|FSETP.NEU.AND": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "MOV|HFMA2": {
+      "min_stall": 1,
+      "observations": 5,
+      "trusted": false
+    },
+    "MOV|IADD": {
+      "min_stall": 1,
+      "observations": 13,
+      "trusted": true
+    },
+    "MOV|IADD3": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "MOV|IMAD": {
+      "min_stall": 12,
+      "observations": 1,
+      "trusted": false
+    },
+    "MOV|IMAD.HI.U32": {
+      "min_stall": 5,
+      "observations": 4,
+      "trusted": false
+    },
+    "MOV|IMMA.16832.U8.U8": {
+      "min_stall": 7,
+      "observations": 9,
+      "trusted": true
+    },
+    "MOV|ISETP.GE.U32.AND": {
+      "min_stall": 2,
+      "observations": 2,
+      "trusted": false
+    },
+    "MOV|ISETP.LE.AND": {
+      "min_stall": 5,
+      "observations": 1,
+      "trusted": false
+    },
+    "MOV|LDC.64": {
+      "min_stall": 2,
+      "observations": 11,
+      "trusted": true
+    },
+    "MOV|LDCU.64": {
+      "min_stall": 1,
+      "observations": 1,
+      "trusted": false
+    },
+    "MOV|LOP3.LUT": {
+      "min_stall": 1,
+      "observations": 43,
+      "trusted": true
+    },
+    "MOV|MOV": {
+      "min_stall": 1,
+      "observations": 680,
+      "trusted": true
+    },
+    "MOV|MOVM.U4TO8.M832": {
+      "min_stall": 1,
+      "observations": 30,
+      "trusted": true
+    },
+    "MOV|MUFU.RCP64H": {
+      "min_stall": 1,
+      "observations": 7,
+      "trusted": false
+    },
+    "MOV|NOP": {
+      "min_stall": 15,
+      "observations": 2,
+      "trusted": false
+    },
+    "MOV|PLOP3.LUT": {
+      "min_stall": 4,
+      "observations": 2,
+      "trusted": false
+    },
+    "MOV|PRMT": {
+      "min_stall": 1,
+      "observations": 4,
+      "trusted": false
+    },
+    "MOV|REDG.E.AND.STRONG.GPU": {
+      "min_stall": 10,
+      "observations": 3,
+      "trusted": false
+    },
+    "MOV|REDG.E.MAX.STRONG.GPU": {
+      "min_stall": 10,
+      "observations": 3,
+      "trusted": false
+    },
+    "MOV|REDG.E.MIN.STRONG.GPU": {
+      "min_stall": 10,
+      "observations": 3,
+      "trusted": false
+    },
+    "MOV|REDG.E.OR.STRONG.GPU": {
+      "min_stall": 10,
+      "observations": 3,
+      "trusted": false
+    },
+    "MOV|REDG.E.XOR.STRONG.GPU": {
+      "min_stall": 10,
+      "observations": 3,
+      "trusted": false
+    },
+    "MOV|RET.REL.NODEC": {
+      "min_stall": 2,
+      "observations": 13,
+      "trusted": true
+    },
+    "MOV|S2R": {
+      "min_stall": 1,
+      "observations": 14,
+      "trusted": true
+    },
+    "MOV|SEL": {
+      "min_stall": 1,
+      "observations": 5,
+      "trusted": false
+    },
+    "MOV|SHF.R.U32.HI": {
+      "min_stall": 1,
+      "observations": 19,
+      "trusted": true
+    },
+    "MOV|STG.E.64": {
+      "min_stall": 5,
+      "observations": 4,
+      "trusted": false
+    },
+    "MOV|STS.128": {
+      "min_stall": 1,
+      "observations": 40,
+      "trusted": true
+    },
+    "MOV|UIADD3": {
+      "min_stall": 4,
+      "observations": 11,
+      "trusted": true
+    },
+    "MOV|VIMNMX.S32": {
+      "min_stall": 3,
+      "observations": 1,
+      "trusted": false
+    },
+    "MUFU.COS|STG.E": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "MUFU.EX2|FMUL": {
+      "min_stall": 1,
+      "observations": 9,
+      "trusted": true
+    },
+    "MUFU.EX2|HFMA2": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "MUFU.EX2|MUFU.EX2": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "MUFU.LG2|FADD": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "MUFU.RCP64H|DFMA": {
+      "min_stall": 3,
+      "observations": 3,
+      "trusted": false
+    },
+    "MUFU.RCP64H|FSETP.GEU.AND": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "MUFU.RCP64H|IADD": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "MUFU.RCP64H|LOP3.LUT": {
+      "min_stall": 1,
+      "observations": 1,
+      "trusted": false
+    },
+    "MUFU.RCP64H|MOV": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "MUFU.RCP64H|NOP": {
+      "min_stall": 15,
+      "observations": 3,
+      "trusted": false
+    },
+    "MUFU.RCP|FADD.FTZ": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "MUFU.RCP|FCHK": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "MUFU.RCP|FMUL": {
+      "min_stall": 2,
+      "observations": 6,
+      "trusted": false
+    },
+    "MUFU.RCP|IADD": {
+      "min_stall": 1,
+      "observations": 12,
+      "trusted": true
+    },
+    "MUFU.RSQ|BRA": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "MUFU.RSQ|FMUL": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "MUFU.RSQ|FMUL.FTZ": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "MUFU.RSQ|ISETP.GT.U32.AND": {
+      "min_stall": 4,
+      "observations": 3,
+      "trusted": false
+    },
+    "MUFU.SIN|STG.E": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "MUFU.SQRT|FMUL": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "NOP|CS2R.32": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "NOP|DFMA": {
+      "min_stall": 1,
+      "observations": 94,
+      "trusted": true
+    },
+    "NOP|DMUL": {
+      "min_stall": 4,
+      "observations": 10,
+      "trusted": true
+    },
+    "NOP|DMUL.RP": {
+      "min_stall": 12,
+      "observations": 1,
+      "trusted": false
+    },
+    "NOP|NOP": {
+      "min_stall": 15,
+      "observations": 312,
+      "trusted": true
+    },
+    "OMMA.SF.16864.F32.E2M1.E2M1.E8|LDC.64": {
+      "min_stall": 1,
+      "observations": 6,
+      "trusted": false
+    },
+    "OMMA.SF.16864.F32.E2M1.E2M1.UE4M3.4X|LDC.64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "PLOP3.LUT|BRA": {
+      "min_stall": 13,
+      "observations": 9,
+      "trusted": true
+    },
+    "PLOP3.LUT|HFMA2": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "PLOP3.LUT|IADD": {
+      "min_stall": 1,
+      "observations": 16,
+      "trusted": true
+    },
+    "PLOP3.LUT|IADD3": {
+      "min_stall": 4,
+      "observations": 2,
+      "trusted": false
+    },
+    "PLOP3.LUT|LOP3.LUT": {
+      "min_stall": 2,
+      "observations": 2,
+      "trusted": false
+    },
+    "PLOP3.LUT|MOV": {
+      "min_stall": 1,
+      "observations": 6,
+      "trusted": false
+    },
+    "PLOP3.LUT|SEL": {
+      "min_stall": 5,
+      "observations": 1,
+      "trusted": false
+    },
+    "PLOP3.LUT|SHF.R.U32.HI": {
+      "min_stall": 2,
+      "observations": 2,
+      "trusted": false
+    },
+    "POPC|IADD": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "POPC|POPC": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "POPC|SHFL.IDX": {
+      "min_stall": 1,
+      "observations": 9,
+      "trusted": true
+    },
+    "POPC|STG.E": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "PRMT|IMAD.SHL.U32": {
+      "min_stall": 1,
+      "observations": 4,
+      "trusted": false
+    },
+    "PRMT|LDC.64": {
+      "min_stall": 2,
+      "observations": 7,
+      "trusted": false
+    },
+    "PRMT|LOP3.LUT": {
+      "min_stall": 2,
+      "observations": 13,
+      "trusted": true
+    },
+    "PRMT|MOV": {
+      "min_stall": 1,
+      "observations": 1,
+      "trusted": false
+    },
+    "PRMT|PRMT": {
+      "min_stall": 2,
+      "observations": 6,
+      "trusted": false
+    },
+    "PRMT|RET.REL.NODEC": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "PRMT|SEL": {
+      "min_stall": 1,
+      "observations": 4,
+      "trusted": false
+    },
+    "PRMT|SHF.R.U32.HI": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "PRMT|SHFL.IDX": {
+      "min_stall": 4,
+      "observations": 2,
+      "trusted": false
+    },
+    "PRMT|STG.E": {
+      "min_stall": 5,
+      "observations": 2,
+      "trusted": false
+    },
+    "QMMA.16832.F32.E2M1.E2M1|LDC.64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "QMMA.16832.F32.E2M1.E2M3|LDC.64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "QMMA.16832.F32.E2M1.E3M2|LDC.64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "QMMA.16832.F32.E2M1.E4M3|LDC.64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "QMMA.16832.F32.E2M1.E5M2|LDC.64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "QMMA.16832.F32.E2M3.E2M1|LDC.64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "QMMA.16832.F32.E2M3.E2M3|LDC.64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "QMMA.16832.F32.E2M3.E3M2|LDC.64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "QMMA.16832.F32.E2M3.E4M3|LDC.64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "QMMA.16832.F32.E2M3.E5M2|LDC.64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "QMMA.16832.F32.E3M2.E2M1|LDC.64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "QMMA.16832.F32.E3M2.E2M3|LDC.64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "QMMA.16832.F32.E3M2.E3M2|LDC.64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "QMMA.16832.F32.E3M2.E4M3|LDC.64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "QMMA.16832.F32.E3M2.E5M2|LDC.64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "QMMA.16832.F32.E4M3.E2M1|LDC.64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "QMMA.16832.F32.E4M3.E2M3|LDC.64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "QMMA.16832.F32.E4M3.E3M2|LDC.64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "QMMA.16832.F32.E4M3.E4M3|LDC.64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "QMMA.16832.F32.E4M3.E5M2|LDC.64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "QMMA.16832.F32.E5M2.E2M1|LDC.64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "QMMA.16832.F32.E5M2.E2M3|LDC.64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "QMMA.16832.F32.E5M2.E3M2|LDC.64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "QMMA.16832.F32.E5M2.E4M3|LDC.64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "QMMA.16832.F32.E5M2.E5M2|LDC.64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "QMMA.SF.16832.F32.E2M1.E2M1.E8|LDC.64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "QMMA.SF.16832.F32.E2M3.E2M3.E8|LDC.64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "QMMA.SF.16832.F32.E3M2.E3M2.E8|LDC.64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "QMMA.SF.16832.F32.E4M3.E4M3.E8|LDC.64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "QMMA.SF.16832.F32.E5M2.E5M2.E8|LDC.64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "QMMA.SP.16864.F32.E4M3.E4M3|LDC.64": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "REDG.E.ADD.STRONG.GPU|EXIT": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "REDG.E.AND.STRONG.GPU|EXIT": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "REDG.E.MAX.STRONG.GPU|EXIT": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "REDG.E.MIN.STRONG.GPU|EXIT": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "REDG.E.OR.STRONG.GPU|EXIT": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "REDG.E.XOR.STRONG.GPU|EXIT": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "REDUX.MAX|MOV": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "REDUX.MIN|MOV": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "REDUX.OR|MOV": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "REDUX.XOR|MOV": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "REDUX|MOV": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "S2R|FLO.U32": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "S2R|IMAD": {
+      "min_stall": 2,
+      "observations": 9,
+      "trusted": true
+    },
+    "S2R|IMAD.SHL.U32": {
+      "min_stall": 2,
+      "observations": 6,
+      "trusted": false
+    },
+    "S2R|LDCU.64": {
+      "min_stall": 1,
+      "observations": 12,
+      "trusted": true
+    },
+    "S2R|LEA": {
+      "min_stall": 2,
+      "observations": 18,
+      "trusted": true
+    },
+    "S2R|LOP3.LUT": {
+      "min_stall": 2,
+      "observations": 9,
+      "trusted": true
+    },
+    "S2R|S2UR": {
+      "min_stall": 7,
+      "observations": 13,
+      "trusted": true
+    },
+    "S2R|UFLO.U32": {
+      "min_stall": 1,
+      "observations": 21,
+      "trusted": true
+    },
+    "S2R|UIADD3": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "S2R|ULEA": {
+      "min_stall": 1,
+      "observations": 45,
+      "trusted": true
+    },
+    "S2R|UPOPC": {
+      "min_stall": 1,
+      "observations": 7,
+      "trusted": false
+    },
+    "S2UR|LDCU.64": {
+      "min_stall": 1,
+      "observations": 12,
+      "trusted": true
+    },
+    "S2UR|UMOV": {
+      "min_stall": 1,
+      "observations": 57,
+      "trusted": true
+    },
+    "SEL|FLO.U32": {
+      "min_stall": 6,
+      "observations": 3,
+      "trusted": false
+    },
+    "SEL|FSEL": {
+      "min_stall": 2,
+      "observations": 4,
+      "trusted": false
+    },
+    "SEL|FSETP.GEU.AND": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "SEL|ISETP.LT.AND": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "SEL|ISETP.NE.AND": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "SEL|LOP3.LUT": {
+      "min_stall": 1,
+      "observations": 37,
+      "trusted": true
+    },
+    "SEL|MOV": {
+      "min_stall": 1,
+      "observations": 12,
+      "trusted": true
+    },
+    "SEL|PRMT": {
+      "min_stall": 1,
+      "observations": 9,
+      "trusted": true
+    },
+    "SEL|RET.REL.NODEC": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "SEL|SEL": {
+      "min_stall": 2,
+      "observations": 13,
+      "trusted": true
+    },
+    "SEL|SHFL.IDX": {
+      "min_stall": 3,
+      "observations": 5,
+      "trusted": false
+    },
+    "SEL|STG.E": {
+      "min_stall": 5,
+      "observations": 126,
+      "trusted": true
+    },
+    "SEL|STG.E.64": {
+      "min_stall": 5,
+      "observations": 5,
+      "trusted": false
+    },
+    "SEL|VIMNMX.S32": {
+      "min_stall": 3,
+      "observations": 3,
+      "trusted": false
+    },
+    "SGXT.U32|STG.E": {
+      "min_stall": 5,
+      "observations": 3,
+      "trusted": false
+    },
+    "SHF.L.U32|FSETP.NEU.FTZ.AND": {
+      "min_stall": 2,
+      "observations": 2,
+      "trusted": false
+    },
+    "SHF.L.U32|LDC.64": {
+      "min_stall": 2,
+      "observations": 2,
+      "trusted": false
+    },
+    "SHF.L.U32|SHF.R.U32.HI": {
+      "min_stall": 2,
+      "observations": 1,
+      "trusted": false
+    },
+    "SHF.L.U32|STG.E": {
+      "min_stall": 5,
+      "observations": 2,
+      "trusted": false
+    },
+    "SHF.L.U32|STG.E.64": {
+      "min_stall": 5,
+      "observations": 2,
+      "trusted": false
+    },
+    "SHF.L.U64.HI|SHF.L.U32": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "SHF.L.W.U32.HI|LDC.64": {
+      "min_stall": 2,
+      "observations": 1,
+      "trusted": false
+    },
+    "SHF.L.W.U32.HI|STG.E": {
+      "min_stall": 5,
+      "observations": 2,
+      "trusted": false
+    },
+    "SHF.R.S32.HI|IMAD.SHL.U32": {
+      "min_stall": 1,
+      "observations": 60,
+      "trusted": true
+    },
+    "SHF.R.S32.HI|IMAD.U32": {
+      "min_stall": 1,
+      "observations": 10,
+      "trusted": true
+    },
+    "SHF.R.S32.HI|LOP3.LUT": {
+      "min_stall": 2,
+      "observations": 100,
+      "trusted": true
+    },
+    "SHF.R.S32.HI|SHF.R.S32.HI": {
+      "min_stall": 2,
+      "observations": 46,
+      "trusted": true
+    },
+    "SHF.R.S32.HI|STG.E.64": {
+      "min_stall": 5,
+      "observations": 12,
+      "trusted": true
+    },
+    "SHF.R.S32.HI|STG.E.S16": {
+      "min_stall": 5,
+      "observations": 3,
+      "trusted": false
+    },
+    "SHF.R.U32.HI|IMAD.SHL.U32": {
+      "min_stall": 1,
+      "observations": 19,
+      "trusted": true
+    },
+    "SHF.R.U32.HI|IMAD.U32": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "SHF.R.U32.HI|IMMA.16832.U8.U8": {
+      "min_stall": 2,
+      "observations": 4,
+      "trusted": false
+    },
+    "SHF.R.U32.HI|ISETP.NE.AND": {
+      "min_stall": 3,
+      "observations": 1,
+      "trusted": false
+    },
+    "SHF.R.U32.HI|LDC.64": {
+      "min_stall": 2,
+      "observations": 2,
+      "trusted": false
+    },
+    "SHF.R.U32.HI|LOP3.LUT": {
+      "min_stall": 2,
+      "observations": 43,
+      "trusted": true
+    },
+    "SHF.R.U32.HI|MOV": {
+      "min_stall": 1,
+      "observations": 31,
+      "trusted": true
+    },
+    "SHF.R.U32.HI|MOVM.U4TO8.M832": {
+      "min_stall": 1,
+      "observations": 28,
+      "trusted": true
+    },
+    "SHF.R.U32.HI|PLOP3.LUT": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "SHF.R.U32.HI|SEL": {
+      "min_stall": 3,
+      "observations": 3,
+      "trusted": false
+    },
+    "SHF.R.U32.HI|SGXT.U32": {
+      "min_stall": 4,
+      "observations": 3,
+      "trusted": false
+    },
+    "SHF.R.U32.HI|SHF.R.U32.HI": {
+      "min_stall": 2,
+      "observations": 37,
+      "trusted": true
+    },
+    "SHF.R.U32.HI|STG.E": {
+      "min_stall": 5,
+      "observations": 2,
+      "trusted": false
+    },
+    "SHF.R.U32.HI|STG.E.64": {
+      "min_stall": 5,
+      "observations": 2,
+      "trusted": false
+    },
+    "SHF.R.U32.HI|STG.E.U16": {
+      "min_stall": 5,
+      "observations": 3,
+      "trusted": false
+    },
+    "SHF.R.U64|SHF.R.U32.HI": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "SHFL.IDX|IMAD": {
+      "min_stall": 2,
+      "observations": 6,
+      "trusted": false
+    },
+    "SHFL.IDX|IMAD.WIDE.U32": {
+      "min_stall": 2,
+      "observations": 3,
+      "trusted": false
+    },
+    "SHFL.IDX|PRMT": {
+      "min_stall": 2,
+      "observations": 1,
+      "trusted": false
+    },
+    "SHFL.IDX|SEL": {
+      "min_stall": 1,
+      "observations": 1,
+      "trusted": false
+    },
+    "SHFL.IDX|SHF.R.U32.HI": {
+      "min_stall": 1,
+      "observations": 5,
+      "trusted": false
+    },
+    "SHFL.IDX|SHFL.IDX": {
+      "min_stall": 4,
+      "observations": 20,
+      "trusted": true
+    },
+    "SHFL.UP|IADD": {
+      "min_stall": 2,
+      "observations": 15,
+      "trusted": true
+    },
+    "STG.E.64|EXIT": {
+      "min_stall": 1,
+      "observations": 265,
+      "trusted": true
+    },
+    "STG.E.64|STL.64": {
+      "min_stall": 4,
+      "observations": 2,
+      "trusted": false
+    },
+    "STG.E.EF|EXIT": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "STG.E.S16|EXIT": {
+      "min_stall": 1,
+      "observations": 57,
+      "trusted": true
+    },
+    "STG.E.STRONG.GPU|EXIT": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "STG.E.STRONG.SM|EXIT": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "STG.E.STRONG.SYS|EXIT": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "STG.E.U16|EXIT": {
+      "min_stall": 1,
+      "observations": 133,
+      "trusted": true
+    },
+    "STG.E.U16|STL.U16": {
+      "min_stall": 4,
+      "observations": 2,
+      "trusted": false
+    },
+    "STG.E|EXIT": {
+      "min_stall": 1,
+      "observations": 816,
+      "trusted": true
+    },
+    "STG.E|STL": {
+      "min_stall": 4,
+      "observations": 2,
+      "trusted": false
+    },
+    "STG.E|STSM.16.M88": {
+      "min_stall": 4,
+      "observations": 2,
+      "trusted": false
+    },
+    "STG.E|STSM.16.M88.2": {
+      "min_stall": 4,
+      "observations": 3,
+      "trusted": false
+    },
+    "STG.E|STSM.16.M88.4": {
+      "min_stall": 4,
+      "observations": 3,
+      "trusted": false
+    },
+    "STG.E|STSM.16.MT88": {
+      "min_stall": 4,
+      "observations": 2,
+      "trusted": false
+    },
+    "STG.E|STSM.16.MT88.2": {
+      "min_stall": 4,
+      "observations": 3,
+      "trusted": false
+    },
+    "STG.E|STSM.16.MT88.4": {
+      "min_stall": 4,
+      "observations": 3,
+      "trusted": false
+    },
+    "STL.64|EXIT": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "STL.64|STG.E.64": {
+      "min_stall": 4,
+      "observations": 1,
+      "trusted": false
+    },
+    "STL.U16|EXIT": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "STL.U16|STG.E.U16": {
+      "min_stall": 4,
+      "observations": 1,
+      "trusted": false
+    },
+    "STL|EXIT": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "STL|STG.E": {
+      "min_stall": 4,
+      "observations": 1,
+      "trusted": false
+    },
+    "STS.128|BAR.SYNC.DEFER_BLOCKING": {
+      "min_stall": 1,
+      "observations": 24,
+      "trusted": true
+    },
+    "STS.128|MOV": {
+      "min_stall": 1,
+      "observations": 16,
+      "trusted": true
+    },
+    "STS.128|STS.128": {
+      "min_stall": 4,
+      "observations": 152,
+      "trusted": true
+    },
+    "STS.64|BAR.SYNC.DEFER_BLOCKING": {
+      "min_stall": 1,
+      "observations": 6,
+      "trusted": false
+    },
+    "STS.U16|BAR.SYNC.DEFER_BLOCKING": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "STSM.16.M88.2|EXIT": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "STSM.16.M88.4|EXIT": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "STSM.16.M88|EXIT": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "STSM.16.M88|STG.E": {
+      "min_stall": 4,
+      "observations": 1,
+      "trusted": false
+    },
+    "STSM.16.MT88.2|EXIT": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "STSM.16.MT88.4|EXIT": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "STSM.16.MT88|EXIT": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "STSM.16.MT88|STG.E": {
+      "min_stall": 4,
+      "observations": 1,
+      "trusted": false
+    },
+    "STS|BAR.SYNC.DEFER_BLOCKING": {
+      "min_stall": 1,
+      "observations": 30,
+      "trusted": true
+    },
+    "STS|STS": {
+      "min_stall": 4,
+      "observations": 9,
+      "trusted": true
+    },
+    "UFLO.U32|ISETP.EQ.U32.AND": {
+      "min_stall": 6,
+      "observations": 15,
+      "trusted": true
+    },
+    "UFLO.U32|UPOPC": {
+      "min_stall": 1,
+      "observations": 6,
+      "trusted": false
+    },
+    "UIADD3|DFMA": {
+      "min_stall": 1,
+      "observations": 1,
+      "trusted": false
+    },
+    "UIADD3|FFMA": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "UIADD3|IADD": {
+      "min_stall": 5,
+      "observations": 1,
+      "trusted": false
+    },
+    "UIADD3|IADD3": {
+      "min_stall": 4,
+      "observations": 6,
+      "trusted": false
+    },
+    "UIADD3|IMMA.16832.U8.U8": {
+      "min_stall": 1,
+      "observations": 10,
+      "trusted": true
+    },
+    "UIADD3|ISETP.GT.AND": {
+      "min_stall": 4,
+      "observations": 2,
+      "trusted": false
+    },
+    "UIADD3|MOV": {
+      "min_stall": 1,
+      "observations": 5,
+      "trusted": false
+    },
+    "UIADD3|RET.REL.NODEC": {
+      "min_stall": 3,
+      "observations": 3,
+      "trusted": false
+    },
+    "UIADD3|STG.E": {
+      "min_stall": 3,
+      "observations": 150,
+      "trusted": true
+    },
+    "UIADD3|UIADD3": {
+      "min_stall": 11,
+      "observations": 156,
+      "trusted": true
+    },
+    "UIADD3|UISETP.GE.AND": {
+      "min_stall": 4,
+      "observations": 1,
+      "trusted": false
+    },
+    "UIADD3|ULEA": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "UIMAD|UIADD3": {
+      "min_stall": 1,
+      "observations": 1,
+      "trusted": false
+    },
+    "UISETP.GE.AND|BRA.U": {
+      "min_stall": 9,
+      "observations": 2,
+      "trusted": false
+    },
+    "UISETP.GE.AND|FFMA": {
+      "min_stall": 1,
+      "observations": 1,
+      "trusted": false
+    },
+    "UISETP.GE.AND|STS": {
+      "min_stall": 1,
+      "observations": 1,
+      "trusted": false
+    },
+    "ULEA|LEA": {
+      "min_stall": 6,
+      "observations": 57,
+      "trusted": true
+    },
+    "ULEA|LOP3.LUT": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "ULEA|STS": {
+      "min_stall": 9,
+      "observations": 6,
+      "trusted": false
+    },
+    "ULEA|STS.64": {
+      "min_stall": 9,
+      "observations": 3,
+      "trusted": false
+    },
+    "ULEA|UIADD3": {
+      "min_stall": 1,
+      "observations": 1,
+      "trusted": false
+    },
+    "ULEA|ULEA": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "ULEA|UMOV": {
+      "min_stall": 3,
+      "observations": 1,
+      "trusted": false
+    },
+    "UMOV|HFMA2": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "UMOV|LDC.64": {
+      "min_stall": 7,
+      "observations": 50,
+      "trusted": true
+    },
+    "UMOV|LOP3.LUT": {
+      "min_stall": 1,
+      "observations": 8,
+      "trusted": true
+    },
+    "UMOV|S2R": {
+      "min_stall": 1,
+      "observations": 2,
+      "trusted": false
+    },
+    "UMOV|ULEA": {
+      "min_stall": 2,
+      "observations": 13,
+      "trusted": true
+    },
+    "UMOV|UMOV": {
+      "min_stall": 1,
+      "observations": 8,
+      "trusted": true
+    },
+    "UMOV|VOTEU.ANY": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "UPOPC|ISETP.EQ.U32.AND": {
+      "min_stall": 1,
+      "observations": 12,
+      "trusted": true
+    },
+    "UPOPC|ULEA": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "USHF.L.U32|USHF.R.S32.HI": {
+      "min_stall": 4,
+      "observations": 1,
+      "trusted": false
+    },
+    "USHF.R.S32.HI|IADD.64": {
+      "min_stall": 6,
+      "observations": 1,
+      "trusted": false
+    },
+    "VIADD.S32.ISAT|LDC.64": {
+      "min_stall": 2,
+      "observations": 1,
+      "trusted": false
+    },
+    "VIADD.S32.ISAT|STG.E": {
+      "min_stall": 5,
+      "observations": 2,
+      "trusted": false
+    },
+    "VIMNMX.S16x2|LDC.64": {
+      "min_stall": 2,
+      "observations": 6,
+      "trusted": false
+    },
+    "VIMNMX.S16x2|STG.E.S16": {
+      "min_stall": 5,
+      "observations": 6,
+      "trusted": false
+    },
+    "VIMNMX.S32|IADD": {
+      "min_stall": 5,
+      "observations": 3,
+      "trusted": false
+    },
+    "VIMNMX.S32|LDC.64": {
+      "min_stall": 2,
+      "observations": 2,
+      "trusted": false
+    },
+    "VIMNMX.S32|SEL": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    },
+    "VIMNMX.S32|STG.E": {
+      "min_stall": 5,
+      "observations": 10,
+      "trusted": true
+    },
+    "VIMNMX.U16x2|LDC.64": {
+      "min_stall": 2,
+      "observations": 6,
+      "trusted": false
+    },
+    "VIMNMX.U16x2|STG.E.U16": {
+      "min_stall": 5,
+      "observations": 6,
+      "trusted": false
+    },
+    "VIMNMX.U32|LDC.64": {
+      "min_stall": 2,
+      "observations": 2,
+      "trusted": false
+    },
+    "VIMNMX.U32|STG.E": {
+      "min_stall": 5,
+      "observations": 10,
+      "trusted": true
+    },
+    "VOTE.ANY|STG.E": {
+      "min_stall": 5,
+      "observations": 6,
+      "trusted": false
+    },
+    "VOTEU.ANY|FLO.U32": {
+      "min_stall": 2,
+      "observations": 7,
+      "trusted": false
+    },
+    "VOTEU.ANY|LDC.64": {
+      "min_stall": 5,
+      "observations": 20,
+      "trusted": true
+    },
+    "VOTEU.ANY|S2R": {
+      "min_stall": 1,
+      "observations": 3,
+      "trusted": false
+    }
+  },
   "by_pair": {
     "BMSK->IADD": {
       "min_stall": 7,

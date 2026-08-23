@@ -27,7 +27,7 @@ from tempfile import TemporaryDirectory
 import pytest
 
 from basalt.disasm import disassemble_program
-from basalt.encoding import NO_BARRIER
+from basalt.encoding import NO_BARRIER, STALL_YIELD
 from basalt.harvest.runner import _MALFORMED
 from basalt.verify.hazards import Severity, verify_program
 from basalt.verify.latency import DEFAULT_MODEL, LatencyModel
@@ -209,6 +209,12 @@ class TestReadBarrierWindowsAreNotTightened:
     guarantee goes with them, which is `k_mma_m16n8k32_s4_s4_s32` at `-O1`,
     where `R4` was overwritten under four loads that had not finished reading it.
 
+    What holds the window open is the rate the unit accepts work: `LDG` after
+    `LDG` is 4 cycles across 1,953 observations, so four loads under one barrier
+    take at least that much between them however little the dependencies ask for.
+    basalt used to copy the vendor's own stalls here, which worked and could not
+    have worked on a program the vendor never compiled.
+
     The window here is found by scanning back from the barrier to the previous
     barrier, control transfer or branch target, deliberately without asking the
     scheduler where it thinks the window is. Otherwise this would agree with the
@@ -241,7 +247,11 @@ class TestReadBarrierWindowsAreNotTightened:
             for index, instruction in enumerate(program.instructions):
                 if instruction.word is None:
                     continue
-                if instruction.word.field("read_barrier") == NO_BARRIER:
+                # basalt's barriers, not the vendor's: they sit in different
+                # places now, and a window is only a window for the schedule
+                # that has the barrier closing it. the *rate* is still recomputed
+                # from the mined table rather than asked of the scheduler
+                if result.words[index].field("read_barrier") == NO_BARRIER:
                     continue
                 start = index
                 while start > previous + 1 and start not in targets:
@@ -249,11 +259,18 @@ class TestReadBarrierWindowsAreNotTightened:
                     if earlier.word is None or earlier.opcode in transfers:
                         break
                     start -= 1
-                window = range(start, index + 1)
-                vendor = sum(program.instructions[i].word.field("stall") for i in window)
-                ours = sum(result.words[i].field("stall") for i in window)
-                if ours < vendor:
-                    found.append(f"{name} -O{opt} slot {index}: {ours} < {vendor} cycles")
+                for slot in range(start, index):
+                    first = program.instructions[slot]
+                    second = program.instructions[slot + 1]
+                    if first.word is None or second.word is None or observed is None:
+                        continue
+                    rate = observed.issue_minimum(first.mnemonic, second.mnemonic)
+                    ours = result.words[slot].field("stall")
+                    if ours != STALL_YIELD and ours < rate:
+                        found.append(
+                            f"{name} -O{opt} slot {slot}: {ours} cycles where "
+                            f"{first.mnemonic} into {second.mnemonic} needs {rate}"
+                        )
                 previous = index
             return found
 
@@ -265,7 +282,7 @@ class TestReadBarrierWindowsAreNotTightened:
         with ThreadPoolExecutor(max_workers=os.cpu_count() or 4) as pool:
             return [line for lines in pool.map(one, tasks) for line in lines]
 
-    def test_no_read_barrier_window_is_shorter_than_the_vendors(self, tightened):
+    def test_no_window_issues_faster_than_the_unit_accepts(self, tightened):
         if tightened:
             shown = "\n".join(f"  {line}" for line in tightened[:10])
             pytest.fail(f"{len(tightened)} read-barrier windows tightened:\n{shown}")

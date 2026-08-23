@@ -49,12 +49,18 @@ levels. The two excluded read the clock and the grid id, so they do not agree wi
 either. That count is what the work is measured against: it was 246 when the control was first
 run, and every model correction since came out of watching it move.
 
-Every field is derived, read barriers included. Those guard an instruction that has not
-finished taking its operands at issue, and for most of this project basalt copied them out
-of the schedule it was replacing, which meant it could not have scheduled a program nobody
-had compiled. Characterising all 334 of them in the corpus gave the rule it places them by
-now (finding 25), and the test that it is a real rule rather than a plausible one is that
-taking the derived barriers away makes a kernel return the wrong answer on the card.
+Every field is derived, and so is every number behind them. Read barriers guard an
+instruction that has not finished taking its operands at issue, and for most of this project
+basalt copied them out of the schedule it was replacing, which meant it could not have
+scheduled a program nobody had compiled. Characterising all 299 of them in the corpus gave
+the rule it places them by now (finding 25), and the test that it is a real rule rather than
+a plausible one is that taking the derived barriers away makes a kernel return the wrong
+answer on the card.
+
+The last inherited quantity went with them. Inside the window a barrier covers, basalt used
+to hold the vendor's own stalls as a floor; it now holds the issue rate mined from every
+consecutive pairing in the corpus, which is the same 4 cycles for a run of loads and is a
+number that exists for a program the vendor never saw.
 
 The assembler encodes SASS text back into the instruction word, and its standard is the
 vendor's own bytes: assembling every corpus kernel as a whole program, with its labels

@@ -113,6 +113,11 @@ class ObservedStalls:
     # what a *reader* still needs before its register may be overwritten. its own
     # keyspace: this is the other direction of dependency and the numbers differ
     by_anti: dict[tuple[str, str], StallEvidence] = field(default_factory=dict)
+    # the smallest stall the vendor gives one instruction before the next, per
+    # consecutive pairing. an issue rate rather than a dependency: nothing here
+    # is about registers, and it is what a run of loads under one read barrier
+    # needs when the barrier is standing in for all of them (finding 13)
+    by_issue: dict[tuple[str, str], StallEvidence] = field(default_factory=dict)
     kernels: int = 0
 
     def observe(self, producer: str, consumer: str, stall: int, sample: str) -> None:
@@ -147,6 +152,22 @@ class ObservedStalls:
         if key not in self.by_anti:
             self.by_anti[key] = StallEvidence(reader, writer, minimum=cycles)
         self.by_anti[key].observe(cycles, sample)
+
+    def observe_issue(self, first: str, second: str, stall: int, sample: str) -> None:
+        """Record the stall between one instruction and the next."""
+        key = (first, second)
+        if key not in self.by_issue:
+            self.by_issue[key] = StallEvidence(first, second, minimum=stall)
+        self.by_issue[key].observe(stall, sample)
+
+    def issue_minimum(self, first: str, second: str) -> int:
+        """The smallest stall the vendor puts between this exact pairing.
+
+        Zero when the pairing is unseen or thin, because there is no basis for
+        inventing a rate and this is a floor rather than a requirement.
+        """
+        evidence = self.by_issue.get((first, second))
+        return evidence.minimum if evidence is not None and evidence.trusted else 0
 
     def anti_requirement(self, reader: str, writer: str) -> StallEvidence | None:
         """Cycles a read needs before its register may be overwritten.
@@ -250,10 +271,12 @@ class ObservedStalls:
     def summary(self) -> str:
         trusted = sum(1 for e in self.by_producer.values() if e.trusted)
         anti = sum(1 for e in self.by_anti.values() if e.trusted)
+        issue = sum(1 for e in self.by_issue.values() if e.trusted)
         return (
             f"{self.kernels} kernels, {len(self.by_pair)} distinct pairs, "
             f"{trusted}/{len(self.by_producer)} producers with enough observations, "
-            f"{anti}/{len(self.by_anti)} anti-dependency pairs"
+            f"{anti}/{len(self.by_anti)} anti-dependency pairs, "
+            f"{issue}/{len(self.by_issue)} issue-rate pairs"
         )
 
     def write(self, path: Path) -> None:
@@ -296,6 +319,14 @@ class ObservedStalls:
                         }
                         for (r, w), e in sorted(self.by_anti.items())
                     },
+                    "by_issue": {
+                        f"{a}|{b}": {
+                            "min_stall": e.minimum,
+                            "observations": e.observations,
+                            "trusted": e.trusted,
+                        }
+                        for (a, b), e in sorted(self.by_issue.items())
+                    },
                     "by_scoreboarded": {
                         f"{m}=>{c}": {
                             "min_stall": e.minimum,
@@ -332,6 +363,11 @@ class ObservedStalls:
             ev.observations = entry["observations"]
             ev.samples = entry.get("samples", [])
             out.by_anti[(reader, writer)] = ev
+        for key, entry in raw.get("by_issue", {}).items():
+            first, _, second = key.partition("|")
+            ev = StallEvidence(first, second, minimum=entry["min_stall"])
+            ev.observations = entry["observations"]
+            out.by_issue[(first, second)] = ev
         for key, entry in raw.get("by_scoreboarded", {}).items():
             mnemonic, _, consumer = key.partition("=>")
             ev = StallEvidence(mnemonic, consumer, minimum=entry["min_stall"])
@@ -419,7 +455,23 @@ def mine_program(program: Program, into: ObservedStalls) -> None:
                     f"{program.instructions[reader_index].text} ~> {instr.text}",
                 )
 
-            stall = effective_stall(instr.word.field("stall"))
+            raw_stall = instr.word.field("stall")
+            following = index + 1
+            # the safe encoding is a long wait rather than a small number, so it
+            # says nothing about how fast the unit accepts work
+            if (
+                raw_stall != 0
+                and following < block.end
+                and program.instructions[following].word is not None
+            ):
+                into.observe_issue(
+                    instr.mnemonic,
+                    program.instructions[following].mnemonic,
+                    raw_stall,
+                    f"{instr.text} | {program.instructions[following].text}",
+                )
+
+            stall = effective_stall(raw_stall)
             for key in list(elapsed):
                 elapsed[key] += stall
             for key in list(since_read):

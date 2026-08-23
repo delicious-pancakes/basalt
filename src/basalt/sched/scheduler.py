@@ -839,8 +839,15 @@ def schedule_program(
         result.yielded.append(last)
 
     # ---- windows a read barrier covers
-    # one barrier stands in for a whole run of reads, so the vendor's gaps
-    # inside the window are a floor rather than something to compress (finding 13)
+    # One barrier stands in for a whole run of reads, and the guarantee is that
+    # by the time the last has taken its operands the earlier ones have too. That
+    # holds at the rate the unit accepts work and not faster, so inside the window
+    # the issue rate is a floor: `LDG` after `LDG` is 4 cycles across 1,953
+    # observations, which is what the four loads in finding 13 need.
+    #
+    # Mined rather than copied from the schedule being replaced. The two agree on
+    # that kernel, and only the mined one means anything for a program the vendor
+    # never compiled.
     block_of_index: dict[int, int] = {}
     for block in cfg.blocks:
         for index in range(block.start, block.end):
@@ -848,13 +855,17 @@ def schedule_program(
 
     previous_barrier = -1
     for index, instr in enumerate(program.instructions):
-        if instr.word is None or instr.word.field("read_barrier") == NO_BARRIER:
+        if instr.word is None or read_barriers[index] == NO_BARRIER:
             continue
         start = max(block_of_index.get(index, 0), previous_barrier + 1)
-        for covered in range(start, index + 1):
-            original = program.instructions[covered]
-            if original.word is not None:
-                stalls[covered] = max(stalls[covered], original.word.field("stall"))
+        for covered in range(start, index):
+            first = program.instructions[covered]
+            second = program.instructions[covered + 1]
+            if first.word is None or second.word is None or observed is None:
+                continue
+            rate = observed.issue_minimum(first.mnemonic, second.mnemonic)
+            if stalls[covered] != STALL_YIELD:
+                stalls[covered] = max(stalls[covered], rate)
         previous_barrier = index
 
     # ---- anti-dependencies

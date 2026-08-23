@@ -120,6 +120,12 @@ any release. The clean-room position in [`NOTICE`](NOTICE) will not.
 
 
 ### Changed
+- The last quantity basalt copied from the schedule it was replacing is derived.
+  Inside the window a read barrier covers, the vendor's own stalls were a floor,
+  which worked and meant nothing for a program the vendor never compiled. The
+  floor is now the issue rate mined from every consecutive pairing in the corpus:
+  `LDG` after `LDG` is 4 cycles across 1,953 observations, which is the same
+  number and a derived one. Nothing in the control word is inherited any more.
 - The anti-dependency requirement is mined per pairing rather than charged as a
   constant. Three cycles is what fault injection measured for `ULEA` into
   `UMOV`; the vendor leaves one or two for hundreds of other pairings, 386 times
