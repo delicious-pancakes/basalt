@@ -191,9 +191,8 @@ class TestHarvest:
                 )
             )
         chosen = collect_representatives(result)
-        # keyed by mnemonic and operand shape now, since one mnemonic covers
-        # several encodings; both of these are the same shape, so they compete
-        # and the one with distinct registers wins
+        # keyed by mnemonic and shape, so these two compete and the one with
+        # distinct registers wins
         from basalt.isa.build import operand_shape
 
         key = ("IADD", operand_shape("R2, R3, 0x1"))

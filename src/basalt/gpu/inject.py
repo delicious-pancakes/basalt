@@ -42,9 +42,8 @@ from .latency import ChainSpec, _build_kernel
 
 __all__ = ["STALL_MAX", "InjectionResult", "probe_required_stall"]
 
-# The stall field is four bits, so this is the longest gap a single instruction
-# can express. A latency above it has to be covered by several instructions or
-# by a scoreboard, which is exactly what ptxas does for fp64.
+# four bits of stall, so anything longer needs several instructions or a
+# scoreboard, which is what ptxas does for fp64
 STALL_MAX = 15
 
 DEFAULT_REPEATS = 12
@@ -60,14 +59,11 @@ class InjectionResult:
     consumer_index: int
     scheduled: int
     span: int = 1
-    # True when the producer signals a scoreboard the consumer waits on. The
-    # stall is then irrelevant to correctness, so sweeping it measures nothing
-    # about latency and the result must not be read as one.
+    # a waited-on scoreboard makes the stall irrelevant, so sweeping it measures
+    # nothing about latency
     scoreboarded: bool = False
-    # Whether the kernel can distinguish a skipped link at all, established
-    # independently of the stall sweep by shortening the chain. Without this,
-    # "no value produced a wrong answer" is ambiguous between "every value is
-    # genuinely safe" and "this kernel cannot tell", which are opposite claims.
+    # without this, "no value was wrong" cannot be told apart from "this kernel
+    # cannot tell", which are opposite claims
     sensitive: bool = True
     safe: list[int] = field(default_factory=list)
     unsafe: list[int] = field(default_factory=list)
@@ -209,9 +205,8 @@ def probe_required_stall(
         between = [program.instructions[i].word for i in range(producer, consumer)]
         scheduled = sum(word.field("stall") for word in between if word is not None)
 
-        # if the compiler covered this dependency with a scoreboard, the stall
-        # is not what makes it safe, and sweeping the stall would report a
-        # meaninglessly small "requirement"
+        # a scoreboarded dependency is not made safe by the stall, so sweeping it
+        # reports a meaninglessly small requirement
         producer_word = program.instructions[producer].word
         consumer_word = program.instructions[consumer].word
         barrier = producer_word.field("write_barrier") if producer_word else 7
@@ -219,9 +214,8 @@ def probe_required_stall(
             consumer_word and barrier != 7 and (consumer_word.field("wait_mask") >> barrier) & 1
         )
 
-        # Sensitivity control: a chain one link shorter must produce a
-        # different answer. If it does not, this kernel cannot detect a stale
-        # read and the sweep below would be measuring nothing.
+        # sensitivity control: one link shorter must change the answer, or this
+        # kernel cannot detect a stale read at all
         shorter = tmpdir / "shorter.cubin"
         shorter_src = tmpdir / "shorter.ptx"
         shorter_src.write_text(_build_kernel(spec, links - 1, arch))
@@ -255,10 +249,8 @@ def probe_required_stall(
                 rejected="the reference run was not deterministic, so nothing can be compared",
             )
 
-        # every instruction from the producer up to the consumer contributes,
-        # so the budget is spread across the whole span rather than dropped on
-        # the producer alone. anything else leaves ptxas's NOP padding in place
-        # and measures nothing.
+        # spread across the span rather than dropped on the producer, or ptxas's
+        # NOP padding stays in place and the sweep measures nothing
         span = list(range(producer, consumer))
         ceiling = STALL_MAX * len(span)
 

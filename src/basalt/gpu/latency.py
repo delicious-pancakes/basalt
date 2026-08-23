@@ -75,10 +75,8 @@ class ChainSpec:
     seed: str
     kind: LatencyClass = LatencyClass.FIXED
     note: str = ""
-    # Opcodes the slope covers together. Usually just `opcode`, but a few
-    # instructions cannot appear in a dependent chain alone: a conversion has to
-    # convert back before it can feed the next link, so the measurement covers
-    # the pair and says so instead of halving it and calling that a result.
+    # a conversion cannot chain alone, so the slope covers the round trip and
+    # says so rather than halving it
     covers: tuple[str, ...] = ()
 
     @property
@@ -167,9 +165,8 @@ _SPECS: tuple[ChainSpec, ...] = (
     ChainSpec(
         opcode="POPC",
         ptx_type="b32",
-        # popc of a popc is a legitimate dependent chain and needs no second
-        # instruction to close the loop. the value converges almost immediately,
-        # which does not matter: the dependency is what is being timed.
+        # popc of a popc closes the loop on its own; the value converging at once
+        # does not matter, the dependency is what is timed
         body="    popc.b32 {d}, {d};",
         seed="    ld.global.u32 %r1, [%in];",
         kind=LatencyClass.VARIABLE,
@@ -308,10 +305,8 @@ class MeasurementRun:
     multiprocessors: int
     clock_khz: int
     cuda_version: str
-    # The driver reports the GPU, not the board partner, so this is passed in.
-    # It matters for reproducing a run and not for the numbers: every latency
-    # here is in cycles, which a factory overclock does not change. The boost
-    # clock is recorded alongside so a wall-clock comparison stays possible.
+    # the driver reports the GPU, not the board partner. provenance rather than
+    # input: these latencies are cycles, which an overclock does not move
     board: str = ""
     measurements: list[LatencyMeasurement] = field(default_factory=list)
 

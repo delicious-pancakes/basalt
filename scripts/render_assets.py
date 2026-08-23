@@ -32,22 +32,16 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 ASSETS = ROOT / "docs" / "assets"
 
-# GitHub displays the social preview at 1280x640 and rejects uploads over 1 MB.
-# Rendering at 2x keeps it sharp on high-DPI displays, which is free as long as
-# the optimised file still fits; SCALE and CAP are what make that a decision the
-# script checks rather than a hope.
+# 2x keeps the 1280x640 preview sharp on high-DPI, and the cap is checked rather
+# than hoped for
 SCALE = 2
 CAP_BYTES = 1_000_000
 
-# Aim well under the cap rather than at it. A 942 KB file is legal and leaves no
-# room for the artwork to gain a single element later, and an upload that fails
-# on a byte count is a bad afternoon.
+# well under the 1 MB cap, so the artwork can gain an element without failing
 TARGET_BYTES = 600_000
 
-# How far a quantised pixel may drift from the lossless one, averaged over the
-# image, before the trade is refused. The artwork is flat panels and text over a
-# slow gradient, which quantises to 256 colours with no visible banding; this is
-# what stops that from being an assumption that survives an artwork change.
+# mean pixel drift allowed before quantising is refused, so "no visible banding"
+# stays checked rather than assumed
 MAX_MEAN_DRIFT = 1.5
 
 # (source svg, output png, css width, css height)

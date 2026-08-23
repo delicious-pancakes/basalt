@@ -75,9 +75,8 @@ class Access:
 
     defs: set[RegRef] = field(default_factory=set)
     uses: set[RegRef] = field(default_factory=set)
-    # The predicate in a guard such as `@!P0`, if there is one. Kept apart from
-    # the rest of `uses` because it is needed earlier in the pipeline than an
-    # ordinary source and therefore costs more to wait for; see `guards` below.
+    # kept apart from the rest of `uses`: a guard is needed earlier than an
+    # ordinary source and costs more to wait for
     guard: RegRef | None = None
 
     @property
@@ -89,9 +88,8 @@ class Access:
         return {r for r in self.uses if not r.is_sink}
 
 
-# Opcodes whose first operand is a source rather than a destination. Listed
-# explicitly: inferring this from the operand shape is possible and is wrong
-# often enough to matter.
+# listed rather than inferred from the operand shape, which is wrong often
+# enough to matter
 _STORE_OPCODES = frozenset(
     {
         "ST",
@@ -201,9 +199,7 @@ def _expand(base: RegRef, count: int) -> set[RegRef]:
 # them as single registers loses half of every dependency
 _PAIRED_OPCODES = frozenset({"DADD", "DMUL", "DFMA", "DSETP", "DMMA", "DMNMX"})
 
-# Opcodes whose register destination follows their leading predicate outputs.
-# The min/max family: `IMNMX`, and its float and double counterparts, which are
-# the same instruction over a different type.
+# the min/max family, whose register destination follows its predicate outputs
 _PREDICATES_THEN_REGISTER = frozenset({"IMNMX", "FMNMX", "DMNMX", "HMNMX", "HMNMX2"})
 
 # in `IMAD.WIDE dst, a, b, c` the destination and addend are register pairs and

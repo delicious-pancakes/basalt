@@ -177,10 +177,8 @@ class Program:
         return len(self.instructions)
 
 
-# a label on its own line, e.g. `.L_x_1:`
-# `.L_x_0:`, but also `k_sqrt_rn_f32:` and `$__internal_0_..._slowpath:`. Taking
-# only the dotted form loses the call targets and the kernel's own entry, which
-# a `CALL.REL.NOINC` and a `RET.REL.NODEC` name directly
+# a label on its own line. not only the dotted form: taking that alone loses the
+# call targets and the kernel's own entry
 _LABEL = re.compile(r"^\s*([A-Za-z_.$][\w.$]*)\s*:\s*$")
 # a branch target as nvdisasm prints it, e.g. `` `(.L_x_1) ``
 _TARGET = re.compile(r"`\((?P<label>\.[A-Za-z_][\w.$]*)\)")

@@ -64,8 +64,6 @@ class LatencyRecord:
         return self.kind is LatencyClass.FIXED
 
 
-# opcode prefixes by pipeline, longest-prefix on the bare opcode. ASSUMED
-# throughout: stage 7 replaces these with numbers measured on silicon
 # a guard is consumed at issue and needs 13 cycles where the same predicate read
 # as data needs 5, so this is a property of issue rather than of the file
 GUARD_CYCLES = 13
@@ -90,10 +88,8 @@ _ASSUMED: dict[str, tuple[int, LatencyClass, str]] = {
     # make the stall redundant, so this stays fixed
     "POPC": (18, LatencyClass.VARIABLE, "population count, measured, scoreboard signalled"),
     "FLO": (4, LatencyClass.VARIABLE, "find leading one, scoreboard signalled"),
-    # Scoreboarded in two of the three dependent instances in the corpus, and the
-    # third is covered by a wait on a later instruction from the same unit rather
-    # than by elapsed cycles. Left as fixed latency it produced a non-
-    # deterministic `brev` on hardware from basalt's own schedule.
+    # scoreboarded in two of three corpus instances, and fixed latency made
+    # basalt's own schedule produce a non-deterministic `brev` on hardware
     "BREV": (4, LatencyClass.VARIABLE, "bit reverse, scoreboard signalled"),
     "MOV": (4, LatencyClass.FIXED, ""),
     "FADD": (4, LatencyClass.FIXED, ""),
@@ -121,14 +117,11 @@ _ASSUMED: dict[str, tuple[int, LatencyClass, str]] = {
     # `I2FP` is a different instruction, not `I2F` with a suffix, and the
     # longest-prefix rule would otherwise hand it the conversion pipe's entry
     "I2FP": (6, LatencyClass.FIXED, "packed integer to float, never scoreboarded"),
-    # `F2FP` is the same case for `F2F`: ptxas packs two floats to half and reads
-    # the result five cycles later with no scoreboard anywhere, so it is not
-    # completing out of order. The 6 is `I2FP`'s, the same pipe; where there is
-    # mined evidence for a pair it is the mined number that applies
+    # ptxas reads `F2FP` five cycles later with no scoreboard, so it does not
+    # complete out of order; the 6 is `I2FP`'s, the same pipe
     "F2FP": (6, LatencyClass.FIXED, "packed float to half, never scoreboarded"),
-    # `I2I` does not appear anywhere in the corpus, so there is no evidence for
-    # its class either way and it keeps the conservative default rather than
-    # being classed with the rest of the pipe on the strength of its name.
+    # `I2I` is absent from the corpus, so it keeps the conservative default
+    # rather than being classed with its pipe on the strength of its name
     "I2I": (6, LatencyClass.FIXED, "conversion pipeline, class unobserved"),
     "FRND": (6, LatencyClass.FIXED, ""),
     # fp64 completes out of order and is always scoreboarded; the wait carries
@@ -211,9 +204,8 @@ _ASSUMED: dict[str, tuple[int, LatencyClass, str]] = {
     "STSM": (0, LatencyClass.CONTROL, ""),
 }
 
-# An opcode nobody has classified is treated as fixed with the longest common
-# ALU latency. That direction is deliberate: it can produce a false alarm, which
-# a human then investigates, rather than a false silence, which nobody ever sees.
+# unclassified means fixed at the longest common ALU latency: a false alarm gets
+# investigated, a false silence never does
 UNKNOWN_DEFAULT = LatencyRecord(
     cycles=6,
     kind=LatencyClass.FIXED,

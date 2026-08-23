@@ -189,14 +189,11 @@ def _check_instruction(
             if report is not None:
                 report.checked_pairs += 1
 
-            # a wait on the producer's scoreboard covers the dependency no
-            # matter how long the instruction takes, so it is checked before the
-            # latency class is consulted at all
+            # a wait covers the dependency whatever the latency, so it is checked
+            # before the class is consulted
             if rd.yielded or (rd.barrier != NO_BARRIER and rd.satisfied):
-                # A wait covers the bulk of a variable-latency result, but the
-                # producer still owes whatever stall the compiler never goes
-                # below for that opcode. `DADD` is a real case: always
-                # scoreboarded, never given less than 2, and wrong at 1.
+                # a wait covers the bulk, not the residue: `DADD` is always
+                # scoreboarded, never given less than 2, and wrong at 1
                 _check_scoreboarded_minimum(
                     report, seen, program, observed, rd, reg, access.guard, index, instr, recording
                 )
@@ -212,9 +209,8 @@ def _check_instruction(
                 )
                 if rd.elapsed >= required or not recording:
                     continue
-                # grounded means the number came from hardware or from what
-                # the vendor actually schedules, either of which is enough to
-                # call a shortfall an error rather than a suspicion
+                # grounded in hardware or in what the vendor schedules, either of
+                # which makes a shortfall an error rather than a suspicion
                 severity = (
                     Severity.ERROR
                     if grounded or producer_record.confidence is Confidence.MEASURED
@@ -391,8 +387,8 @@ def verify_program(
                 worklist.append(succ)
 
     # ---- report ---------------------------------------------------------
-    # one pass over the settled entry states, so a block visited many times
-    # during convergence contributes each of its findings exactly once
+    # one pass over the settled states, so a block visited many times during
+    # convergence reports each finding once
     seen: set[tuple] = set()
     for block in cfg.blocks:
         _run_block(cfg, block.index, entries[block.index], model, report, seen, observed)
@@ -435,9 +431,8 @@ def _check_scoreboarded_minimum(
     if observed is None or report is None or not recording:
         return
     if rd.crossed or rd.index == index:
-        # a minimum over paths rather than a distance, and the evidence is mined
-        # one block at a time, so there is nothing here to compare fairly.
-        # reaching itself is the same case: only a back edge does that
+        # a minimum over paths, against evidence mined one block at a time: there
+        # is nothing here to compare fairly
         return
     producer = program.instructions[rd.index]
     if producer.word is None or producer.word.field("stall") == STALL_YIELD:

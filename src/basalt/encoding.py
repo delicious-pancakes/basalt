@@ -86,9 +86,8 @@ NO_BARRIER = 0b111
 # zero makes a checker call correct programs broken (finding 1)
 STALL_YIELD = 0
 
-# What a zero stall is worth when accumulating. Larger than any latency on this
-# architecture, because the observed behaviour is "wait until safe" rather than
-# a specific figure; see docs/METHOD.md for the experiment.
+# larger than any latency here, because the observed behaviour is "wait until
+# safe" rather than a figure (docs/METHOD.md)
 STALL_YIELD_EQUIVALENT = 1024
 
 

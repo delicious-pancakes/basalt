@@ -235,9 +235,8 @@ def main() -> int:
             counts["same operands, suffix follows the value"] += 1
             continue
 
-        # A discarded result is not printed at all: `VOTE.ANY RZ, PT, P0` comes
-        # back as `VOTE.ANY PT, P0`. The operand is still encoded, so this only
-        # counts when the difference is exactly one or more sinks disappearing.
+        # nvdisasm does not print a discarded result, so a vanished sink is not
+        # a wrong encoding
         if asked_head == got_head and _dropped_only_sinks(_split(asked_rest), _split(got_rest)):
             counts["a discarded result is not printed"] += 1
             continue

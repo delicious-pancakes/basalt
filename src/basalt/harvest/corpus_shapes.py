@@ -131,9 +131,8 @@ NEXT:
     @%p2 bra LOOP3;
     st.global.u32 [%out], %r2;""",
         ),
-        # Shared memory that is actually addressable, written then read back
-        # across a barrier. The corpus reaches `LDS` only through an address in
-        # the wrong space, which compiles and cannot run.
+        # addressable shared memory, written then read back across a barrier,
+        # with the loop and the branch the generated corpus has none of
         _kernel(
             "s_shared_roundtrip",
             """    ld.global.u32 %r1, [%in];
@@ -232,10 +231,8 @@ LOOP5:
     add.s32 %r5, %r4, %r2;
     st.global.u32 [%out], %r5;""",
         ),
-        # `BMSK` is in the database from the -O0 harvest, where `bfi.b32`
-        # lowers to it, and at -O3 that kernel folds it away. Written directly
-        # it survives, which puts the opcode inside the hardware round trip
-        # instead of only inside the database.
+        # -O3 folds away the `bfi.b32` that lowers to `BMSK`, so writing it
+        # directly is what puts the opcode inside the hardware round trip
         _kernel(
             "s_bit_mask",
             """    ld.global.u32 %r1, [%in];

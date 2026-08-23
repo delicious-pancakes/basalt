@@ -63,9 +63,8 @@ def driver() -> ctypes.CDLL:
     errors = []
     for name in candidates:
         try:
-            # an `if` rather than a ternary so the branch for the other platform
-            # is dead code a type checker can skip; `ctypes.WinDLL` does not
-            # exist off Windows and a ternary makes it look like it should
+            # an `if` rather than a ternary, so a type checker skips the dead
+            # branch: `ctypes.WinDLL` does not exist off Windows
             if sys.platform == "win32":
                 _LIB = ctypes.WinDLL(name)
             else:

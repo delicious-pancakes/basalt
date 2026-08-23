@@ -32,16 +32,14 @@ from ..disasm import Instruction, Program, branch_target
 
 __all__ = ["Block", "ControlFlowGraph", "ReachingDef", "build_cfg"]
 
-# Once this much stall has accumulated, no latency on this architecture can
-# still be outstanding, so the exact figure stops mattering. Saturating keeps
-# the lattice finite and makes loops converge.
+# past this, nothing can still be outstanding, so saturating keeps the lattice
+# finite and loops converging
 STALL_SATURATION = 512
 
 _TERMINATORS = frozenset({"EXIT", "RET", "RTT", "BPT"})
 _UNCONDITIONAL_BRANCH = frozenset({"BRA", "JMP", "BRX", "JMX"})
-# Branches whose destination is computed rather than named. Their successors
-# cannot be recovered from the listing, and pretending otherwise would make the
-# analysis quietly unsound rather than visibly incomplete.
+# computed destinations: their successors are not in the listing, and inventing
+# them trades visibly incomplete for quietly unsound
 _INDIRECT = frozenset({"BRX", "JMX"})
 
 
@@ -53,14 +51,11 @@ class ReachingDef:
     elapsed: int  # smallest stall accumulated since, over all paths
     satisfied: bool  # its scoreboard has been waited on, on every path
     barrier: int  # write_barrier it signalled
-    # True when every path from the definition to here crosses an instruction
-    # using the safe stall encoding, which waits for outstanding results as well
-    # as elapsed cycles. Kept as a fact rather than folded into `elapsed`, since
-    # a saturating counter cannot distinguish "waited" from "waited a long time".
+    # kept apart from `elapsed`, because a saturating counter cannot tell
+    # "waited" from "waited a long time"
     yielded: bool = False
-    # True once this definition has been carried into another block. The gap to
-    # a consumer then depends on which path was taken, so it is a minimum over
-    # paths rather than a distance anything can be measured against.
+    # once carried across an edge the gap is a minimum over paths, not a distance
+    # anything can be measured against
     crossed: bool = False
 
     def merged_with(self, other: ReachingDef) -> ReachingDef:

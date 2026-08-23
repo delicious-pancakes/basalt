@@ -294,10 +294,8 @@ def drive(work: Path, manifest: list[dict]) -> list[Verdict]:
     return [verdicts[k] for k in sorted(verdicts)]
 
 
-# Outcomes that count as basalt having been given a fair chance. A fault on
-# basalt's side belongs here and not among the exclusions: the vendor's kernel
-# ran, basalt's crashed the context, and calling that "not comparable" would
-# quietly move a failure out of the denominator.
+# outcomes that count as a fair chance. a basalt fault belongs here: excluding it
+# would move a failure out of the denominator
 COMPARABLE = ("match", "MISMATCH", "basalt-nondeterministic", "basalt-faulted")
 
 

@@ -166,9 +166,8 @@ class TestSchedulerOverTheWholeCorpus:
             with TemporaryDirectory(prefix="basalt-sched-") as tmp:
                 out = Path(tmp) / "r.cubin"
                 cubin.save(out)
-                # content first: basalt emitted a control word `nvdisasm`
-                # refused for a while, and this check read back an empty program
-                # and passed. a check that passes on nothing is worse than none.
+                # content first: this once read back an empty program and passed,
+                # and a check that passes on nothing is worse than none
                 written = disassemble_program(toolchain, out)
             if len(written.instructions) != len(program.instructions):
                 return (
@@ -327,9 +326,8 @@ class TestAssemblerAgainstTheVendorsBytes:
         exact = sum(1 for verdict, _ in assembled if verdict == "exact")
         total = len(assembled)
         assert total > 5000, f"only {total} instructions seen; the corpus did not build"
-        # 95.6% when this was written. the floor is deliberately below that, so
-        # it catches a regression without failing on a database that legitimately
-        # learned to refuse something it had been guessing at.
+        # 95.6% when written. below that on purpose, so a database that learns to
+        # refuse something it was guessing at does not fail here
         assert exact / total >= 0.92, f"only {exact}/{total} ({exact / total:.1%}) reproduced"
 
 
@@ -378,9 +376,8 @@ class TestWholeProgramAssembly:
         exact, wrong, refused = assembled
         total = exact + wrong + refused
         assert total > 5000, "the corpus did not build"
-        # 99.9% when this was written. The floor sits a point below rather than
-        # four, because a floor far under the real number lets coverage fall a
-        # long way without anything going red.
+        # 99.9% when written. a point below rather than four, or coverage can
+        # fall a long way without anything going red
         assert exact / total >= 0.99, f"only {exact}/{total} ({exact / total:.1%}) reproduced"
 
 
@@ -463,9 +460,8 @@ class TestWhatTheCorrectnessCosts:
         vendor, basalt = cycles
         assert vendor > 5000, "the corpus did not build"
         ratio = basalt / vendor
-        # 1.05x when this was written, pinned from both sides: slower is a
-        # regression, and faster is a reason to distrust the costing rather
-        # than to celebrate it (finding 12)
+        # 1.05x when written, pinned from both sides: faster is a reason to
+        # distrust the costing rather than to celebrate it (finding 12)
         assert ratio < 1.15, f"basalt's schedules cost {ratio:.2f}x the vendor's, up from 1.05x"
         assert ratio > 0.75, (
             f"basalt's schedules cost {ratio:.2f}x, which is far cheaper than the vendor's and "

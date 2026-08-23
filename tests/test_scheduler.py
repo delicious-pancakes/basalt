@@ -65,10 +65,8 @@ class Case:
     inputs: tuple
     out_format: str
     body: str
-    # Why this case is known not to round-trip yet. Recorded as an expected
-    # failure rather than deleted: a limitation that still runs is one that
-    # reports the day it is fixed, and one that is removed is one nobody
-    # remembers. Strict, so an unexpected pass fails the suite as well.
+    # an expected failure rather than a deleted test: a limitation that still
+    # runs reports the day it is fixed. strict, so an unexpected pass fails too
     known_gap: str = ""
 
 

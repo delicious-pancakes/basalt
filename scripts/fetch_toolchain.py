@@ -28,15 +28,11 @@ from pathlib import Path
 
 REDIST_BASE = "https://developer.download.nvidia.com/compute/cuda/redist"
 
-# Pinned default. 13.3.1 is the newest release at time of writing and carries
-# instruction forms 13.0 does not; the harvester runs both and diffs them, so
-# changing this default changes which build is "primary", not which are used.
+# the harvester runs both and diffs them, so this picks the primary, not the set
 DEFAULT_VERSION = "13.3.1"
 
-# nvrtc is excluded because it is 300 MB and nothing here calls it, and cudart
-# because basalt reaches the GPU through the driver API rather than the runtime.
-# A fresh clone with neither of them present passes `basalt doctor` and the whole
-# toolchain-marked suite, which is how both were shown to be unnecessary.
+# no nvrtc or cudart: a fresh clone without either passes doctor and the whole
+# toolchain-marked suite
 COMPONENTS = ("cuda_nvcc", "cuda_nvdisasm", "cuda_cuobjdump")
 
 ROOT = Path(__file__).resolve().parent.parent

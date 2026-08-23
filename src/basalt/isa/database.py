@@ -50,10 +50,8 @@ class OperandField:
     bits: tuple[int, ...]
     example_before: str = ""
     example_after: str = ""
-    # For a composite operand, which bits inside this field control which part
-    # of it: the bank, the offset, the base register. Empty when the field is
-    # not composite or when the prober could not read the effect. See
-    # `basalt.isa.operands`.
+    # which bits inside a composite operand carry the bank, offset and base.
+    # empty when it is not composite, or when the prober could not read it
     subfields: dict[str, tuple[int, ...]] = field(default_factory=dict)
 
     @property

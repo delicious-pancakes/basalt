@@ -69,15 +69,13 @@ class Observation:
         )
 
 
-# a corpus bug and a form the architecture does not have look identical from
-# out here: both are one rejected snippet. These are the reasons that mean the
-# PTX we wrote is wrong, and naming them is what makes the difference visible
+# a corpus bug and an absent form both look like one rejected snippet; these are
+# the reasons that mean the PTX we wrote is wrong
 _MALFORMED = re.compile(
     r"parsing error|syntax error|unexpected instruction types"
     r"|arguments mismatch|not defined|unknown symbol"
-    # a PTX type rule, not an architecture limit: bitwise atomics take `.b32`,
-    # `div` and a narrowing `cvt` must name a rounding mode, and a matrix
-    # instruction's vector width follows from its shape
+    # PTX type rules rather than architecture limits: atomics, rounding modes,
+    # and a matrix instruction's vector width
     r"|requires \.b\d|illegal rounding modifier|rounding modifier.{0,40}required"
     r"|vector of size \d+ is expected|incorrect no\. of",
     re.IGNORECASE,
@@ -151,9 +149,8 @@ def _one(tc: Toolchain, snip: Snippet, arch: str, opt: int) -> tuple[list[Observ
             timeout=60.0,
         )
         if res.returncode != 0 or not cubin.exists():
-            # ptxas splits diagnostics across both streams depending on the kind
-            # of failure, so scan them together and keep the first line that
-            # actually names an error rather than echoing the source
+            # ptxas splits diagnostics across both streams, so scan them together
+            # and skip the lines that only echo the source
             blob = res.stderr + "\n" + res.stdout
             reason = next(
                 (

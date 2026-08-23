@@ -115,16 +115,13 @@ def operand_shape(operands: str) -> tuple[str, ...]:
             kinds.append("label")
         elif text.startswith("["):
             # `[R3]` and `[UR4]` are different register files behind the same
-            # brackets, so collapsing them harvests one and leaves the other
-            # with no encoding to be written through
+            # brackets; collapsing them leaves one with no encoding
             inner = text[1:].split("]")[0].lstrip("-")
             found = _KIND.match(inner)
             kinds.append("addr:" + (found.group(1) if found else "?"))
         elif text.startswith("SR_"):
-            # A special register is a name in an eight-bit field, and the name is
-            # the value. Collapsing them all into one shape harvests one form and
-            # leaves the assembler nothing to write the other names with, so each
-            # is its own shape and matches its own encoding exactly.
+            # a special register's name is its value, so each is its own shape;
+            # collapsed, the assembler could write only one of them
             kinds.append(text)
         elif (match := _KIND.match(_bare(text))) is not None:
             kinds.append({"R": "reg", "UR": "ureg", "P": "pred", "UP": "upred"}[match.group(1)])

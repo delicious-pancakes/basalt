@@ -47,9 +47,8 @@ from .operands import operand_access
 
 __all__ = ["ObservedStalls", "StallEvidence", "mine_program"]
 
-# A pair seen only once could be a coincidence of scheduling rather than a
-# statement about the requirement. Below this, the observation is kept but not
-# treated as authoritative.
+# below this, a gap is more likely a coincidence of scheduling than a statement
+# about the requirement, so it is kept and not trusted
 MIN_OBSERVATIONS = 8
 
 
@@ -308,9 +307,8 @@ def mine_program(program: Program, into: ObservedStalls) -> None:
             for reg in access.real_uses:
                 if (previous := last_def.get(reg)) is None:
                     continue
-                # a guard is resolved at issue rather than at operand read, so
-                # it needs a different amount of lead and is mined separately.
-                # `@IMAD` and `IMAD` are two requirements, not one.
+                # a guard resolves at issue rather than at operand read, so
+                # `@IMAD` and `IMAD` are two requirements
                 consumer_key = ("@" if reg == access.guard else "") + instr.opcode
                 producer_index, producer_mnemonic = previous
                 word = program.instructions[producer_index].word

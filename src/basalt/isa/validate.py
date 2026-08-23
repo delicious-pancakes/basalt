@@ -30,15 +30,12 @@ from .database import InstructionForm, IsaDatabase
 
 __all__ = ["FormValidation", "ValidationSummary", "validate_database"]
 
-# Values written into a field. Chosen to have different bit patterns from each
-# other so a field that is really narrower than measured shows up as a mismatch
-# rather than as agreement on a value that happened to fit.
+# distinct bit patterns, so a field narrower than measured shows up as a
+# mismatch rather than as agreement on a value that happened to fit
 PROBE_VALUES: tuple[int, ...] = (1, 2, 5, 9, 21)
 
-# Any register-like token and its number. Predicates matter as much as general
-# registers here: several forms put a predicate in the first operand slot, and a
-# validator that only looks for `R\d+` reports their field maps as broken when
-# they are exactly right.
+# predicates too: several forms put one in the first slot, and a validator
+# looking only for `R\d+` calls their field maps broken
 _REGISTER = re.compile(r"\b(UR|R|UP|P)(\d+)\b")
 
 
@@ -49,10 +46,8 @@ class FormValidation:
     mnemonic: str
     controllable: list[int] = field(default_factory=list)
     uncontrollable: list[int] = field(default_factory=list)
-    # Slots that do not hold a register at all: a branch target, an immediate,
-    # a named special register. Their bits may well be controllable, but not by
-    # a check that reads back a register number, so they are counted apart
-    # rather than reported as failures.
+    # branch targets, immediates and special-register names: controllable, but
+    # not by a check that reads back a register number
     non_register: list[int] = field(default_factory=list)
     undecodable: int = 0
     detail: str = ""

@@ -52,10 +52,8 @@ from pathlib import Path
 
 import _repo
 
-# The same four input patterns the round trip uses, taken from the one place
-# they are defined. A stale read only changes the answer when the stale value
-# and the fresh one differ, so a single pattern is a single chance to notice and
-# an "over-strict" verdict reached on one is mostly a claim about that pattern.
+# from the one place they are defined: a verdict reached on fewer patterns is
+# mostly a claim about those patterns
 from roundtrip_corpus import PATTERNS
 
 _repo.use_repo_source()

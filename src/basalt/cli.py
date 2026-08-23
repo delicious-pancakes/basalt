@@ -89,9 +89,8 @@ def _doctor(args: argparse.Namespace) -> int:
 
 DEFAULT_DB = "data/isa/sm_120a.json"
 DEFAULT_OBSERVED = "data/latency/observed-stalls-sm120a.json"
-# The measured latencies for the one card this has been run on. Used when no
-# `--latencies` is given, so a command run from a checkout gets the measurements
-# rather than the assumptions without having to be told.
+# so a command run from a checkout gets the measurements rather than the
+# assumptions without being told
 DEFAULT_LATENCIES = "data/latency/rtx-5070-ti.json"
 DEFAULT_ISA = "data/isa/sm_120a.json"
 
