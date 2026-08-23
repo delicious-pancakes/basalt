@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 Sunny Patel
+#
+# The sdist is a source distribution, not a mirror of the repository: the
+# archive of record is the Zenodo deposit, which takes the whole tree. What is
+# added here is the metadata a redistributor needs in order to attribute the
+# work correctly, which is a licence term rather than a nicety.
+include CITATION.cff
+include CHANGELOG.md
+include NOTICE
+
+# no docs/ or scripts/: they are not needed to build the wheel, and a copy of
+# the findings that no longer sits beside the commit whose verify_all.py
+# regenerates them is a copy that can quietly go stale

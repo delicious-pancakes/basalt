@@ -60,6 +60,32 @@ def _compile(tc, snippet, opt):
         return disassemble_program(tc, cubin)
 
 
+def _opcodes(program) -> set[str]:
+    return {i.mnemonic.split(".")[0] for i in program.instructions if i.word is not None}
+
+
+def _coverage(reached: set[str]) -> None:
+    """How much of the instruction database these levels actually contain.
+
+    Finding 10 quotes this, and the denominator moves every time the database is
+    rebuilt, so it is computed here rather than counted by hand once.
+    """
+    from basalt.isa.database import IsaDatabase
+    from basalt.paths import ISA_DATABASE
+
+    known = {form.opcode for form in IsaDatabase.read(ISA_DATABASE).forms.values()}
+    covered = known & reached
+    share = 100 * len(covered) / len(known)
+    print()
+    print(f"  opcodes in the database                     {len(known):6}")
+    print(f"  reached at these levels                     {len(covered):6}  ({share:.0f}%)")
+    if missing := sorted(known - reached):
+        print("  in the database, not reached here          ", " ".join(missing))
+    # the other direction is the one that finds a gap rather than a limit
+    if extra := sorted(reached - known):
+        print("  emitted here, no form in the database      ", " ".join(extra))
+
+
 def _late(mnemonic, model):
     from basalt.verify.latency import LatencyClass
 
@@ -251,10 +277,14 @@ def main() -> int:
     def run(task):
         snippet, opt = task
         program = _compile(tc, snippet, opt)
-        return _one(program, model, observed) if program is not None else collections.Counter()
+        if program is None:
+            return collections.Counter(), set()
+        return _one(program, model, observed), _opcodes(program)
 
     with ThreadPoolExecutor(max_workers=(os.cpu_count() or 4) * 2) as pool:
-        totals: collections.Counter = sum(pool.map(run, tasks), collections.Counter())
+        results = list(pool.map(run, tasks))
+    totals: collections.Counter = sum((c for c, _ in results), collections.Counter())
+    reached: set[str] = set().union(*(ops for _, ops in results))
 
     distance = totals.pop("distance total", 0)
     seen = totals.pop("distance count", 0)
@@ -265,6 +295,7 @@ def main() -> int:
         print(f"  {key:58} {totals[key]:6}")
     if seen:
         print(f"\n  mean distance where distance is the only cover: {distance / seen:.0f} cycles")
+    _coverage(reached)
     return 0
 
 

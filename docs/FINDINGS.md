@@ -489,15 +489,28 @@ the instruction set they contain between them:
 
 | Opcode coverage | Count |
 | :--- | ---: |
-| Opcodes in the database | 77 |
-| Opcodes the round trip executes on the GPU | **74 (96%)** |
+| Opcodes in the database | 90 |
+| Opcodes the corpus reaches at the levels the round trip runs | **85 (94%)** |
 
-The three it never runs are `ENDCOLLECTIVE`, `R2UR` and `WARPSYNC`, and the reason is
-specific rather than incidental. The harvest compiles at `-O0` as well as `-O3`, and those
-three appear only at `-O0`: `shfl.sync` and `bar.sync` lower to them there and the optimiser
-folds them away by `-O3`. The round trip deliberately does not run `-O0`, because that level
-emits a zeroed control word, so there is no schedule to replace and nothing the comparison
-would prove.
+```bash
+python scripts/corpus_figures.py            # -O1, -O2 and -O3, the levels that schedule
+python scripts/corpus_figures.py --opt 0
+```
+
+The denominator moves every time the database is rebuilt, which is why it is computed by
+that command rather than counted by hand once. It was 74 of 77 when this section was first
+written, and both halves moved.
+
+The five it never reaches are `BPT`, `ENDCOLLECTIVE`, `LDL`, `R2UR` and `WARPSYNC`, and the
+reason is specific rather than incidental: **every one of them appears at `-O0` and at no
+higher level**, which is measured rather than argued. Recompiling the whole corpus at `-O0`
+reaches all five, and recompiling at `-O1`, `-O2` and `-O3` reaches none. For `WARPSYNC` and
+`ENDCOLLECTIVE` the mechanism is visible in the PTX, since `shfl.sync` and `bar.sync` lower
+to them there and the optimiser folds them away above it. `BPT` and `LDL` joined the group
+when the database was rebuilt wider; `-O0` keeping locals in memory rather than registers is
+the obvious source of `LDL`, and neither is claimed beyond the measurement. The round trip
+deliberately does not run `-O0`, because that level emits a zeroed control word, so there is
+no schedule to replace and nothing the comparison would prove.
 
 So they are in the database legitimately and are unreachable by this control by
 construction. Nothing is claimed about how basalt schedules them.
@@ -1758,6 +1771,15 @@ Stated so the boundary of the evidence is visible.
   is not a plain field read and the probe is not measuring what it looks like it is measuring.
   Reverted rather than kept, because it changed no outcome: 345 forms either way, and the same
   22,714 of 22,752 at `-O0`. The refusals stand and name the field they could not place.
+- **Three opcodes the compiler emits have no form in the database.** `ptxas` emits `UIMAD`,
+  `UISETP` and `USHF` from basalt's own corpus at `-O1` and above, and the differential probe
+  has never isolated a form for any of them, so the database holds none. The consequence is
+  coverage rather than correctness: asked for one, the assembler raises `AssemblyError` naming
+  the opcode rather than guessing an encoding, and the latency model carries all three, so the
+  checker still reasons about them where they appear in someone else's machine code. It is
+  recorded here because nothing found it for a long time. The database was only ever compared
+  against itself, and pointing `scripts/corpus_figures.py` at both directions at once, what
+  the database holds and what the compiler actually emitted, is what surfaced it.
 - **Ten opcodes have no evidence behind their latency**, out of the 134 the model now holds.
   The other 124 split into 11 measured on silicon, 91 mined from what the vendor schedules
   across shipped code as well as the corpus, and 22 with no register result at all, whose

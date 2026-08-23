@@ -10,6 +10,7 @@ until someone quotes it back.
 
 from __future__ import annotations
 
+import re
 import tomllib
 from pathlib import Path
 
@@ -62,3 +63,40 @@ class TestTheMeasuredDataShips:
             Confidence.MEASURED
         )
         assert ObservedStalls.read(OBSERVED_STALLS).by_pair
+
+
+class TestTheReadmeIsAlsoThePackagePage:
+    """`readme = "README.md"` makes this file PyPI's project description.
+
+    PyPI serves it from its own domain and resolves nothing against the
+    repository, so a relative path that works on GitHub renders as a broken
+    image there. Six of them did, including the header.
+    """
+
+    @staticmethod
+    def _references(text: str) -> list[str]:
+        live = re.sub(r"<!--.*?-->", "", text, flags=re.S)
+        return (
+            re.findall(r'<img[^>]+src="([^"]+)"', live)
+            + re.findall(r'<a[^>]+href="([^"]+)"', live)
+            + [url for _, url in re.findall(r"\[([^\]]*)\]\(([^)\s]+)\)", live)]
+        )
+
+    def test_nothing_in_it_is_relative(self) -> None:
+        text = (ROOT / "README.md").read_text(encoding="utf-8")
+        relative = [
+            url
+            for url in self._references(text)
+            if not url.startswith(("http://", "https://", "#", "mailto:"))
+        ]
+        assert not relative, relative
+
+    def test_every_asset_it_points_at_is_in_the_tree(self) -> None:
+        # absolute URLs cannot be checked by existence, so they are checked by
+        # shape: each one has to name a file this repository actually carries
+        text = (ROOT / "README.md").read_text(encoding="utf-8")
+        prefix = "https://raw.githubusercontent.com/sunnypatell/basalt/main/"
+        assets = [u for u in self._references(text) if u.startswith(prefix)]
+        assert assets
+        for url in assets:
+            assert (ROOT / url[len(prefix) :]).is_file(), url

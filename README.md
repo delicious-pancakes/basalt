@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="./docs/assets/social-preview.svg" alt="basalt: world's first hazard checker for NVIDIA Blackwell (sm_120), with an assembler and scheduler matched against their own compiler byte for byte. The check they never shipped. sm_120 has no hardware interlock, so one wrong stall count makes the GPU read a stale register and return a wrong answer silently." width="880" />
+<img src="https://raw.githubusercontent.com/sunnypatell/basalt/main/docs/assets/social-preview.svg" alt="basalt: world's first hazard checker for NVIDIA Blackwell (sm_120), with an assembler and scheduler matched against their own compiler byte for byte. The check they never shipped. sm_120 has no hardware interlock, so one wrong stall count makes the GPU read a stale register and return a wrong answer silently." width="880" />
 
 <br/>
 
@@ -14,18 +14,18 @@
 <a href="https://orcid.org/0009-0005-3863-7642"><img alt="ORCID" src="https://img.shields.io/badge/ORCID-0009--0005--3863--7642-A6CE39?style=flat-square&logo=orcid&logoColor=white&labelColor=0d1117"></a>
 <img alt="Architecture" src="https://img.shields.io/badge/arch-sm__120%20%7C%20sm__120a-76B900?style=flat-square&labelColor=0d1117">
 <a href="https://github.com/sunnypatell/basalt/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/sunnypatell/basalt/ci.yml?branch=main&style=flat-square&logo=githubactions&logoColor=white&label=ci&labelColor=0d1117"></a>
-<a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Apache--2.0-3178C6?style=flat-square&labelColor=0d1117"></a>
+<a href="https://github.com/sunnypatell/basalt/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Apache--2.0-3178C6?style=flat-square&labelColor=0d1117"></a>
 
 <br/>
 
 <img alt="Python" src="https://img.shields.io/badge/python-3.11%2B-3776AB?style=flat-square&logo=python&logoColor=white&labelColor=0d1117">
 <img alt="Runtime dependencies" src="https://img.shields.io/badge/runtime%20deps-none-555?style=flat-square&labelColor=0d1117">
 <img alt="No GPU required" src="https://img.shields.io/badge/ISA%20build-no%20GPU%20required-555?style=flat-square&labelColor=0d1117">
-<a href="CITATION.cff"><img alt="Cite this repository" src="https://img.shields.io/badge/cite-CITATION.cff-555?style=flat-square&labelColor=0d1117"></a>
+<a href="https://github.com/sunnypatell/basalt/blob/main/CITATION.cff"><img alt="Cite this repository" src="https://img.shields.io/badge/cite-CITATION.cff-555?style=flat-square&labelColor=0d1117"></a>
 
 <br/><br/>
 
-<strong><a href="#the-problem">The problem</a> &nbsp;&middot;&nbsp; <a href="#which-gpus">Which GPUs</a> &nbsp;&middot;&nbsp; <a href="#how-it-works">How it works</a> &nbsp;&middot;&nbsp; <a href="#quickstart">Quickstart</a> &nbsp;&middot;&nbsp; <a href="#measured-not-assumed">Measured, not assumed</a> &nbsp;&middot;&nbsp; <a href="docs/FINDINGS.md">Findings</a> &nbsp;&middot;&nbsp; <a href="docs/METHOD.md">Method</a> &nbsp;&middot;&nbsp; <a href="docs/ROADMAP.md">Roadmap</a> &nbsp;&middot;&nbsp; <a href="#clean-room-position">Clean-room</a></strong>
+<strong><a href="#the-problem">The problem</a> &nbsp;&middot;&nbsp; <a href="#which-gpus">Which GPUs</a> &nbsp;&middot;&nbsp; <a href="#how-it-works">How it works</a> &nbsp;&middot;&nbsp; <a href="#quickstart">Quickstart</a> &nbsp;&middot;&nbsp; <a href="#measured-not-assumed">Measured, not assumed</a> &nbsp;&middot;&nbsp; <a href="https://github.com/sunnypatell/basalt/blob/main/docs/FINDINGS.md">Findings</a> &nbsp;&middot;&nbsp; <a href="https://github.com/sunnypatell/basalt/blob/main/docs/METHOD.md">Method</a> &nbsp;&middot;&nbsp; <a href="https://github.com/sunnypatell/basalt/blob/main/docs/ROADMAP.md">Roadmap</a> &nbsp;&middot;&nbsp; <a href="#clean-room-position">Clean-room</a></strong>
 
 </div>
 
@@ -39,7 +39,7 @@ An NVIDIA GPU instruction is 128 bits, and 21 of them are not the instruction at
 
 That is a strange kind of bug. It does not crash. It does not appear in a debugger. It produces numbers that are merely wrong, which in a matrix multiply or an attention kernel means a model that trains slightly badly rather than one that visibly breaks.
 
-<img src="./docs/assets/chart-stall.svg" alt="Cycles per instruction for each stall encoding on sm_120: a stall of 0 costs 36.85 cycles and is correct, 1, 2 and 3 cost 4.88, 4.88 and 5.88 and silently return the wrong answer, and 4, 8 and 15 cost 6.88, 10.88 and 18.02 and are correct.">
+<img src="https://raw.githubusercontent.com/sunnypatell/basalt/main/docs/assets/chart-stall.svg" alt="Cycles per instruction for each stall encoding on sm_120: a stall of 0 costs 36.85 cycles and is correct, 1, 2 and 3 cost 4.88, 4.88 and 5.88 and silently return the wrong answer, and 4, 8 and 15 cost 6.88, 10.88 and 18.02 and are correct.">
 
 The three cheapest encodings are the broken ones, and nothing anywhere reports it. Note also
 what the left-hand bar is doing: a stall of **zero** is not zero cycles, it is a distinct safe
@@ -113,7 +113,7 @@ schedules spend **1.05x** the vendor's issue cycles, slower on 111 of the 1,323 
 optimisation-level pairs and cheaper on 842, with every comparable kernel still
 byte-identical on the GPU.
 
-<img src="./docs/assets/chart-audit.svg" alt="Three audit runs against NVIDIA shipped sm_120 libraries: 6,593 errors over 250 kernels, then 940 after widening to 2,762 kernels and 10,218,030 dependencies, then 0 after thirteen corrections. Every error was basalt's own.">
+<img src="https://raw.githubusercontent.com/sunnypatell/basalt/main/docs/assets/chart-audit.svg" alt="Three audit runs against NVIDIA shipped sm_120 libraries: 6,593 errors over 250 kernels, then 940 after widening to 2,762 kernels and 10,218,030 dependencies, then 0 after thirteen corrections. Every error was basalt's own.">
 
 The third row is the one that changed the other three. A checker calibrated on a corpus
 cannot fail on that corpus: the tightest gap the compiler was seen to leave *is* the floor,
@@ -125,7 +125,7 @@ million instructions took it straight back to 940, and found five more model err
 the first eight. Thirteen corrections, none of them NVIDIA's, and the requirement re-mined from
 24,311 shipped kernels put a guard predicate at 13 cycles across 229,567 observations, which is
 the number fault injection had measured on this card by breaking a program on purpose. See
-[finding 32](docs/FINDINGS.md).
+[finding 32](https://github.com/sunnypatell/basalt/blob/main/docs/FINDINGS.md).
 
 Cheaper than the vendor is not a claim to be smug about. basalt schedules every dependency
 at the tightest gap `ptxas` was ever seen to leave for that exact pairing, and `ptxas` is
@@ -138,7 +138,7 @@ The middle column is the point. A checker and a scheduler that share a latency m
 with each other while both being wrong, so neither is evidence for the other; only the
 silicon has no stake in the argument. Running the scheduler over seven hand-written kernels
 passed seven of seven for a long time. Running it over three hundred found forty-one wrong
-ones, and every correction in [findings](docs/FINDINGS.md) came out of watching that number
+ones, and every correction in [findings](https://github.com/sunnypatell/basalt/blob/main/docs/FINDINGS.md) came out of watching that number
 move.
 
 The same applies to the inputs. A stale read only changes the answer when the stale value
@@ -150,7 +150,7 @@ survived every control up to that point, including the round trip itself.
 The same discipline decides what the assembler is allowed to do, and it is worth separating
 the two numbers it has.
 
-<img src="./docs/assets/chart-assembler.svg" alt="basalt's assembler reproduces 59,693 of 59,760 corpus instructions and 4,585,336 of 5,237,448 shipped library instructions exactly, refusing the rest by name, and has assembled zero of all 5,297,208 to the wrong bytes.">
+<img src="https://raw.githubusercontent.com/sunnypatell/basalt/main/docs/assets/chart-assembler.svg" alt="basalt's assembler reproduces 59,693 of 59,760 corpus instructions and 4,585,336 of 5,237,448 shipped library instructions exactly, refusing the rest by name, and has assembled zero of all 5,297,208 to the wrong bytes.">
 
 **Coverage is 99.9% of the corpus and 87.5% of shipped library code.
 Correctness is 100%, and that is the number pinned by a test.** The gap between them is
@@ -209,7 +209,7 @@ apply to every card in it:
 one, and does not claim to support it. What it can say is measured: the compiler emits
 **byte-identical code, control words included**, for all six targets it offers here, so the
 schedule a kernel needs is a property of the architecture rather than of the part
-([finding 28](docs/FINDINGS.md)). If that were not true, NVIDIA's own compiler would be
+([finding 28](https://github.com/sunnypatell/basalt/blob/main/docs/FINDINGS.md)). If that were not true, NVIDIA's own compiler would be
 emitting an unsafe schedule for one of them.
 
 Every number measured on silicon comes from **one physical card**, named exactly, because
@@ -311,7 +311,7 @@ Eight-bit register fields and a 32-bit immediate, arrived at by experiment rathe
 | `wait_mask` | 121:116 | Scoreboards that must be clear before issuing |
 | `reuse` | 125:122 | Operand reuse-cache flags, one per source slot |
 
-<img src="./docs/assets/diagram-control-word.svg" alt="An sm_120 instruction is 128 bits, of which bits 105 to 125 are the scheduling control word: stall at 108:105, yield at 109, write_barrier at 112:110, read_barrier at 115:113, wait_mask at 121:116 and reuse at 125:122.">
+<img src="https://raw.githubusercontent.com/sunnypatell/basalt/main/docs/assets/diagram-control-word.svg" alt="An sm_120 instruction is 128 bits, of which bits 105 to 125 are the scheduling control word: stall at 108:105, yield at 109, write_barrier at 112:110, read_barrier at 115:113, wait_mask at 121:116 and reuse at 125:122.">
 
 The layout validates itself on contact. In a trivial kernel, `S2R` sets `write_barrier=0` and the `IMAD` consuming its result carries `wait_mask=0x01`; `LDCU.64` sets `write_barrier=1` and the dependent `STG.E` carries `wait_mask=0x02`. Every producer and consumer pair lines up, and instructions that `nvdisasm` annotates `.reuse` have the matching reuse bit set.
 
@@ -338,6 +338,45 @@ ok    cubin oracle  16 instructions with encodings
 ok    probe oracle 16/16 mnemonics round-tripped
 
 both oracles healthy. no GPU required for anything above.
+```
+
+<!-- Uncomment with the badges, once v1.0.0 is on PyPI:
+### Or as a package
+
+`pip install basalt-sass` installs the CLI, the library and all three measured tables, with
+no runtime dependencies. Use this if you already have CUDA on the machine; the checkout above
+is what you want if you do not, or if you mean to reproduce the measurements.
+
+```bash
+pip install basalt-sass
+basalt doctor
+basalt verify kernel.cubin
+```
+-->
+
+### Where it looks for `ptxas` and `nvdisasm`
+
+basalt drives both as external processes and redistributes neither, so it has to find a copy.
+It takes the first that answers, and **any CUDA 13 install will do**: nothing has to be the
+pinned redistributable.
+
+| Order | Where |
+| ---: | :--- |
+| 1 | `--cuda-bin`, passed on the command line |
+| 2 | `BASALT_CUDA_BIN`, a directory holding both binaries |
+| 3 | `CUDA_PATH`, `CUDA_HOME` or `CUDA_ROOT`, each plus `/bin` |
+| 4 | `ptxas` on your `PATH` |
+| 5 | `third_party/cuda/<version>/bin` in a checkout, newest first |
+
+`basalt doctor` prints which one it resolved, and exits non-zero when it cannot find one, so
+it works as a build-step precondition rather than only as a thing to read.
+
+Querying the instruction database needs no toolchain at all, because the database is measured
+ahead of time and ships inside the package:
+
+```bash
+basalt isa --stats
+basalt isa --opcode QMMA
 ```
 
 Rebuild the instruction database from scratch, or query the committed one:
@@ -422,10 +461,10 @@ Numbers here are printed by the tooling and regenerate from a clean checkout. Th
 
 | Instruction database | Count |
 | :--- | ---: |
-| Instruction forms | 274 |
-| Distinct opcodes | 77 |
-| Forms with a full operand map | 269 |
-| Tensor-core forms | 43 |
+| Instruction forms | 345 |
+| Distinct opcodes | 90 |
+| Forms with a full operand map | 339 |
+| Tensor-core forms | 46 |
 | Built with | `ptxas` V13.3.73 |
 
 Tensor coverage is where the low-precision hardware lives: `HMMA` and `IMMA`, `QMMA` across the FP8, FP6 and FP4 types including asymmetric operand pairs, the scale-factor forms `QMMA.SF` and `OMMA.SF` that carry a per-block exponent, sparse `IMMA.SP`, and the matrix movement instructions `LDSM`, `STSM` and `MOVM` in every shape including the transposing variants.
@@ -442,7 +481,7 @@ Tensor coverage is where the low-precision hardware lives: `HMMA` and `IMMA`, `Q
 
 Three of those contradict the assumed model basalt shipped with: `DADD` was assumed 48, `POPC` was assumed 4, and each conversion was assumed 6 against 24 measured for the round trip.
 
-<img src="./docs/assets/chart-latency.svg" alt="Three latencies basalt assumed before measuring them against what the silicon reported: fp64 add assumed 48 and measured 64, POPC assumed 4 and measured 18, and the I2FP plus F2I conversion round trip assumed 12 and measured 24.">
+<img src="https://raw.githubusercontent.com/sunnypatell/basalt/main/docs/assets/chart-latency.svg" alt="Three latencies basalt assumed before measuring them against what the silicon reported: fp64 add assumed 48 and measured 64, POPC assumed 4 and measured 18, and the I2FP plus F2I conversion round trip assumed 12 and measured 24.">
 
 An assumed latency model is not a small approximation of a measured one, which is the entire argument for measuring.
 
@@ -458,22 +497,22 @@ An assumed latency model is not a small approximation of a measured one, which i
 
 **It agrees with the vendor compiler on every kernel in the corpus.** Every kernel `ptxas` builds from the corpus is verified against its own scheduling, at every optimisation level that schedules: 30,421 dependencies, zero errors. That sweep runs in CI on every push, and every modelling error this project has made was caught by it rather than by reasoning.
 
-**The verdicts match the silicon.** For every encodable stall on a dependent producer, basalt's static answer and what the hardware actually computes agree, including the zero case. That is held as a test, not asserted here. Full evidence, including three independent methods for the required stall and the corrections made along the way, is in [findings](docs/FINDINGS.md).
+**The verdicts match the silicon.** For every encodable stall on a dependent producer, basalt's static answer and what the hardware actually computes agree, including the zero case. That is held as a test, not asserted here. Full evidence, including three independent methods for the required stall and the corrections made along the way, is in [findings](https://github.com/sunnypatell/basalt/blob/main/docs/FINDINGS.md).
 
-**And when it says a schedule is unsafe, the silicon agrees.** Take the vendor's own working schedule for 233 kernels, shorten one real dependency in each, and compare basalt's verdict against what the GPU computes: 79 that it called broken were broken, and **nothing it called safe computed a wrong answer**. That number started at 34 missed rather than zero, and [findings](docs/FINDINGS.md) says what the cause was and what fixing it cost in false alarms, because a sweep that only ever reported its final figure would be worth less than one that reported its first.
+**And when it says a schedule is unsafe, the silicon agrees.** Take the vendor's own working schedule for 233 kernels, shorten one real dependency in each, and compare basalt's verdict against what the GPU computes: 79 that it called broken were broken, and **nothing it called safe computed a wrong answer**. That number started at 34 missed rather than zero, and [findings](https://github.com/sunnypatell/basalt/blob/main/docs/FINDINGS.md) says what the cause was and what fixing it cost in false alarms, because a sweep that only ever reported its final figure would be worth less than one that reported its first.
 
 ## It can assign the control bits too
 
 The verifier answers whether a schedule is safe. The scheduler answers what a safe schedule would be, from the same measurements: it discards every control bit `ptxas` produced, computes its own, hands the result back to the verifier, and then runs it on the GPU beside the vendor's version of the same kernel.
 
-Run over the whole corpus on the card, at every optimisation level that produces a schedule, all 439 comparable kernels come out computing byte-identical results to the vendor schedule, from control bits basalt worked out itself. The 2 that are excluded read the clock and the grid id, so they do not agree with themselves either, and [findings](docs/FINDINGS.md) says so rather than folding them into a percentage.
+Run over the whole corpus on the card, at every optimisation level that produces a schedule, all 439 comparable kernels come out computing byte-identical results to the vendor schedule, from control bits basalt worked out itself. The 2 that are excluded read the clock and the grid id, so they do not agree with themselves either, and [findings](https://github.com/sunnypatell/basalt/blob/main/docs/FINDINGS.md) says so rather than folding them into a percentage.
 
 That control is the reason any of the rest is trustworthy. The checker and the scheduler read the same latency model, so a wrong entry in it satisfies both at once and they agree with each other while both being wrong. Only the silicon has no stake in the argument. Running the scheduler over seven hand-written kernels passed seven of seven for a long time; running it over three hundred found forty-one wrong ones, and every model correction since came out of watching that number move.
 
 That loop is where the real bugs came from. Stall spent outside the window between a producer and its consumer counts for nothing, and spending it there ends the search with a program that is still short. A stall pinned to the safe encoding was being overwritten by a later pass, replacing a guarantee with a small number. fp64 operands occupy register pairs with nothing in the mnemonic to say so, so half of every fp64 dependency was invisible to both the checker and the scheduler. A predicate used as an instruction's guard needs thirteen cycles where the same predicate read as data needs five, because a guard has to be resolved before the instruction issues at all. And waiting on a scoreboard does not settle a dependency completely: the producer still owes a small stall of its own, two cycles for fp64 add, and one cycle less is silently wrong. None of those were found by reasoning; every one was found by running the output and getting the wrong number.
 
 > [!NOTE]
-> **1.0, and specific about what that means.** What is done: both oracles, the instruction database with its fields proven writable, the hazard checker over a real control-flow graph, latency measured on one SKU by three independent methods, a scheduler that round-trips every comparable corpus kernel through the hardware byte-for-byte, and an audit of 2,762 shipped kernels held out of every table the checker reads. What is not: 12 corpus kernels that are not runnable by construction and 2 whose vendor output is not deterministic, all named in the findings; ten opcodes still carry an assumed latency rather than a measured one, none of them ever a producer in either body of code; and only one GPU has been measured, which [finding 28](docs/FINDINGS.md) shows matters less than it sounds. Where something is inferred rather than measured, the tooling says so rather than rounding it up to a fact. See the [roadmap](docs/ROADMAP.md) and the [method](docs/METHOD.md).
+> **1.0, and specific about what that means.** What is done: both oracles, the instruction database with its fields proven writable, the hazard checker over a real control-flow graph, latency measured on one SKU by three independent methods, a scheduler that round-trips every comparable corpus kernel through the hardware byte-for-byte, and an audit of 2,762 shipped kernels held out of every table the checker reads. What is not: 12 corpus kernels that are not runnable by construction and 2 whose vendor output is not deterministic, all named in the findings; ten opcodes still carry an assumed latency rather than a measured one, none of them ever a producer in either body of code; and only one GPU has been measured, which [finding 28](https://github.com/sunnypatell/basalt/blob/main/docs/FINDINGS.md) shows matters less than it sounds. Where something is inferred rather than measured, the tooling says so rather than rounding it up to a fact. See the [roadmap](https://github.com/sunnypatell/basalt/blob/main/docs/ROADMAP.md) and the [method](https://github.com/sunnypatell/basalt/blob/main/docs/METHOD.md).
 
 ## Repository layout
 
@@ -511,18 +550,18 @@ basalt is an independent, clean-room work for interoperability. It contains no N
 
 NVIDIA, CUDA, and Blackwell are trademarks of NVIDIA Corporation. This project is not affiliated with, endorsed by, or sponsored by NVIDIA.
 
-Licensed under [Apache-2.0](LICENSE). Apache rather than something restrictive on purpose: a correctness tool nobody is allowed to build on is a correctness tool nobody runs, and the patent grant matters for work this close to hardware.
+Licensed under [Apache-2.0](https://github.com/sunnypatell/basalt/blob/main/LICENSE). Apache rather than something restrictive on purpose: a correctness tool nobody is allowed to build on is a correctness tool nobody runs, and the patent grant matters for work this close to hardware.
 
 ## Contributing
 
-The highest-value contribution is an encoding basalt gets wrong. See [`CONTRIBUTING.md`](CONTRIBUTING.md) and the [ISA gap template](.github/ISSUE_TEMPLATE/isa_gap.yml), which collects enough to reproduce without your machine.
+The highest-value contribution is an encoding basalt gets wrong. See [`CONTRIBUTING.md`](https://github.com/sunnypatell/basalt/blob/main/CONTRIBUTING.md) and the [ISA gap template](https://github.com/sunnypatell/basalt/blob/main/.github/ISSUE_TEMPLATE/isa_gap.yml), which collects enough to reproduce without your machine.
 
-[`SUPPORT.md`](SUPPORT.md) says where a question goes, [`GOVERNANCE.md`](GOVERNANCE.md) what a change has to clear, [`RELEASING.md`](RELEASING.md) how a release is cut and verified, and [`SECURITY.md`](SECURITY.md) how to report privately.
+[`SUPPORT.md`](https://github.com/sunnypatell/basalt/blob/main/SUPPORT.md) says where a question goes, [`GOVERNANCE.md`](https://github.com/sunnypatell/basalt/blob/main/GOVERNANCE.md) what a change has to clear, [`RELEASING.md`](https://github.com/sunnypatell/basalt/blob/main/RELEASING.md) how a release is cut and verified, and [`SECURITY.md`](https://github.com/sunnypatell/basalt/blob/main/SECURITY.md) how to report privately.
 
 ## Citing basalt
 
 If basalt informs a paper, a tool, a model or a bug report, please cite it. GitHub reads
-[`CITATION.cff`](CITATION.cff) natively, so **Cite this repository** in the sidebar gives you
+[`CITATION.cff`](https://github.com/sunnypatell/basalt/blob/main/CITATION.cff) natively, so **Cite this repository** in the sidebar gives you
 APA and BibTeX with no transcription. The same file is what Zenodo and citation managers
 parse, and it is the authoritative record of authorship.
 
@@ -550,7 +589,7 @@ they came from rather than `main`: the numbers are regenerated by `scripts/verif
 a specific commit, and a tag is what makes that reproducible.
 
 **Attribution is a licence term, not a courtesy.** Apache-2.0 &sect;4 requires that
-[`LICENSE`](LICENSE) and [`NOTICE`](NOTICE) travel with any redistribution or derivative work,
+[`LICENSE`](https://github.com/sunnypatell/basalt/blob/main/LICENSE) and [`NOTICE`](https://github.com/sunnypatell/basalt/blob/main/NOTICE) travel with any redistribution or derivative work,
 and `NOTICE` carries the authorship and the clean-room statement. Forks, vendored copies and
 repackaged wheels all keep both files.
 
