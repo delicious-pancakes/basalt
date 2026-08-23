@@ -145,9 +145,18 @@ be checked directly.
   instruction downstream.
 - **Operands still being read.** An instruction signalling a read barrier has not consumed
   its sources yet, so anything overwriting those registers must wait on it.
+- **Operands read without a barrier.** The same hazard where the compiler covered it with
+  spacing instead. The gap needed is a property of the pairing rather than a constant, so it
+  is mined from what the vendor leaves, and reported only where there is enough evidence to
+  say a shorter gap is wrong (finding 23).
 
 Analysis is per basic block. Tracking a definition across a branch needs a real
 control-flow graph, and inventing one from a linear listing produces confident nonsense.
+
+The scheduler answers the same four questions in the other direction, from the same model
+and, where a rule has a number in it, the same function. A checker and a scheduler that
+disagree produce schedules that fail their own verifier, which has happened here and is
+worth designing against rather than testing for.
 
 ```bash
 python -m basalt.cli verify path/to/kernel.cubin --latencies data/latency/rtx-5070-ti.json
