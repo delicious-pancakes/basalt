@@ -243,11 +243,8 @@ def generate_tensor() -> list[Snippet]:
             )
         )
 
-    # sparse variants carry a metadata operand and a selector. `.sp` and
-    # `.sp::ordered_metadata` are two forms, not a spelling: ptxas advises the
-    # second and accepts both, and only emitting the first left the other
-    # unharvested. FP4 is here without a shape that builds, because every shape
-    # sm_120a offers rejects it and a recorded rejection is the negative result
+    # `.sp` and `.sp::ordered_metadata` are two forms rather than a spelling.
+    # FP4 has no shape sm_120a accepts, and the rejection is the negative result
     for shape, atype, ctype, na, nb, nc in (
         # a sparse A is compressed to half its dense width, so `m16n8k32` takes
         # the same four registers `m16n8k16` does, and B spans the full k at four

@@ -146,7 +146,9 @@ def main() -> int:
     if args.list:
         for name, entry in sorted(man.items()):
             if isinstance(entry, dict) and key in entry:
-                mb = entry[key]["size"] / 1e6
+                # the manifest quotes the size as a string, and dividing that by
+                # a float is a TypeError rather than a size
+                mb = int(entry[key].get("size", 0)) / 1e6
                 print(f"{name:22s} {mb:8.1f} MB  {entry.get('version', '')}")
         return 0
 

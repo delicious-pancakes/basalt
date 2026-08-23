@@ -320,12 +320,9 @@ def operand_access(mnemonic: str, operands: str) -> Access:
             if ref is None:
                 continue
             if addressed:
-                # A width on the mnemonic describes the data, not the address.
-                # `STS.128 [R0], R8` moves four registers to one 32-bit shared
-                # address, and widening the address invented a dependency on
-                # R1..R3 that made the vendor's own schedule read as broken. A
-                # suffix on the register itself, as `[R2.64]` has, still counts,
-                # and a descriptor is a 64-bit pair whether or not it says so.
+                # a width on the mnemonic describes the data, not the address:
+                # `STS.128 [R0], R8` writes four registers to one 32-bit address.
+                # a suffix on the register still counts, and a descriptor is a pair
                 width = _width_from("", m.group(3))
                 if _in_descriptor(part, m.start()):
                     width = max(width, 2)

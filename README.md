@@ -129,8 +129,15 @@ apply to every card in it:
 | RTX PRO Blackwell workstation cards | 12.0 (`sm_120`) | yes |
 | Datacentre Blackwell (B100, B200, GB200) | 10.0 (`sm_100`) | no, different encoding |
 
-Every number here comes from **one physical card**, named exactly, because "a 5070 Ti" is
-not enough to reproduce a run:
+`ptxas` also targets `sm_121`, a different chip in the same family. basalt has never run on
+one, and does not claim to support it. What it can say is measured: the compiler emits
+**byte-identical code, control words included**, for all six targets it offers here, so the
+schedule a kernel needs is a property of the architecture rather than of the part
+([finding 28](docs/FINDINGS.md)). If that were not true, NVIDIA's own compiler would be
+emitting an unsafe schedule for one of them.
+
+Every number measured on silicon comes from **one physical card**, named exactly, because
+"a 5070 Ti" is not enough to reproduce a run:
 
 | | |
 | :--- | :--- |

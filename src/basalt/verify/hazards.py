@@ -457,8 +457,7 @@ def verify_program(
                 worklist.append(succ)
 
     # ---- report ---------------------------------------------------------
-    # one pass over the settled states, so a block visited many times during
-    # convergence reports each finding once
+    # one pass over the settled states, so each finding is reported once
     seen: set[tuple] = set()
     for block in cfg.blocks:
         _run_block(cfg, block.index, entries[block.index], model, report, seen, observed)

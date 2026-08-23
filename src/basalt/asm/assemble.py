@@ -622,18 +622,15 @@ def _write_composite(word: int, slot: Slot, token: str, reference: str, mnemonic
                 f"never located bits for it in this form"
             )
         if role == "offset" or (role == "bank" and _IMMEDIATE.match(value_text)):
-            # a constant bank is a number, as in `c[0x1][0x0]`, and only `cx`
-            # names it with a uniform register. reading `0x1` as a register
-            # refused 875 of the 913 instructions -O0 could not assemble
+            # a constant bank is a number and only `cx` names it with a
+            # register; reading `0x1` as one refused 875 instructions at -O0
             value = int(value_text or "0x0", 0)
         else:
             # the base register carries its access width, as in `R2.64`, and the
             # width is part of the opcode rather than of this field
             bare = value_text.split(".")[0]
-            # `[R3]` and `[UR4]` are different register files behind the same
-            # brackets, and the vendor encodes the uniform one as a sink here
-            # plus a selector elsewhere. writing 4 into the base bits produced a
-            # word that disassembles as a different address
+            # `[R3]` and `[UR4]` are different files behind the same brackets:
+            # the uniform one encodes as a sink here plus a selector elsewhere
             if _register_file(bare) != _register_file(reference_text.split(".")[0]):
                 raise AssemblyError(
                     f"{mnemonic} operand {slot.index} has {value_text!r} as its {role} where the "

@@ -1412,7 +1412,82 @@ assumption that the control word is where control lives. `DEPBAR` is a counter-e
 sitting in the instruction stream, and the way to find the rest of them is to look for
 operands that name a piece of scheduling state rather than a register.
 
-## 28. What is deliberately not claimed
+## 28. The schedule is a property of the architecture, not of the part
+
+The largest caveat on everything here is that it was measured on one card, and the obvious
+way to lift it is to buy more cards. That is the wrong instrument. The question underneath is
+not "what does this part do" but "is the required schedule a property of the part", and the
+compiler answers that one without any card at all, because on sm_120 the compiler is what
+carries the schedule. The hardware checks nothing.
+
+`ptxas` targets six members of this family. `sm_120a` is architecture-specific, `sm_120f`
+family-specific, `sm_120` the portable subset, and `sm_121` is a **different chip** with the
+same three suffixes. If the requirement varied across them, the emitted control words would
+have to vary. Compile the whole corpus for each and compare:
+
+| Target | Kernels built | Identical to `sm_120a` | Different code | Same code, different schedule |
+| :--- | ---: | ---: | ---: | ---: |
+| `sm_120` | 1,215 | 1,215 | 0 | **0** |
+| `sm_120f` | 1,323 | 1,323 | 0 | **0** |
+| `sm_121a` | 1,323 | 1,323 | 0 | **0** |
+| `sm_121` | 1,215 | 1,215 | 0 | **0** |
+| `sm_121f` | 1,323 | 1,323 | 0 | **0** |
+
+Every kernel every target builds comes out **byte-identical, control words included**. The
+108 the bare names decline are the tensor forms that need the `a` suffix, and they are
+declined at compile time rather than scheduled differently.
+
+This is the negative result the roadmap said was worth having. `ptxas` does not tune its
+scheduling per part in this family: it applies one model to all six targets, so the mined
+half of basalt's model, 56 of 87 opcodes, is derived from output that is identical for every
+one of them. What remains card-specific is the 11 latencies measured on silicon, which exist
+as a cross-check on the mined numbers rather than as the source of them.
+
+Stated carefully, because it is easy to overclaim. This does not prove the silicon is
+identical. It proves that if two parts in this family had different scheduling requirements,
+NVIDIA's own compiler would be emitting an unsafe schedule for one of them. That is a
+different sentence and a much stronger one than anything a second card would have bought.
+
+    python scripts/across_the_family.py --opt 1 2 3
+
+## 29. Deriving the instruction set twice, from two compilers
+
+basalt's instruction model comes from differential probing of one `ptxas` build, and one
+measurement is not a result. Every bit role it assigns could be a property of that build, and
+nothing inside the pipeline would notice. So the model was derived again, independently, from
+CUDA 13.0.3 against the 13.3.1 it ships with, and the two compared.
+
+The comparison has to be on the right thing. Two releases disagree on **195 of 343** shared
+encodings, which sounds alarming and means nothing: an encoding carries the control bits and
+the branch target of whichever kernel the form was harvested from, so `EXIT` reads
+`000fc0...` under one and `000fea...` under the other and the difference is entirely
+scheduling. What matters is the model: which bits are the opcode, which are modifiers, and
+which bits each operand occupies.
+
+| Compared on | Forms differing |
+| :--- | ---: |
+| The exemplar encoding | 195 |
+| The derived bit model | 38 |
+| **The operand model** | **0** |
+
+Not one operand field, sub-field or modifier bit differs across 343 shared forms. The 38 are
+all the same shape: a bit reads as opcode under one exemplar and as something else under the
+other, which is a property of the exemplar rather than of the architecture, since which flips
+change the mnemonic depends on the rest of the word.
+
+The stronger test is whether one model can read the other's output, and it can:
+
+| Assembling CUDA 13.0.3 output with the 13.3.1 database | Exact | Refused | Wrong |
+| :--- | ---: | ---: | ---: |
+| `-O1` | 12,145 of 12,168 | 23 | **0** |
+| `-O3` | 12,351 of 12,360 | 9 | **0** |
+
+Two forms exist only in 13.3.1 and one only in 13.0.3, which is a code generator choosing
+`IADD3.X` where the other chose `IADD.X` rather than an instruction set changing.
+
+    python scripts/cross_toolchain.py
+
+## 30. What is deliberately not claimed
 
 Stated so the boundary of the evidence is visible.
 
@@ -1421,13 +1496,14 @@ Stated so the boundary of the evidence is visible.
   24-cycle figure is the pair, and it is recorded in a separate `composite` section rather
   than halved and presented as a per-instruction latency. Fault injection cannot separate them
   either, because the round trip is idempotent and the chain reaches a fixed point.
-- **Only one card has been measured.** Everything here is a Gigabyte GeForce RTX 5070 Ti
-  EAGLE OC, 70 SMs, 2542 MHz boost, named exactly because "a 5070 Ti" is not enough to
-  reproduce a run. The factory overclock does not move the numbers, which are in cycles
-  rather than nanoseconds, but the SM count plausibly could. Whether these figures
-  hold across sm_120 parts with different SM counts is exactly the sort of thing that should
-  not be assumed, and basalt records the part alongside every measurement so a second card can
-  be compared rather than merged.
+- **Only one card has been measured, and that matters less than it did.** Everything measured
+  on silicon is a Gigabyte GeForce RTX 5070 Ti EAGLE OC, 70 SMs, 2542 MHz boost, named exactly
+  because "a 5070 Ti" is not enough to reproduce a run. Finding 28 removes most of the sting:
+  `ptxas` emits byte-identical schedules for all six targets in this family, `sm_121` included,
+  so the mined model is derived from output that does not vary by part. What is still specific
+  to this card is the 11 latencies measured on it, and those exist to cross-check the mined
+  numbers rather than to be the source of them. basalt records the part alongside every
+  measurement so a second card can be compared rather than merged.
 - **The scoreboard residual is not checked across a block boundary.** A waited-on
   scoreboard still leaves a gap the producer has to cover (finding 7), and that gap is
   mined one block at a time because a distance that spans a branch depends on which path
@@ -1475,7 +1551,7 @@ Stated so the boundary of the evidence is visible.
   first conversion. An earlier run reported `I2FP` as requiring 4 cycles; the control
   retracted it, and it is listed as not established rather than quietly kept.
 
-## 29. Corrections made along the way
+## 31. Corrections made along the way
 
 Kept because a method is only as trustworthy as its error log.
 

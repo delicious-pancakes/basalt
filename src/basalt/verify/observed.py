@@ -113,10 +113,8 @@ class ObservedStalls:
     # what a *reader* still needs before its register may be overwritten. its own
     # keyspace: this is the other direction of dependency and the numbers differ
     by_anti: dict[tuple[str, str], StallEvidence] = field(default_factory=dict)
-    # the smallest stall the vendor gives one instruction before the next, per
-    # consecutive pairing. an issue rate rather than a dependency: nothing here
-    # is about registers, and it is what a run of loads under one read barrier
-    # needs when the barrier is standing in for all of them (finding 13)
+    # the smallest stall between each consecutive pairing. an issue rate rather
+    # than a dependency: nothing here is about registers (finding 13)
     by_issue: dict[tuple[str, str], StallEvidence] = field(default_factory=dict)
     kernels: int = 0
 
@@ -396,9 +394,8 @@ def mine_program(program: Program, into: ObservedStalls) -> None:
         # the same index does not undo an earlier wait
         signalled: dict[int, int] = {}
         satisfied: set[int] = set()
-        # last reader of each register, its mnemonic, and the stall since. the
-        # other direction of dependency: a read that is still in flight when the
-        # register is overwritten sees the new value (finding 23)
+        # last reader of each register and the stall since: the other direction
+        # of dependency, where the overwrite is the hazard (finding 23)
         last_read: dict[object, tuple[int, str]] = {}
         since_read: dict[object, int] = {}
 

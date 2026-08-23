@@ -11,6 +11,14 @@ Encodings are not promised to be stable across ptxas releases, so a difference
 is not automatically a bug. It is automatically something a human should look at.
 
     python scripts/compare_isa.py data/isa/sm_120a.json /tmp/rebuilt.json
+    python scripts/compare_isa.py --model a.json b.json
+
+`--model` compares what basalt *derived* rather than the exemplar it derived it
+from: which bits are the opcode, which are modifiers, and which bits each operand
+occupies. Two databases built from different `ptxas` releases disagree on almost
+every encoding and agree on nearly every model, because the encoding carries the
+control bits and the branch target of whichever kernel the form was harvested
+from. Comparing the two is the difference between 197 differences and 3.
 """
 
 from __future__ import annotations
@@ -35,6 +43,12 @@ def main() -> int:
     ap.add_argument("committed", type=Path)
     ap.add_argument("rebuilt", type=Path)
     ap.add_argument(
+        "--model",
+        action="store_true",
+        help="compare the derived bit model rather than the exemplar encoding, which is what "
+        "differs meaningfully between two compiler releases",
+    )
+    ap.add_argument(
         "--allow-new",
         action="store_true",
         help="treat forms present only in the rebuild as informational rather than a failure",
@@ -51,16 +65,35 @@ def main() -> int:
             f"{b.get('cuda_version')}; differences below may be legitimate"
         )
 
+    def model(form: dict) -> tuple:
+        """What was derived, with no trace of the kernel it came from."""
+        return (
+            tuple(form.get("opcode_bits", ())),
+            tuple(form.get("modifier_bits", ())),
+            tuple(
+                (
+                    slot.get("slot"),
+                    tuple(slot.get("bits", ())),
+                    tuple(sorted((k, tuple(v)) for k, v in slot.get("subfields", {}).items())),
+                )
+                for slot in form.get("operands", ())
+            ),
+        )
+
     missing = sorted(set(fa) - set(fb))
     added = sorted(set(fb) - set(fa))
-    changed = sorted(
-        name
-        for name in set(fa) & set(fb)
-        if fa[name].get("encoding") != fb[name].get("encoding")
-        or fa[name].get("operands") != fb[name].get("operands")
-    )
+    if args.model:
+        changed = sorted(n for n in set(fa) & set(fb) if model(fa[n]) != model(fb[n]))
+    else:
+        changed = sorted(
+            name
+            for name in set(fa) & set(fb)
+            if fa[name].get("encoding") != fb[name].get("encoding")
+            or fa[name].get("operands") != fb[name].get("operands")
+        )
 
-    print(f"committed {len(fa)} forms, rebuilt {len(fb)} forms")
+    what = "bit model" if args.model else "encoding"
+    print(f"committed {len(fa)} forms, rebuilt {len(fb)} forms, compared by {what}")
     for label, names in (
         ("missing from rebuild", missing),
         ("new in rebuild", added),

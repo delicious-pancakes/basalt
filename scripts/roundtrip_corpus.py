@@ -77,10 +77,8 @@ _repo.use_repo_source()
 ROOT = _repo.ROOT
 
 ARCH = "sm_120a"
-# A stale read only shows when the stale and fresh values differ, so these are
-# chosen to disagree with each other everywhere. Eight rather than four: doubling
-# them found nothing the first four had missed, at 5.5 seconds on the card
-# against 3.0, and a control worth running is worth running at its strongest.
+# chosen to disagree with each other everywhere, since a stale read only shows
+# where the stale and fresh values differ. eight because doubling four cost 2.5s
 PATTERNS: tuple[bytes, ...] = (
     bytes((i * 37 + 11) & 0xFF for i in range(256)),
     bytes((i * 211 + 173) & 0xFF for i in range(256)),

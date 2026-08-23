@@ -89,15 +89,13 @@ def _parts(text: str) -> tuple[str, ...] | None:
         if "+" in inner:
             base, _, offset = inner.partition("+")
             return ("const", m.group(2), base.strip(), offset.strip())
-        # `c[0x3][R0]` indexes by register, and calling that an offset made every
-        # bit of it fail the hex check and go unattributed, which is why 875
-        # register-indexed constant loads could not be assembled
+        # `c[0x3][R0]` indexes by register; calling that an offset failed the
+        # hex check and left 875 constant loads unassemblable
         if _HEX.match(inner):
             return ("const", m.group(2), "", inner)
         return ("const", m.group(2), inner, "")
-    # a plain address, as `STS [R3], R0` and `LDS.64 R4, [UR4+0x400]` have. the
-    # register and the displacement live in different bits of one wide field,
-    # and without splitting them the whole field reads as unattributable
+    # a plain address: the register and the displacement are different bits of
+    # one wide field, and unsplit the whole field reads as unattributable
     if (m := _MEMORY.search(text)) is not None:
         inner = m.group(1)
         base, _, offset = inner.partition("+")
@@ -201,11 +199,8 @@ def classify_bit(before: str, after: str) -> str:
     if len(changed) != 1:
         return SubRole.UNKNOWN
     role = changed[0]
-    # A bit that swaps the register file is a selector, not part of the number.
-    # `LDS.64 R8, [UR4]` has one at 91: flipping it prints `[R4]`, which reads as
-    # a different base, and folding it into the base bits meant assembling
-    # `[UR7]` wrote 7 across the selector as well and produced a general-register
-    # address that disassembles as though it were fine.
+    # a bit that swaps the register file is a selector, not part of the number:
+    # `LDS.64 R8, [UR4]` has one at 91, and folding it in mis-encoded `[UR7]`
     if role in (SubRole.BASE, SubRole.DESCRIPTOR):
         pair = (base, r_base) if role is SubRole.BASE else (first, r_first)
         if _file(pair[0]) != _file(pair[1]):

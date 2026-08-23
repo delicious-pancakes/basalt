@@ -37,7 +37,7 @@ vendor compiler's own output, which is what makes it useful rather than self-ref
 | 8 | Cross-block analysis | A real control-flow graph, so definitions survive branches | **done** |
 | 8b | Fault injection | Required stall measured by breaking programs on hardware | **done** |
 | 9 | Field validation | Prove the measured fields can be written through | **done** |
-| 9b | Cross-check | basalt's ISA model against independently derived tables | planned |
+| 9b | Cross-check | The ISA model derived twice, from two compiler releases | **done**, 0 operand fields differ |
 | 10 | Audit | Every public sm_120 SASS kernel, ptxas as the control | planned |
 | 11 | Scheduler | Assign the control bits, not only check them | **done**, every field derived |
 | 12 | Assembler | SASS text to the instruction word | **working** |
@@ -97,10 +97,11 @@ A tool can be ignored; a measurement cannot.
 1. **ISA disagreements.** basalt derives its instruction model by differential bit probing.
    Other tools extract tables. Two independent derivations of one ISA that disagree mean one is
    wrong, and finding out which is a contribution either way.
-2. **Per-SKU latency.** Published sm_120 characterisation covers single parts. If latency varies
-   across sm_120 SKUs then scheduling tuned on one part is unsound on the others, which would be
-   a significant result. If it does not vary, that is a useful negative result that lets every
-   existing scheduler claim portability with evidence.
+2. **Per-SKU latency.** *Answered, and it is the negative result.* `ptxas` compiles the whole
+   corpus to byte-identical code, control words included, for all six targets in this family
+   including `sm_121`, which is a different chip. The required schedule is a property of the
+   architecture rather than of the part, so a scheduler tuned on one part is sound on the
+   others, with evidence rather than hope. Finding 28.
 3. **Unsafe control bits in shipped kernels.** Hand-written SASS is now in production use. The
    verifier either finds hazards there or establishes that it does not.
 

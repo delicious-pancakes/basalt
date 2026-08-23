@@ -247,10 +247,8 @@ class TestReadBarrierWindowsAreNotTightened:
             for index, instruction in enumerate(program.instructions):
                 if instruction.word is None:
                     continue
-                # basalt's barriers, not the vendor's: they sit in different
-                # places now, and a window is only a window for the schedule
-                # that has the barrier closing it. the *rate* is still recomputed
-                # from the mined table rather than asked of the scheduler
+                # basalt's barriers, not the vendor's: a window belongs to the
+                # schedule that closes it. the rate is still recomputed here
                 if result.words[index].field("read_barrier") == NO_BARRIER:
                     continue
                 start = index

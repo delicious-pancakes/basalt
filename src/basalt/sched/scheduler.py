@@ -69,22 +69,16 @@ _OPAQUE_TRANSFERS = frozenset({"CALL", "RET", "BRX", "JMX", "RTT", "BPT"})
 # basalt reaches for that encoding as a fallback, so these need somewhere else
 _NEVER_ZERO_STALL: dict[str, int] = {"EXIT": 5, "RET": 5, "CALL": 5, "BAR": 6}
 
-# Stalls ptxas pairs with the yield hint, as a half-open range. Fitted rather
-# than reasoned: it agrees with the vendor on 93.7% of 37,008 instructions where
-# "yield when the stall is 1" agreed on 73.2%. The bit is a hint and not a
-# correctness input, which is measured rather than assumed (finding 26).
+# stalls ptxas pairs with the yield hint, fitted rather than reasoned: 93.7% of
+# 37,008 instructions against 73.2% for the guess it replaced (finding 26)
 YIELD_STALL_RANGE = (1, 12)
 
-# A scoreboard named in operand text rather than in the control word.
-# `DEPBAR.LE SB0, 0x0` waits on SB0 by naming it, so renumbering whatever
-# signals SB0 breaks the pairing and nothing in the encoding records it. This is
-# how `cp.async` synchronises, and why it could not be rescheduled (finding 27).
+# `DEPBAR.LE SB0, 0x0` waits by naming its scoreboard, so renumbering the
+# signaller unpairs them with nothing in the encoding to show it (finding 27)
 SCOREBOARD_OPERAND = re.compile(r"\bSB(\d)\b")
 
-# Opcodes with no register result, so no latency class of their own, whose
-# operand read is still not finished at issue. A store hands its data register
-# to the memory pipe rather than to a result bus, and the vendor guards it with
-# a read barrier exactly as it does a variable-latency reader (finding 25).
+# no register result, so no latency class, but the operand read is still in
+# flight after they issue: the vendor guards these with a read barrier too
 _LATE_READING_CONTROL = frozenset({"STG", "STS", "STL", "ST", "RED"})
 
 
@@ -99,10 +93,8 @@ class ScheduleResult:
     # shared an already-busy scoreboard: over-synchronised, so counted not hidden
     scoreboards_shared: int = 0
     read_barriers_used: int = 0
-    # Instructions this actually computed a control word for. A cubin holds more
-    # than its entry function, and what the dataflow cannot reach keeps the
-    # vendor's word; saying which is the difference between a schedule basalt
-    # stands behind and one it partly copied.
+    # what this computed a word for. the rest keeps the vendor's, and saying
+    # which is the difference between standing behind a schedule and copying it
     analysed: set[int] = field(default_factory=set)
     unplaceable: list[str] = field(default_factory=list)
     out_of_scoreboards: list[str] = field(default_factory=list)
@@ -394,9 +386,8 @@ def _assign_read_barriers(
         # again from the head to the writer, so the whole enclosing span is taken
         span = range(min(reader, writer), max(reader, writer) + 1)
         if read_barrier_of[reader] != NO_BARRIER:
-            # one reader can cover two overwrites, and the barrier stays
-            # outstanding until the later one. marking only the first window
-            # busy let a second reuse the number and wait on its own read
+            # a reader can cover two overwrites, so the number is busy to the
+            # later one; marking only the first let a second reuse it
             already = read_barrier_of[reader]
             extra[writer] |= 1 << already
             for i in span:
@@ -409,9 +400,8 @@ def _assign_read_barriers(
             taken |= busy[i]
         free = next((sb for sb in range(SCOREBOARDS) if not (taken >> sb) & 1), None)
         if free is None:
-            # every number is spoken for across this window. a scoreboard is a
-            # counter, so sharing one waits for both signals rather than losing
-            # either: over-synchronised, and counted, but never a stale read
+            # every number is taken. a scoreboard is a counter, so sharing waits
+            # for both signals: over-synchronised, counted, never a stale read
             mine = waits[reader] | extra[reader]
             choices = [sb for sb in range(SCOREBOARDS) if not (mine >> sb) & 1] or list(
                 range(SCOREBOARDS)
@@ -490,8 +480,7 @@ def schedule_program(
     cfg = build_cfg(program)
 
     # ---- scoreboards named in an operand
-    # pinned to the vendor's number, and the number is off limits until the
-    # instruction that names it has run
+    # pinned to the vendor's number, which is off limits until the namer has run
     pinned_barrier: dict[int, int] = {}
     reserved: list[tuple[int, int, int]] = []
     for index, instr in enumerate(program.instructions):
@@ -513,8 +502,8 @@ def schedule_program(
                 reserved.append((sb, signaller, index))
 
     # ---- scoreboards
-    # allocated per block, then propagated along edges to a fixed point: a value
-    # loaded before a loop and used inside it gets no wait from a block-local pass
+    # per block, then propagated to a fixed point: a value loaded before a loop
+    # and used inside it gets no wait from a block-local pass
     barrier_of: list[int] = [NO_BARRIER] * count
 
     def unavailable(index: int) -> set[int]:
@@ -572,10 +561,8 @@ def schedule_program(
                     barrier_of[index] = free
                     write_barriers[index] = free
 
-    # register -> producers that may still be outstanding for it on entry.
-    # keyed on the producer rather than on its scoreboard number, because a
-    # number is reused several times in a kernel and a wait on the second use
-    # says nothing about the first
+    # register -> producers still outstanding on entry. keyed on the producer,
+    # since a number is reused and a wait on the second use says nothing
     entry_state: list[dict[RegRef, frozenset[int]]] = [{} for _ in cfg.blocks]
     # producers some consumer actually waits for; the rest are signalling into
     # a void and are taking a scoreboard a read barrier could have had
@@ -606,9 +593,8 @@ def schedule_program(
                 needed |= 1 << barrier_of[producer]
             if emit:
                 waits[index] |= needed
-                # credited here as well as on being cleared below, because a
-                # guarded consumer emits its wait and clears nothing. crediting
-                # only there dropped the barrier a guarded `SHFL` result needed
+                # here as well as on being cleared below: a guarded consumer
+                # emits its wait and clears nothing
                 credited.update(wanted)
 
             if needed and not access.guard:
@@ -617,11 +603,8 @@ def schedule_program(
                 covered = {q for ps in live.values() for q in ps if (needed >> barrier_of[q]) & 1}
                 live = {r: frozenset(ps - covered) for r, ps in live.items()}
                 if emit:
-                    # credited on being cleared, not on being asked for: a
-                    # scoreboard is a counter, so a wait placed for one producer
-                    # drains every producer sharing the number, and downstream
-                    # leans on that. crediting only `wanted` would call those
-                    # others unwaited-for and drop the barrier out from under them
+                    # on being cleared, not on being asked for: a wait drains
+                    # every producer sharing the number and downstream leans on it
                     credited.update(covered)
 
             mine = frozenset({index}) if barrier_of[index] != NO_BARRIER else frozenset()
@@ -661,17 +644,14 @@ def schedule_program(
         for block in cfg.blocks:
             transfer(block.index, entry_state[block.index], emit=True)
 
-    # An instruction may wait on the number it is about to signal: the wait is
-    # evaluated before issue and the barrier raised at or after it, so this is
-    # reusing a number that has just drained rather than waiting on itself.
-    # `ptxas` does it 251 times in 37,008 instructions (finding 24).
+    # waiting on the number about to be signalled is reuse, not self-reference:
+    # ptxas does it 251 times in 37,008 instructions (finding 24)
     allocate()
     converge()
 
     # ---- barriers nothing waits for
-    # a scoreboard that is signalled and never waited on is not synchronisation,
-    # it is a scoreboard a read barrier could have had. the allocator cannot see
-    # this because it runs before the dataflow that decides who waits
+    # signalled and never waited on is not synchronisation, it is a number a
+    # read barrier could have had; the allocator runs before the dataflow
     live_out = _live_out(cfg, program)
     block_of = {i: b.index for b in cfg.blocks for i in range(b.start, b.end)}
 
@@ -696,9 +676,7 @@ def schedule_program(
         converge()
 
     # ---- read barriers
-    # computed from the same dependence rules as everything else rather than
-    # inherited from the vendor's word, so a program that never had one still
-    # gets them; see `_read_barrier_windows` for the shape being covered
+    # computed rather than inherited, so a program that never had one gets them
     windows = _read_barrier_windows(cfg, program, model, waits, write_barriers)
     read_barriers, read_waits, shared = _assign_read_barriers(windows, write_barriers, waits, count)
     for index in range(count):
@@ -807,8 +785,7 @@ def schedule_program(
                 break
 
     # ---- take back what nothing needs
-    # the fixed point only ever adds, so stall placed for one pair can already
-    # cover a later one; lowering is checked against the same requirement
+    # the fixed point only adds, so stall placed for one pair can cover a later
     for block in cfg.blocks:
         for index in range(block.end - 1, block.start - 1, -1):
             if index in pinned or program.instructions[index].word is None:
@@ -822,8 +799,7 @@ def schedule_program(
                 result.stalls_added -= 1
 
     # ---- anything crossing a block boundary
-    # the safe stall encoding covers what leaves a block, and costs ~37 cycles,
-    # so it goes only where liveness says something actually does
+    # the safe encoding costs ~37 cycles, so it goes only where liveness says
     for block in cfg.blocks:
         last = block.end - 1
         if not (0 <= last < count) or last in pinned:
@@ -840,15 +816,8 @@ def schedule_program(
         result.yielded.append(last)
 
     # ---- windows a read barrier covers
-    # One barrier stands in for a whole run of reads, and the guarantee is that
-    # by the time the last has taken its operands the earlier ones have too. That
-    # holds at the rate the unit accepts work and not faster, so inside the window
-    # the issue rate is a floor: `LDG` after `LDG` is 4 cycles across 1,953
-    # observations, which is what the four loads in finding 13 need.
-    #
-    # Mined rather than copied from the schedule being replaced. The two agree on
-    # that kernel, and only the mined one means anything for a program the vendor
-    # never compiled.
+    # one barrier stands in for a run of reads, and that holds at the rate the
+    # unit accepts work: `LDG` after `LDG` is 4 cycles over 1,953 observations
     block_of_index: dict[int, int] = {}
     for block in cfg.blocks:
         for index in range(block.start, block.end):
@@ -870,8 +839,7 @@ def schedule_program(
         previous_barrier = index
 
     # ---- anti-dependencies
-    # a read still in flight when the register is overwritten reads the new
-    # value, so the gap between the two is a requirement of its own
+    # a read still in flight when its register is overwritten sees the new value
     for block in cfg.blocks:
         last_read: dict[RegRef, int] = {}
         for index in range(block.start, block.end):
@@ -900,9 +868,8 @@ def schedule_program(
                 last_read[register] = index
 
     # ---- floors the dependency graph cannot see
-    # a barrier's requirement is not a register dependency: the second `bar.sync`
-    # in a tiled loop stops the next iteration overwriting shared memory the
-    # other threads are still reading, and no def-use edge shows that
+    # the second `bar.sync` in a tiled loop guards shared memory, not a register,
+    # and no def-use edge shows that
     for index, instr in enumerate(program.instructions):
         if instr.word is None or stalls[index] == STALL_YIELD:
             continue
@@ -910,10 +877,8 @@ def schedule_program(
         if floor is not None:
             stalls[index] = max(stalls[index], floor)
 
-    # A cubin holds more than its entry function: `mma.b1` lowers to a call into
-    # an internal helper, and 125 of that kernel's 144 instructions sit in bodies
-    # with no edge from the entry. The dataflow never reaches them, so basalt has
-    # computed nothing for them and leaves the vendor's words alone.
+    # a cubin holds more than its entry function: 125 of `mma.b1`'s 144
+    # instructions sit in bodies the dataflow never reaches, so they keep theirs
     reachable: set[int] = set()
     stack = [0] if cfg.blocks else []
     while stack:
