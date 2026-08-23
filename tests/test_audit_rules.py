@@ -18,7 +18,7 @@ from pathlib import Path
 
 import pytest
 
-from basalt.verify.hazards import _exclusive, _requirement
+from basalt.verify.hazards import _exclusive, _requirement, verify_program
 from basalt.verify.latency import (
     ANTI_DEPENDENCY_CYCLES,
     DEFAULT_MODEL,
@@ -195,3 +195,35 @@ class TestExclusiveGuards:
 
     def test_an_unguarded_use_always_meets(self) -> None:
         assert not _exclusive("@P0 IADD R4, R0, 0x1", "MOV R0, R4")
+
+
+class TestArbitraryControlWords:
+    """The checker is handed machine code it did not produce, so it must not
+    assume the control word makes sense."""
+
+    @pytest.mark.toolchain
+    def test_randomised_control_words_never_raise(self, toolchain, sample_cubin, observed) -> None:
+        # a checker for foreign code meets words no compiler would emit, and
+        # falling over on one is a worse failure than a wrong verdict
+        import dataclasses
+        import random
+
+        from basalt.disasm import disassemble_program
+
+        program = disassemble_program(toolchain, sample_cubin)
+        fields = (("stall", 15), ("yield_", 1), ("write_barrier", 7), ("read_barrier", 7))
+        rng = random.Random(20260823)
+
+        for _ in range(120):
+            instructions = list(program.instructions)
+            for i, instruction in enumerate(instructions):
+                if instruction.word is None:
+                    continue
+                word = instruction.word
+                for name, top in (*fields, ("wait_mask", 63), ("reuse", 15)):
+                    if rng.random() < 0.5:
+                        word = word.with_field(name, rng.randint(0, top))
+                instructions[i] = dataclasses.replace(instruction, word=word)
+            mutated = dataclasses.replace(program, instructions=instructions)
+            report = verify_program(mutated, DEFAULT_MODEL, observed=observed)
+            assert report.instructions == len(instructions)

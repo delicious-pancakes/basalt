@@ -43,6 +43,39 @@ ROOT = _repo.ROOT
 ARCH = "sm_120a"
 
 
+def _shipped(cubins: Path, tc, tally, show_refusals: bool) -> int:
+    """Assemble machine code basalt never compiled, and refuse the rest by name."""
+    from basalt.disasm import disassemble_kernels
+
+    targets = sorted(cubins.rglob("*.cubin"), key=lambda p: p.stat().st_size, reverse=True)
+    if not targets:
+        raise SystemExit(f"no cubins under {cubins}")
+
+    print(f"{_repo.provenance()}\n")
+    print(f"assembling {len(targets)} shipped cubins from {cubins}")
+
+    totals: Counter[str] = Counter()
+    reasons: Counter[str] = Counter()
+    kernels = 0
+    for path in targets:
+        for program in disassemble_kernels(tc, path).values():
+            counted, why, _ = tally(program)
+            totals.update(counted)
+            reasons.update(why)
+            kernels += 1
+
+    exact, refused, wrong = totals["exact"], totals["refused"], totals["wrong"]
+    considered = exact + refused + wrong
+    print(f"\n{kernels} kernels, {considered} instructions")
+    print(f"  exact    {exact} ({exact / max(considered, 1):.2%})")
+    print(f"  refused  {refused}")
+    print(f"  WRONG    {wrong}")
+    if show_refusals:
+        for reason, count in reasons.most_common(20):
+            print(f"    {count:6} {reason}")
+    return 1 if wrong else 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
@@ -52,6 +85,12 @@ def main() -> int:
     parser.add_argument("--show-refusals", action="store_true", help="list the reasons, by count")
     parser.add_argument("--only", default=None, help="comma separated kernel names")
     parser.add_argument("--db", type=Path, default=None, help="ISA database to assemble against")
+    parser.add_argument(
+        "--cubins",
+        type=Path,
+        default=None,
+        help="assemble shipped cubins instead of the corpus, code basalt never compiled",
+    )
     args = parser.parse_args()
 
     from basalt.asm.assemble import assemble_program
@@ -73,6 +112,29 @@ def main() -> int:
     work = args.work or Path(__file__).resolve().parent.parent / ".work" / "assembler-coverage"
     work.mkdir(parents=True, exist_ok=True)
 
+    def tally(program) -> tuple[Counter, Counter, int]:
+        """Assemble one program and count exact against refused against wrong."""
+        result = assemble_program(program, database)
+        counted: Counter[str] = Counter()
+        mismatched = 0
+        for instruction, produced in zip(program.instructions, result.words, strict=True):
+            if instruction.word is None:
+                continue
+            if produced is None:
+                counted["refused"] += 1
+            elif produced.value == instruction.word.value:
+                counted["exact"] += 1
+            else:
+                counted["wrong"] += 1
+                mismatched += 1
+        # grouped on the whole reason: truncating first merged refusals that
+        # happened to share a prefix and reported them as one cause
+        why = Counter(reason.split(":")[0] for _, _, reason in result.refused)
+        return counted, why, mismatched
+
+    if args.cubins:
+        return _shipped(args.cubins, tc, tally, args.show_refusals)
+
     snippets = generate_scalar() + generate_tensor() + generate_shapes()
     if args.only:
         wanted = {name.strip() for name in args.only.split(",")}
@@ -93,24 +155,7 @@ def main() -> int:
         if built.returncode != 0:
             return None
 
-        program = disassemble_program(tc, cubin)
-        result = assemble_program(program, database)
-
-        counted = Counter()
-        mismatched = 0
-        for instruction, produced in zip(program.instructions, result.words, strict=True):
-            if instruction.word is None:
-                continue
-            if produced is None:
-                counted["refused"] += 1
-            elif produced.value == instruction.word.value:
-                counted["exact"] += 1
-            else:
-                counted["wrong"] += 1
-                mismatched += 1
-        # grouped on the whole reason: truncating first merged refusals that
-        # happened to share a prefix and reported them as one cause
-        why = Counter(reason.split(":")[0] for _, _, reason in result.refused)
+        counted, why, mismatched = tally(disassemble_program(tc, cubin))
         return counted, why, (snippet.name, mismatched) if mismatched else None
 
     with ThreadPoolExecutor(max_workers=os.cpu_count() or 4) as pool:

@@ -624,7 +624,15 @@ def _write_composite(word: int, slot: Slot, token: str, reference: str, mnemonic
         if role == "offset" or (role == "bank" and _IMMEDIATE.match(value_text)):
             # a constant bank is a number and only `cx` names it with a
             # register; reading `0x1` as one refused 875 instructions at -O0
-            value = int(value_text or "0x0", 0)
+            try:
+                value = int(value_text or "0x0", 0)
+            except ValueError:
+                # `c[0x0][UR4]` indexes by register where a number was recorded,
+                # and refusing by name is the contract: never wrong, never raise
+                raise AssemblyError(
+                    f"{mnemonic} operand {slot.index} indexes its {role} by {value_text!r} "
+                    f"where the recorded form has a number; those are different encodings"
+                ) from None
         else:
             # the base register carries its access width, as in `R2.64`, and the
             # width is part of the opcode rather than of this field
