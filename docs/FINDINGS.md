@@ -567,7 +567,9 @@ a consumer that is short and spends cycles in the window before it, and a cycle 
 one pair also separates every other pair spanning that point. So a later pair can be
 satisfied by stall placed for an earlier one, leaving the earlier placement larger than
 anything requires. Walking that back, one cycle at a time, judged by the same requirement
-function that placed them, took 1.29x to 0.93x, and back to 1.05x once anti-dependencies were charged for. `LDC` alone was half the excess before it,
+function that placed them, took 1.29x to 0.93x. Charging for anti-dependencies (finding 23)
+took it back to 1.05x, which is what that correctness costs. `LDC` alone was half the excess
+before any of it,
 almost all overshoot rather than requirement.
 
 **Not leaning on a wait a predicated instruction carries.** `ptxas` does lean on them and
@@ -1144,6 +1146,23 @@ scoreboard 1 for an unrelated register, and waiting on a scoreboard drains its c
 every producer on it has landed and the barrier is cleared from every register that was
 waiting behind it. By that reasoning `R9` is available at `#46` and no wait is needed. The
 silicon disagrees, so the reasoning has a hole in it, and the hole is not yet found.
+
+**What has been ruled out, which is most of what is known.** Each of these was tested on the
+card rather than argued about:
+
+| Hypothesis | Test | Verdict |
+| :--- | :--- | :--- |
+| the extra wait is really a delay | stall 4, 8 and 15 at the same instruction, no wait | **no**, delay alone never fixes it |
+| a register dependency basalt missed | screen every scoreboard-covered dependency in the corpus | **no**, this kernel is not flagged |
+| a write barrier allocated onto an inherited read-barrier number | reserve those numbers | fixes this kernel, breaks two others |
+| the wait is covering something still outstanding | trace the scoreboard | **no**, `#39` already waits on it and drains it |
+
+The last row is the strange one. `#38` signals scoreboard 1 and `#39` waits on it, so by the
+counter semantics the load has landed long before `#46` reads the register. Adding a wait on
+that same scoreboard at `#45` should therefore be a no-op on a counter already at zero, and
+it changes the answer. Either the counter is not at zero when that reasoning says it is, or
+`wait_mask` does not mean here what it means elsewhere. Both are worth knowing and neither is
+established.
 
 **What it is not.** The two kinds of barrier share one six-bit space and only write barriers
 are renumbered, so an obvious theory is that basalt allocates a write barrier onto a number

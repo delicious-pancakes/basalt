@@ -67,11 +67,9 @@ _OPAQUE_TRANSFERS = frozenset({"CALL", "RET", "BRX", "JMX", "RTT", "BPT"})
 # basalt reaches for that encoding as a fallback, so these need somewhere else
 _NEVER_ZERO_STALL: dict[str, int] = {"EXIT": 5, "RET": 5, "CALL": 5, "BAR": 6}
 
-# An operand read is not instantaneous. Overwrite a register one or two cycles
-# after an instruction reads it and the reader sees the new value, measured by
-# shortening the gap on `ULEA UR5, UR12, UR4` ahead of `UMOV UR4, URZ` until the
-# answer moved: 1 and 2 corrupt, 3 and above are correct, and 0 is the long safe
-# wait as always (finding 23). Nothing else in basalt models an anti-dependency.
+# An operand read is not instantaneous: overwrite a register one or two cycles
+# after it is read and the reader sees the new value. Measured at three by
+# shortening the gap until the answer moved (finding 23).
 ANTI_DEPENDENCY_CYCLES = 3
 
 
@@ -606,11 +604,9 @@ def schedule_program(
                 last_read[register] = index
 
     # ---- floors the dependency graph cannot see
-    # `ptxas` never issues these below the figure beside them, whatever the
-    # def-use edges say, and a barrier's is not a register dependency at all:
-    # the second `bar.sync` in a tiled loop is there to stop the next iteration
-    # overwriting shared memory the other threads are still reading. No edge in
-    # this analysis shows that, so the floor is what stands in for it.
+    # a barrier's requirement is not a register dependency: the second `bar.sync`
+    # in a tiled loop stops the next iteration overwriting shared memory the
+    # other threads are still reading, and no def-use edge shows that
     for index, instr in enumerate(program.instructions):
         if instr.word is None or stalls[index] == STALL_YIELD:
             continue

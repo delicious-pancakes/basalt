@@ -60,7 +60,7 @@ One standard, three tools: **agree with the vendor exactly, or say why not.**
 | :--- | :--- | :--- | ---: |
 | **Assembler** | SASS text to the 128-bit word | Reassemble every instruction `ptxas` emitted and compare bytes | 11,988 of 12,008 exact, **0 wrong** |
 | **Checker** | Reads a schedule, reports hazards | The vendor's own output must verify clean, and a deliberately shortened stall must be caught | 0 errors over 1,323 vendor kernel and optimisation-level pairs, **0 missed** on 226 broken ones |
-| **Scheduler** | Assigns the control bits from scratch | Discard every control bit, compute new ones, run both on the GPU against four inputs, compare output bytes | **422 of 422** at -O1, 421 of 422 at -O2 and -O3, at every optimisation level |
+| **Scheduler** | Assigns the control bits from scratch | Discard every control bit, compute new ones, run both on the GPU against four inputs, compare output bytes | **422 of 422** at -O1 and 421 of 422 at -O2 and -O3, with the one named |
 
 And the part a scheduler is usually quiet about: what the correctness costs. basalt's
 schedules spend **1.05x** the vendor's issue cycles, slower on 66 of the 441 kernels and
