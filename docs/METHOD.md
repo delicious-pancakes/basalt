@@ -253,8 +253,8 @@ of them got. Every entry in the table carries both numbers for that reason.
 
 ## The published position, and where it does not reach
 
-Two sources state that this cannot be done, and both are worth quoting rather than
-paraphrasing. `CuAssembler`, the most used SASS assembler, says in its own documentation:
+Three sources say this cannot be done, and they are worth quoting rather than paraphrasing.
+`CuAssembler`, the most used SASS assembler, says in its own documentation:
 
 > Checking rigorous correctness of the whole program needs comprehensive understanding of the
 > launch model and instruction set, both grammatically and semantically, far from possible
@@ -266,7 +266,24 @@ paraphrasing. `CuAssembler`, the most used SASS assembler, says in its own docum
 > Validation is impossible for GPU native assembly codes because the formal semantics of the
 > sass is closed-source.
 
-**Both are correct, and neither is about the question basalt asks.** They describe *semantic*
+And [CuAsmRL](https://arxiv.org/html/2501.08071v1), which mutates `ptxas`'s own schedules with
+reinforcement learning, states both the method the field actually uses and why it is not
+enough:
+
+> Probabilistic testing generates randomized inputs and reference outputs and then compared
+> with the output of the program.
+
+> Formal verification methods cannot apply to SASS sequences due to the lack of official
+> semantics, and bitwise enumeration of the test inputs is computationally intractable.
+
+It then says what that leaves the user with, and names the missing piece exactly:
+
+> users are required to manually verify the optimized kernels
+
+because the authors do not have complete knowledge of the dependency rules that decide
+whether a mutated schedule is still correct.
+
+**All three are correct, and none of them is about the question basalt asks.** They describe *semantic*
 validation: proving that a kernel computes what it is supposed to compute. That does need the
 semantics, the semantics are closed, and basalt does not claim to answer it. A kernel can pass
 every check here and still implement the wrong algorithm.
@@ -289,10 +306,22 @@ hardware until the answer changes, and the boundary is the requirement (finding 
 measurement of the machine, not a reading of a specification.
 
 So the closed semantics bound what can be *proven about a program's meaning*, and leave
-untouched what can be *measured about its timing*. The two published positions rule out the
-first and were never tested against the second, because the second requires a body of work
-neither project set out to do: a per-pair requirement mined at scale, cross-checked against
-fault injection on a card, and held out from the code it is then used to check.
+untouched what can be *measured about its timing*. The published positions rule out the first
+and were never tested against the second, because the second requires a body of work none of
+those projects set out to do: a per-pair requirement mined at scale, cross-checked against
+fault injection on a card, and held out from the code it is then used to check. CuAsmRL names
+that gap in as many words when it says its authors lack complete knowledge of the dependency
+rules. Those rules are what `data/latency/observed-stalls-sm120a.json` holds, and finding 4
+is how they were measured.
+
+**And running the kernel is not a substitute, which is measurable rather than arguable.** A
+stale read only changes the answer when the stale value and the fresh one differ, so an
+execution-based check is only as strong as the disagreement between its inputs. basalt ran the
+whole corpus against one pattern of bytes and it passed. Running the same kernels against a
+second, third and fourth pattern immediately found a carry-out predicate the operand model had
+been reading as a source since the beginning, and it had survived every control up to that
+point including the hardware round trip. Probabilistic testing did not catch a real defect
+that a static rule catches in one pass, on the one body of code where both were run.
 
 Where that reasoning would break, and does not: if the dependency structure were not
 recoverable from the encoding, or if the requirement varied with something unobservable.

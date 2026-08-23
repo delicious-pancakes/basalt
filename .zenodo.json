@@ -1,0 +1,33 @@
+{
+  "title": "basalt: a hazard checker, assembler and scheduler for NVIDIA consumer Blackwell (sm_120)",
+  "description": "<p>On NVIDIA <code>sm_120</code> there is no hardware interlock on fixed-latency instructions. Twenty-one bits of every 128-bit instruction are a scheduling control word, the silicon trusts whatever wrote them, and a stall count shorter than the latency of a value the next instruction reads produces a wrong answer at full speed, with no fault and no warning.</p><p>Tools that generate machine code for this architecture assign those bits from a latency model. basalt reads them back and decides whether they are safe, on machine code regardless of what produced it, which is the question anyone holding a cubin actually has.</p><p>Every part is measured rather than assumed. The instruction model is derived by differential bit probing and again from a second compiler release. Instruction latency is measured on silicon by three independent methods, including fault injection: shortening a dependency until the answer changes. The assembler reproduces the vendor compiler's exact 128 bits, 59,693 of 59,760 corpus instructions and 4,585,336 of 5,237,448 shipped ones, with zero wrong in either. The scheduler discards every control bit the compiler chose, computes new ones, and the GPU computes the same answer for 439 of 439 comparable kernels at three optimisation levels.</p><p>The checker is validated against machine code it did not produce: 2,762 kernels shipped in CUDA 13.3.1, held out of every table it reads, verify with 0 errors over 10,218,030 dependencies and all 2,762 kernels fully analysed. The first such run reported 6,593 errors and every one was a defect in basalt's own model; thirteen corrections and the method that produced them are recorded in the findings.</p>",
+  "upload_type": "software",
+  "license": "Apache-2.0",
+  "access_right": "open",
+  "version": "1.0.0",
+  "language": "eng",
+  "creators": [
+    {
+      "name": "Patel, Sunny",
+      "orcid": "0009-0005-3863-7642",
+      "affiliation": "Independent Researcher"
+    }
+  ],
+  "keywords": [
+    "GPU",
+    "SASS",
+    "NVIDIA",
+    "Blackwell",
+    "sm_120",
+    "instruction scheduling",
+    "hazard detection",
+    "static analysis",
+    "instruction set architecture",
+    "reverse engineering",
+    "microarchitecture",
+    "assembler",
+    "compiler verification",
+    "reproducible research"
+  ],
+  "notes": "Apache-2.0. Set the Zenodo license field to match; do not accept Zenodo's default CC-BY-4.0. basalt is an independent clean-room work: it contains and redistributes no NVIDIA source, headers, libraries or documentation, and drives publicly distributed executables as external processes, recording observable behaviour. NVIDIA, CUDA and Blackwell are trademarks of NVIDIA Corporation; this project is not affiliated with, endorsed by, or sponsored by NVIDIA. Cite the concept DOI rather than a version DOI unless a specific release is meant."
+}

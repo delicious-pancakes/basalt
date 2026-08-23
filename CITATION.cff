@@ -23,6 +23,13 @@ authors:
     orcid: "https://orcid.org/0009-0005-3863-7642"
 repository-code: "https://github.com/sunnypatell/basalt"
 url: "https://github.com/sunnypatell/basalt"
+# added once Zenodo mints it. Use the concept DOI, which resolves to the newest
+# release and therefore never has to change again:
+#   doi: "10.5281/zenodo.XXXXXXX"
+#   identifiers:
+#     - type: doi
+#       value: "10.5281/zenodo.XXXXXXX"
+#       description: "The concept DOI, resolving to the latest release"
 license: Apache-2.0
 license-url: "https://github.com/sunnypatell/basalt/blob/main/LICENSE"
 keywords:
