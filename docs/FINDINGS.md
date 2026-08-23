@@ -776,7 +776,7 @@ actually has, which is whether a hazard basalt reports is a hazard the silicon a
 
 `scripts/agreement_sweep.py` asks it across the corpus. Take the vendor's own working
 schedule, shorten one stall on a real dependency, and collect two independent verdicts: what
-basalt says statically, and what the GPU computes against four input patterns.
+basalt says statically, and what the GPU computes against eight input patterns.
 
 | | GPU agrees with the reference | GPU computes something else |
 | :--- | ---: | ---: |
@@ -789,10 +789,10 @@ computes a wrong answer, which is the entire failure this repository exists to p
 | | |
 | :--- | ---: |
 | Kernels, one dependency shortened in each | 233 |
-| Agreed broken | 74 |
-| Over-strict | 101 |
+| Agreed broken | 79 |
+| Over-strict | 90 |
 | **Missed** | **0** |
-| Unstable, excluded | 58 |
+| Unstable, excluded | 64 |
 
 Which kernels land in the excluded column moves between runs, because several read memory
 this harness never initialises and are therefore stable only until something else has used
@@ -825,7 +825,7 @@ it is a real cost rather than a free win.
 
 **Over-strict is not the same as wrong.** A schedule can be tighter than anything the vendor
 emits and still return the right answer, because a stale read only changes the result when
-the stale value and the fresh one differ. Running four patterns instead of one moves
+the stale value and the fresh one differ. Running eight patterns instead of one moves
 verdicts out of over-strict and into agreed broken, which are cases where basalt was right
 and a single pattern had not been enough to show it. The rest are unproven either way, and
 they are counted separately rather than folded into an accuracy figure.
@@ -1298,7 +1298,7 @@ stall value.
 Two questions, and they need different kinds of evidence.
 
 **Does it affect the answer?** Take the vendor's own schedule, invert every yield bit in it,
-and run both on the card against four input patterns.
+and run both on the card against eight input patterns.
 
 | Kernel | Level | Bits inverted | Result |
 | :--- | :--- | ---: | :--- |
@@ -1411,6 +1411,14 @@ Stated so the boundary of the evidence is visible.
   checker uses. The model marks every assumed number as assumed, and a hazard derived from one
   is reported as a warning rather than an error, because the difference between a lead and a
   finding is where the number came from.
+- **Four input patterns were enough, and that was checked rather than assumed.** A stale read
+  only changes the answer when the stale value and the fresh one differ, so the round trip's
+  strength is bounded by how much its inputs disagree. Doubling them to eight, chosen to
+  disagree with the first four as well as with each other, found nothing new: 439 of 439 at
+  every optimisation level, the same two exclusions. It was not wasted, though. The *negative*
+  control is not saturated: the extra patterns moved five verdicts out of over-strict and into
+  agreed-broken, cases where basalt was right and four patterns had not been enough to show
+  it. Both controls keep all eight, at 5.5 seconds on the card against 3.0.
 - **A test that cannot detect corruption proves nothing.** An early version of the injection
   probe multiplied by 1.0000001, so a stale read rounded back to the same float and `FMUL`
   appeared to need only one cycle. Every probe now runs a sensitivity control first: a chain

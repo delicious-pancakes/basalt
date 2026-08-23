@@ -36,9 +36,10 @@ harness, not the schedule.
 
 *One input is one chance to notice.* A stale read only changes the answer when
 the stale value and the fresh one differ, so a schedule can be wrong and a single
-pattern of bytes can fail to show it. Every kernel runs against four patterns
+pattern of bytes can fail to show it. Every kernel runs against eight patterns
 chosen to disagree with each other everywhere, and their outputs are compared as
-one result.
+one result. Four of them found everything eight do, which is a fact about this
+corpus rather than a reason to run four.
 
 *A kernel whose output is not stable cannot be compared.* Several have 32 threads
 storing to one address, so the winner is arbitrary. Others read shared or local
@@ -76,13 +77,19 @@ _repo.use_repo_source()
 ROOT = _repo.ROOT
 
 ARCH = "sm_120a"
-# a stale read only shows when the stale and fresh values differ, so these four
-# are chosen to disagree with each other everywhere
+# A stale read only shows when the stale and fresh values differ, so these are
+# chosen to disagree with each other everywhere. Eight rather than four: doubling
+# them found nothing the first four had missed, at 5.5 seconds on the card
+# against 3.0, and a control worth running is worth running at its strongest.
 PATTERNS: tuple[bytes, ...] = (
     bytes((i * 37 + 11) & 0xFF for i in range(256)),
     bytes((i * 211 + 173) & 0xFF for i in range(256)),
     bytes(0xFF if i % 3 else 0x00 for i in range(256)),
     bytes((i * i + 7) & 0xFF for i in range(256)),
+    bytes((i * 97 + 41) & 0xFF for i in range(256)),
+    bytes((i * 149 + 233) & 0xFF for i in range(256)),
+    bytes(0x00 if i % 5 else 0xFF for i in range(256)),
+    bytes((i * i * i + 19) & 0xFF for i in range(256)),
 )
 BUFFER = 256
 REPEATS = 5

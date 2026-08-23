@@ -201,7 +201,7 @@ hundred found forty-one that were wrong.
 
 **Four inputs, not one.** A stale read only changes the answer when the stale value and the
 fresh one differ, so a single pattern of bytes is a single chance to notice. Every kernel in
-the round trip runs against four patterns chosen to disagree with each other everywhere.
+the round trip runs against eight patterns chosen to disagree with each other everywhere.
 Adding the second, third and fourth immediately exposed a carry-out predicate the operand
 model had been reading as a source since the beginning, which had survived every control
 above it including the round trip.

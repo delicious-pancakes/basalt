@@ -60,7 +60,7 @@ One standard, three tools: **agree with the vendor exactly, or say why not.**
 | :--- | :--- | :--- | ---: |
 | **Assembler** | SASS text to the 128-bit word | Reassemble every instruction `ptxas` emitted and compare bytes | 59,693 of 59,760 exact across four optimisation levels, **0 wrong** |
 | **Checker** | Reads a schedule, reports hazards | The vendor's own output must verify clean, and a deliberately shortened stall must be caught | 0 errors over 1,323 vendor kernel and optimisation-level pairs, **0 missed** on 233 broken ones |
-| **Scheduler** | Assigns every control bit from scratch | Discard the vendor's, compute new ones, run both on the GPU against four inputs, compare output bytes | **439 of 439 comparable kernels** byte-identical, at all three optimisation levels |
+| **Scheduler** | Assigns every control bit from scratch | Discard the vendor's, compute new ones, run both on the GPU against eight inputs, compare output bytes | **439 of 439 comparable kernels** byte-identical, at all three optimisation levels |
 
 And the part a scheduler is usually quiet about: what the correctness costs. basalt's
 schedules spend **1.05x** the vendor's issue cycles, slower on 168 of the 1,323 kernel and
@@ -344,7 +344,7 @@ Three of those contradict the assumed model basalt shipped with: `DADD` was assu
 
 **The verdicts match the silicon.** For every encodable stall on a dependent producer, basalt's static answer and what the hardware actually computes agree, including the zero case. That is held as a test, not asserted here. Full evidence, including three independent methods for the required stall and the corrections made along the way, is in [findings](docs/FINDINGS.md).
 
-**And when it says a schedule is unsafe, the silicon agrees.** Take the vendor's own working schedule for 233 kernels, shorten one real dependency in each, and compare basalt's verdict against what the GPU computes: 74 that it called broken were broken, and **nothing it called safe computed a wrong answer**. That number started at 34 missed rather than zero, and [findings](docs/FINDINGS.md) says what the cause was and what fixing it cost in false alarms, because a sweep that only ever reported its final figure would be worth less than one that reported its first.
+**And when it says a schedule is unsafe, the silicon agrees.** Take the vendor's own working schedule for 233 kernels, shorten one real dependency in each, and compare basalt's verdict against what the GPU computes: 79 that it called broken were broken, and **nothing it called safe computed a wrong answer**. That number started at 34 missed rather than zero, and [findings](docs/FINDINGS.md) says what the cause was and what fixing it cost in false alarms, because a sweep that only ever reported its final figure would be worth less than one that reported its first.
 
 ## It can assign the control bits too
 

@@ -36,12 +36,16 @@ ARCH = "sm_120a"
 BUFFER = 256
 THREADS = 32
 
-# the same four the corpus runner uses, so a verdict here means what it means there
+# the same ones the corpus runner uses, so a verdict here means what it means there
 PATTERNS: tuple[bytes, ...] = (
     bytes((i * 37 + 11) & 0xFF for i in range(256)),
     bytes((i * 211 + 173) & 0xFF for i in range(256)),
     bytes(0xFF if i % 3 else 0x00 for i in range(256)),
     bytes((i * i + 7) & 0xFF for i in range(256)),
+    bytes((i * 97 + 41) & 0xFF for i in range(256)),
+    bytes((i * 149 + 233) & 0xFF for i in range(256)),
+    bytes(0x00 if i % 5 else 0xFF for i in range(256)),
+    bytes((i * i * i + 19) & 0xFF for i in range(256)),
 )
 
 
