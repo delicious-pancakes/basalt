@@ -40,10 +40,6 @@ CAP_BYTES = 1_000_000
 # well under the 1 MB cap, so the artwork can gain an element without failing
 TARGET_BYTES = 600_000
 
-# mean pixel drift allowed before quantising is refused, so "no visible banding"
-# stays checked rather than assumed
-MAX_MEAN_DRIFT = 1.5
-
 # (source svg, output png, css width, css height)
 TARGETS: tuple[tuple[str, Path, int, int], ...] = (
     ("social-preview.svg", ROOT / ".github" / "social-preview.png", 1280, 640),
@@ -137,7 +133,7 @@ def main() -> int:
                 sys.stderr.write(proc.stderr.decode("utf-8", "replace"))
                 raise SystemExit(f"chrome produced no output for {svg}")
 
-            px, mode = optimise(out)
+            px, mode = optimise(out, w, h)
             print(
                 f"  {svg} -> {out.relative_to(ROOT)}  {px}  "
                 f"{out.stat().st_size / 1024:.0f} KB  ({mode})"
@@ -147,50 +143,39 @@ def main() -> int:
     return 0
 
 
-def optimise(path: Path) -> tuple[str, str]:
-    """Shrink a rendered PNG to fit GitHub's cap, losslessly if possible.
+def optimise(path: Path, width: int, height: int) -> tuple[str, str]:
+    """Write the exact form GitHub's social preview pipeline hands back.
 
-    Chrome writes a fast, large PNG. Recompressing it losslessly is usually
-    enough on artwork this flat. Quantisation is the fallback and is reported,
-    because silently degrading an asset is exactly the kind of thing that should
-    never happen without saying so.
+    Uploading anything else means asking that pipeline to convert, and a
+    conversion that fails leaves the setting pointing at an asset that 404s: the
+    repository looks configured and unfurls as nothing. Fetching what GitHub
+    serves for a preview that does work shows what it wants, which is 1280x640
+    8-bit truecolour with no palette and no alpha, so that is what this writes.
+
+    Chrome renders at 2x for the downsample and the file is saved at 1x, which
+    is both sharper than rendering at 1x and smaller than shipping the 2x.
     """
     try:
-        from PIL import Image, ImageChops, ImageStat
+        from PIL import Image
     except ImportError:
         return "unscaled", "no Pillow, left as rendered"
 
     with Image.open(path) as raw:
+        # RGB, not RGBA and not P: an alpha channel composites against whatever
+        # the unfurling client uses for a background, which is not a choice to
+        # leave to Slack
         im = raw.convert("RGB")
-        px = f"{im.width}x{im.height}"
-
+        if (im.width, im.height) != (width, height):
+            im = im.resize((width, height), Image.Resampling.LANCZOS)
         im.save(path, "PNG", optimize=True, compress_level=9)
-        lossless = path.stat().st_size
-        if lossless <= TARGET_BYTES:
-            return px, "lossless"
 
-        # smaller palettes until one fits, and the drift is measured rather than
-        # assumed, so a steep gradient refuses the trade instead of banding
-        for colors in (256, 192, 128):
-            candidate = im.quantize(colors=colors, dither=Image.Dither.FLOYDSTEINBERG)
-            drift = ImageStat.Stat(ImageChops.difference(im, candidate.convert("RGB"))).mean
-            worst = max(drift)
-            if worst > MAX_MEAN_DRIFT:
-                continue
-            candidate.save(path, "PNG", optimize=True, compress_level=9)
-            if path.stat().st_size <= TARGET_BYTES:
-                return px, (
-                    f"{colors} colours, {path.stat().st_size / lossless:.0%} of lossless, "
-                    f"mean drift {worst:.2f}/255"
-                )
-
-        # nothing faithful was small enough, so keep the lossless file if it is
-        # at least legal and say why it is bigger than intended
-        im.save(path, "PNG", optimize=True, compress_level=9)
-        if path.stat().st_size <= CAP_BYTES:
-            return px, "lossless, over the comfort target but under GitHub's cap"
-
-    return px, "over GitHub's 1 MB cap; reduce SCALE or simplify the artwork"
+    size = path.stat().st_size
+    px = f"{width}x{height}"
+    if size > CAP_BYTES:
+        return px, "over GitHub's 1 MB cap; simplify the artwork"
+    if size > TARGET_BYTES:
+        return px, "under GitHub's cap, over the comfort target"
+    return px, "truecolour, the form GitHub serves"
 
 
 if __name__ == "__main__":
