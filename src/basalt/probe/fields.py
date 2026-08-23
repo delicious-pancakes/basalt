@@ -38,6 +38,19 @@ _REG = re.compile(r"\b(?:UR|R|P|UP|SR_|SB)\w*", re.IGNORECASE)
 _IMM = re.compile(r"\b0x[0-9a-fA-F]+\b")
 # a guard is printed ahead of the first operand rather than beside it
 _GUARD_PREFIX = re.compile(r"^@!?U?P(?:\d+|T)\s+")
+# and a branch target trails the last one, with a space rather than a comma
+_LABEL_SUFFIX = re.compile(r"\s*`\([^)]*\)\s*$")
+
+
+def _strip_edges(text: str) -> str:
+    """Operand text without the guard in front or the branch target behind.
+
+    Both ride on an operand rather than being their own comma-separated part, so
+    leaving them attached puts two things in one field. `RET.REL.NODEC R12
+    `(label)` has no comma at all, which made the return register and the branch
+    target one slot and left nothing to write the register with.
+    """
+    return _LABEL_SUFFIX.sub("", _GUARD_PREFIX.sub("", text, count=1)).strip()
 
 
 class BitRole(StrEnum):
@@ -70,8 +83,8 @@ class BitObservation:
         in one field, so a guarded form's destination bits are recorded as the
         guard's and there is nothing left to write a different destination with.
         """
-        a = [t.strip() for t in _GUARD_PREFIX.sub("", self.before, count=1).split(",")]
-        b = [t.strip() for t in _GUARD_PREFIX.sub("", self.after, count=1).split(",")]
+        a = [t.strip() for t in _strip_edges(self.before).split(",")]
+        b = [t.strip() for t in _strip_edges(self.after).split(",")]
         if len(a) != len(b):
             return None
         moved = [i for i, (x, y) in enumerate(zip(a, b, strict=True)) if x != y]

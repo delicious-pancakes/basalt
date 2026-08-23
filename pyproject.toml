@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "basalt-sass"
 version = "0.1.0.dev0"
-description = "The world's first verified assembler, checker and scheduler for NVIDIA consumer Blackwell (sm_120)."
+description = "The world's first assembler, checker and scheduler for NVIDIA consumer Blackwell (sm_120) that agrees with the vendor compiler byte for byte."
 readme = "README.md"
 requires-python = ">=3.11"
 license = "Apache-2.0"

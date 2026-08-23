@@ -339,7 +339,12 @@ class Assembler:
                 # `PLOP3.LUT`'s predicate slot is a uniform-register flag, a
                 # number and a negate sharing five bits, and taking four of them
                 # for the number turns `P1` into `UP0`.
-                if holds == "value" and token < len(tokens):
+                # A field the prober called a modifier is still writable when a
+                # value was split out of it and that value reproduces its own
+                # reference: `QMMA` slot 5 carries a reuse flag beside a register
+                # number, and the number is encodable once the flag is named.
+                writable = holds == "value" or SubRole.VALUE in parts
+                if writable and holds != "float" and token < len(tokens):
                     value_bits = tuple(sorted(parts.get(SubRole.VALUE, operand.bits)))
                     expected = _token_value(_strip_modifiers(tokens[token])[1])
                     if expected is None or _read(reference, value_bits) != expected:
@@ -347,6 +352,8 @@ class Assembler:
                         parts = {
                             role: bits for role, bits in parts.items() if role in _COMPOSITE_ROLES
                         }
+                    else:
+                        holds = "value"
                 slots.append(
                     Slot(
                         index=operand.slot,
