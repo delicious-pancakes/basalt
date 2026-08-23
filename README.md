@@ -4,24 +4,29 @@
 
 <br/>
 
-<!-- Uncomment both of these together, once v1.0.0 is on PyPI and Zenodo has minted the
-     archive. Until then they would render as "not found", and a badge that lies about
-     the thing being available is the one badge this repository cannot afford.
-     Use the *concept* DOI, which always resolves to the newest release:
-<a href="https://doi.org/10.5281/zenodo.XXXXXXX"><img alt="DOI" src="https://img.shields.io/badge/DOI-10.5281%2Fzenodo.XXXXXXX-1682D4?style=flat-square&logo=doi&logoColor=white&labelColor=0d1117"></a>
+<img alt="Architecture" src="https://img.shields.io/badge/arch-sm__120%20%7C%20sm__120a-76B900?style=flat-square&labelColor=0d1117">
+<img alt="Python" src="https://img.shields.io/badge/python-3.11%2B-3776AB?style=flat-square&logo=python&logoColor=white&labelColor=0d1117">
+<a href="https://github.com/sunnypatell/basalt/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Apache--2.0-3178C6?style=flat-square&labelColor=0d1117"></a>
+<!-- uncomment once the package is on the index:
 <a href="https://pypi.org/project/basalt-sass/"><img alt="PyPI" src="https://img.shields.io/pypi/v/basalt-sass?style=flat-square&logo=pypi&logoColor=white&label=pypi&color=76B900&labelColor=0d1117"></a>
 -->
-<a href="https://orcid.org/0009-0005-3863-7642"><img alt="ORCID" src="https://img.shields.io/badge/ORCID-0009--0005--3863--7642-A6CE39?style=flat-square&logo=orcid&logoColor=white&labelColor=0d1117"></a>
-<img alt="Architecture" src="https://img.shields.io/badge/arch-sm__120%20%7C%20sm__120a-76B900?style=flat-square&labelColor=0d1117">
-<a href="https://github.com/sunnypatell/basalt/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/sunnypatell/basalt/ci.yml?branch=main&style=flat-square&logo=githubactions&logoColor=white&label=ci&labelColor=0d1117"></a>
-<a href="https://github.com/sunnypatell/basalt/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Apache--2.0-3178C6?style=flat-square&labelColor=0d1117"></a>
 
 <br/>
 
-<img alt="Python" src="https://img.shields.io/badge/python-3.11%2B-3776AB?style=flat-square&logo=python&logoColor=white&labelColor=0d1117">
+<a href="https://github.com/sunnypatell/basalt/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/sunnypatell/basalt/ci.yml?branch=main&style=flat-square&logo=githubactions&logoColor=white&label=ci&labelColor=0d1117"></a>
 <img alt="Runtime dependencies" src="https://img.shields.io/badge/runtime%20deps-none-555?style=flat-square&labelColor=0d1117">
 <img alt="No GPU required" src="https://img.shields.io/badge/ISA%20build-no%20GPU%20required-555?style=flat-square&labelColor=0d1117">
-<a href="https://github.com/sunnypatell/basalt/blob/main/CITATION.cff"><img alt="Cite this repository" src="https://img.shields.io/badge/cite-CITATION.cff-555?style=flat-square&labelColor=0d1117"></a>
+<img alt="Controls" src="https://img.shields.io/badge/controls-19%20passing-76B900?style=flat-square&labelColor=0d1117">
+
+<br/>
+
+<!-- both fill in the moment Zenodo mints the archive. use the *concept* DOI, the one
+     that always resolves to the newest release, so neither line changes again:
+<a href="https://doi.org/10.5281/zenodo.XXXXXXX"><img alt="DOI" src="https://zenodo.org/badge/DOI/10.5281/zenodo.XXXXXXX.svg"></a>
+<a href="https://doi.org/10.5281/zenodo.XXXXXXX"><img alt="Archived on Zenodo" src="https://img.shields.io/badge/archived-Zenodo-1682D4?style=flat-square&logo=zenodo&logoColor=white&labelColor=0d1117"></a>
+-->
+<a href="https://orcid.org/0009-0005-3863-7642"><img alt="ORCID 0009-0005-3863-7642" src="https://img.shields.io/badge/ORCID-0009--0005--3863--7642-A6CE39?style=flat-square&logo=orcid&logoColor=white&labelColor=0d1117"></a>
+<a href="https://github.com/sunnypatell/basalt/blob/main/CITATION.cff"><img alt="Cite this repository" src="https://img.shields.io/badge/cite-CITATION.cff-1682D4?style=flat-square&labelColor=0d1117"></a>
 
 <br/><br/>
 
