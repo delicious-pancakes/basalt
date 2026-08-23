@@ -17,9 +17,15 @@ permissions:
 
 concurrency:
   group: ci-${{ github.ref }}
-  # superseded pull-request runs are wasted minutes, but a cancelled run on main
-  # leaves the branch with no recorded status, so those are left to finish
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  # Cancel superseded runs everywhere, main included.
+  #
+  # This used to exempt main, on the reasoning that a cancelled run leaves the
+  # branch with no recorded status. That is not what the setting does. With
+  # cancel-in-progress false GitHub still holds only one pending run per group,
+  # so a third push cancels the queued one regardless: five of the eight main
+  # runs before this change ended up cancelled anyway. The exemption bought no
+  # extra status and cost a full corpus run per superseded commit.
+  cancel-in-progress: true
 
 env:
   CUDA_VERSION: "13.3.1"
@@ -114,9 +120,19 @@ jobs:
         run: pytest -m "toolchain and not slow"
 
       - name: Positive control over the whole corpus
-        # every kernel ptxas builds must verify clean. this is the check that
-        # decides whether anything else basalt reports is worth reading, so it
-        # gates every push rather than running on a schedule.
+        # every kernel ptxas builds must verify clean, at all three -O levels.
+        # this is the check that decides whether anything else basalt reports
+        # is worth reading, and it is also 693 of this job's 844 seconds: 449
+        # kernels compiled and disassembled three times over. measured, the
+        # cost is nvdisasm, 441 spawns a level at ~36 ms each; the hazard
+        # analysis those spawns feed is 2.1 s for all 1347.
+        #
+        # it runs on pull requests and nightly rather than on every push. the
+        # same sweep runs locally through scripts/verify_all.py before a push,
+        # so re-running it per commit buys a second opinion from an identical
+        # pinned toolchain and costs twelve minutes to do it. `isa-drift` below
+        # is gated the same way for the same reason.
+        if: github.event_name != 'push'
         run: pytest -m slow
 
       - name: Try to make the assembler emit something else
@@ -131,7 +147,12 @@ jobs:
         # the suite already pins "nothing assembles to the wrong bytes"; this
         # prints the figure itself, so a drop in coverage is visible in the log
         # rather than only when it crosses the floor, and the script that
-        # produces the published number cannot quietly stop working
+        # produces the published number cannot quietly stop working.
+        #
+        # correctness is therefore already gated above. this is a reporting
+        # pass that recompiles all 449 kernels a fourth time for about a
+        # hundred seconds, so it belongs on the nightly run, not on every push.
+        if: github.event_name != 'push'
         run: python scripts/assembler_coverage.py
 
   isa-drift:
