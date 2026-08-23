@@ -1,5 +1,15 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (c) 2026 Sunny Patel
+#
+# Pins are only as good as the thing that refreshes them. Every action in this
+# repository is SHA-pinned, which stops a tag being re-pointed under us but also
+# means a pin rots silently until something bumps it; that something is here.
+#
+# Monthly and grouped, so the pins stay fresh without a PR queue nobody reads.
+# The cooldown is the deliberate part: a compromised release of a popular
+# package (the tj-actions pattern) is usually caught upstream within days, and
+# waiting a week before opening the bump means the incident happens to someone
+# else's main branch rather than this one.
 version: 2
 updates:
   # basalt has no runtime dependencies on purpose, so this only covers the dev
@@ -8,19 +18,39 @@ updates:
     directory: /
     schedule:
       interval: monthly
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 3
+    cooldown:
+      default-days: 7
     commit-message:
       prefix: "chore(deps)"
     groups:
       dev-tooling:
         patterns: ["*"]
 
-  - package-ecosystem: github-actions
+  # cooldown is not supported for the github-actions ecosystem, so the monthly
+  # cadence is the buffer here instead
+  - package-ecosystem: github-actions # zizmor: ignore[dependabot-cooldown]
     directory: /
     schedule:
       interval: monthly
+    open-pull-requests-limit: 3
     commit-message:
       prefix: "ci(deps)"
     groups:
       actions:
+        patterns: ["*"]
+
+  # the hooks are the local half of the same gate CI runs; if they drift apart
+  # a contributor's machine starts disagreeing with the runner
+  - package-ecosystem: pre-commit
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 3
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      hooks:
         patterns: ["*"]

@@ -18,8 +18,10 @@ repos:
         # a cubin belongs in a scratch directory, not in history
         args: [--maxkb=1024]
       - id: check-merge-conflict
+      - id: check-json
       - id: check-toml
       - id: check-yaml
+      - id: detect-private-key
       - id: end-of-file-fixer
         exclude: ^data/
       - id: mixed-line-ending
@@ -49,6 +51,19 @@ repos:
         args: [--platform=win32]
         additional_dependencies: [pytest]
 
+  # the same two gates workflow-lint.yml runs, at the same severity, so the
+  # answer does not change between a laptop and a runner
+  - repo: https://github.com/rhysd/actionlint
+    rev: v1.7.12
+    hooks:
+      - id: actionlint
+        args: [-ignore, SC2086, -ignore, SC2129]
+  - repo: https://github.com/zizmorcore/zizmor-pre-commit
+    rev: v1.28.0
+    hooks:
+      - id: zizmor
+        args: [--min-severity=medium]
+
   - repo: local
     hooks:
       - id: no-vendored-nvidia-source
@@ -61,3 +76,9 @@ repos:
           sys.exit(bad and print('refusing vendored source:', *bad) or 0)"
         language: system
         files: ^third_party/
+
+ci:
+  autofix_commit_msg: "style: auto-fixed from pre-commit hooks"
+  autofix_prs: true
+  autoupdate_commit_msg: "chore(deps): updated pre-commit hooks"
+  autoupdate_schedule: monthly
