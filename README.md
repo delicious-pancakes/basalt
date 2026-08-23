@@ -7,9 +7,7 @@
 <img alt="Architecture" src="https://img.shields.io/badge/arch-sm__120%20%7C%20sm__120a-76B900?style=flat-square&labelColor=0d1117">
 <img alt="Python" src="https://img.shields.io/badge/python-3.11%2B-3776AB?style=flat-square&logo=python&logoColor=white&labelColor=0d1117">
 <a href="https://github.com/sunnypatell/basalt/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Apache--2.0-3178C6?style=flat-square&labelColor=0d1117"></a>
-<!-- uncomment once the package is on the index:
 <a href="https://pypi.org/project/basalt-sass/"><img alt="PyPI" src="https://img.shields.io/pypi/v/basalt-sass?style=flat-square&logo=pypi&logoColor=white&label=pypi&color=76B900&labelColor=0d1117"></a>
--->
 
 <br/>
 
@@ -342,7 +340,6 @@ ok    probe oracle 16/16 mnemonics round-tripped
 both oracles healthy. no GPU required for anything above.
 ```
 
-<!-- Uncomment with the badges, once v1.0.0 is on PyPI:
 ### Or as a package
 
 `pip install basalt-sass` installs the CLI, the library and all three measured tables, with
@@ -354,7 +351,6 @@ pip install basalt-sass
 basalt doctor
 basalt verify kernel.cubin
 ```
--->
 
 ### Where it looks for `ptxas` and `nvdisasm`
 
