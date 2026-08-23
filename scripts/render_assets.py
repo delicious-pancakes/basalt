@@ -32,9 +32,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 ASSETS = ROOT / "docs" / "assets"
 
-# 2x keeps the 1280x640 preview sharp on high-DPI, and the cap is checked rather
-# than hoped for
-SCALE = 2
+# render at 4x and downsample: 16 samples a pixel beats the browser's own
+# antialiasing on the small type, and the smoother result compresses smaller too
+SCALE = 4
 CAP_BYTES = 1_000_000
 
 # well under the 1 MB cap, so the artwork can gain an element without failing
@@ -146,14 +146,14 @@ def main() -> int:
 def optimise(path: Path, width: int, height: int) -> tuple[str, str]:
     """Write the exact form GitHub's social preview pipeline hands back.
 
-    Uploading anything else means asking that pipeline to convert, and a
-    conversion that fails leaves the setting pointing at an asset that 404s: the
-    repository looks configured and unfurls as nothing. Fetching what GitHub
-    serves for a preview that does work shows what it wants, which is 1280x640
-    8-bit truecolour with no palette and no alpha, so that is what this writes.
+    GitHub re-encodes whatever it accepts, to 1280x640 8-bit truecolour with no
+    palette and no alpha. Handing it that form already means nothing is resized
+    or converted on the way in, so the upload has one less step to fail at and
+    the bytes that get served are the bytes that were reviewed here.
 
-    Chrome renders at 2x for the downsample and the file is saved at 1x, which
-    is both sharper than rendering at 1x and smaller than shipping the 2x.
+    Chrome renders at SCALE and the file is saved at 1x: sharper than letting
+    the browser antialias at 1x, and a fraction of the size of shipping the
+    supersample.
     """
     try:
         from PIL import Image
