@@ -212,7 +212,10 @@ def _check_instruction(
     state.satisfy(wait_mask)
     # so everything below sees the state this instruction actually executes in
 
-    for reg in sorted(access.real_uses, key=str):
+    # sorted only when reporting, where the order decides how findings read;
+    # the convergence passes reach the same fixed point in any order
+    uses = sorted(access.real_uses, key=str) if recording else access.real_uses
+    for reg in uses:
         for rd in state.reaching(reg):
             producer = program.instructions[rd.index]
             if _exclusive(producer.text, instr.text):

@@ -102,16 +102,23 @@ class FlowState:
         signal outstanding on that scoreboard, for this instruction and for
         everything after it.
         """
-        for reg, by_index in self.defs.items():
-            for index, rd in list(by_index.items()):
+        if not wait_mask:
+            return
+        for by_index in self.defs.values():
+            for index, rd in by_index.items():
                 if not rd.satisfied and rd.barrier != 7 and (wait_mask >> rd.barrier) & 1:
+                    # every field carried across: rebuilding without `yielded`
+                    # and `crossed` reset both on every wait, which made a
+                    # definition that had crossed an edge look like one that
+                    # had not, and the gap a distance it is not
                     by_index[index] = ReachingDef(
-                        index=rd.index,
-                        elapsed=rd.elapsed,
-                        satisfied=True,
-                        barrier=rd.barrier,
+                        rd.index,
+                        rd.elapsed,
+                        True,
+                        rd.barrier,
+                        rd.yielded,
+                        rd.crossed,
                     )
-            self.defs[reg] = by_index
 
         for sb in list(self.reads):
             if (wait_mask >> sb) & 1:

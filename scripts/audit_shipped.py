@@ -228,10 +228,11 @@ def main() -> int:
     with ProcessPoolExecutor(max_workers=workers, initializer=_setup) as pool:
         for done, tally in enumerate(pool.map(_audit, targets, chunksize=1), start=1):
             total.merge(tally)
-            if done % 25 == 0:
+            if done % 10 == 0:
                 print(
                     f"  {done}/{len(targets)} cubins, {total.kernels} kernels, "
-                    f"{total.errors} errors",
+                    f"{total.instructions} instructions, {total.errors} errors "
+                    f"({time.perf_counter() - started:.0f}s)",
                     flush=True,
                 )
     elapsed = time.perf_counter() - started
