@@ -49,8 +49,8 @@ Its scheduling is the reference, so an error on any of them is basalt's fault.
 
 | | |
 | :--- | ---: |
-| Kernels compiled | 423 |
-| Dependencies checked | 7,325 |
+| Kernel and optimisation-level pairs | 1,323 |
+| Dependencies checked | 24,399 |
 | Errors | **0** |
 | Kernels with warnings | 1 |
 
@@ -294,7 +294,7 @@ The staircase is the useful part. A single wrong answer could be anything; a val
 climbs monotonically toward the right one as the gap widens, and then stops changing, is a
 timing requirement being met.
 
-**Across the corpus.** Every dependent pair in the 423 kernel corpus, split by how the
+**Across the corpus.** Every dependent pair in the corpus, split by how the
 consumer reads the value, scoreboard-covered pairs excluded because there the stall says
 nothing:
 
@@ -350,7 +350,7 @@ with traffic on both sides, predicated writes, and long unbranched dependent cha
 
 | | |
 | :--- | ---: |
-| Kernels rescheduled and run | 436 |
+| Kernels rescheduled and run | 441 |
 | Comparable (the vendor runs here, deterministically, and reproducibly) | 314 |
 | **Byte-identical to the vendor schedule** | **314** |
 | Wrong | 0 |
@@ -525,7 +525,7 @@ label under this rule and none decodes wrongly.
 The rule is a measurement, and a measurement written down as a constant is exactly what goes
 quietly wrong when a compiler version changes, so it is re-derived from the corpus by a test
 rather than trusted. With it, assembling every corpus kernel as a whole program reproduces
-11,743 of 11,752 instructions bit-identically, and none to anything else.
+11,988 of 12,008 instructions bit-identically, and none to anything else.
 
 ## 12. What the correctness costs
 
@@ -536,9 +536,9 @@ schedules are correct on every comparable corpus kernel, and here is what they c
 | :--- | ---: |
 | `ptxas -O3` | 13,571 |
 | basalt | 12,168 |
-| | **0.93x** |
+| | **1.05x** |
 
-Slower on 44 of the 436 kernels and cheaper on the rest, with every comparable kernel still
+Slower on 66 of the 441 kernels and cheaper on the rest, with every comparable kernel still
 byte-identical on the GPU at all three optimisation levels.
 
 Cheaper than the vendor is believable rather than suspicious, for a specific reason: basalt
@@ -567,7 +567,7 @@ a consumer that is short and spends cycles in the window before it, and a cycle 
 one pair also separates every other pair spanning that point. So a later pair can be
 satisfied by stall placed for an earlier one, leaving the earlier placement larger than
 anything requires. Walking that back, one cycle at a time, judged by the same requirement
-function that placed them, took 1.29x to 0.93x. `LDC` alone was half the excess before it,
+function that placed them, took 1.29x to 0.93x, and back to 1.05x once anti-dependencies were charged for. `LDC` alone was half the excess before it,
 almost all overshoot rather than requirement.
 
 **Not leaning on a wait a predicated instruction carries.** `ptxas` does lean on them and
@@ -782,11 +782,11 @@ computes a wrong answer, which is the entire failure this repository exists to p
 
 | | |
 | :--- | ---: |
-| Kernels, one dependency shortened in each | 223 |
+| Kernels, one dependency shortened in each | 226 |
 | Agreed broken | 73 |
-| Over-strict | 85 |
+| Over-strict | 90 |
 | **Missed** | **0** |
-| Unstable, excluded | 65 |
+| Unstable, excluded | 63 |
 
 Which kernels land in the excluded column moves between runs, because several read memory
 this harness never initialises and are therefore stable only until something else has used
@@ -1001,9 +1001,147 @@ defects in the corpus.
 | | Mnemonics | Opcodes | Instructions reproduced |
 | :--- | ---: | ---: | ---: |
 | Before | 276 | 77 | 9,846 of 9,856 |
-| After | **335** | **86** | **11,743 of 11,752** |
+| After | **337** | **86** | **11,988 of 12,008** |
 
-## 21. What is deliberately not claimed
+## 21. A corpus of two-instruction kernels overestimates what the compiler requires
+
+basalt mines its stall requirements from the vendor's own scheduling: the tightest gap
+`ptxas` was ever seen to leave for a pairing is a lower bound on what that pairing needs.
+The premise was written down alongside a caveat, that the compiler might simply be
+conservative and basalt would then be merely strict, and one assurance:
+
+> If the compiler were ever wrong in the other direction the positive control would already
+> be failing.
+
+It was not failing because it was not looking. The control checked `-O3` only, and only the
+generated corpus, never the hand-written kernels with loops and barriers in them. Widening it
+to every kernel at every optimisation level, and adding five workloads shaped like code
+somebody would run, made it fail immediately:
+
+| Pairing | Mined floor | What the vendor actually did | Observations behind the floor |
+| :--- | ---: | ---: | ---: |
+| `FADD -> *` | 5 | **4** | 24 |
+| `ULEA -> *` | 9 | **7** | 54 |
+| `CS2R -> *` | 16 | **13** | 3 |
+
+**Why a narrow corpus reads high.** A kernel with two instructions of body gives `ptxas`
+nothing to fill a gap with. It leaves whatever spacing is convenient, and that spacing is an
+upper bound on the requirement wearing the clothes of a lower one. Give it a tiled matrix
+multiply and it packs independent work into the same gaps, and the floor it cannot go below
+is the one that shows.
+
+Re-mining with those workloads present moved `FADD` from 5 to 4 across 90 observations
+instead of 24, and `ULEA` from 9 to 7 across 93. The `FADD` number now agrees with fault
+injection, which had said 4 all along in finding 4: the mined table had been quietly
+contradicting the measured one, and the checker was believing the wrong half.
+
+**Three observations is not evidence.** `CS2R` had exactly three, said 16, and the
+instruction's measured latency is 4. Beside it in the same table, `CS2R.32` had three
+observations and said 7, and `FADD.RM`, `.RP` and `.RZ` each had three and said 5 where
+plain `FADD` had ninety and said 4. The threshold for calling mined evidence trustworthy was
+three, and at three the numbers disagree with each other.
+
+Raising it to eight costs less than it looks. It demotes a requirement to a warning rather
+than deleting it, and the negative control is where the cost would show: nothing moved into
+the missed column, which stayed at zero.
+
+| | Errors on vendor output | Kernel/level pairs checked | Dependencies |
+| :--- | ---: | ---: | ---: |
+| Before | not measured at `-O1`, or on any shape kernel | 423 | 7,325 |
+| After | **0** | **1,323** | **24,399** |
+
+## 22. A loop-carried dependency is not a distance
+
+`DFMA` to `DFMA` mines at 64 cycles across 194 observations, and in `s_loop_double` at `-O1`
+the vendor leaves 18. Both are correct, because they are not the same situation.
+
+```
+#8   DFMA R8, R6, R8, R4     stall=3  writes SB2   waits on SB1, SB2, SB5
+#9   UISETP.GE.AND ...       stall=9
+#10  BRA.U !UP0              stall=5   <- back edge to #8
+```
+
+The `DFMA` waits on scoreboard 2, which is the barrier its own previous iteration signalled.
+That is what carries the dependency around the back edge, and 18 cycles is all the spacing it
+needs on top. In a straight line there is no previous iteration to have signalled anything,
+so `ptxas` covers the same dependency by padding with `NOP`s to the full 64 (finding 4). The
+mined figure is the straight-line habit, and applying it to the loop reported the vendor's own
+working kernel as understalled.
+
+The checker already declined to compare a gap that crossed a block boundary, for exactly this
+reason: it is a minimum over paths rather than a distance. An instruction reaching *itself* is
+that same case and was not recognised as one, because it can only do so around a back edge.
+Saying so is one condition, and it is the difference between a control that passes and a
+control that is right.
+
+## 23. An operand read is not instantaneous, and nothing was modelling that
+
+`ULEA UR5, UR12, UR4, 0x18` reads `UR4`. The next instruction, `UMOV UR4, URZ`,
+overwrites it. `ptxas` leaves three cycles between them, and basalt's scheduler left one,
+which is the entire difference between a tiled matrix multiply that computes the right
+answer and one that does not.
+
+Shortening that gap on the card and nothing else:
+
+| `stall` on the reader | result |
+| ---: | :--- |
+| **0** | correct |
+| 1 | **wrong** |
+| 2 | **wrong** |
+| 3 | correct |
+| 4 to 7 | correct |
+
+The same shape as finding 1, and for the same reason: zero is the long safe encoding, and
+the first values above it are the ones that corrupt. Three cycles is the requirement, and it
+is a requirement basalt had no concept of.
+
+**Every dependency basalt modelled was a read after a write.** A value is produced, and a
+later instruction must not read it too early. This is the other direction: a value is read,
+and a later instruction must not overwrite it too early. The hardware does not check that
+one either, and the corruption is the same kind, silent and repeatable.
+
+It went unnoticed because a corpus of two-instruction kernels almost never overwrites a
+register it has just read. Real code does it constantly, because registers are scarce and a
+compiler reuses them the moment they are dead.
+
+This is the same gap finding 13 names from the other side. Read barriers exist because an
+instruction can consume its operands late, and basalt inherits them rather than computing
+them because it has no measured model of how long a read takes. Here `ptxas` protected the
+same thing with spacing rather than a barrier, so there was nothing to inherit and the gap
+became visible as a wrong answer. Three cycles is the first measurement of that latency.
+
+## 24. A scoreboard the scheduler allocates and never waits on
+
+`s_tile_matmul` at `-O2` and `-O3` still does not round-trip, and it is worth stating
+precisely rather than rounding off, because it is a defect in machinery basalt believes it
+has working rather than a mechanism it has never modelled.
+
+Substituting one half of the control word at a time isolates it. basalt's stalls alone
+compute the vendor's answer; basalt's `reuse` alone does too; basalt's scoreboards alone
+reproduce the wrong one, so the fault is in the allocation and not the spacing:
+
+| Substituted into the vendor's schedule | Result |
+| :--- | :--- |
+| basalt's stalls | correct |
+| basalt's reuse flags | correct |
+| **basalt's write barriers and wait masks** | **wrong** |
+
+Forcing one instruction to wait on everything narrows it to a single missing bit. `#45 STS
+[R6], R7` waits on nothing; adding scoreboard 1 to its mask, and nothing else, restores the
+vendor's answer exactly. So the scheduler allocates that scoreboard and then stores through
+a register it covers without waiting for it.
+
+Single-word substitution is not available as a technique here and the reason is worth
+recording: scoreboard numbers are global, so lifting one instruction out of a renumbered
+schedule leaves its consumer waiting on a barrier that nobody in the new numbering signals.
+Every apparent culprit found that way is an artefact. Only whole-field substitutions stay
+coherent, which is what the table above is.
+
+It is not fixed. A scoreboard allocator is where a silent hazard would come from if it were
+patched by guesswork, and the round-trip count is reported with this kernel counted against
+it rather than excluded from it.
+
+## 25. What is deliberately not claimed
 
 Stated so the boundary of the evidence is visible.
 
@@ -1041,7 +1179,7 @@ Stated so the boundary of the evidence is visible.
   first conversion. An earlier run reported `I2FP` as requiring 4 cycles; the control
   retracted it, and it is listed as not established rather than quietly kept.
 
-## 22. Corrections made along the way
+## 26. Corrections made along the way
 
 Kept because a method is only as trustworthy as its error log.
 
@@ -1093,6 +1231,14 @@ Kept because a method is only as trustworthy as its error log.
   finally reached it.
 - `HMNMX2` had no latency entry at all, while `HADD2`, `HMUL2` and `HFMA2` beside it did.
   Nothing had noticed because no kernel producing one ever compiled.
+
+- A mined requirement was trusted on three observations. `CS2R` had three, said sixteen
+  cycles, and the instruction's measured latency is four; the vendor's own thirteen came out
+  as an error. Eight observations now, and nothing moved into the negative control's missed
+  column when it changed.
+- An instruction reaching itself was checked as though the gap were a distance. It can only
+  reach itself around a back edge, where the vendor leans on the scoreboard rather than
+  padding to the full latency, and `DFMA` was being asked for 64 cycles where 18 was right.
 
 Each of these was caught by the positive control: the vendor compiler's own output must
 verify clean, and every one of them made it fail.

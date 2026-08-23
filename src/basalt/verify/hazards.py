@@ -434,11 +434,16 @@ def _check_scoreboarded_minimum(
     """
     if observed is None or report is None or not recording:
         return
-    if rd.crossed:
+    if rd.crossed or rd.index == index:
         # The gap is a minimum over paths rather than a distance, and the
         # evidence this is checked against is mined one block at a time, so
         # there is nothing here to compare fairly. Recorded as a limit in
         # docs/FINDINGS.md rather than guessed at.
+        #
+        # An instruction reaching itself is that same case: it can only do so
+        # around a back edge. `DFMA` mines at 64 cycles to another `DFMA`
+        # because in a straight line ptxas pads to the full latency, and in a
+        # loop it leans on the scoreboard instead and leaves 18.
         return
     producer = program.instructions[rd.index]
     if producer.word is None or producer.word.field("stall") == STALL_YIELD:

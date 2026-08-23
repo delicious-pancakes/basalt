@@ -265,4 +265,129 @@ INNER:
     @%p2 bra OUTER;
     st.global.u32 [%out], %r2;""",
         ),
+        _kernel(
+            "s_tile_matmul",
+            """    mov.u32 %r1, %tid.x;
+    and.b32 %r1, %r1, 15;
+    shl.b32 %r2, %r1, 2;
+    mov.u32 %t1, tileA;
+    mov.u32 %t2, tileB;
+    add.s32 %t3, %t1, %r2;
+    add.s32 %t4, %t2, %r2;
+    mov.f32 %f1, 0f00000000;
+    mov.f32 %f2, 0f00000000;
+    mov.u32 %r5, 0;
+TILE:
+    shl.b32 %r6, %r5, 6;
+    cvt.s64.s32 %d3, %r6;
+    add.s64 %d4, %in, %d3;
+    ld.global.f32 %f3, [%d4];
+    ld.global.f32 %f4, [%d4+64];
+    st.shared.f32 [%t3], %f3;
+    st.shared.f32 [%t4], %f4;
+    bar.sync 0;
+    ld.shared.f32 %f5, [%t1];
+    ld.shared.f32 %f6, [%t2];
+    ld.shared.f32 %f7, [%t1+4];
+    ld.shared.f32 %f8, [%t2+4];
+    fma.rn.f32 %f1, %f5, %f6, %f1;
+    fma.rn.f32 %f2, %f7, %f8, %f2;
+    bar.sync 0;
+    add.s32 %r5, %r5, 1;
+    setp.lt.s32 %p1, %r5, 4;
+    @%p1 bra TILE;
+    add.f32 %f9, %f1, %f2;
+    st.global.f32 [%out], %f9;""",
+            shared=""".shared .align 4 .b8 tileA[1024];
+.shared .align 4 .b8 tileB[1024];
+""",
+            extra_regs="""    .reg .b32 %t<8>;
+""",
+        ),
+        _kernel(
+            "s_warp_reduce_tree",
+            """    ld.global.f32 %f1, [%in];
+    mov.u32 %r1, 31;
+    shfl.sync.down.b32 %f2|%p1, %f1, 16, %r1, -1;
+    add.f32 %f1, %f1, %f2;
+    shfl.sync.down.b32 %f3|%p2, %f1, 8, %r1, -1;
+    add.f32 %f1, %f1, %f3;
+    shfl.sync.down.b32 %f4|%p3, %f1, 4, %r1, -1;
+    add.f32 %f1, %f1, %f4;
+    shfl.sync.down.b32 %f5|%p4, %f1, 2, %r1, -1;
+    add.f32 %f1, %f1, %f5;
+    shfl.sync.down.b32 %f6|%p5, %f1, 1, %r1, -1;
+    add.f32 %f1, %f1, %f6;
+    st.global.f32 [%out], %f1;""",
+        ),
+        _kernel(
+            "s_softmax_row",
+            """    ld.global.f32 %f1, [%in];
+    ld.global.f32 %f2, [%in+4];
+    ld.global.f32 %f3, [%in+8];
+    ld.global.f32 %f4, [%in+12];
+    max.f32 %f5, %f1, %f2;
+    max.f32 %f6, %f3, %f4;
+    max.f32 %f5, %f5, %f6;
+    sub.f32 %f7, %f1, %f5;
+    sub.f32 %f8, %f2, %f5;
+    sub.f32 %f9, %f3, %f5;
+    sub.f32 %f10, %f4, %f5;
+    ex2.approx.f32 %f7, %f7;
+    ex2.approx.f32 %f8, %f8;
+    ex2.approx.f32 %f9, %f9;
+    ex2.approx.f32 %f10, %f10;
+    add.f32 %f11, %f7, %f8;
+    add.f32 %f12, %f9, %f10;
+    add.f32 %f11, %f11, %f12;
+    rcp.approx.f32 %f13, %f11;
+    mul.f32 %f7, %f7, %f13;
+    mul.f32 %f8, %f8, %f13;
+    add.f32 %f14, %f7, %f8;
+    st.global.f32 [%out], %f14;""",
+        ),
+        _kernel(
+            "s_scan_inclusive",
+            """    ld.global.u32 %r1, [%in];
+    mov.u32 %r2, 31;
+    shfl.sync.up.b32 %r3|%p1, %r1, 1, 0, -1;
+    @%p1 add.s32 %r1, %r1, %r3;
+    shfl.sync.up.b32 %r4|%p2, %r1, 2, 0, -1;
+    @%p2 add.s32 %r1, %r1, %r4;
+    shfl.sync.up.b32 %r5|%p3, %r1, 4, 0, -1;
+    @%p3 add.s32 %r1, %r1, %r5;
+    shfl.sync.up.b32 %r6|%p4, %r1, 8, 0, -1;
+    @%p4 add.s32 %r1, %r1, %r6;
+    shfl.sync.up.b32 %r7|%p5, %r1, 16, 0, -1;
+    @%p5 add.s32 %r1, %r1, %r7;
+    st.global.u32 [%out], %r1;""",
+        ),
+        _kernel(
+            "s_fma_pipeline",
+            """    ld.global.f32 %a1, [%in];
+    ld.global.f32 %a2, [%in+4];
+    ld.global.f32 %a3, [%in+8];
+    ld.global.f32 %a4, [%in+12];
+    mov.f32 %a5, 0f3F800000;
+    mov.f32 %a6, 0f40000000;
+    mov.f32 %a7, 0f40400000;
+    mov.f32 %a8, 0f40800000;
+    mov.u32 %r1, 0;
+PIPE:
+    fma.rn.f32 %a5, %a1, %a5, %a2;
+    fma.rn.f32 %a6, %a2, %a6, %a3;
+    fma.rn.f32 %a7, %a3, %a7, %a4;
+    fma.rn.f32 %a8, %a4, %a8, %a1;
+    fma.rn.f32 %a5, %a5, %a6, %a7;
+    fma.rn.f32 %a6, %a6, %a7, %a8;
+    add.s32 %r1, %r1, 1;
+    setp.lt.s32 %p1, %r1, 8;
+    @%p1 bra PIPE;
+    add.f32 %a9, %a5, %a6;
+    add.f32 %a9, %a9, %a7;
+    add.f32 %a9, %a9, %a8;
+    st.global.f32 [%out], %a9;""",
+            extra_regs="""    .reg .f32 %a<24>;
+""",
+        ),
     ]

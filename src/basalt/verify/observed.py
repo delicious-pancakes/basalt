@@ -24,11 +24,14 @@ What this is and is not:
 
 - It is an empirical lower bound on the required stall, from the only source
   that definitively knows it.
-- It is not a proof. The compiler could be conservative, in which case the true
-  requirement is lower and basalt is merely strict. If the compiler were ever
-  wrong in the other direction the positive control would already be failing.
-- It only covers pairs the compiler actually emitted. Coverage is reported, and
-  pairs with too few observations are not trusted.
+- It is not a proof. The compiler is conservative when a kernel gives it nothing
+  to fill a gap with, and a corpus of two-instruction kernels reads high for
+  exactly that reason: `FADD` mined at 5 cycles from 24 such observations and at
+  4 from 90 once the corpus had workloads in it, where 4 is what fault injection
+  had measured all along (finding 21).
+- So the observation count is the evidence, and a thin one is not evidence at
+  all. `CS2R` had three observations, said sixteen, and measures four. Pairs
+  below the threshold are recorded and not trusted, and coverage is reported.
 """
 
 from __future__ import annotations
@@ -47,7 +50,7 @@ __all__ = ["ObservedStalls", "StallEvidence", "mine_program"]
 # A pair seen only once could be a coincidence of scheduling rather than a
 # statement about the requirement. Below this, the observation is kept but not
 # treated as authoritative.
-MIN_OBSERVATIONS = 3
+MIN_OBSERVATIONS = 8
 
 
 @dataclass

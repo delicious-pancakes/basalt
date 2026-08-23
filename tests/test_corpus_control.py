@@ -28,8 +28,6 @@ import pytest
 
 from basalt.disasm import disassemble_program
 from basalt.encoding import NO_BARRIER
-from basalt.harvest.corpus import generate
-from basalt.harvest.corpus_tensor import generate_tensor
 from basalt.harvest.runner import _MALFORMED
 from basalt.verify.hazards import Severity, verify_program
 from basalt.verify.latency import DEFAULT_MODEL, LatencyModel
@@ -57,19 +55,26 @@ def observed() -> ObservedStalls | None:
 
 @pytest.fixture(scope="module")
 def reports(corpus_builds, model, observed):
-    """Verify every kernel the vendor built, sharing the session's compile."""
-    wanted = {snippet.name for snippet in generate() + generate_tensor()}
+    """Verify every kernel the vendor built, at every level that schedules.
+
+    This checked `-O3` alone, and only the generated corpus, until widening it
+    found two things at once. The mined stall table was overestimating, because
+    a two-instruction kernel gives ptxas nothing to fill a gap with and it
+    leaves conservative spacing: `FADD` was pinned at 5 cycles by 24 such
+    observations while real code shows the vendor at 4. And a loop-carried
+    dependency was being measured as a straight-line distance.
+    """
     return [
-        (name, verify_program(program, model, observed=observed))
-        for name, (_, program) in corpus_builds.at(3).items()
-        if name in wanted
+        (f"{name} -O{opt}", verify_program(program, model, observed=observed))
+        for opt in (1, 2, 3)
+        for name, (_, program) in corpus_builds.at(opt).items()
     ]
 
 
 class TestPositiveControl:
     def test_the_corpus_actually_compiled(self, reports):
         """A control over nothing proves nothing."""
-        assert len(reports) > 200, f"only {len(reports)} kernels compiled"
+        assert len(reports) > 900, f"only {len(reports)} kernel/level pairs compiled"
 
     def test_no_kernel_is_rejected_for_being_malformed(self, corpus_builds):
         """A corpus bug must not go on looking like a form sm_120 lacks.
@@ -91,7 +96,7 @@ class TestPositiveControl:
 
     def test_dependencies_were_actually_checked(self, reports):
         total = sum(report.checked_pairs for _, report in reports)
-        assert total > 1000, f"only {total} dependencies checked"
+        assert total > 15000, f"only {total} dependencies checked"
 
     def test_no_vendor_kernel_produces_an_error(self, reports):
         """The one that matters. `ptxas` output must verify clean."""
@@ -458,10 +463,10 @@ class TestWhatTheCorrectnessCosts:
         vendor, basalt = cycles
         assert vendor > 5000, "the corpus did not build"
         ratio = basalt / vendor
-        # 0.93x when this was written, pinned from both sides: slower is a
+        # 1.05x when this was written, pinned from both sides: slower is a
         # regression, and faster is a reason to distrust the costing rather
         # than to celebrate it (finding 12)
-        assert ratio < 1.15, f"basalt's schedules cost {ratio:.2f}x the vendor's, up from 0.93x"
+        assert ratio < 1.15, f"basalt's schedules cost {ratio:.2f}x the vendor's, up from 1.05x"
         assert ratio > 0.75, (
             f"basalt's schedules cost {ratio:.2f}x, which is far cheaper than the vendor's and "
             f"is the shape a costing bug takes. check the hardware round trip before believing it"

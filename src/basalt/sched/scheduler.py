@@ -67,6 +67,13 @@ _OPAQUE_TRANSFERS = frozenset({"CALL", "RET", "BRX", "JMX", "RTT", "BPT"})
 # basalt reaches for that encoding as a fallback, so these need somewhere else
 _NEVER_ZERO_STALL: dict[str, int] = {"EXIT": 5, "RET": 5, "CALL": 5, "BAR": 6}
 
+# An operand read is not instantaneous. Overwrite a register one or two cycles
+# after an instruction reads it and the reader sees the new value, measured by
+# shortening the gap on `ULEA UR5, UR12, UR4` ahead of `UMOV UR4, URZ` until the
+# answer moved: 1 and 2 corrupt, 3 and above are correct, and 0 is the long safe
+# wait as always (finding 23). Nothing else in basalt models an anti-dependency.
+ANTI_DEPENDENCY_CYCLES = 3
+
 
 @dataclass
 class ScheduleResult:
@@ -576,6 +583,42 @@ def schedule_program(
         barrier = instr.word.field("read_barrier")
         if barrier != NO_BARRIER:
             read_barrier_mask |= 1 << barrier
+
+    # ---- anti-dependencies
+    # a read still in flight when the register is overwritten reads the new
+    # value, so the gap between the two is a requirement of its own
+    for block in cfg.blocks:
+        last_read: dict[RegRef, int] = {}
+        for index in range(block.start, block.end):
+            instr = program.instructions[index]
+            if instr.word is None:
+                continue
+            access = operand_access(instr.mnemonic, instr.operands)
+            for register in access.real_defs:
+                reader = last_read.get(register)
+                if reader is None or reader == index:
+                    continue
+                gap = sum(
+                    SATURATION if stalls[i] == STALL_YIELD else stalls[i]
+                    for i in range(reader, index)
+                )
+                if gap < ANTI_DEPENDENCY_CYCLES:
+                    stalls[reader] += ANTI_DEPENDENCY_CYCLES - gap
+            for register in access.real_uses:
+                last_read[register] = index
+
+    # ---- floors the dependency graph cannot see
+    # `ptxas` never issues these below the figure beside them, whatever the
+    # def-use edges say, and a barrier's is not a register dependency at all:
+    # the second `bar.sync` in a tiled loop is there to stop the next iteration
+    # overwriting shared memory the other threads are still reading. No edge in
+    # this analysis shows that, so the floor is what stands in for it.
+    for index, instr in enumerate(program.instructions):
+        if instr.word is None or stalls[index] == STALL_YIELD:
+            continue
+        floor = _NEVER_ZERO_STALL.get(instr.opcode)
+        if floor is not None:
+            stalls[index] = max(stalls[index], floor)
 
     # ---- emit
     for index, instr in enumerate(program.instructions):
