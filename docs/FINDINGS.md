@@ -1166,7 +1166,7 @@ The wait is evaluated at issue and the signal follows, so on a counter model tha
 harmless. **It is harmless, and reading it as a defect was a mistake worth keeping in the
 record**, because the diagnosis it led to was right and the rule it produced was not.
 
-`ptxas` emits that shape 260 times in 36,576 instructions: 209 on a write barrier and 51 on a
+`ptxas` emits that shape 254 times in 38,064 instructions: 206 on a write barrier and 48 on a
 read barrier. `LDC.64 R2, c[0x0][0x388]` waits on SB0 and then signals SB0, which is reusing a
 number that has just drained rather than waiting on its own result. The observation above was
 true of that kernel and false in general, and the sample that produced it was one kernel.
@@ -1198,7 +1198,7 @@ what came back waiting on its own barrier, and allocate again away from it.
 
 ### The repair loop did not survive its own premise
 
-Once the vendor was checked properly and found emitting the shape 260 times, the loop had
+Once the vendor was checked properly and found emitting the shape 254 times, the loop had
 nothing left to justify it, and the honest test is whether removing it changes an answer.
 It does not: 439 of 439 at every optimisation level with the loop gone, on the same eight
 input patterns.
@@ -1221,42 +1221,36 @@ than an untidy one. A tool that can only place three of the four fields cannot s
 program nobody has compiled, which is the whole point of the assembler, and a round trip
 that carries a field across unchanged is not evidence about that field.
 
-The question is what a read barrier is *for*, and the corpus answers it. Across 36,576
-instructions of `ptxas` output at three optimisation levels there are **334** read barriers,
-which is few enough to characterise exhaustively:
-
-| Opcode carrying one | Count | Latency class |
-| :--- | ---: | :--- |
-| `LDG` | 219 | variable |
-| `MOVM` | 22 | variable |
-| `DFMA`, `DADD`, `DMUL`, `DSETP` | 45 | variable |
-| `F2I` | 12 | variable |
-| `MUFU` | 7 | variable |
-| `STS` | 6 | control, no register result |
-| `SHFL` | 2 | variable |
-
-**328 of 334 are on variable-latency instructions**, and the six that are not are stores. So
-the rule is not about memory, and not about any particular opcode: an instruction whose
-*result* the hardware makes you wait for is also one whose *operands* it has not finished
-taking at issue, and a store is the same case with no result to wait for. Nothing outside
-those two sets ever carries one.
+The question is what a read barrier is *for*, and the corpus answers it. Across 38,064
+instructions of `ptxas` output at three optimisation levels there are **341** read barriers,
+which is few enough to characterise exhaustively. **325 of them are on variable-latency
+instructions and the other 16 are on stores.** So the rule is not about memory, and not about
+any particular opcode: an instruction whose *result* the hardware makes you wait for is also
+one whose *operands* it has not finished taking at issue, and a store is the same case with
+no result to wait for. Nothing outside those two sets ever carries one.
 
 That says who can need a barrier. When they actually need one takes a second measurement.
 Of the candidate instructions whose source register something later overwrites:
 
 | | Read barrier | No read barrier |
 | :--- | ---: | ---: |
-| A source is overwritten later | 333 | 444 |
-| No source is ever overwritten | 1 | 4,796 |
+| A source is overwritten later | 340 | 474 |
+| No source is ever overwritten | 1 | 5,119 |
 
-The first column is almost perfectly explained: **333 of the 334 barriers sit on an
-instruction whose source register is overwritten later**, and essentially none sit anywhere
-else. The 444 in the top right are the interesting cell, and two effects account for all of
-them. **318** of the 444 are separated from the overwrite by a wait on the reader's *own
-write barrier*, which cannot clear before the read has happened, so the read is already
-covered. The remaining **126** are the in-order property from finding 13: the barrier is on
-the *last* late reader before the overwrite and covers every earlier one, so a run of four
-loads takes one barrier and my first pass counted the other three as unprotected.
+**340 of the 341 barriers sit on an instruction whose source register is overwritten later**,
+and essentially none sit anywhere else. The 474 in the top right are the interesting cell,
+and three mechanisms account for every one of them:
+
+| How `ptxas` covers it instead | Count |
+| :--- | ---: |
+| A wait on the reader's own write barrier, which cannot clear before the read | 348 |
+| A barrier on a *later* late reader, which covers this one too (finding 13) | 15 |
+| Distance: 4 cycles at the minimum, 27 at the median, 311 at the most | 111 |
+
+Nothing is left over, which is the part worth insisting on. The third row is the same
+mechanism finding 23 measures from the other side, and the first row is the one that matters
+most because it is the largest: a wait placed for the *result* of a load also guarantees that
+the load has taken its address.
 
 ```
 #3 LDG.E.64 R4, [R2.64]            rb 7    <- reads R2, no barrier
@@ -1309,7 +1303,7 @@ answer on the card until the credit followed the counter rather than the intent.
 Five of the six control fields decide whether a program is correct. The sixth, one bit at
 109, is described everywhere as a hint to the warp scheduler, and basalt set it by a rule
 nobody had checked: yield when the stall is exactly 1. That agrees with `ptxas` on 72.9% of
-36,576 instructions, which is not a model, it is a coincidence that held for the commonest
+38,064 instructions, which is not a model, it is a coincidence that held for the commonest
 stall value.
 
 Two questions, and they need different kinds of evidence.
@@ -1332,7 +1326,7 @@ correctness, and basalt is free to choose it on any grounds it likes. Worth sayi
 because "it is only a hint" is the kind of claim that gets repeated without anyone checking,
 and a scheduler that writes it is one experiment away from knowing.
 
-**What does `ptxas` actually do with it?** Fit against the same 36,576 instructions:
+**What does `ptxas` actually do with it?** Fit against the same 38,064 instructions:
 
 | Rule | Agreement |
 | :--- | ---: |
@@ -1422,7 +1416,7 @@ Stated so the boundary of the evidence is visible.
   The other 79 split into 11 measured on silicon, 56 mined from what the vendor schedules, and
   12 with no register result at all, whose number is never consulted because an instruction
   that defines nothing is never a producer. The eight are `BPT`, `CCTL`, `CGAERRBAR`,
-  `ENDCOLLECTIVE`, `ERRBAR`, `LDL`, `R2UR` and `REDG`; five of them appear nowhere in 36,576
+  `ENDCOLLECTIVE`, `ERRBAR`, `LDL`, `R2UR` and `REDG`; five of them appear nowhere in 38,064
   instructions of compiler output, and of the three that do, only `LDL` ever writes a register,
   where its variable class means a scoreboard covers it and the mined residue is what the
   checker uses. The model marks every assumed number as assumed, and a hazard derived from one

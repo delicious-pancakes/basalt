@@ -13,7 +13,7 @@ any release. The clean-room position in [`NOTICE`](NOTICE) will not.
 - Read barriers are derived rather than copied from the schedule being replaced,
   which is what a scheduler needs to place control bits on a program nobody has
   compiled. All 334 in the corpus were characterised first: 328 sit on a
-  variable-latency instruction and the rest on a store, 333 of 334 sit on one
+  variable-latency instruction and the rest on a store, 340 of 341 sit on one
   whose source register is overwritten later, and the barrier goes on the last
   such reader before the overwrite because it covers every earlier one. Removing
   them makes `s_tile_matmul` return the wrong answer on the card, which is the
@@ -123,7 +123,7 @@ any release. The clean-room position in [`NOTICE`](NOTICE) will not.
   frequently there for another reason. The checker tests the same rule through
   the same function, which closed a gap where the scheduler charged for a hazard
   the checker never looked for. Issue cost 1.06x to 1.05x.
-- The yield bit follows a rule fitted to 36,576 instructions of vendor output,
+- The yield bit follows a rule fitted to 38,064 instructions of vendor output,
   93.7% agreement against the 72.9% the previous guess managed. Inverting 680 of
   them in the vendor's own schedules changed no result on the card, so the field
   is a hint rather than a correctness input, which is now measured rather than
@@ -140,7 +140,7 @@ any release. The clean-room position in [`NOTICE`](NOTICE) will not.
 
 ### Fixed
 - Removed a repair loop that reallocated scoreboards away from any instruction
-  waiting on the number it signals. `ptxas` emits that shape 260 times in 36,576
+  waiting on the number it signals. `ptxas` emits that shape 254 times in 38,064
   instructions, so the rule was invented to avoid a hazard that is not one, and
   it was not free: forbidding a number pushes the allocator onto a fresh
   scoreboard, and `s_tile_matmul` was taking 57 where it needs 20. Removing it
@@ -229,9 +229,9 @@ any release. The clean-room position in [`NOTICE`](NOTICE) will not.
 
 ### Found
 - A read barrier is set exactly where an operand read outlives its register, and
-  covers every earlier late reader before the overwrite. 333 of the 334 in
-  36,576 instructions of vendor output fit that rule, and the 444 overwrites left
-  bare are explained by two effects and no third. Finding 25.
+  covers every earlier late reader before the overwrite. 340 of the 341 in
+  38,064 instructions of vendor output fit that rule, and all 474 overwrites left
+  bare are accounted for by three mechanisms with nothing left over. Finding 25.
 - The yield bit does not gate correctness on sm_120. 680 inversions across fp64,
   transcendental, tensor, loop, barrier and shared-atomic kernels, and the card
   computed the vendor's answer every time. Finding 26.
