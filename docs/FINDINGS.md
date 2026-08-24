@@ -580,11 +580,11 @@ rather than trusted. With it, assembling every corpus kernel as a whole program 
 A scheduler that reports only whether it was right is hiding the trade it made. basalt's
 schedules are correct on every comparable corpus kernel, and here is what they cost:
 
-| | Issue cycles |
+| Schedule | Issue cycles |
 | :--- | ---: |
 | `ptxas`, all three levels | 56,441 |
 | basalt | 59,125 |
-| | **1.05x** |
+| **ratio** | **1.05x** |
 
 Slower on 111 of the 1,323 kernel and optimisation-level pairs and cheaper on 842, with
 every comparable kernel still byte-identical on the GPU at all three.
@@ -724,7 +724,7 @@ schedule and sweeping only the stall on the run of four loads:
 | **1** | **wrong** |
 | 2 | correct |
 | 3 to 8 | correct |
-| *vendor leaves 4* | |
+| *vendor leaves 4* | *correct, two cycles above the minimum* |
 
 Reproducible across repeated runs, and deterministic rather than a race. Two things follow.
 The hazard is real: one cycle is not enough and the answer is wrong every time, so the
@@ -1313,7 +1313,7 @@ barrier. Three mechanisms account for every one of them, and they add up exactly
 | A wait on the reader's own write barrier, which cannot clear before the read | 246 |
 | A barrier on a *later* late reader, which covers this one too (finding 13) | 12 |
 | Distance alone, averaging 31 cycles | 60 |
-| | **318** |
+| **Total** | **318** |
 
 Nothing is left over, which is the part worth insisting on. The third row is the same
 mechanism finding 23 measures from the other side, and the first row is the one that matters
@@ -1582,7 +1582,7 @@ read 5 from a thin corpus and 4 from a wider one, and 4 was what fault injection
 the libraries the audit then reports on**, because a table measured on the code it is checked
 against is the flaw being fixed rather than a fix for it. 909 cubins, 24,311 kernels.
 
-| | Corpus | With shipped code | New pairings | Read too high |
+| Requirement table | Corpus | With shipped code | New pairings | Read too high |
 | :--- | ---: | ---: | ---: | ---: |
 | dependent pairs | 340 | **3,957** | 3,617 | 66 |
 | per producer | 162 | **512** | 350 | 50 |
@@ -1665,7 +1665,7 @@ every control bit discarded and has to compute new ones.
 | `nvjpeg` | 63,968 | 48,810 | 15,158 | **0** |
 | `curand` | 642,960 | 573,761 | 69,199 | **0** |
 | `cusolverMg` | 4,530,520 | 3,962,765 | 567,755 | **0** |
-| | **5,237,448** | **4,585,336 (87.5%)** | 652,112 | **0** |
+| **Total** | **5,237,448** | **4,585,336 (87.5%)** | 652,112 | **0** |
 
 <img src="assets/chart-assembler.svg" alt="59,693 of 59,760 corpus instructions and 4,585,336 of 5,237,448 shipped instructions assembled to the vendor's exact bytes, the rest refused by name, and zero of all 5,297,208 assembled to the wrong bytes.">
 
@@ -1685,7 +1685,7 @@ than a wrong verdict, because the caller gets neither.
 
 ### The result
 
-| | Kernels | Instructions | Dependencies | Errors | Warnings |
+| Run | Kernels | Instructions | Dependencies | Errors | Warnings |
 | :--- | ---: | ---: | ---: | ---: | ---: |
 | First run, one library | 250 | 63,968 | 93,972 | 6,593 | 554 |
 | Widened to three | 2,762 | 5,237,448 | 10,218,030 | 940 | 217,855 |
