@@ -19,7 +19,7 @@ ships, held out of every table it reads, the checker reports 0 errors over
 10,218,030 dependencies with all 2,762 kernels fully analysed.
 
 ### Added
-- Stage 10, the audit: the checker pointed at 2,473 sm_120 kernels NVIDIA ships
+- Stage 10, the audit: the checker pointed at 2,473 sm_120 cubins NVIDIA ships
   in CUDA 13.3.1, 844 MB of device code basalt did not compile. The first run
   reported 6,593 errors in 250 nvjpeg kernels and not one was real; eight holes
   in basalt's model were, each invisible on a corpus basalt generates itself.
