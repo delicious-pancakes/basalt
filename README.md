@@ -204,6 +204,13 @@ apply to every card in it:
 | RTX PRO Blackwell workstation cards | 12.0 (`sm_120`) | yes |
 | Datacentre Blackwell (B100, B200, GB200) | 10.0 (`sm_100`) | no, different encoding |
 
+Ampere (`sm_86`) is also not covered. Basalt has a deliberately separate
+[observation-only research path](docs/SM86_RESEARCH.md) for raw corpus mining and
+identity-bound one-bit execution probes. Its first hardware campaign found a
+decoder-text-silent mutation that changed deterministic output, so it did not
+promote an Ampere control schema; control-aware `sm_86` commands remain
+fail-closed.
+
 `ptxas` also targets `sm_121`, a different chip in the same family. basalt has never run on
 one, and does not claim to support it. What it can say is measured: the compiler emits
 **byte-identical code, control words included**, for all six targets it offers here, so the
