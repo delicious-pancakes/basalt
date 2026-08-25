@@ -67,6 +67,18 @@ load-bearing. This is not evidence that bit 116 is a dependency, yield, reuse,
 stall, barrier, or scheduling field, and it does not establish semantic
 equivalence outside the exact direct words and inputs.
 
+A second fresh context matrix sampled eight previously unexecuted reciprocal
+sites. Bit 116 changed deterministic output in optimized unsigned division,
+signed remainder, and unsigned remainder, while the corresponding unoptimized
+forms and two optimized floating-division sites remained output-equal. All
+mutants loaded and synchronized; every pair was raw-decoder-text-silent. The
+three divergent optimized integer forms used the same exact
+`MUFU.RCP R6, R6` word and immediately consumed its result with `IADD3`. Their
+unoptimized forms inserted a `MOV` before that consumer. But the direct
+reciprocal witness had an immediate `FMUL` consumer and remained equal, so
+distance alone is not established. Consumer class, full control encoding,
+register arrangement, and dependency graph remain confounded.
+
 Bit 122 also resisted global naming. Its one-bit mutation was raw-text-silent on
 the selected atomic, added a `.reuse` source modifier to one BMMA, and made raw
 `nvdisasm` reject another BMMA. Both selected BMMA mutants nevertheless loaded,
@@ -85,6 +97,7 @@ No `sm_86` field is promoted. In particular:
 
 - raw decoder-text silence is not semantic silence;
 - mnemonic equality is not context equality;
+- optimization level and consumer neighborhood are evidence strata, not field names;
 - a no-fault or output-equal mutation is not field attribution;
 - hardware acceptance of a raw-decoder-rejected word is not general legality;
 - one opcode's modifier spelling is not a cross-opcode field boundary;
