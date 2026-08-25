@@ -9,7 +9,40 @@ import sys
 import textwrap
 
 from . import __version__
+from .architecture import (
+    ArchitectureError,
+    artifact_architecture,
+    cubin_architecture,
+    require_architecture_match,
+    require_control_model,
+)
 from .paths import ISA_DATABASE, LATENCIES, OBSERVED_STALLS
+
+
+_CONTROL_MODEL_COMMANDS = frozenset(
+    {
+        "assemble",
+        "build-isa",
+        "mine-stalls",
+        "probe-stalls",
+        "schedule",
+        "validate-isa",
+        "verify",
+    }
+)
+
+
+def _architecture_error(exc: ArchitectureError) -> int:
+    print(f"error: architecture authority failure: {exc}", file=sys.stderr)
+    return 2
+
+
+def _require_json_arch(path: Path, expected: str, label: str) -> None:
+    require_architecture_match(expected, artifact_architecture(path), label)
+
+
+def _require_cubin_arch(path: Path, expected: str) -> None:
+    require_architecture_match(expected, cubin_architecture(path), str(path))
 
 
 def _doctor(args: argparse.Namespace) -> int:
@@ -45,7 +78,7 @@ def _doctor(args: argparse.Namespace) -> int:
             ret;
         }
         """
-    )
+    ).replace(".target sm_120a", f".target {args.arch}")
 
     with TemporaryDirectory(prefix="basalt-doctor-") as tmp:
         src, cubin = Path(tmp) / "probe.ptx", Path(tmp) / "probe.cubin"
@@ -291,7 +324,12 @@ def _assemble(args: argparse.Namespace) -> int:
         print("error: nothing to assemble", file=_sys.stderr)
         return 1
 
-    assembler = Assembler(IsaDatabase.read(database))
+    db = IsaDatabase.read(database)
+    try:
+        require_architecture_match(args.arch, db.arch, str(database))
+    except ArchitectureError as exc:
+        return _architecture_error(exc)
+    assembler = Assembler(db)
     toolchain = None
     if args.verify:
         from .toolchain import ToolchainError, find_toolchain
@@ -341,15 +379,22 @@ def _assemble_cubin(args: argparse.Namespace, database) -> int:
     from .isa.database import IsaDatabase
     from .toolchain import ToolchainError, find_toolchain
 
+    target = Path(args.cubin)
+    if not target.is_file():
+        print(f"error: {target} not found", file=_sys.stderr)
+        return 1
+
+    db = IsaDatabase.read(database)
+    try:
+        _require_cubin_arch(target, args.arch)
+        require_architecture_match(args.arch, db.arch, str(database))
+    except ArchitectureError as exc:
+        return _architecture_error(exc)
+
     try:
         tc = find_toolchain(args.cuda_bin)
     except ToolchainError as exc:
         print(f"error: {exc}", file=_sys.stderr)
-        return 1
-
-    target = Path(args.cubin)
-    if not target.is_file():
-        print(f"error: {target} not found", file=_sys.stderr)
         return 1
 
     program = disassemble_program(tc, target)
@@ -357,7 +402,7 @@ def _assemble_cubin(args: argparse.Namespace, database) -> int:
         print(f"error: nothing disassembled from {target}", file=_sys.stderr)
         return 1
 
-    result = assemble_program(program, IsaDatabase.read(database))
+    result = assemble_program(program, db)
     exact = wrong = 0
     for instruction, got in zip(program.instructions, result.words, strict=True):
         if instruction.word is None or got is None:
@@ -401,27 +446,50 @@ def _schedule(args: argparse.Namespace) -> int:
     from .verify.latency import DEFAULT_MODEL, LatencyModel
     from .verify.observed import ObservedStalls
 
+    target = Path(args.cubin)
+    if not target.is_file():
+        print(f"error: {target} not found", file=sys.stderr)
+        return 1
+
+    try:
+        _require_cubin_arch(target, args.arch)
+    except ArchitectureError as exc:
+        return _architecture_error(exc)
+
     try:
         tc = find_toolchain(args.cuda_bin)
     except ToolchainError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
 
-    target = Path(args.cubin)
-    if not target.is_file():
-        print(f"error: {target} not found", file=sys.stderr)
-        return 1
-
     model = DEFAULT_MODEL
     if args.latencies:
-        model = LatencyModel.assumed().overlay(Path(args.latencies))
+        latency_path = Path(args.latencies)
+        try:
+            _require_json_arch(latency_path, args.arch, "latency model")
+        except ArchitectureError as exc:
+            return _architecture_error(exc)
+        model = LatencyModel.assumed().overlay(latency_path)
     elif (measured := Path(DEFAULT_LATENCIES)).is_file():
+        try:
+            _require_json_arch(measured, args.arch, "default latency model")
+        except ArchitectureError as exc:
+            return _architecture_error(exc)
         model = LatencyModel.assumed().overlay(measured)
 
     observed = None
     if args.observed:
-        observed = ObservedStalls.read(Path(args.observed))
+        observed_path = Path(args.observed)
+        try:
+            _require_json_arch(observed_path, args.arch, "observed-stall table")
+        except ArchitectureError as exc:
+            return _architecture_error(exc)
+        observed = ObservedStalls.read(observed_path)
     elif (default := Path(DEFAULT_OBSERVED)).is_file():
+        try:
+            _require_json_arch(default, args.arch, "default observed-stall table")
+        except ArchitectureError as exc:
+            return _architecture_error(exc)
         observed = ObservedStalls.read(default)
 
     program = disassemble_program(tc, target)
@@ -514,29 +582,52 @@ def _verify(args: argparse.Namespace) -> int:
     from .verify.latency import DEFAULT_MODEL, Confidence, LatencyModel
     from .verify.observed import ObservedStalls
 
+    target = Path(args.cubin)
+    if not target.is_file():
+        print(f"error: {target} not found", file=sys.stderr)
+        return 1
+
+    try:
+        _require_cubin_arch(target, args.arch)
+    except ArchitectureError as exc:
+        return _architecture_error(exc)
+
     try:
         tc = find_toolchain(args.cuda_bin)
     except ToolchainError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
 
-    target = Path(args.cubin)
-    if not target.is_file():
-        print(f"error: {target} not found", file=sys.stderr)
-        return 1
-
     model = DEFAULT_MODEL
     if args.latencies:
-        model = LatencyModel.assumed().overlay(Path(args.latencies))
+        latency_path = Path(args.latencies)
+        try:
+            _require_json_arch(latency_path, args.arch, "latency model")
+        except ArchitectureError as exc:
+            return _architecture_error(exc)
+        model = LatencyModel.assumed().overlay(latency_path)
     elif (measured := Path(DEFAULT_LATENCIES)).is_file():
         # the committed measurements beat the assumptions, and a checkout has
         # them, so a bare `verify` should not quietly use the weaker model
+        try:
+            _require_json_arch(measured, args.arch, "default latency model")
+        except ArchitectureError as exc:
+            return _architecture_error(exc)
         model = LatencyModel.assumed().overlay(measured)
 
     observed = None
     if args.observed:
-        observed = ObservedStalls.read(Path(args.observed))
+        observed_path = Path(args.observed)
+        try:
+            _require_json_arch(observed_path, args.arch, "observed-stall table")
+        except ArchitectureError as exc:
+            return _architecture_error(exc)
+        observed = ObservedStalls.read(observed_path)
     elif (default := Path(DEFAULT_OBSERVED)).is_file():
+        try:
+            _require_json_arch(default, args.arch, "default observed-stall table")
+        except ArchitectureError as exc:
+            return _architecture_error(exc)
         observed = ObservedStalls.read(default)
 
     # per kernel, because a shipped library holds hundreds in one ELF and
@@ -635,14 +726,17 @@ def _measure(args: argparse.Namespace) -> int:
         )
         return 1
 
-    run = measure_all(
-        tc,
-        arch=args.arch,
-        ordinal=args.device,
-        lengths=tuple(args.lengths),
-        repeats=args.repeats,
-        board=args.board,
-    )
+    try:
+        run = measure_all(
+            tc,
+            arch=args.arch,
+            ordinal=args.device,
+            lengths=tuple(args.lengths),
+            repeats=args.repeats,
+            board=args.board,
+        )
+    except ArchitectureError as exc:
+        return _architecture_error(exc)
 
     out = Path(args.out) if args.out else LATENCIES.parent / _slug(run.sku)
     run.write(out)
@@ -777,6 +871,11 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     args = ap.parse_args(argv)
+    if args.command in _CONTROL_MODEL_COMMANDS:
+        try:
+            require_control_model(args.arch, args.command)
+        except ArchitectureError as exc:
+            return _architecture_error(exc)
     return {
         "doctor": _doctor,
         "build-isa": _build_isa,

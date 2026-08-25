@@ -37,6 +37,7 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+from ..architecture import ArchitectureError, require_architecture_match
 from ..disasm import disassemble_cubin
 from ..toolchain import Toolchain
 from ..verify.latency import LatencyClass
@@ -524,6 +525,12 @@ def measure_all(
     """Sweep every chain spec on the device and collect the results."""
     with Device(ordinal) as dev:
         info = dev.info
+        try:
+            require_architecture_match(arch, info.arch, f"CUDA device {ordinal}")
+        except ArchitectureError:
+            # Re-raise the typed authority failure before compiling or launching
+            # anything for a device that cannot execute the requested target.
+            raise
         run = MeasurementRun(
             sku=info.name,
             board=board,
