@@ -279,10 +279,33 @@ class Device:
         block: tuple[int, int, int] = (1, 1, 1),
         shared_bytes: int = 0,
     ) -> None:
-        """Launch a kernel and wait for it.
+        """Launch a kernel and wait for it."""
+        self.launch_async(
+            fn,
+            params,
+            grid=grid,
+            block=block,
+            shared_bytes=shared_bytes,
+        )
+        self.synchronize()
+
+    def launch_async(
+        self,
+        fn: CUfunction,
+        params: list[Any],
+        *,
+        grid: tuple[int, int, int] = (1, 1, 1),
+        block: tuple[int, int, int] = (1, 1, 1),
+        shared_bytes: int = 0,
+    ) -> None:
+        """Launch a kernel without conflating launch admission with completion.
 
         `params` holds ctypes objects; the driver wants an array of pointers to
         the arguments rather than the arguments themselves.
+
+        Most callers should keep using :meth:`launch`.  Evidence runners that
+        need to distinguish a rejected launch from a later synchronization
+        failure can call this method followed by :meth:`synchronize`.
         """
         lib = self._lib
         arg_ptrs = (ctypes.c_void_p * len(params))(
@@ -305,4 +328,8 @@ class Device:
             ),
             "cuLaunchKernel",
         )
+
+    def synchronize(self) -> None:
+        """Wait for prior work in this context and report completion errors."""
+        lib = self._lib
         _check(lib, lib.cuCtxSynchronize(), "cuCtxSynchronize")
