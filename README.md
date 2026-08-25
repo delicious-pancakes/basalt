@@ -206,8 +206,10 @@ apply to every card in it:
 
 Ampere (`sm_86`) is also not covered. Basalt has a deliberately separate
 [observation-only research path](docs/SM86_RESEARCH.md) for raw corpus mining and
-identity-bound one-bit execution probes. Its first hardware campaign found a
-decoder-text-silent mutation that changed deterministic output, so it did not
+identity-bound one-bit execution probes. Its hardware campaigns found a
+decoder-text-silent mutation that changed deterministic output in a
+signed-division context but remained output-equal across seven direct MUFU
+unary witnesses, including direct reciprocal. That context dependence did not
 promote an Ampere control schema; control-aware `sm_86` commands remain
 fail-closed.
 

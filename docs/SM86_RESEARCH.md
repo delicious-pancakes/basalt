@@ -48,9 +48,24 @@ hypothesis. These two exact words both decode as `MUFU.RCP R6, R6`:
 On an exactly identified RTX 3070, the original signed-division kernel returned
 333 and -333 for the two fixed inputs. The bit-116 mutant returned 2 and -2.
 Every value was stable across five repetitions. Bit 116 was output-equal in the
-selected IADD3, predicated-loop-back-edge, and global-atomic witnesses, which is
-why the division result is an opcode-local counterexample rather than a global
-field attribution.
+selected IADD3, predicated-loop-back-edge, and global-atomic witnesses, so the
+division result was already a local counterexample rather than a global field
+attribution.
+
+A fresh follow-up then flipped bit 116 across direct O3 unary kernels for
+`MUFU.COS`, `EX2`, `LG2`, `RCP`, `RSQ`, `SIN`, and `SQRT`, using two fixed
+finite inputs per exact word. Every original and mutant loaded, launched,
+synchronized, and produced identical deterministic bytes across five
+repetitions. The direct `MUFU.RCP R0, R0` witness was output-equal even though
+the earlier signed-division `MUFU.RCP R6, R6` witness diverged. All seven
+mutations remained raw-decoder-text-silent, and the predicate detection control
+again changed output.
+
+The follow-up narrows the conclusion: the mnemonic alone is not the semantic
+unit. Full encoding plus surrounding producer/consumer/control context is
+load-bearing. This is not evidence that bit 116 is a dependency, yield, reuse,
+stall, barrier, or scheduling field, and it does not establish semantic
+equivalence outside the exact direct words and inputs.
 
 Bit 122 also resisted global naming. Its one-bit mutation was raw-text-silent on
 the selected atomic, added a `.reuse` source modifier to one BMMA, and made raw
@@ -69,6 +84,7 @@ of observing a semantic difference in the same cubin and execution path.
 No `sm_86` field is promoted. In particular:
 
 - raw decoder-text silence is not semantic silence;
+- mnemonic equality is not context equality;
 - a no-fault or output-equal mutation is not field attribution;
 - hardware acceptance of a raw-decoder-rejected word is not general legality;
 - one opcode's modifier spelling is not a cross-opcode field boundary;
